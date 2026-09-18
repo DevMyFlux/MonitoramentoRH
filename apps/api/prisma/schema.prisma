@@ -1,0 +1,1014 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RoleName {
+  DEV
+  ADMIN
+  RH
+  COMUM
+}
+
+enum RecordStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  ARCHIVE
+  RESTORE
+  APPROVE
+  REJECT
+  PUBLISH
+  UNPUBLISH
+  OVERRIDE
+  ROLE_CHANGE
+  PERMISSION_CHANGE
+  USER_INVITE
+  USER_DISABLE
+}
+
+enum ImportType {
+  EMPLOYEES
+  QLP
+  SCHEDULE
+}
+
+enum ImportStatus {
+  UPLOADED
+  VALIDATED
+  COMMITTED
+  REJECTED
+}
+
+enum ImportIssueSeverity {
+  ERROR
+  WARNING
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+  VACATION
+  TERMINATED
+  SCHEDULED_ADMISSION
+}
+
+enum QLPKind {
+  CONTRACTUAL
+  OPERATIONAL
+}
+
+enum WorkflowStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum RequirementKind {
+  DOCUMENT
+  COMPETENCY
+}
+
+enum AptitudeStatus {
+  GREEN
+  YELLOW
+  RED
+}
+
+enum EvaluationStatus {
+  DRAFT
+  IN_RH_REVIEW
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum CalendarEventCategory {
+  VACATION
+  LEAVE
+  TRAINING
+  ADMISSION
+  TERMINATION
+  TIME_OFF
+  OTHER
+}
+
+model User {
+  id                   String               @id @default(uuid()) @db.Uuid
+  email                String               @unique
+  name                 String
+  passwordHash         String
+  roleId               String               @db.Uuid
+  role                 Role                 @relation(fields: [roleId], references: [id])
+  isActive             Boolean              @default(true)
+  status               RecordStatus         @default(ACTIVE)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  createdBy            String?              @db.Uuid
+  updatedBy            String?              @db.Uuid
+  archivedAt           DateTime?
+  auditLogs            AuditLog[]
+  scopes               UserScope[]
+  refreshSessions      RefreshSession[]
+  invitationsCreated   UserInvitation[]     @relation("InvitationCreatedBy")
+  passwordResetTokens  PasswordResetToken[]
+}
+
+model Role {
+  id          String           @id @default(uuid()) @db.Uuid
+  name        RoleName         @unique
+  level       Int
+  description String
+  status      RecordStatus     @default(ACTIVE)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  createdBy   String?          @db.Uuid
+  updatedBy   String?          @db.Uuid
+  archivedAt  DateTime?
+  users       User[]
+  permissions RolePermission[]
+  invitations UserInvitation[]
+}
+
+model Permission {
+  id          String           @id @default(uuid()) @db.Uuid
+  code        String           @unique
+  description String
+  status      RecordStatus     @default(ACTIVE)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  createdBy   String?          @db.Uuid
+  updatedBy   String?          @db.Uuid
+  archivedAt  DateTime?
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       String     @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id])
+  permissionId String     @db.Uuid
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@id([roleId, permissionId])
+}
+
+model UserScope {
+  id          String       @id @default(uuid()) @db.Uuid
+  userId      String       @db.Uuid
+  user        User         @relation(fields: [userId], references: [id])
+  companyId   String?      @db.Uuid
+  operationId String?      @db.Uuid
+  unitId      String?      @db.Uuid
+  company     Company?     @relation(fields: [companyId], references: [id])
+  operation   Operation?   @relation(fields: [operationId], references: [id])
+  unit        Unit?        @relation(fields: [unitId], references: [id])
+  isGlobal    Boolean      @default(false)
+  status      RecordStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   String?      @db.Uuid
+  updatedBy   String?      @db.Uuid
+  archivedAt  DateTime?
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([operationId])
+  @@index([unitId])
+}
+
+model Company {
+  id         String       @id @default(uuid()) @db.Uuid
+  name       String
+  document   String?
+  status     RecordStatus @default(ACTIVE)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  createdBy  String?      @db.Uuid
+  updatedBy  String?      @db.Uuid
+  archivedAt DateTime?
+  clients    Client[]
+  contracts  Contract[]
+  units      Unit[]
+  operations Operation[]
+  scopes     UserScope[]
+}
+
+model Client {
+  id         String       @id @default(uuid()) @db.Uuid
+  companyId  String       @db.Uuid
+  company    Company      @relation(fields: [companyId], references: [id])
+  name       String
+  document   String?
+  status     RecordStatus @default(ACTIVE)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  createdBy  String?      @db.Uuid
+  updatedBy  String?      @db.Uuid
+  archivedAt DateTime?
+  contracts  Contract[]
+  units      Unit[]
+  operations Operation[]
+
+  @@index([companyId])
+}
+
+model Unit {
+  id         String       @id @default(uuid()) @db.Uuid
+  companyId  String       @db.Uuid
+  company    Company      @relation(fields: [companyId], references: [id])
+  clientId   String?      @db.Uuid
+  client     Client?      @relation(fields: [clientId], references: [id])
+  name       String
+  code       String?
+  status     RecordStatus @default(ACTIVE)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  createdBy  String?      @db.Uuid
+  updatedBy  String?      @db.Uuid
+  archivedAt DateTime?
+  operations Operation[]
+  scopes     UserScope[]
+
+  @@index([companyId])
+  @@index([clientId])
+}
+
+model Contract {
+  id          String       @id @default(uuid()) @db.Uuid
+  companyId   String       @db.Uuid
+  company     Company      @relation(fields: [companyId], references: [id])
+  clientId    String       @db.Uuid
+  client      Client       @relation(fields: [clientId], references: [id])
+  name        String
+  code        String?
+  startsAt    DateTime?
+  endsAt      DateTime?
+  status      RecordStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   String?      @db.Uuid
+  updatedBy   String?      @db.Uuid
+  archivedAt  DateTime?
+  operations  Operation[]
+
+  @@index([companyId])
+  @@index([clientId])
+}
+
+model Operation {
+  id          String       @id @default(uuid()) @db.Uuid
+  companyId   String       @db.Uuid
+  company     Company      @relation(fields: [companyId], references: [id])
+  clientId    String       @db.Uuid
+  client      Client       @relation(fields: [clientId], references: [id])
+  contractId  String?      @db.Uuid
+  contract    Contract?    @relation(fields: [contractId], references: [id])
+  unitId      String       @db.Uuid
+  unit        Unit         @relation(fields: [unitId], references: [id])
+  name        String
+  code        String?
+  status      RecordStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   String?      @db.Uuid
+  updatedBy   String?      @db.Uuid
+  archivedAt  DateTime?
+  services    Service[]
+  obligations Obligation[]
+  functions   JobFunction[]
+  scopes      UserScope[]
+  employees   Employee[]
+  qlpVersions QLPVersion[]
+  positions   Position[]
+  requirements ComplianceRequirement[]
+  competencyMatrix CompetencyMatrixItem[]
+  calendarEvents CalendarEvent[]
+  scheduleVersions ScheduleVersion[]
+
+  @@index([companyId])
+  @@index([clientId])
+  @@index([contractId])
+  @@index([unitId])
+}
+
+model Service {
+  id          String       @id @default(uuid()) @db.Uuid
+  operationId String       @db.Uuid
+  operation   Operation    @relation(fields: [operationId], references: [id])
+  name        String
+  code        String?
+  status      RecordStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   String?      @db.Uuid
+  updatedBy   String?      @db.Uuid
+  archivedAt  DateTime?
+  obligations Obligation[]
+
+  @@index([operationId])
+}
+
+model Obligation {
+  id          String       @id @default(uuid()) @db.Uuid
+  operationId String       @db.Uuid
+  operation   Operation    @relation(fields: [operationId], references: [id])
+  serviceId   String?      @db.Uuid
+  service     Service?     @relation(fields: [serviceId], references: [id])
+  title       String
+  description String?
+  status      RecordStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   String?      @db.Uuid
+  updatedBy   String?      @db.Uuid
+  archivedAt  DateTime?
+
+  @@index([operationId])
+  @@index([serviceId])
+}
+
+model JobFunction {
+  id          String       @id @default(uuid()) @db.Uuid
+  operationId String?      @db.Uuid
+  operation   Operation?   @relation(fields: [operationId], references: [id])
+  name        String
+  code        String?
+  description String?
+  status      RecordStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   String?      @db.Uuid
+  updatedBy   String?      @db.Uuid
+  archivedAt  DateTime?
+  employees   Employee[]
+  qlpRequirements QLPRequirement[]
+  positions   Position[]
+  requirements ComplianceRequirement[]
+  competencyMatrix CompetencyMatrixItem[]
+
+  @@index([operationId])
+}
+
+model QLPVersion {
+  positions Position[]
+  id           String           @id @default(uuid()) @db.Uuid
+  operationId  String           @db.Uuid
+  operation    Operation        @relation(fields: [operationId], references: [id])
+  version      Int
+  kind         QLPKind
+  validFrom    DateTime
+  validTo      DateTime?
+  reason       String
+  status       WorkflowStatus   @default(DRAFT)
+  approvedBy   String?          @db.Uuid
+  approvedAt   DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  createdBy    String?          @db.Uuid
+  updatedBy    String?          @db.Uuid
+  archivedAt   DateTime?
+  requirements QLPRequirement[]
+
+  @@unique([operationId, version, kind])
+  @@index([operationId])
+  @@index([status])
+}
+
+model QLPRequirement {
+  id         String      @id @default(uuid()) @db.Uuid
+  versionId  String      @db.Uuid
+  version    QLPVersion  @relation(fields: [versionId], references: [id])
+  functionId String      @db.Uuid
+  function   JobFunction @relation(fields: [functionId], references: [id])
+  workRegime String?
+  shift      String?
+  parity     String?
+  team       String?
+  quantity   Int
+  criticality String?
+  status     RecordStatus @default(ACTIVE)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  createdBy  String?      @db.Uuid
+  updatedBy  String?      @db.Uuid
+  archivedAt DateTime?
+
+  @@index([versionId])
+  @@index([functionId])
+}
+
+model Position {
+  qlpVersionId String? @db.Uuid
+  qlpVersion QLPVersion? @relation(fields: [qlpVersionId], references: [id])
+  recruitmentRequests RecruitmentRequest[]
+  assignments EmployeeAssignment[]
+  id          String       @id @default(uuid()) @db.Uuid
+  operationId String       @db.Uuid
+  operation   Operation    @relation(fields: [operationId], references: [id])
+  functionId  String       @db.Uuid
+  function    JobFunction  @relation(fields: [functionId], references: [id])
+  workRegime  String?
+  shift       String?
+  parity      String?
+  team        String?
+  criticality String?
+  validFrom   DateTime
+  validTo     DateTime?
+  status      RecordStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   String?      @db.Uuid
+  updatedBy   String?      @db.Uuid
+  archivedAt  DateTime?
+
+  @@index([operationId])
+  @@index([functionId])
+}
+
+model Employee {
+  admissions CandidateApplication[]
+  id           String              @id @default(uuid()) @db.Uuid
+  operationId  String              @db.Uuid
+  operation    Operation           @relation(fields: [operationId], references: [id])
+  functionId   String?             @db.Uuid
+  function     JobFunction?        @relation(fields: [functionId], references: [id])
+  name         String
+  identifier   String
+  employmentType String?
+  jobTitle     String?
+  admissionDate DateTime?
+  status       EmployeeStatus      @default(ACTIVE)
+  workRegime   String?
+  shift        String?
+  team         String?
+  notes        String?
+  recordStatus RecordStatus        @default(ACTIVE)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  createdBy    String?             @db.Uuid
+  updatedBy    String?             @db.Uuid
+  archivedAt   DateTime?
+  assignments  EmployeeAssignment[]
+  history      EmployeeHistory[]
+  documents    EmployeeDocument[]
+  competencies EmployeeCompetency[]
+  evaluations  EmployeeEvaluation[]
+  developmentPlans DevelopmentPlan[]
+  calendarEvents CalendarEvent[]
+
+  @@unique([operationId, identifier])
+  @@index([operationId])
+  @@index([functionId])
+  @@index([status])
+}
+
+model ComplianceRequirement {
+  id           String          @id @default(uuid()) @db.Uuid
+  operationId  String?         @db.Uuid
+  operation    Operation?      @relation(fields: [operationId], references: [id])
+  functionId   String?         @db.Uuid
+  function     JobFunction?    @relation(fields: [functionId], references: [id])
+  kind         RequirementKind
+  code         String
+  name         String
+  description  String?
+  validityDays Int?
+  warningDays  Int            @default(30)
+  required     Boolean        @default(true)
+  status       RecordStatus   @default(ACTIVE)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  createdBy    String?        @db.Uuid
+  updatedBy    String?        @db.Uuid
+  archivedAt   DateTime?
+  documents    EmployeeDocument[]
+
+  @@unique([operationId, functionId, kind, code])
+  @@index([operationId])
+  @@index([functionId])
+  @@index([kind])
+}
+
+model EmployeeDocument {
+  id             String                @id @default(uuid()) @db.Uuid
+  employeeId     String                @db.Uuid
+  employee       Employee              @relation(fields: [employeeId], references: [id])
+  requirementId  String                @db.Uuid
+  requirement    ComplianceRequirement @relation(fields: [requirementId], references: [id])
+  issuedAt       DateTime?
+  expiresAt      DateTime?
+  fileName       String?
+  fileUrl        String?
+  notes          String?
+  status         RecordStatus          @default(ACTIVE)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  createdBy      String?               @db.Uuid
+  updatedBy      String?               @db.Uuid
+  archivedAt     DateTime?
+
+  @@index([employeeId])
+  @@index([requirementId])
+  @@index([expiresAt])
+}
+
+model CompetencyMatrixItem {
+  id            String       @id @default(uuid()) @db.Uuid
+  operationId   String?      @db.Uuid
+  operation     Operation?   @relation(fields: [operationId], references: [id])
+  functionId    String       @db.Uuid
+  function      JobFunction  @relation(fields: [functionId], references: [id])
+  competencyCode String
+  competencyName String
+  requiredLevel Int          @default(1)
+  validityDays  Int?
+  warningDays   Int          @default(30)
+  required      Boolean      @default(true)
+  status        RecordStatus @default(ACTIVE)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  createdBy     String?      @db.Uuid
+  updatedBy     String?      @db.Uuid
+  archivedAt    DateTime?
+
+  @@unique([operationId, functionId, competencyCode])
+  @@index([operationId])
+  @@index([functionId])
+}
+
+model EmployeeCompetency {
+  id             String       @id @default(uuid()) @db.Uuid
+  employeeId     String       @db.Uuid
+  employee       Employee     @relation(fields: [employeeId], references: [id])
+  competencyCode String
+  competencyName String
+  level          Int          @default(1)
+  achievedAt     DateTime?
+  expiresAt      DateTime?
+  notes          String?
+  status         RecordStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  createdBy      String?      @db.Uuid
+  updatedBy      String?      @db.Uuid
+  archivedAt     DateTime?
+
+  @@index([employeeId])
+  @@index([competencyCode])
+  @@index([expiresAt])
+}
+
+model ScheduleVersion {
+  id           String           @id @default(uuid()) @db.Uuid
+  operationId  String           @db.Uuid
+  operation    Operation        @relation(fields: [operationId], references: [id])
+  version      Int
+  month        DateTime
+  status       WorkflowStatus   @default(DRAFT)
+  generatedInput Json
+  generatedResult Json
+  approvedBy   String?          @db.Uuid
+  approvedAt   DateTime?
+  publishedBy  String?          @db.Uuid
+  publishedAt  DateTime?
+  overrideJustification String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  createdBy    String?          @db.Uuid
+  updatedBy    String?          @db.Uuid
+  archivedAt   DateTime?
+  assignments  ScheduleAssignment[]
+  history      ScheduleHistory[]
+
+  @@unique([operationId, version, month])
+  @@index([operationId])
+  @@index([status])
+  @@index([month])
+}
+
+model ScheduleAssignment {
+  id              String          @id @default(uuid()) @db.Uuid
+  scheduleId      String          @db.Uuid
+  schedule        ScheduleVersion @relation(fields: [scheduleId], references: [id])
+  positionId      String
+  employeeId      String
+  ruleBroken      Boolean         @default(false)
+  justification   String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  createdBy       String?         @db.Uuid
+  updatedBy       String?         @db.Uuid
+
+  @@index([scheduleId])
+  @@index([employeeId])
+  @@index([positionId])
+}
+
+model ScheduleHistory {
+  id         String          @id @default(uuid()) @db.Uuid
+  scheduleId String          @db.Uuid
+  schedule   ScheduleVersion @relation(fields: [scheduleId], references: [id])
+  action     String
+  before     Json?
+  after      Json?
+  reason     String?
+  createdAt  DateTime        @default(now())
+  createdBy  String?         @db.Uuid
+
+  @@index([scheduleId])
+}
+
+model EventType {
+  id          String                @id @default(uuid()) @db.Uuid
+  code        String                @unique
+  name        String
+  category    CalendarEventCategory
+  blocksAvailability Boolean        @default(true)
+  requiresApproval   Boolean        @default(false)
+  status      RecordStatus          @default(ACTIVE)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  createdBy   String?               @db.Uuid
+  updatedBy   String?               @db.Uuid
+  archivedAt  DateTime?
+  events      CalendarEvent[]
+}
+
+model CalendarEvent {
+  id          String       @id @default(uuid()) @db.Uuid
+  typeId      String       @db.Uuid
+  type        EventType    @relation(fields: [typeId], references: [id])
+  employeeId  String?      @db.Uuid
+  employee    Employee?    @relation(fields: [employeeId], references: [id])
+  operationId String?      @db.Uuid
+  operation   Operation?   @relation(fields: [operationId], references: [id])
+  title       String
+  startsAt    DateTime
+  endsAt      DateTime
+  allDay      Boolean      @default(false)
+  notes       String?
+  status      RecordStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   String?      @db.Uuid
+  updatedBy   String?      @db.Uuid
+  archivedAt  DateTime?
+
+  @@index([typeId])
+  @@index([employeeId])
+  @@index([operationId])
+  @@index([startsAt, endsAt])
+}
+
+model EvaluationCriterion {
+  id          String       @id @default(uuid()) @db.Uuid
+  code        String       @unique
+  name        String
+  description String?
+  weight      Int          @default(1)
+  status      RecordStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   String?      @db.Uuid
+  updatedBy   String?      @db.Uuid
+  archivedAt  DateTime?
+  scores      EvaluationScore[]
+}
+
+model EmployeeEvaluation {
+  id          String            @id @default(uuid()) @db.Uuid
+  employeeId  String            @db.Uuid
+  employee    Employee          @relation(fields: [employeeId], references: [id])
+  title       String
+  periodStart DateTime
+  periodEnd   DateTime
+  status      EvaluationStatus  @default(DRAFT)
+  notes       String?
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+  reviewedBy  String?           @db.Uuid
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  createdBy   String?           @db.Uuid
+  updatedBy   String?           @db.Uuid
+  archivedAt  DateTime?
+  scores      EvaluationScore[]
+  history     EvaluationHistory[]
+  developmentPlans DevelopmentPlan[]
+
+  @@index([employeeId])
+  @@index([status])
+}
+
+model EvaluationScore {
+  id           String              @id @default(uuid()) @db.Uuid
+  evaluationId String              @db.Uuid
+  evaluation   EmployeeEvaluation  @relation(fields: [evaluationId], references: [id])
+  criterionId  String              @db.Uuid
+  criterion    EvaluationCriterion @relation(fields: [criterionId], references: [id])
+  score        Int
+  comment      String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  createdBy    String?             @db.Uuid
+  updatedBy    String?             @db.Uuid
+
+  @@unique([evaluationId, criterionId])
+  @@index([evaluationId])
+  @@index([criterionId])
+}
+
+model DevelopmentPlan {
+  id           String              @id @default(uuid()) @db.Uuid
+  employeeId   String              @db.Uuid
+  employee     Employee            @relation(fields: [employeeId], references: [id])
+  evaluationId String?             @db.Uuid
+  evaluation   EmployeeEvaluation? @relation(fields: [evaluationId], references: [id])
+  title        String
+  description  String?
+  status       WorkflowStatus      @default(DRAFT)
+  dueAt        DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  createdBy    String?             @db.Uuid
+  updatedBy    String?             @db.Uuid
+  archivedAt   DateTime?
+  items        DevelopmentPlanItem[]
+
+  @@index([employeeId])
+  @@index([evaluationId])
+  @@index([status])
+}
+
+model DevelopmentPlanItem {
+  id          String          @id @default(uuid()) @db.Uuid
+  planId      String          @db.Uuid
+  plan        DevelopmentPlan @relation(fields: [planId], references: [id])
+  action      String
+  owner       String?
+  dueAt       DateTime?
+  completedAt DateTime?
+  status      RecordStatus    @default(ACTIVE)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  createdBy   String?         @db.Uuid
+  updatedBy   String?         @db.Uuid
+  archivedAt  DateTime?
+
+  @@index([planId])
+}
+
+model EvaluationHistory {
+  id           String             @id @default(uuid()) @db.Uuid
+  evaluationId String             @db.Uuid
+  evaluation   EmployeeEvaluation @relation(fields: [evaluationId], references: [id])
+  action       String
+  before       Json?
+  after        Json?
+  reason       String?
+  createdAt    DateTime           @default(now())
+  createdBy    String?            @db.Uuid
+
+  @@index([evaluationId])
+}
+
+model EmployeeAssignment {
+  position Position? @relation(fields: [positionId], references: [id])
+  id         String       @id @default(uuid()) @db.Uuid
+  employeeId String       @db.Uuid
+  employee   Employee     @relation(fields: [employeeId], references: [id])
+  positionId String?      @db.Uuid
+  startsAt   DateTime
+  endsAt     DateTime?
+  status     RecordStatus @default(ACTIVE)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  createdBy  String?      @db.Uuid
+  updatedBy  String?      @db.Uuid
+  archivedAt DateTime?
+
+  @@index([employeeId])
+  @@index([positionId])
+}
+
+model EmployeeHistory {
+  id         String   @id @default(uuid()) @db.Uuid
+  employeeId String   @db.Uuid
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  action     String
+  before     Json?
+  after      Json?
+  createdAt  DateTime @default(now())
+  createdBy  String?  @db.Uuid
+
+  @@index([employeeId])
+}
+
+model ImportBatch {
+  id            String       @id @default(uuid()) @db.Uuid
+  type          ImportType
+  status        ImportStatus @default(UPLOADED)
+  fileName      String
+  fileSize      Int
+  checksum      String
+  acceptedCount Int          @default(0)
+  rejectedCount Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  createdBy     String?      @db.Uuid
+  updatedBy     String?      @db.Uuid
+  archivedAt    DateTime?
+  rows          ImportRow[]
+  issues        ImportIssue[]
+
+  @@index([type])
+  @@index([status])
+  @@index([checksum])
+}
+
+model ImportRow {
+  id        String      @id @default(uuid()) @db.Uuid
+  batchId   String      @db.Uuid
+  batch     ImportBatch @relation(fields: [batchId], references: [id])
+  rowNumber Int
+  raw       Json
+  mapped    Json
+  createdAt DateTime    @default(now())
+
+  @@index([batchId])
+}
+
+model ImportIssue {
+  id        String              @id @default(uuid()) @db.Uuid
+  batchId   String              @db.Uuid
+  batch     ImportBatch         @relation(fields: [batchId], references: [id])
+  rowNumber Int?
+  field     String?
+  value     String?
+  code      String
+  severity  ImportIssueSeverity
+  message   String
+  createdAt DateTime            @default(now())
+
+  @@index([batchId])
+  @@index([severity])
+}
+
+model RefreshSession {
+  id           String       @id @default(uuid()) @db.Uuid
+  userId       String       @db.Uuid
+  user         User         @relation(fields: [userId], references: [id])
+  tokenHash    String       @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  status       RecordStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  createdBy    String?      @db.Uuid
+  updatedBy    String?      @db.Uuid
+  archivedAt   DateTime?
+
+  @@index([userId])
+}
+
+model UserInvitation {
+  id          String       @id @default(uuid()) @db.Uuid
+  email       String
+  name        String
+  roleId      String       @db.Uuid
+  role        Role         @relation(fields: [roleId], references: [id])
+  scopes      Json
+  tokenHash   String       @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdById String       @db.Uuid
+  createdBy   User         @relation("InvitationCreatedBy", fields: [createdById], references: [id])
+  status      RecordStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  updatedBy   String?      @db.Uuid
+  archivedAt  DateTime?
+
+  @@index([email])
+  @@index([createdById])
+}
+
+model PasswordResetToken {
+  id         String       @id @default(uuid()) @db.Uuid
+  userId     String       @db.Uuid
+  user       User         @relation(fields: [userId], references: [id])
+  tokenHash  String       @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  status     RecordStatus @default(ACTIVE)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  createdBy  String?      @db.Uuid
+  updatedBy  String?      @db.Uuid
+  archivedAt DateTime?
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id            String      @id @default(uuid()) @db.Uuid
+  userId        String?     @db.Uuid
+  user          User?       @relation(fields: [userId], references: [id])
+  userRole      RoleName?
+  action        AuditAction
+  entity        String
+  entityId      String?
+  companyId     String?     @db.Uuid
+  operationId   String?     @db.Uuid
+  unitId        String?     @db.Uuid
+  before        Json?
+  after         Json?
+  justification String?
+  origin        String
+  createdAt     DateTime    @default(now())
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+enum AdmissionStage {
+  REQUESTED
+  RECRUITING
+  SELECTED
+  DOCUMENTATION
+  MEDICAL_EXAM
+  ADMISSION_SCHEDULED
+  ADMITTED
+  WITHDRAWN
+  CANCELLED
+}
+model RecruitmentRequest {
+  id String @id @default(uuid()) @db.Uuid
+  positionId String @db.Uuid
+  position Position @relation(fields: [positionId], references: [id])
+  reason String
+  desiredDate DateTime
+  status String @default("REQUESTED")
+  createdBy String @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  applications CandidateApplication[]
+  @@index([positionId, status])
+}
+model CandidateApplication {
+  id String @id @default(uuid()) @db.Uuid
+  requestId String @db.Uuid
+  request RecruitmentRequest @relation(fields: [requestId], references: [id])
+  name String
+  email String?
+  stage AdmissionStage @default(REQUESTED)
+  admissionDate DateTime?
+  documentsChecked Boolean @default(false)
+  medicalCleared Boolean @default(false)
+  employeeId String? @unique @db.Uuid
+  employee Employee? @relation(fields: [employeeId], references: [id])
+  revision Int @default(1)
+  createdBy String @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  history RecruitmentStageHistory[]
+  @@index([requestId, stage])
+}
+model RecruitmentStageHistory {
+  id String @id @default(uuid()) @db.Uuid
+  applicationId String @db.Uuid
+  application CandidateApplication @relation(fields: [applicationId], references: [id])
+  fromStage AdmissionStage?
+  toStage AdmissionStage
+  reason String
+  createdBy String @db.Uuid
+  createdAt DateTime @default(now())
+  @@index([applicationId])
+}
+model OperationalParameter {
+  id String @id @default(uuid()) @db.Uuid
+  operationId String @db.Uuid
+  kind String
+  code String
+  name String
+  configuration Json
+  revision Int @default(1)
+  status RecordStatus @default(ACTIVE)
+  createdBy String @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([operationId, kind, code])
+}

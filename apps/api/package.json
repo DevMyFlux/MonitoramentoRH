@@ -1,0 +1,35 @@
+{
+  "name": "@my-flux/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --exclude \"dist/**\"",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.1.0",
+    "@my-flux/config": "workspace:*",
+    "@my-flux/shared": "workspace:*",
+    "@my-flux/types": "workspace:*",
+    "@my-flux/validation": "workspace:*",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.1.0",
+    "fastify": "^5.6.2",
+    "pg": "^8.23.0",
+    "xlsx": "^0.18.5",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "prisma": "^7.1.0",
+    "tsx": "^4.21.0"
+  }
+}

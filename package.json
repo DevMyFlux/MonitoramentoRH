@@ -1,0 +1,36 @@
+{
+  "name": "my-flux",
+  "version": "0.0.0",
+  "private": true,
+  "description": "MY FLUX - Sistema Integrado de Gestao Operacional de Pessoas.",
+  "type": "module",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @my-flux/api --filter @my-flux/web dev",
+    "build": "pnpm -r build",
+    "lint": "eslint . --max-warnings=0",
+    "format": "prettier . --check",
+    "format:write": "prettier . --write",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "db:generate": "pnpm --filter @my-flux/api db:generate"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.1",
+    "embedded-postgres": "18.4.0-beta.17",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "prettier": "^3.7.3",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.47.0",
+    "vitest": "^4.0.15"
+  }
+}

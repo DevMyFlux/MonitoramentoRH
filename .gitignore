@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.vite/
+.turbo/
+.pnpm-store/
+.local/

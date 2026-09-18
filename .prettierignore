@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+.pnpm-store/
+.vite/
+.turbo/
+portfolio-redesign/
+bolao-da-galera/
+__pycache__/
+tmp/
+*.tsv
+*.json
+pnpm-lock.yaml
+*.py
+static/
+templates/
