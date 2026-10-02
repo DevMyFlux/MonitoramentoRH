@@ -85,7 +85,7 @@ export async function registerWorkspaceRoutes(
       where: { id },
       include: { history: { orderBy: { createdAt: "asc" } } }
     });
-    if (!row) throw new HttpError(404, "NOT_FOUND", "Escala não encontrada.");
+    if (!row || row.archivedAt) throw new HttpError(404, "NOT_FOUND", "Escala não encontrada.");
     await scopedOperation(db, user, row.operationId);
     return { data: row };
   });

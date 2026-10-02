@@ -67,6 +67,21 @@ export const idParamsSchema = z.object({
   id: z.string().uuid()
 });
 
+/**
+ * Manual, per-employee, per-day correction applied on top of the automatically
+ * generated schedule — used from Fase 6 onward. `code` is only shape-checked
+ * here; the API validates it against the shared schedule codes catalog
+ * (packages/shared/schedule-codes), since that package cannot currently be
+ * imported from packages/validation (see tsconfig rootDir note in shared).
+ */
+export const scheduleDayOverrideInputSchema = z.object({
+  operationId: z.string().uuid(),
+  employeeId: z.string().uuid(),
+  date: z.string().date(),
+  code: z.string().min(1).max(10),
+  reason: z.string().max(500).nullable().optional()
+});
+
 export const companyInputSchema = z.object({
   name: z.string().min(2).max(180),
   document: z.string().max(40).nullable().optional()
@@ -141,17 +156,24 @@ export const employeeStatusSchema = z.enum([
   "SCHEDULED_ADMISSION"
 ]);
 
+export const employeeParitySchema = z.enum(["ODD", "EVEN"]);
+
 export const employeeInputSchema = z.object({
   operationId: z.string().uuid(),
   functionId: z.string().uuid().nullable().optional(),
   name: z.string().min(2).max(180),
   identifier: z.string().min(1).max(80),
+  initials: z.string().min(1).max(12),
+  /** Professional council registration (e.g. CREA/CRM), when the role requires one. */
+  council: z.string().max(80).nullable().optional(),
   employmentType: z.string().max(80).nullable().optional(),
   jobTitle: z.string().max(120).nullable().optional(),
   admissionDate: z.string().datetime().nullable().optional(),
   status: employeeStatusSchema.default("ACTIVE"),
   workRegime: z.string().max(80).nullable().optional(),
   shift: z.string().max(80).nullable().optional(),
+  /** Odd/even calendar-day rotation group. Leave empty for fixed weekday schedules. */
+  parity: employeeParitySchema.nullable().optional(),
   team: z.string().max(80).nullable().optional(),
   notes: z.string().max(2000).nullable().optional()
 });

@@ -26,6 +26,7 @@ export class DashboardRepository {
       }),
       this.db.scheduleVersion.count({
         where: {
+          archivedAt: null,
           status: { in: ["DRAFT", "IN_REVIEW"] },
           operation: operationWhere,
           generatedResult: { path: ["conflicts"], not: [] }

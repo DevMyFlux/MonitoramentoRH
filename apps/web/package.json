@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@my-flux/config": "workspace:*",
+    "@my-flux/shared": "workspace:*",
     "@my-flux/types": "workspace:*",
     "@my-flux/validation": "workspace:*",
     "@tanstack/react-query": "^5.90.12",

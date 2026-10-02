@@ -41,6 +41,13 @@ async function fetchWithTimeout(input: string, init: RequestInit) {
 export function storeSession(accessToken: string, refreshToken: string): void {
   window.localStorage.setItem("my-flux.accessToken", accessToken);
   window.localStorage.setItem("my-flux.refreshToken", refreshToken);
+  // Also mirror into sessionStorage under the keys features/my-flux/client.ts's
+  // request() actually reads when refreshing an expired access token
+  // (sessionStorage["flux.refresh"]). Without this, every refresh attempt
+  // sent refreshToken: null and failed, forcing a full re-login on every
+  // access-token expiry (~15min) even though a valid refresh token existed.
+  window.sessionStorage.setItem("flux.access", accessToken);
+  window.sessionStorage.setItem("flux.refresh", refreshToken);
 }
 
 function authHeaders(): Record<string, string> {

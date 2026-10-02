@@ -17,7 +17,10 @@ export class ScheduleRepository {
 
   async list(user: AuthenticatedUser) {
     return this.db.scheduleVersion.findMany({
-      where: { operation: operationScopeWhere(user) },
+      // archivedAt is how an "Excluir escala" is recorded (see
+      // employee-schedule-routes.ts): the row and its history stay for audit,
+      // but a deleted schedule must disappear from every listing.
+      where: { archivedAt: null, operation: operationScopeWhere(user) },
       include: { assignments: true },
       orderBy: [{ month: "desc" }, { version: "desc" }]
     });
@@ -82,7 +85,7 @@ export class ScheduleRepository {
       where: { id },
       include: { operation: true }
     });
-    if (!before) {
+    if (!before || before.archivedAt) {
       throw new HttpError(404, "SCHEDULE_NOT_FOUND", "Versao de escala nao encontrada.");
     }
     assertScoped(user, {

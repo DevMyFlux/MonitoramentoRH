@@ -487,10 +487,17 @@ export class OperationalRepository {
   }
 
   async listJobFunctions(user: AuthenticatedUser) {
+    // DEV/global users must NOT go through the `OR: [{ operationId: null }, { operation: {} }]`
+    // shape below: Prisma drops an empty relation filter used as an OR branch instead of
+    // treating it as "always true", which silently turned this into "operationId: null" only
+    // and hid every scoped function from unrestricted users. Skip the OR entirely for them.
+    const unrestricted = user.role === "DEV" || user.scopes.some((scope) => scope.isGlobal);
     return this.db.jobFunction.findMany({
       where: {
         status: "ACTIVE",
-        OR: [{ operationId: null }, { operation: operationScopeWhere(user) }]
+        ...(unrestricted
+          ? {}
+          : { OR: [{ operationId: null }, { operation: operationScopeWhere(user) }] })
       },
       orderBy: { name: "asc" }
     });

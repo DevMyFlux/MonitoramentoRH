@@ -17,7 +17,9 @@
     "format:write": "prettier . --write",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "db:generate": "pnpm --filter @my-flux/api db:generate"
+    "db:generate": "pnpm --filter @my-flux/api db:generate",
+    "deploy:build": "pnpm --filter @my-flux/shared --filter @my-flux/types --filter @my-flux/validation --filter @my-flux/config build && pnpm --filter @my-flux/api db:generate && VITE_API_BASE_URL=/api/v1 pnpm --filter @my-flux/web build && pnpm --filter @my-flux/api bundle",
+    "deploy:start": "pnpm --filter @my-flux/api exec prisma migrate deploy && node apps/api/dist/server.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

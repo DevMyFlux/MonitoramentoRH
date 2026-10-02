@@ -1,5 +1,5 @@
 import type { AuthenticatedUser } from "@my-flux/types";
-import { Prisma, type EmployeeStatus, type PrismaClient } from "@prisma/client";
+import { Prisma, type EmployeeParity, type EmployeeStatus, type PrismaClient } from "@prisma/client";
 import { HttpError } from "../../lib/http-error.js";
 import { canAccessScope } from "../identity/scope-policy.js";
 
@@ -8,12 +8,15 @@ type EmployeeInput = {
   functionId?: string | null | undefined;
   name: string;
   identifier: string;
+  initials: string;
+  council?: string | null | undefined;
   employmentType?: string | null | undefined;
   jobTitle?: string | null | undefined;
   admissionDate?: string | null | undefined;
   status: EmployeeStatus;
   workRegime?: string | null | undefined;
   shift?: string | null | undefined;
+  parity?: EmployeeParity | null | undefined;
   team?: string | null | undefined;
   notes?: string | null | undefined;
 };
@@ -23,12 +26,15 @@ type UpdateEmployeeInput = {
   functionId?: string | null | undefined;
   name?: string | undefined;
   identifier?: string | undefined;
+  initials?: string | undefined;
+  council?: string | null | undefined;
   employmentType?: string | null | undefined;
   jobTitle?: string | null | undefined;
   admissionDate?: string | null | undefined;
   status?: EmployeeStatus | undefined;
   workRegime?: string | null | undefined;
   shift?: string | null | undefined;
+  parity?: EmployeeParity | null | undefined;
   team?: string | null | undefined;
   notes?: string | null | undefined;
 };
@@ -48,6 +54,72 @@ export class EmployeeRepository {
       },
       orderBy: { name: "asc" }
     });
+  }
+
+  /**
+   * Everything the "Extrair XLSX" export needs, in one scoped read. Unlike
+   * list(), this includes the full cadastro history and the active calendar
+   * events (afastamentos/licenças) per employee. With an operationId it is
+   * strictly that unit's employees — units are never mixed in one export.
+   */
+  async exportData(user: AuthenticatedUser, operationId?: string) {
+    let unitName: string | null = null;
+    if (operationId) {
+      await this.assertOperationScope(user, operationId);
+      const unit = await this.db.operation.findUnique({
+        where: { id: operationId },
+        select: { name: true }
+      });
+      unitName = unit?.name ?? null;
+    }
+
+    const employees = await this.db.employee.findMany({
+      where: {
+        recordStatus: "ACTIVE",
+        ...(operationId ? { operationId } : {}),
+        operation: operationScopeWhere(user)
+      },
+      include: {
+        operation: { select: { id: true, name: true } },
+        function: { select: { name: true } },
+        history: { orderBy: { createdAt: "asc" } },
+        calendarEvents: {
+          where: { status: "ACTIVE" },
+          include: { type: { select: { code: true, name: true, category: true } } },
+          orderBy: { startsAt: "asc" }
+        }
+      },
+      orderBy: [{ operation: { name: "asc" } }, { name: "asc" }]
+    });
+
+    const operationIds = [...new Set(employees.map((e) => e.operationId))];
+    const shiftParameters = operationIds.length
+      ? await this.db.operationalParameter.findMany({
+          where: { kind: "SHIFT", status: "ACTIVE", operationId: { in: operationIds } },
+          select: { operationId: true, code: true, name: true, configuration: true }
+        })
+      : [];
+
+    const authorIds = [
+      ...new Set(
+        employees.flatMap((e) =>
+          e.history.map((h) => h.createdBy).filter((id): id is string => Boolean(id))
+        )
+      )
+    ];
+    const authors = authorIds.length
+      ? await this.db.user.findMany({
+          where: { id: { in: authorIds } },
+          select: { id: true, name: true }
+        })
+      : [];
+
+    return {
+      unitName,
+      employees,
+      shiftParameters,
+      userNames: new Map(authors.map((u) => [u.id, u.name]))
+    };
   }
 
   async get(user: AuthenticatedUser, id: string) {
@@ -82,12 +154,15 @@ export class EmployeeRepository {
         functionId: data.functionId ?? null,
         name: data.name,
         identifier: data.identifier,
+        initials: data.initials,
+        council: data.council ?? null,
         employmentType: data.employmentType ?? null,
         jobTitle: data.jobTitle ?? null,
         admissionDate: data.admissionDate ? new Date(data.admissionDate) : null,
         status: data.status,
         workRegime: data.workRegime ?? null,
         shift: data.shift ?? null,
+        parity: data.parity ?? null,
         team: data.team ?? null,
         notes: data.notes ?? null,
         createdBy: user.id,
@@ -116,6 +191,8 @@ export class EmployeeRepository {
     applyDefined(updateData, "functionId", data.functionId);
     applyDefined(updateData, "name", data.name);
     applyDefined(updateData, "identifier", data.identifier);
+    applyDefined(updateData, "initials", data.initials);
+    applyDefined(updateData, "council", data.council);
     applyDefined(updateData, "employmentType", data.employmentType);
     applyDefined(updateData, "jobTitle", data.jobTitle);
     applyDefined(
@@ -126,6 +203,7 @@ export class EmployeeRepository {
     applyDefined(updateData, "status", data.status);
     applyDefined(updateData, "workRegime", data.workRegime);
     applyDefined(updateData, "shift", data.shift);
+    applyDefined(updateData, "parity", data.parity);
     applyDefined(updateData, "team", data.team);
     applyDefined(updateData, "notes", data.notes);
 

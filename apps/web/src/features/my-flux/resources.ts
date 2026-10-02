@@ -160,6 +160,8 @@ export const resources: Record<string, Resource> = {
       op,
       fn,
       ...named,
+      f("initials", "Iniciais"),
+      { ...f("council", "Conselho (ex.: CREA, CRM)"), optional: true },
       f("identifier", "Matrícula"),
       f("jobTitle", "Cargo"),
       { key: "admissionDate", label: "Admissão", type: "date" },
@@ -178,11 +180,19 @@ export const resources: Record<string, Resource> = {
         value: "ACTIVE"
       },
       f("shift", "Código do turno"),
+      {
+        key: "parity",
+        label: "Rodízio (ímpar/par)",
+        type: "select",
+        options: ["ODD", "EVEN"],
+        optional: true
+      },
       { ...f("team", "Equipe"), optional: true },
       { key: "notes", label: "Observações", type: "textarea", optional: true }
     ],
     columns: [
       ["name", "Colaborador"],
+      ["initials", "Iniciais"],
       ["identifier", "Matrícula"],
       ["function", "Função"],
       ["shift", "Turno"],
@@ -492,6 +502,8 @@ export const resources: Record<string, Resource> = {
   }
 };
 export const labels: Record<string, string> = {
+  ODD: "Ímpar",
+  EVEN: "Par",
   ACTIVE: "Ativo",
   INACTIVE: "Inativo",
   SCHEDULED_ADMISSION: "Admissão programada",

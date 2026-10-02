@@ -14,9 +14,12 @@ export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase();
   const groups = navigationGroups
+    .filter((group) => !group.hidden)
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => normalize(item.label).includes(normalize(query)))
+      items: group.items.filter(
+        (item) => !item.hidden && normalize(item.label).includes(normalize(query))
+      )
     }))
     .filter((group) => group.items.length);
   return (
@@ -93,11 +96,11 @@ export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
       <div className="m-3 rounded-xl bg-[#123f36] p-4 text-white">
         <p className="text-xs font-medium text-emerald-100">Da necessidade à escala.</p>
         <Link
-          to="/qlp"
+          to="/escalas"
           onClick={onNavigate}
           className="mt-2 flex items-center justify-between text-xs text-white/70 hover:text-white"
         >
-          Acompanhar planejamento <ArrowUpRight size={16} />
+          Ver escalas geradas <ArrowUpRight size={16} />
         </Link>
       </div>
     </aside>

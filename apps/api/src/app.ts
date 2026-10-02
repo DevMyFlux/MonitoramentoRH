@@ -1,6 +1,9 @@
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { registerRecruitmentRoutes } from "./modules/recruitment/recruitment-routes.js";
 import { registerWorkspaceRoutes } from "./modules/operations/workspace-routes.js";
 import cors from "@fastify/cors";
+import fastifyStatic from "@fastify/static";
 import { apiPrefix } from "@my-flux/config";
 import type { ApiErrorShape, HealthStatus } from "@my-flux/types";
 import { healthStatusSchema } from "@my-flux/validation";
@@ -32,6 +35,7 @@ import { ReportRepository } from "./modules/reports/report-repository.js";
 import { registerReportRoutes } from "./modules/reports/report-routes.js";
 import { ScheduleRepository } from "./modules/scheduling/schedule-repository.js";
 import { registerScheduleRoutes } from "./modules/scheduling/schedule-routes.js";
+import { registerEmployeeScheduleRoutes } from "./modules/scheduling/employee-schedule-routes.js";
 import { UserRepository } from "./modules/users/user-repository.js";
 
 const version = "0.0.0";
@@ -63,7 +67,10 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await app.register(cors, {
     origin: process.env.WEB_ORIGIN ?? "http://localhost:5175",
-    methods: ["GET", "HEAD", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"]
+    methods: ["GET", "HEAD", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    // Content-Disposition isn't in the CORS default-exposed header set, so the
+    // browser can't read the export's suggested filename without this.
+    exposedHeaders: ["Content-Disposition"]
   });
 
   app.addHook("onSend", async (_request, reply, payload) => {
@@ -76,7 +83,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   app.setErrorHandler((error, _request, reply) => {
-    if (typeof error === 'object' && error && 'code' in error && ['P2002','P2003','P2025','P2034','P2004'].includes(String(error.code))) return reply.status(409).send({code:'DATA_CONFLICT',message:'Conflito de dados, vínculo ou atualização simultânea. Recarregue e verifique o registro.'});
+    if (typeof error === 'object' && error && 'code' in error && ['P2002','P2003','P2025','P2034','P2004'].includes(String(error.code))) return reply.status(409).send({code:'DATA_CONFLICT',message:'Conflito de dados, vï¿½nculo ou atualizaï¿½ï¿½o simultï¿½nea. Recarregue e verifique o registro.'});
     if (error instanceof HttpError) {
       const payload: ApiErrorShape = {
         code: error.code,
@@ -221,5 +228,29 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await app.register(async a => registerRecruitmentRoutes(a, userRepository, prisma), { prefix: apiPrefix });
   await app.register(async a => registerWorkspaceRoutes(a, userRepository, prisma), { prefix: apiPrefix });
+  await app.register(async a => registerEmployeeScheduleRoutes(a, userRepository, prisma), { prefix: apiPrefix });
+
+  // Production deploy serves the built web app (apps/web/dist, copied to
+  // dist/public alongside this bundled server â€” see scripts/bundle.mjs) from
+  // this same service, same-origin, instead of a separate static host. Local
+  // dev never has this directory (the web app runs on its own Vite server
+  // there), so this whole block is a no-op outside a real deploy.
+  const publicDir = fileURLToPath(new URL("./public/", import.meta.url));
+  if (existsSync(publicDir)) {
+    await app.register(fastifyStatic, { root: publicDir });
+    app.setNotFoundHandler((request, reply) => {
+      if (request.raw.url?.startsWith(apiPrefix)) {
+        const payload: ApiErrorShape = {
+          code: "NOT_FOUND",
+          message: "Rota nao encontrada.",
+          details: {}
+        };
+        return reply.status(404).send(payload);
+      }
+      // Client-side routes (React Router) all resolve through index.html.
+      return reply.sendFile("index.html");
+    });
+  }
+
   return app;
 }

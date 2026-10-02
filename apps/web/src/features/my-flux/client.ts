@@ -25,7 +25,10 @@ export async function request<T>(
   const response = await fetch(`${base}${path}`, {
     method,
     headers: {
-      "Content-Type": "application/json",
+      // Fastify's JSON body parser rejects an empty body when this header is
+      // present (e.g. every DELETE with no payload), so only send it when
+      // there is actually a JSON body to describe.
+      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
       ...(session() ? { Authorization: `Bearer ${session()}` } : {})
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -66,13 +69,24 @@ export async function request<T>(
     );
   return payload.data;
 }
-export async function download(path: string, name: string) {
+/**
+ * `name` is an optional override; by default the file is saved under the name
+ * the server chose (Content-Disposition) so callers never have to duplicate
+ * the server's naming rules (e.g. "Escala Hetrin - Setembro.xlsx").
+ */
+export async function download(path: string, name?: string) {
   const res = await fetch(`${base}${path}`, { headers: { Authorization: `Bearer ${session()}` } });
-  if (!res.ok) throw new Error("Não foi possível exportar. Verifique seu acesso.");
+  if (!res.ok) {
+    // Error responses are JSON ({code, message, details}), not the file itself.
+    const payload = (await res.json().catch(() => null)) as { message?: string } | null;
+    throw new Error(payload?.message || "Não foi possível exportar. Verifique seu acesso.");
+  }
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const fileName = name ?? /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? "download.xlsx";
   const url = URL.createObjectURL(await res.blob());
   const a = document.createElement("a");
   a.href = url;
-  a.download = name;
+  a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
 }

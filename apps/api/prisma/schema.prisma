@@ -296,6 +296,7 @@ model Operation {
   competencyMatrix CompetencyMatrixItem[]
   calendarEvents CalendarEvent[]
   scheduleVersions ScheduleVersion[]
+  scheduleDayOverrides ScheduleDayOverride[]
 
   @@index([companyId])
   @@index([clientId])
@@ -437,6 +438,11 @@ model Position {
   @@index([functionId])
 }
 
+enum EmployeeParity {
+  ODD
+  EVEN
+}
+
 model Employee {
   admissions CandidateApplication[]
   id           String              @id @default(uuid()) @db.Uuid
@@ -446,12 +452,21 @@ model Employee {
   function     JobFunction?        @relation(fields: [functionId], references: [id])
   name         String
   identifier   String
+  /// Short, manually-entered abbreviation shown on the schedule grid.
+  /// Not derived from the name: two employees in the same operation may share initials.
+  initials     String              @default("")
+  /// Professional council registration (e.g. CREA/CRM), when the role requires one.
+  /// Empty on both reference schedules today; kept for future use, never required.
+  council      String?
   employmentType String?
   jobTitle     String?
   admissionDate DateTime?
   status       EmployeeStatus      @default(ACTIVE)
   workRegime   String?
   shift        String?
+  /// Day-of-month rotation group (odd/even calendar day) for 1-on-1-off schedules.
+  /// Null for employees on a fixed weekday schedule (e.g. Mon-Fri commercial/admin staff).
+  parity       EmployeeParity?
   team         String?
   notes        String?
   recordStatus RecordStatus        @default(ACTIVE)
@@ -467,11 +482,38 @@ model Employee {
   evaluations  EmployeeEvaluation[]
   developmentPlans DevelopmentPlan[]
   calendarEvents CalendarEvent[]
+  scheduleDayOverrides ScheduleDayOverride[]
 
   @@unique([operationId, identifier])
   @@index([operationId])
   @@index([functionId])
   @@index([status])
+}
+
+/// Manual, per-employee, per-day correction applied on top of the automatically
+/// generated schedule (e.g. an ad-hoc coverage swap or an extra day off that
+/// follows no rule). Populated from Fase 6 (geração da escala) onward.
+model ScheduleDayOverride {
+  id          String       @id @default(uuid()) @db.Uuid
+  operationId String       @db.Uuid
+  operation   Operation    @relation(fields: [operationId], references: [id])
+  employeeId  String       @db.Uuid
+  employee    Employee     @relation(fields: [employeeId], references: [id])
+  date        DateTime     @db.Date
+  /// Schedule letter code, validated against the shared catalog (packages/shared/schedule-codes).
+  code        String
+  reason      String?
+  status      RecordStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdBy   String       @db.Uuid
+  updatedBy   String?      @db.Uuid
+  archivedAt  DateTime?
+
+  @@unique([operationId, employeeId, date])
+  @@index([operationId])
+  @@index([employeeId])
+  @@index([date])
 }
 
 model ComplianceRequirement {

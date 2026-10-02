@@ -1,9 +1,18 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { employeeInputSchema, idParamsSchema } from "@my-flux/validation";
 import { HttpError } from "../../lib/http-error.js";
 import { verifyAccessToken } from "../auth/token-service.js";
 import type { UserRepository } from "../users/user-repository.js";
+import {
+  attachmentHeader,
+  buildEmployeeExportRows,
+  employeeExportFileName,
+  renderEmployeesWorkbook
+} from "./employee-export.js";
 import type { EmployeeRepository } from "./employee-repository.js";
+
+const exportQuerySchema = z.object({ operationId: z.string().uuid().optional() });
 
 export async function registerEmployeeRoutes(
   app: FastifyInstance,
@@ -13,6 +22,21 @@ export async function registerEmployeeRoutes(
   app.get("/employees", async (request) => {
     const user = await authenticateRequest(request, users);
     return { data: await repository.list(user) };
+  });
+
+  // Registered before "/employees/:id" so "export" is never parsed as an id.
+  app.get("/employees/export", async (request, reply) => {
+    const user = await authenticateRequest(request, users);
+    const { operationId } = exportQuerySchema.parse(request.query);
+    const data = await repository.exportData(user, operationId);
+    const rows = buildEmployeeExportRows(data.employees, data.shiftParameters, data.userNames);
+    const buffer = await renderEmployeesWorkbook(rows);
+    reply.header(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    reply.header("Content-Disposition", attachmentHeader(employeeExportFileName(data.unitName)));
+    return reply.send(buffer);
   });
 
   app.get("/employees/:id", async (request) => {

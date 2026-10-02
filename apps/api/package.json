@@ -13,22 +13,26 @@
     "test": "vitest run --exclude \"dist/**\"",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "bundle": "node scripts/bundle.mjs"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",
+    "@fastify/static": "^8.0.4",
     "@my-flux/config": "workspace:*",
     "@my-flux/shared": "workspace:*",
     "@my-flux/types": "workspace:*",
     "@my-flux/validation": "workspace:*",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.1.0",
+    "exceljs": "^4.4.0",
     "fastify": "^5.6.2",
     "pg": "^8.23.0",
     "xlsx": "^0.18.5",
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "prisma": "^7.1.0",
     "tsx": "^4.21.0"
   }

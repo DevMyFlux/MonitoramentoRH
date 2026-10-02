@@ -57,13 +57,22 @@ export class CalendarRepository {
   }
 
   async listEvents(user: AuthenticatedUser) {
+    // See the matching comment in operational-repository.ts#listJobFunctions: Prisma drops an
+    // empty relation filter (what operationScopeWhere returns for DEV/global users) when it is
+    // used as an OR branch, instead of treating it as "always true" — that silently hid every
+    // event from unrestricted users. Skip the OR entirely for them.
+    const unrestricted = user.role === "DEV" || user.scopes.some((scope) => scope.isGlobal);
     return this.db.calendarEvent.findMany({
       where: {
         status: "ACTIVE",
-        OR: [
-          { operation: operationScopeWhere(user) },
-          { employee: { operation: operationScopeWhere(user) } }
-        ]
+        ...(unrestricted
+          ? {}
+          : {
+              OR: [
+                { operation: operationScopeWhere(user) },
+                { employee: { operation: operationScopeWhere(user) } }
+              ]
+            })
       },
       include: { type: true, employee: true, operation: true },
       orderBy: { startsAt: "asc" }

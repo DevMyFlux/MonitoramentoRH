@@ -201,6 +201,31 @@ async function main() {
       }
     }
   }
+  // Absence/leave codes shared by both reference schedules (HETRIN and HMB).
+  // Kept as EventType rows so the "Afastamentos" tab in Colaboradores has real
+  // options — see packages/shared/schedule-codes for the full letter catalog.
+  const leaveEventTypes: Array<{ code: string; name: string; category: "VACATION" | "LEAVE" }> = [
+    { code: "FR", name: "Férias", category: "VACATION" },
+    { code: "LN", name: "Licença Nojo", category: "LEAVE" },
+    { code: "LG", name: "Licença Gala", category: "LEAVE" },
+    { code: "LM", name: "Licença Maternidade", category: "LEAVE" },
+    { code: "LP", name: "Licença Paternidade", category: "LEAVE" },
+    { code: "AT", name: "Atestado", category: "LEAVE" },
+    { code: "LMA", name: "Licença Médica", category: "LEAVE" }
+  ];
+  for (const type of leaveEventTypes) {
+    await db.eventType.upsert({
+      where: { code: type.code },
+      update: { name: type.name, category: type.category },
+      create: {
+        code: type.code,
+        name: type.name,
+        category: type.category,
+        blocksAvailability: true,
+        createdBy: dev.id
+      }
+    });
+  }
   const requirement = await db.complianceRequirement.upsert({
     where: { id: "99999999-9999-4999-8999-999999999999" },
     update: {},
@@ -218,12 +243,13 @@ async function main() {
   });
   const employee = await db.employee.upsert({
     where: { operationId_identifier: { operationId: operation.id, identifier: "DEMO-001" } },
-    update: {},
+    update: { initials: "PD" },
     create: {
       operationId: operation.id,
       functionId: electrician.id,
       name: "Pessoa Demonstrativa",
       identifier: "DEMO-001",
+      initials: "PD",
       jobTitle: "Técnico operacional",
       admissionDate: new Date("2025-01-02T00:00:00Z"),
       shift: "DIURNO",

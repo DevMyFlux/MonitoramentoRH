@@ -14,7 +14,11 @@ export class ReportRepository {
         take: 500
       }),
       this.db.scheduleVersion.findMany({
-        where: { operation: operationWhere, status: { in: ["DRAFT", "IN_REVIEW"] } },
+        where: {
+          archivedAt: null,
+          operation: operationWhere,
+          status: { in: ["DRAFT", "IN_REVIEW"] }
+        },
         orderBy: { createdAt: "desc" },
         take: 500
       })
