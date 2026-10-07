@@ -61,6 +61,8 @@ export class EmployeeRepository {
    * list(), this includes the full cadastro history and the active calendar
    * events (afastamentos/licenças) per employee. With an operationId it is
    * strictly that unit's employees — units are never mixed in one export.
+   * Desligados are left out: the spreadsheet is the current roster; people who
+   * left are only shown in the system (Colaboradores → "Mostrar desligados").
    */
   async exportData(user: AuthenticatedUser, operationId?: string) {
     let unitName: string | null = null;
@@ -76,6 +78,7 @@ export class EmployeeRepository {
     const employees = await this.db.employee.findMany({
       where: {
         recordStatus: "ACTIVE",
+        status: { not: "TERMINATED" },
         ...(operationId ? { operationId } : {}),
         operation: operationScopeWhere(user)
       },

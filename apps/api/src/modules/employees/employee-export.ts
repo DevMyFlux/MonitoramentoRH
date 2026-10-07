@@ -372,7 +372,6 @@ export async function renderEmployeesWorkbook(rows: EmployeeExportRow[]): Promis
     { header: "Equipe", key: "team", width: 16 },
     { header: "Situação", key: "statusLabel", width: 20 },
     { header: "Admissão", key: "admissionDate", width: 13 },
-    { header: "Desligado em (registro)", key: "terminationDate", width: 24 },
     { header: "Afastamentos (qtd.)", key: "leaveCount", width: 13 },
     { header: "Afastamento vigente", key: "currentLeave", width: 40 },
     { header: "Próximo afastamento", key: "nextLeave", width: 40 },
@@ -390,10 +389,8 @@ export async function renderEmployeesWorkbook(rows: EmployeeExportRow[]): Promis
     });
   }
   styleHeader(main, columns.length);
-  for (const key of ["admissionDate", "terminationDate"]) {
-    main.getColumn(key).numFmt = "dd/mm/yyyy";
-    main.getColumn(key).alignment = { horizontal: "center" };
-  }
+  main.getColumn("admissionDate").numFmt = "dd/mm/yyyy";
+  main.getColumn("admissionDate").alignment = { horizontal: "center" };
 
   const leaves = workbook.addWorksheet("Afastamentos e licenças");
   const leaveColumns = [
