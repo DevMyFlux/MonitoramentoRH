@@ -21,9 +21,9 @@
     "db:generate": "pnpm --filter @my-flux/api db:generate",
     "deploy:build": "pnpm --filter @my-flux/shared --filter @my-flux/types --filter @my-flux/validation --filter @my-flux/config build && pnpm --filter @my-flux/api db:generate && VITE_API_BASE_URL=/api/v1 pnpm --filter @my-flux/web build && pnpm --filter @my-flux/api bundle",
     "deploy:start": "pnpm --filter @my-flux/api exec prisma migrate deploy && node apps/api/dist/server.js",
-    "start": "pnpm run deploy:start"
+    "start": "cd apps/api && ./node_modules/.bin/prisma migrate deploy && node dist/server.js"
   },
-  "devDependencies": {
+  "dependencies": {
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",
     "embedded-postgres": "18.4.0-beta.17",
