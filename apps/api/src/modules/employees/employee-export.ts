@@ -10,6 +10,7 @@
  * only lays that shape out in ExcelJS. Both are pure (no DB, no I/O), so the
  * route stays thin and the layout is unit-testable.
  */
+import { currentMonthInSaoPaulo, effectiveParity } from "@my-flux/shared";
 import ExcelJS from "exceljs";
 
 export type ExportShiftParameter = {
@@ -32,6 +33,8 @@ export type ExportSourceEmployee = {
   status: string;
   shift: string | null;
   parity: "ODD" | "EVEN" | null;
+  /** Month (YYYY-MM) in which `parity` is true; null = DEFAULT_PARITY_REFERENCE_MONTH. */
+  parityReferenceMonth?: string | null;
   team: string | null;
   notes: string | null;
   createdAt: Date;
@@ -253,7 +256,12 @@ export function buildEmployeeExportRows(
       ? shiftParameters.find((p) => p.operationId === employee.operationId && p.code === employee.shift)
       : undefined;
     const shiftLabel = employee.shift ? (parameter?.name ?? titleCase(employee.shift)) : "";
-    const parityLabel = employee.parity ? (parityLabels[employee.parity] ?? employee.parity) : "";
+    // Par/Ímpar inverts after every 31-day month, so the sheet shows the group the person
+    // follows in the CURRENT month (the same one the schedule generated today carries).
+    const parityNow = employee.parity
+      ? effectiveParity(employee.parity, employee.parityReferenceMonth, currentMonthInSaoPaulo(today))
+      : null;
+    const parityLabel = parityNow ? (parityLabels[parityNow] ?? parityNow) : "";
     const scheduleLabel = !employee.shift
       ? ""
       : employee.parity

@@ -174,6 +174,12 @@ export const employeeInputSchema = z.object({
   shift: z.string().max(80).nullable().optional(),
   /** Odd/even calendar-day rotation group. Leave empty for fixed weekday schedules. */
   parity: employeeParitySchema.nullable().optional(),
+  /** Month (YYYY-MM) in which `parity` is true; defaults to the current month when parity is set. */
+  parityReferenceMonth: z
+    .string()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Use o formato AAAA-MM")
+    .nullable()
+    .optional(),
   team: z.string().max(80).nullable().optional(),
   notes: z.string().max(2000).nullable().optional()
 });

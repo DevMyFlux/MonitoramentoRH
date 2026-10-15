@@ -9,20 +9,27 @@
  * of duplicating their rules:
  *   - calculateAvailability() (afastamentos / CalendarEvent overlap)
  *   - calculateAptitude() (documents / competencies)
- * and adds the one genuinely new rule this flow needs: day-of-month parity.
+ * and adds the one genuinely new rule this flow needs: the Par/Ímpar rotation
+ * (parity-rotation.ts in @my-flux/shared — calendar-day parity plus the 30/31-day
+ * month-turn continuity).
  *
  * Everything here is a pure function — no Prisma, no I/O. The caller (the
  * Fase 6 generation service) fetches employees, shift parameters, events and
  * requirements once per month and calls employeeAvailability() per employee
  * per day.
  */
+import { isParityWorkday, type ParityGroup } from "@my-flux/shared";
 import {
   calculateAptitude,
   type AptitudeInput
 } from "../aptitude/aptitude-service.js";
 import { calculateAvailability, type AvailabilityEvent } from "../calendar/availability-service.js";
 
-export type EmployeeParityGroup = "ODD" | "EVEN";
+export type EmployeeParityGroup = ParityGroup;
+
+// The Par/Ímpar rule (with the month-turn continuity) lives in @my-flux/shared so the
+// API and the web read the exact same calculation. Re-exported for existing callers.
+export { isParityWorkday };
 
 export type EmployeeScheduleProfile = {
   id: string;
@@ -31,6 +38,12 @@ export type EmployeeScheduleProfile = {
   admissionDate: string | null;
   /** Day-of-month rotation group; null for fixed-weekday staff (e.g. commercial/admin). */
   parity: EmployeeParityGroup | null;
+  /**
+   * Month (YYYY-MM) in which `parity` is true. The effective parity of any other
+   * month follows the 30/31-day turn rule (see @my-flux/shared parity-rotation).
+   * Null/absent = DEFAULT_PARITY_REFERENCE_MONTH.
+   */
+  parityReferenceMonth?: string | null;
 };
 
 export type ShiftDayRule = {
@@ -61,16 +74,6 @@ export type EmployeeAvailabilityResult = {
   blockingEventTypeCodes: string[];
 };
 
-/**
- * Day-of-month parity check for the 1-on-1-off rotations used by both reference
- * schedules (HETRIN and HMB): day 1 is "odd", and the rotation runs through
- * weekends with no gap — it does not follow the calendar week at all.
- */
-export function isParityWorkday(parity: EmployeeParityGroup, date: string): boolean {
-  const day = Number(date.slice(8, 10));
-  return parity === "ODD" ? day % 2 === 1 : day % 2 === 0;
-}
-
 /** True when the shift's fixed weekday pattern (e.g. Mon-Fri) covers this date. */
 export function isWeekdayWorkday(weekdays: number[], date: string): boolean {
   const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
@@ -82,12 +85,12 @@ export function isWeekdayWorkday(weekdays: number[], date: string): boolean {
  * considering status, admission or absences.
  */
 export function isScheduledDay(
-  employee: Pick<EmployeeScheduleProfile, "parity">,
+  employee: Pick<EmployeeScheduleProfile, "parity" | "parityReferenceMonth">,
   date: string,
   shift: ShiftDayRule
 ): boolean {
   return employee.parity
-    ? isParityWorkday(employee.parity, date)
+    ? isParityWorkday(employee.parity, date, employee.parityReferenceMonth)
     : isWeekdayWorkday(shift.weekdays, date);
 }
 

@@ -467,6 +467,10 @@ model Employee {
   /// Day-of-month rotation group (odd/even calendar day) for 1-on-1-off schedules.
   /// Null for employees on a fixed weekday schedule (e.g. Mon-Fri commercial/admin staff).
   parity       EmployeeParity?
+  /// Month (YYYY-MM) in which `parity` is true. The Par/Ímpar classification inverts after
+  /// every 31-day month, so the effective parity of another month is derived from this one
+  /// (packages/shared/src/parity-rotation.ts). Null = DEFAULT_PARITY_REFERENCE_MONTH (2026-10).
+  parityReferenceMonth String?
   team         String?
   notes        String?
   recordStatus RecordStatus        @default(ACTIVE)

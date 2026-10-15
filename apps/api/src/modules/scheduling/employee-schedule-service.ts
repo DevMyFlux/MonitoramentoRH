@@ -13,7 +13,7 @@
  */
 import { createHash } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
-import { scheduleCodeMap } from "@my-flux/shared";
+import { effectiveParity, scheduleCodeMap } from "@my-flux/shared";
 import type { AuthenticatedUser } from "@my-flux/types";
 import { HttpError } from "../../lib/http-error.js";
 import { json, scopedOperation } from "../identity/access.js";
@@ -135,7 +135,8 @@ export async function buildEmployeeScheduleSnapshot(
       id: employee.id,
       status: employee.status,
       admissionDate: employee.admissionDate?.toISOString() ?? null,
-      parity: employee.parity
+      parity: employee.parity,
+      parityReferenceMonth: employee.parityReferenceMonth
     };
     const events = employee.calendarEvents.map((event) => ({
       id: event.id,
@@ -238,8 +239,10 @@ export async function buildEmployeeScheduleSnapshot(
       employeeName: employee.name,
       initials: employee.initials,
       functionName: employee.function?.name ?? "—",
+      // The label shows the parity the person follows IN THIS MONTH (it inverts after a
+      // 31-day month), not the registered one.
       scheduleLabel: employee.parity
-        ? `${workLetter(shiftConfig?.startHour) === "N" ? "Noturno" : "Diurno"} ${employee.parity === "ODD" ? "ímpar" : "par"}`
+        ? `${workLetter(shiftConfig?.startHour) === "N" ? "Noturno" : "Diurno"} ${effectiveParity(employee.parity, employee.parityReferenceMonth, month) === "ODD" ? "ímpar" : "par"}`
         : "Comercial",
       council: employee.council,
       hours: hoursLabel(shiftConfig),

@@ -13,6 +13,12 @@ import {
   UserCheck,
   UserX
 } from "lucide-react";
+import {
+  DEFAULT_PARITY_REFERENCE_MONTH,
+  currentMonthInSaoPaulo,
+  effectiveParity,
+  type ParityGroup
+} from "@my-flux/shared";
 import { Badge, Button, Drawer, Tabs } from "../components/ui";
 import { download, request, text, date, type Row } from "../features/my-flux/client";
 import { labels } from "../features/my-flux/resources";
@@ -29,6 +35,13 @@ const shiftOptions = [
   { value: "DIURNO", label: "Diurno" },
   { value: "NOTURNO", label: "Noturno" }
 ];
+const monthNamesPt = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+/** "2026-11" -> "novembro/2026" */
+const monthLabelPt = (value: string) => {
+  const [year, month] = value.split("-").map(Number);
+  return `${monthNamesPt[(month ?? 1) - 1] ?? ""}/${year}`;
+};
+const parityWord = (group: ParityGroup) => (group === "ODD" ? "Ímpar" : "Par");
 const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 
 const statusTone: Record<string, "success" | "warning" | "danger" | "neutral" | "info"> = {
@@ -51,6 +64,8 @@ type EmployeeForm = {
   status: string;
   shift: string;
   parity: string;
+  /** Month (YYYY-MM) in which `parity` is true; Par/Ímpar inverts after every 31-day month. */
+  parityReferenceMonth: string;
   team: string;
   notes: string;
 };
@@ -66,6 +81,7 @@ const emptyForm = (operationId: string): EmployeeForm => ({
   status: "ACTIVE",
   shift: "",
   parity: "",
+  parityReferenceMonth: currentMonthInSaoPaulo(),
   team: "",
   notes: ""
 });
@@ -204,6 +220,7 @@ export function EmployeesPage() {
       status: text(row.status),
       shift: text(row.shift ?? ""),
       parity: text(row.parity ?? ""),
+      parityReferenceMonth: text(row.parityReferenceMonth ?? "") || DEFAULT_PARITY_REFERENCE_MONTH,
       team: text(row.team ?? ""),
       notes: text(row.notes ?? "")
     });
@@ -280,6 +297,7 @@ export function EmployeesPage() {
         status: form.status,
         shift: form.shift || null,
         parity: form.parity || null,
+        parityReferenceMonth: form.parity ? form.parityReferenceMonth || null : null,
         team: form.team || null,
         notes: form.notes || null
       };
@@ -487,7 +505,21 @@ export function EmployeesPage() {
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-slate-600">{shiftLabel(row)}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-slate-600">
-                      {row.parity ? (labels[text(row.parity)] ?? text(row.parity)) : "—"}
+                      {row.parity ? (
+                        <span
+                          title={`Cadastrado como ${labels[text(row.parity)] ?? text(row.parity)} em ${monthLabelPt(text(row.parityReferenceMonth ?? "") || DEFAULT_PARITY_REFERENCE_MONTH)}`}
+                        >
+                          {parityWord(
+                            effectiveParity(
+                              text(row.parity) as ParityGroup,
+                              text(row.parityReferenceMonth ?? "") || null,
+                              currentMonthInSaoPaulo()
+                            )
+                          )}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
                       <Badge tone={statusTone[text(row.status)] ?? "neutral"}>
@@ -660,13 +692,46 @@ export function EmployeesPage() {
                       <SelectField
                         label="Rodízio"
                         value={form.parity}
-                        onChange={(v) => setForm((f) => ({ ...f, parity: v }))}
+                        onChange={(v) =>
+                          setForm((f) => ({
+                            ...f,
+                            parity: v,
+                            // A new Par/Ímpar choice is true for the month it is made in.
+                            parityReferenceMonth: currentMonthInSaoPaulo()
+                          }))
+                        }
                         options={parityOptions.map((p) => ({
                           value: p,
                           label: p ? (labels[p] ?? p) : "Sem rodízio (ex.: horário comercial)"
                         }))}
                       />
                     </div>
+                    {form.parity && (
+                      <div className="rounded border border-slate-200 bg-slate-50 p-3 text-sm">
+                        <TextField
+                          label="Rodízio válido para o mês de"
+                          type="month"
+                          value={form.parityReferenceMonth}
+                          onChange={(v) => setForm((f) => ({ ...f, parityReferenceMonth: v }))}
+                        />
+                        {form.parityReferenceMonth && (
+                          <p className="mt-2 text-xs text-slate-600">
+                            Em <b>{monthLabelPt(currentMonthInSaoPaulo())}</b> esta pessoa segue a escala{" "}
+                            <b>
+                              {parityWord(
+                                effectiveParity(
+                                  form.parity as ParityGroup,
+                                  form.parityReferenceMonth,
+                                  currentMonthInSaoPaulo()
+                                )
+                              )}
+                            </b>
+                            . Depois de um mês de 31 dias a escala inverte (Ímpar ↔ Par); depois de um mês de 30
+                            dias ela se mantém. O sistema aplica isso sozinho ao gerar cada mês.
+                          </p>
+                        )}
+                      </div>
+                    )}
                     <TextField
                       label="Equipe (opcional)"
                       value={form.team}

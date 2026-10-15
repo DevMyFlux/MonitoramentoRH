@@ -1,4 +1,5 @@
 import type { AuthenticatedUser } from "@my-flux/types";
+import { currentMonthInSaoPaulo } from "@my-flux/shared";
 import { Prisma, type EmployeeParity, type EmployeeStatus, type PrismaClient } from "@prisma/client";
 import { HttpError } from "../../lib/http-error.js";
 import { canAccessScope } from "../identity/scope-policy.js";
@@ -17,6 +18,7 @@ type EmployeeInput = {
   workRegime?: string | null | undefined;
   shift?: string | null | undefined;
   parity?: EmployeeParity | null | undefined;
+  parityReferenceMonth?: string | null | undefined;
   team?: string | null | undefined;
   notes?: string | null | undefined;
 };
@@ -35,6 +37,7 @@ type UpdateEmployeeInput = {
   workRegime?: string | null | undefined;
   shift?: string | null | undefined;
   parity?: EmployeeParity | null | undefined;
+  parityReferenceMonth?: string | null | undefined;
   team?: string | null | undefined;
   notes?: string | null | undefined;
 };
@@ -166,6 +169,8 @@ export class EmployeeRepository {
         workRegime: data.workRegime ?? null,
         shift: data.shift ?? null,
         parity: data.parity ?? null,
+        // The classification is true for the month it is registered in unless told otherwise.
+        parityReferenceMonth: data.parity ? (data.parityReferenceMonth ?? currentMonthInSaoPaulo()) : null,
         team: data.team ?? null,
         notes: data.notes ?? null,
         createdBy: user.id,
@@ -207,6 +212,7 @@ export class EmployeeRepository {
     applyDefined(updateData, "workRegime", data.workRegime);
     applyDefined(updateData, "shift", data.shift);
     applyDefined(updateData, "parity", data.parity);
+    applyParityReference(updateData, before, data);
     applyDefined(updateData, "team", data.team);
     applyDefined(updateData, "notes", data.notes);
 
@@ -321,5 +327,28 @@ function applyDefined<TTarget extends object, TKey extends keyof TTarget>(
 ): void {
   if (value !== undefined) {
     target[key] = value;
+  }
+}
+
+/**
+ * Keeps Employee.parityReferenceMonth consistent with Employee.parity on update:
+ * cleared when the rotation is removed; set to the month the user gave; and, when the
+ * Par/Ímpar choice itself changes without a month, stamped with the current month
+ * (the person picked it looking at today's calendar).
+ */
+export function applyParityReference(
+  updateData: Prisma.EmployeeUncheckedUpdateInput,
+  before: { parity: EmployeeParity | null },
+  data: UpdateEmployeeInput
+) {
+  const parityAfter = data.parity === undefined ? before.parity : data.parity;
+  if (!parityAfter) {
+    if (data.parity !== undefined) updateData.parityReferenceMonth = null;
+    return;
+  }
+  if (data.parityReferenceMonth) {
+    updateData.parityReferenceMonth = data.parityReferenceMonth;
+  } else if (data.parity !== undefined && data.parity !== before.parity) {
+    updateData.parityReferenceMonth = currentMonthInSaoPaulo();
   }
 }

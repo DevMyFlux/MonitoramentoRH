@@ -47,7 +47,7 @@ function employee(overrides: Partial<ExportSourceEmployee> = {}): ExportSourceEm
 
 describe("buildEmployeeExportRows", () => {
   it("derives shift/escala/hours labels from the unit's shift parameter", () => {
-    const [row] = buildEmployeeExportRows([employee()], shiftParameters, new Map());
+    const [row] = buildEmployeeExportRows([employee()], shiftParameters, new Map(), new Date("2026-10-15T15:00:00Z"));
     expect(row).toMatchObject({
       shiftLabel: "Diurno",
       scheduleLabel: "Diurno ímpar",
@@ -56,6 +56,23 @@ describe("buildEmployeeExportRows", () => {
       statusLabel: "Ativo",
       functionName: "Eletricista"
     });
+  });
+
+  it("shows the Par/Ímpar group of the current month: it inverts after a 31-day month", () => {
+    // Registered Ímpar (reference month defaults to 2026-10, which has 31 days) -> Par in November.
+    const [november] = buildEmployeeExportRows([employee()], shiftParameters, new Map(), new Date("2026-11-10T15:00:00Z"));
+    expect(november).toMatchObject({ parityLabel: "Par", scheduleLabel: "Diurno par" });
+    // November has 30 days: nothing flips going into December.
+    const [december] = buildEmployeeExportRows([employee()], shiftParameters, new Map(), new Date("2026-12-10T15:00:00Z"));
+    expect(december).toMatchObject({ parityLabel: "Par" });
+    // An explicit reference month is honoured.
+    const [explicit] = buildEmployeeExportRows(
+      [employee({ parityReferenceMonth: "2026-11" })],
+      shiftParameters,
+      new Map(),
+      new Date("2026-12-10T15:00:00Z")
+    );
+    expect(explicit).toMatchObject({ parityLabel: "Ímpar" });
   });
 
   it("labels a rotation-less employee instead of inventing a parity", () => {
