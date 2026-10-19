@@ -10,7 +10,7 @@
  * only lays that shape out in ExcelJS. Both are pure (no DB, no I/O), so the
  * route stays thin and the layout is unit-testable.
  */
-import { currentMonthInSaoPaulo, effectiveParity } from "@my-flux/shared";
+import { currentMonthInSaoPaulo, effectiveParity, isWeekdayOnlyShift } from "@my-flux/shared";
 import ExcelJS from "exceljs";
 
 export type ExportShiftParameter = {
@@ -266,7 +266,9 @@ export function buildEmployeeExportRows(
       ? ""
       : employee.parity
         ? `${shiftLabel} ${parityLabel.toLowerCase()}`
-        : `${shiftLabel} (sem rodízio)`;
+        : isWeekdayOnlyShift(parameter?.configuration as { weekdays?: number[] } | undefined)
+          ? `${shiftLabel} (5x2)`
+          : `${shiftLabel} (sem rodízio)`;
 
     const leaves: EmployeeExportLeave[] = employee.calendarEvents.map((event) => ({
       typeCode: event.type.code,

@@ -1,5 +1,5 @@
 import type { AuthenticatedUser } from "@my-flux/types";
-import { currentMonthInSaoPaulo } from "@my-flux/shared";
+import { currentMonthInSaoPaulo, isWeekdayOnlyShift } from "@my-flux/shared";
 import { Prisma, type EmployeeParity, type EmployeeStatus, type PrismaClient } from "@prisma/client";
 import { HttpError } from "../../lib/http-error.js";
 import { canAccessScope } from "../identity/scope-policy.js";
@@ -154,6 +154,12 @@ export class EmployeeRepository {
 
   async create(user: AuthenticatedUser, data: EmployeeInput) {
     await this.assertOperationScope(user, data.operationId);
+    const rotation = await resolveRotation(this.db, {
+      operationId: data.operationId,
+      shift: data.shift ?? null,
+      parity: data.parity ?? null,
+      status: data.status
+    });
     const created = await this.db.employee.create({
       data: {
         operationId: data.operationId,
@@ -168,9 +174,9 @@ export class EmployeeRepository {
         status: data.status,
         workRegime: data.workRegime ?? null,
         shift: data.shift ?? null,
-        parity: data.parity ?? null,
+        parity: rotation.parity,
         // The classification is true for the month it is registered in unless told otherwise.
-        parityReferenceMonth: data.parity ? (data.parityReferenceMonth ?? currentMonthInSaoPaulo()) : null,
+        parityReferenceMonth: rotation.parity ? (data.parityReferenceMonth ?? currentMonthInSaoPaulo()) : null,
         team: data.team ?? null,
         notes: data.notes ?? null,
         createdBy: user.id,
@@ -213,6 +219,19 @@ export class EmployeeRepository {
     applyDefined(updateData, "shift", data.shift);
     applyDefined(updateData, "parity", data.parity);
     applyParityReference(updateData, before, data);
+    if (data.shift !== undefined || data.parity !== undefined || data.operationId !== undefined) {
+      const rotation = await resolveRotation(this.db, {
+        operationId: data.operationId ?? before.operationId,
+        shift: data.shift === undefined ? before.shift : data.shift,
+        parity: data.parity === undefined ? before.parity : data.parity,
+        status: data.status ?? before.status
+      });
+      // A weekday-only (5x2) shift has no Par/Ímpar: whatever came in, the rotation is cleared.
+      if (rotation.weekdayOnly && (before.parity || data.parity)) {
+        updateData.parity = null;
+        updateData.parityReferenceMonth = null;
+      }
+    }
     applyDefined(updateData, "team", data.team);
     applyDefined(updateData, "notes", data.notes);
 
@@ -351,4 +370,35 @@ export function applyParityReference(
   } else if (data.parity !== undefined && data.parity !== before.parity) {
     updateData.parityReferenceMonth = currentMonthInSaoPaulo();
   }
+}
+
+/**
+ * Keeps the employee's scale coherent with the shift they were given, using the unit's
+ * own shift parameter (never a hard-coded code):
+ *   - a weekday-only shift (Comercial/Administrativo, 5x2) has no Par/Ímpar -> parity is cleared;
+ *   - a 12x36 rotation shift needs a Par/Ímpar for anyone who enters the schedule
+ *     (ACTIVE / SCHEDULED_ADMISSION); without it the schedule would put them on duty every day.
+ */
+export async function resolveRotation(
+  db: { operationalParameter: { findFirst: (args: never) => Promise<{ configuration: unknown } | null> } },
+  input: { operationId: string; shift: string | null; parity: EmployeeParity | null; status: string }
+): Promise<{ parity: EmployeeParity | null; weekdayOnly: boolean }> {
+  if (!input.shift) return { parity: input.parity, weekdayOnly: false };
+  const parameter = await db.operationalParameter.findFirst({
+    where: { operationId: input.operationId, kind: "SHIFT", code: input.shift, status: "ACTIVE" }
+  } as never);
+  if (!parameter) return { parity: input.parity, weekdayOnly: false };
+
+  const weekdayOnly = isWeekdayOnlyShift(parameter.configuration as { weekdays?: number[] });
+  if (weekdayOnly) return { parity: null, weekdayOnly: true };
+
+  const schedulable = input.status === "ACTIVE" || input.status === "SCHEDULED_ADMISSION";
+  if (!input.parity && schedulable) {
+    throw new HttpError(
+      400,
+      "PARITY_REQUIRED",
+      "Informe o rodízio (Par ou Ímpar) para o turno 12x36, ou escolha um turno comercial (5x2)."
+    );
+  }
+  return { parity: input.parity, weekdayOnly: false };
 }

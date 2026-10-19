@@ -75,6 +75,15 @@ describe("buildEmployeeExportRows", () => {
     expect(explicit).toMatchObject({ parityLabel: "Ímpar" });
   });
 
+  it("labels a commercial (5x2, Mon-Fri) employee as 5x2 instead of inventing a rotation", () => {
+    const withCommercial: ExportShiftParameter[] = [
+      ...shiftParameters,
+      { operationId: "op-hmb", code: "COMERCIAL", name: "Comercial", configuration: { startHour: 8, durationHours: 9, weekdays: [1, 2, 3, 4, 5] } }
+    ];
+    const [row] = buildEmployeeExportRows([employee({ shift: "COMERCIAL", parity: null })], withCommercial, new Map());
+    expect(row).toMatchObject({ shiftLabel: "Comercial", scheduleLabel: "Comercial (5x2)", parityLabel: "", hours: "08:00–17:00" });
+  });
+
   it("labels a rotation-less employee instead of inventing a parity", () => {
     const [row] = buildEmployeeExportRows([employee({ parity: null })], shiftParameters, new Map());
     expect(row!.scheduleLabel).toBe("Diurno (sem rodízio)");

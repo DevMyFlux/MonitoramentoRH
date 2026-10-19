@@ -17,7 +17,8 @@ const user = { id: "u1", role: "DEV", scopes: [] } as unknown as AuthenticatedUs
 const shifts = [
   { code: "DIURNO", configuration: { startHour: 7, durationHours: 12, restHours: 36, weekdays: [0, 1, 2, 3, 4, 5, 6], minimumTeam: 0 } },
   { code: "NOTURNO", configuration: { startHour: 19, durationHours: 12, restHours: 36, weekdays: [0, 1, 2, 3, 4, 5, 6], minimumTeam: 0 } },
-  { code: "COMERCIAL", configuration: { startHour: 8, durationHours: 9, restHours: 15, weekdays: [1, 2, 3, 4, 5], minimumTeam: 0 } }
+  { code: "COMERCIAL", configuration: { startHour: 8, durationHours: 9, restHours: 15, weekdays: [1, 2, 3, 4, 5], minimumTeam: 0 } },
+  { code: "ADMINISTRATIVO", configuration: { startHour: 7, durationHours: 10, restHours: 14, weekdays: [1, 2, 3, 4, 5], minimumTeam: 0 } }
 ];
 
 function employee(
@@ -161,6 +162,49 @@ describe("schedule generation across consecutive months", () => {
     expect(dec[0]).toBe("D");
     expect(dec[1]).toBe("F");
     expect(rowOf(rows, "2026-12", "Ref Novembro").scheduleLabel).toBe("Diurno ímpar");
+  });
+});
+
+describe("employees added on the comercial (5x2) scale reach the schedule", () => {
+  const people = [
+    employee("Comercial Novo", "COMERCIAL", null),
+    employee("Administrativo Novo", "ADMINISTRATIVO", null),
+    employee("Escala 12x36", "DIURNO", "ODD")
+  ];
+
+  it("works Monday to Friday with the shift hours, weekends as rest, in every month", async () => {
+    const months = ["2026-11", "2026-12", "2027-01"];
+    const rows = await generate(months, people);
+    for (const month of months) {
+      const [year, monthNumber] = month.split("-").map(Number) as [number, number];
+      for (const [name, hours] of [["Comercial Novo", "08:00–17:00"], ["Administrativo Novo", "07:00–17:00"]] as const) {
+        const row = rowOf(rows, month, name);
+        expect(row.hours).toBe(hours);
+        expect(row.scheduleLabel).toBe("Comercial");
+        row.days.forEach((code, index) => {
+          const weekday = new Date(Date.UTC(year, monthNumber - 1, index + 1)).getUTCDay();
+          expect(code, `${name} ${month}-${index + 1}`).toBe(weekday >= 1 && weekday <= 5 ? "D" : "F");
+        });
+      }
+    }
+  });
+
+  it("is not affected by the Par/Ímpar turn of the month and does not disturb 12x36 people", async () => {
+    const rows = await generate(["2026-10", "2026-11"], people);
+    // Oct 30 (Fri) and Nov 2 (Mon) are workdays; Oct 31 (Sat) and Nov 1 (Sun) are rest — for 5x2 only the weekday matters.
+    expect(rowOf(rows, "2026-10", "Comercial Novo").days.slice(29, 31)).toEqual(["D", "F"]);
+    expect(rowOf(rows, "2026-11", "Comercial Novo").days.slice(0, 2)).toEqual(["F", "D"]);
+    // The 12x36 person still follows the month-turn rule.
+    expect(rowOf(rows, "2026-10", "Escala 12x36").days[30]).toBe("D");
+    expect(rowOf(rows, "2026-11", "Escala 12x36").days.slice(0, 2)).toEqual(["F", "D"]);
+  });
+
+  it("lands in the DIURNO group and counts only weekdays as required coverage", async () => {
+    const db = fakeDb([employee("Comercial Novo", "COMERCIAL", null)]);
+    const snapshot = await buildEmployeeScheduleSnapshot(db, user, "op", "2026-11");
+    expect(snapshot.grid.sections.map((section) => section.label)).toEqual(["DIURNO"]);
+    // November 2026 has 21 weekdays (Mon-Fri).
+    expect(snapshot.metrics).toMatchObject({ required: 21, covered: 21, coverage: 100 });
   });
 });
 

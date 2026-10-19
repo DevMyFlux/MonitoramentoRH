@@ -77,3 +77,31 @@ nunca inverte** (`monthInvertsParity` devolve `false`).
   comerciais intactos, referência explícita, e exportação HMB/HETRIN pelo `renderScheduleWorkbook`.
 - `apps/api/src/modules/employees/employee-export.test.ts` e `employee-parity-reference.test.ts` —
   rodízio do mês atual na planilha de colaboradores e atualização da referência no cadastro.
+
+## Escala comercial 5x2 (segunda a sexta)
+
+Além do 12x36 (Par/Ímpar), a pessoa pode ser cadastrada na **escala comercial 5x2**: trabalha de
+segunda a sexta, sábado e domingo são folga, e **não tem Par/Ímpar** (portanto a regra de virada de
+mês não se aplica a ela).
+
+- **Como o sistema distingue** (`packages/shared/src/shift-pattern.ts`): pela configuração do próprio
+  turno da unidade (`OperationalParameter.configuration.weekdays`). Turno que lista os 7 dias
+  (Diurno/Noturno) é 12x36; turno que lista só dias úteis, sem sábado/domingo (Comercial,
+  Administrativo — e qualquer outro que a unidade cadastrar) é 5x2. Nenhum código de turno fica fixo
+  no código-fonte.
+- **Cadastro** (Colaboradores → aba "Unidade e escala"): campo "Tipo de escala" — *12x36 — Par/Ímpar*
+  (pede Turno + Rodízio) ou *Comercial 5x2* (pede só o horário comercial da unidade, ex.:
+  HMB "Comercial · 08:00–17:00"; HETRIN "Comercial" e "Administrativo"). O Par/Ímpar some e é limpo.
+  Quem entra na escala (Ativo / Admissão programada) precisa ter o tipo, o turno e — no 12x36 — o rodízio.
+- **API** (`resolveRotation` em `employee-repository.ts`): turno 5x2 ⇒ `parity` e
+  `parityReferenceMonth` são zerados mesmo que venham preenchidos; turno 12x36 sem rodízio para
+  quem entra na escala ⇒ erro `PARITY_REQUIRED` (sem isso a pessoa seria escalada todos os dias).
+- **Escala**: a geração já usava os dias da semana do turno quando não há rodízio; a pessoa aparece
+  no grupo DIURNO (ou NOTURNO, conforme o início do turno), com o horário do turno, `D` de segunda a
+  sexta e `F` no fim de semana, e conta só os dias úteis na cobertura. Na lista de colaboradores a
+  coluna Rodízio mostra "5x2"; na planilha de colaboradores, a escala sai como "Comercial (5x2)".
+- **Pendência (negócio):** o sistema não tem calendário de feriados. Um feriado em dia útil aparece
+  como `D` para quem é 5x2 (e segue o rodízio normal para quem é 12x36); hoje isso se resolve com o
+  ajuste manual do dia (clicar na célula). Se a regra for gerar feriado automaticamente (ex.: `F`
+  ou `FE` para 5x2), é preciso definir a lista de feriados e o código a usar.
+

@@ -16,7 +16,10 @@ import {
 import {
   DEFAULT_PARITY_REFERENCE_MONTH,
   currentMonthInSaoPaulo,
+  describeShiftWeekdays,
   effectiveParity,
+  isWeekdayOnlyShift,
+  shiftHoursText,
   type ParityGroup
 } from "@my-flux/shared";
 import { Badge, Button, Drawer, Tabs } from "../components/ui";
@@ -26,11 +29,23 @@ import { labels } from "../features/my-flux/resources";
 const demoOp = "55555555-5555-4555-8555-555555555555";
 
 const statusOptions = ["ACTIVE", "SCHEDULED_ADMISSION", "ON_LEAVE", "VACATION", "INACTIVE", "TERMINATED"];
-const parityOptions = ["", "ODD", "EVEN"];
+const parityOptions = ["ODD", "EVEN"];
+
+/** Which of the two kinds of scale a person is on: 12x36 (Par/Ímpar) or comercial 5x2 (fixed weekdays). */
+type ScaleType = "" | "ROTATION" | "FIVE_BY_TWO";
+const scaleTypeOptions = [
+  { value: "", label: "Selecione o tipo de escala" },
+  { value: "ROTATION", label: "12x36 — Par/Ímpar (um dia trabalha, um dia folga)" },
+  { value: "FIVE_BY_TWO", label: "Comercial 5x2 — segunda a sexta" }
+];
+type ShiftConfig = { weekdays?: number[]; startHour?: number; durationHours?: number };
+const shiftConfigOf = (parameter: Row | undefined) => parameter?.configuration as ShiftConfig | undefined;
 
 // "Código do turno" is a controlled list, not free text: the stored value is the
 // shift parameter's own code (what the schedule engine looks up), shown with a
-// readable label. Only the two rotation shifts can be picked.
+// readable label. The list comes from the unit's own shift parameters (see
+// `rotationShifts` / `weekdayShifts` below); these two are only the fallback when a
+// unit has none configured yet.
 const shiftOptions = [
   { value: "DIURNO", label: "Diurno" },
   { value: "NOTURNO", label: "Noturno" }
@@ -63,6 +78,7 @@ type EmployeeForm = {
   admissionDate: string;
   status: string;
   shift: string;
+  scaleType: ScaleType;
   parity: string;
   /** Month (YYYY-MM) in which `parity` is true; Par/Ímpar inverts after every 31-day month. */
   parityReferenceMonth: string;
@@ -80,6 +96,7 @@ const emptyForm = (operationId: string): EmployeeForm => ({
   admissionDate: "",
   status: "ACTIVE",
   shift: "",
+  scaleType: "",
   parity: "",
   parityReferenceMonth: currentMonthInSaoPaulo(),
   team: "",
@@ -172,6 +189,49 @@ export function EmployeesPage() {
     [parameters, form.operationId, form.shift]
   );
 
+  // Shifts of a unit, split by what they drive: 12x36 rotation (Diurno/Noturno — every weekday)
+  // vs comercial 5x2 (Comercial/Administrativo — Mon-Fri only). Read from each shift's own
+  // configuration, so a unit's own commercial shifts show up without any code change.
+  function shiftsFor(unitId: string) {
+    const unitShifts = parameters
+      .filter((p) => p.operationId === unitId && text(p.kind) === "SHIFT" && text(p.status) === "ACTIVE")
+      .sort((a, b) => (shiftConfigOf(a)?.startHour ?? 0) - (shiftConfigOf(b)?.startHour ?? 0));
+    const weekday = unitShifts.filter((p) => isWeekdayOnlyShift(shiftConfigOf(p)));
+    const rotation = unitShifts.filter((p) => !isWeekdayOnlyShift(shiftConfigOf(p)));
+    return {
+      weekdayOptions: weekday.map((p) => {
+        const hours = shiftHoursText(shiftConfigOf(p));
+        return { value: text(p.code), label: hours ? `${text(p.name)} · ${hours}` : text(p.name) };
+      }),
+      rotationOptions: rotation.length
+        ? rotation.map((p) => ({ value: text(p.code), label: text(p.name) }))
+        : shiftOptions
+    };
+  }
+  const unitShifts = shiftsFor(form.operationId);
+
+  function deriveScaleType(unitId: string, shift: string, parity: string): ScaleType {
+    const parameter = parameters.find(
+      (p) => p.operationId === unitId && text(p.code) === shift && text(p.kind) === "SHIFT"
+    );
+    if (shift && parameter) return isWeekdayOnlyShift(shiftConfigOf(parameter)) ? "FIVE_BY_TWO" : "ROTATION";
+    return parity ? "ROTATION" : "";
+  }
+
+  function changeScaleType(next: ScaleType) {
+    setForm((f) => {
+      if (next === f.scaleType) return f;
+      const { weekdayOptions } = shiftsFor(f.operationId);
+      return {
+        ...f,
+        scaleType: next,
+        // A 5x2 person has no Par/Ímpar; with a single commercial shift in the unit, pick it.
+        shift: next === "FIVE_BY_TWO" && weekdayOptions.length === 1 ? weekdayOptions[0]!.value : "",
+        parity: next === "FIVE_BY_TWO" ? "" : f.parity
+      };
+    });
+  }
+
   // Funções belong to a unit (JobFunction.operationId) — offer only the ones of
   // the unit being edited, which also removes the same-name duplicates the
   // other unit's list used to add to the dropdown.
@@ -219,6 +279,7 @@ export function EmployeesPage() {
       admissionDate: row.admissionDate ? String(row.admissionDate).slice(0, 10) : "",
       status: text(row.status),
       shift: text(row.shift ?? ""),
+      scaleType: deriveScaleType(text(row.operationId), text(row.shift ?? ""), text(row.parity ?? "")),
       parity: text(row.parity ?? ""),
       parityReferenceMonth: text(row.parityReferenceMonth ?? "") || DEFAULT_PARITY_REFERENCE_MONTH,
       team: text(row.team ?? ""),
@@ -283,6 +344,24 @@ export function EmployeesPage() {
   // alterações" button below calls this directly instead.
   async function saveEmployee() {
     if (saving) return;
+    // Anyone who enters the schedule needs a complete scale, otherwise the schedule would
+    // leave them blank (no turno) or on duty every day (12x36 without Par/Ímpar).
+    if (form.status === "ACTIVE" || form.status === "SCHEDULED_ADMISSION") {
+      const message = !form.scaleType
+        ? "Escolha o tipo de escala (12x36 Par/Ímpar ou Comercial 5x2)."
+        : !form.shift
+          ? form.scaleType === "FIVE_BY_TWO"
+            ? "Escolha o horário comercial (5x2)."
+            : "Escolha o turno (Diurno ou Noturno)."
+          : form.scaleType === "ROTATION" && !form.parity
+            ? "Escolha o rodízio: Ímpar ou Par."
+            : "";
+      if (message) {
+        setFormError(message);
+        setActiveTab("unidade");
+        return;
+      }
+    }
     setSaving(true);
     setFormError("");
     try {
@@ -296,8 +375,9 @@ export function EmployeesPage() {
         admissionDate: form.admissionDate ? new Date(`${form.admissionDate}T00:00:00`).toISOString() : null,
         status: form.status,
         shift: form.shift || null,
-        parity: form.parity || null,
-        parityReferenceMonth: form.parity ? form.parityReferenceMonth || null : null,
+        parity: form.scaleType === "FIVE_BY_TWO" ? null : form.parity || null,
+        parityReferenceMonth:
+          form.scaleType !== "FIVE_BY_TWO" && form.parity ? form.parityReferenceMonth || null : null,
         team: form.team || null,
         notes: form.notes || null
       };
@@ -517,6 +597,8 @@ export function EmployeesPage() {
                             )
                           )}
                         </span>
+                      ) : deriveScaleType(text(row.operationId), text(row.shift ?? ""), "") === "FIVE_BY_TWO" ? (
+                        <span title="Escala comercial: trabalha de segunda a sexta, sem Par/Ímpar">5x2</span>
                       ) : (
                         "—"
                       )}
@@ -655,24 +737,29 @@ export function EmployeesPage() {
                     <SelectField
                       label="Unidade"
                       value={form.operationId}
-                      onChange={(v) => setForm((f) => ({ ...f, operationId: v }))}
+                      onChange={(v) => setForm((f) => ({ ...f, operationId: v, shift: "" }))}
                       options={operations.map((o) => ({ value: o.id, label: text(o.name) }))}
                       required
                     />
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
+                    <SelectField
+                      label="Tipo de escala"
+                      value={form.scaleType}
+                      onChange={(v) => changeScaleType(v as ScaleType)}
+                      options={scaleTypeOptions}
+                      required
+                    />
+                    {form.scaleType === "ROTATION" && (
+                      <div className="grid grid-cols-2 gap-3">
                         <SelectField
                           label="Turno"
                           value={form.shift}
                           onChange={(v) => setForm((f) => ({ ...f, shift: v }))}
                           options={[
                             { value: "", label: "Selecione o turno" },
-                            ...shiftOptions,
-                            // A turno stored before this list became controlled (e.g.
-                            // Comercial/Administrativo, which drives a Mon-Fri schedule)
-                            // is kept as-is so opening someone's cadastro never silently
-                            // rewrites it — it just can't be picked for anyone else.
-                            ...(form.shift && !shiftOptions.some((o) => o.value === form.shift)
+                            ...unitShifts.rotationOptions,
+                            // A turno stored under another code is kept as-is so opening
+                            // someone's cadastro never silently rewrites it.
+                            ...(form.shift && !unitShifts.rotationOptions.some((o) => o.value === form.shift)
                               ? [
                                   {
                                     value: form.shift,
@@ -681,32 +768,61 @@ export function EmployeesPage() {
                                 ]
                               : [])
                           ]}
+                          required
                         />
-                        {form.shift && !shiftOptions.some((o) => o.value === form.shift) && (
-                          <span className="mt-1 block text-xs text-amber-700">
-                            Este colaborador está em um turno fora de Diurno/Noturno. Ele é mantido
-                            até você escolher um dos dois.
-                          </span>
-                        )}
+                        <SelectField
+                          label="Rodízio"
+                          value={form.parity}
+                          onChange={(v) =>
+                            setForm((f) => ({
+                              ...f,
+                              parity: v,
+                              // A new Par/Ímpar choice is true for the month it is made in.
+                              parityReferenceMonth: currentMonthInSaoPaulo()
+                            }))
+                          }
+                          options={[
+                            { value: "", label: "Selecione o rodízio" },
+                            ...parityOptions.map((p) => ({ value: p, label: labels[p] ?? p }))
+                          ]}
+                          required
+                        />
                       </div>
-                      <SelectField
-                        label="Rodízio"
-                        value={form.parity}
-                        onChange={(v) =>
-                          setForm((f) => ({
-                            ...f,
-                            parity: v,
-                            // A new Par/Ímpar choice is true for the month it is made in.
-                            parityReferenceMonth: currentMonthInSaoPaulo()
-                          }))
-                        }
-                        options={parityOptions.map((p) => ({
-                          value: p,
-                          label: p ? (labels[p] ?? p) : "Sem rodízio (ex.: horário comercial)"
-                        }))}
-                      />
-                    </div>
-                    {form.parity && (
+                    )}
+                    {form.scaleType === "FIVE_BY_TWO" &&
+                      (unitShifts.weekdayOptions.length ? (
+                        <>
+                          <SelectField
+                            label="Horário comercial"
+                            value={form.shift}
+                            onChange={(v) => setForm((f) => ({ ...f, shift: v }))}
+                            options={[
+                              { value: "", label: "Selecione o horário" },
+                              ...unitShifts.weekdayOptions
+                            ]}
+                            required
+                          />
+                          <div className="rounded border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                            {matchedShiftParameter && isWeekdayOnlyShift(shiftConfigOf(matchedShiftParameter)) ? (
+                              <>
+                                Trabalha de <b>{describeShiftWeekdays(shiftConfigOf(matchedShiftParameter))}</b>
+                                {shiftHoursText(shiftConfigOf(matchedShiftParameter))
+                                  ? `, das ${shiftHoursText(shiftConfigOf(matchedShiftParameter)).replace("–", " às ")}`
+                                  : ""}
+                                . Sábados e domingos aparecem como folga (F) na escala.
+                              </>
+                            ) : (
+                              <>Escolha o horário: a escala mostrará o trabalho de segunda a sexta.</>
+                            )}{" "}
+                            Não há Par/Ímpar para a escala comercial.
+                          </div>
+                        </>
+                      ) : (
+                        <div className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                          Esta unidade ainda não tem um horário comercial (5x2) cadastrado em Parâmetros.
+                        </div>
+                      ))}
+                    {form.scaleType === "ROTATION" && form.parity && (
                       <div className="rounded border border-slate-200 bg-slate-50 p-3 text-sm">
                         <TextField
                           label="Rodízio válido para o mês de"
@@ -750,6 +866,10 @@ export function EmployeesPage() {
                         <div className="rounded border border-emerald-200 bg-emerald-50 p-3 text-emerald-900">
                           Turno <strong>{text(matchedShiftParameter.name)}</strong> configurado
                           nesta unidade.
+                          <br />
+                          {isWeekdayOnlyShift(shiftConfigOf(matchedShiftParameter))
+                            ? `Escala comercial 5x2: ${describeShiftWeekdays(shiftConfigOf(matchedShiftParameter))}, ${shiftHoursText(shiftConfigOf(matchedShiftParameter))}.`
+                            : `Escala 12x36: ${shiftHoursText(shiftConfigOf(matchedShiftParameter))}, um dia de trabalho e um de folga (Par/Ímpar).`}
                         </div>
                       ) : (
                         <div className="rounded border border-amber-200 bg-amber-50 p-3 text-amber-900">
