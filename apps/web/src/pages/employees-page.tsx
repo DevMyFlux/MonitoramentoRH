@@ -621,7 +621,7 @@ export function EmployeesPage() {
                       <Badge tone={statusTone[text(row.status)] ?? "neutral"}>
                         {labels[text(row.status)] ?? text(row.status)}
                       </Badge>
-                      {row.terminationDate && text(row.status) !== "TERMINATED" && (
+                      {Boolean(row.terminationDate) && text(row.status) !== "TERMINATED" && (
                         <div className="mt-1 text-xs text-amber-700">
                           Desliga em {dateBr(String(row.terminationDate))}
                           {String(row.terminationDate).slice(0, 10) < currentDay() ? " (já passou — marque Desligar)" : ""}
