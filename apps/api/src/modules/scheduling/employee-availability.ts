@@ -36,6 +36,8 @@ export type EmployeeScheduleProfile = {
   status: string;
   /** ISO datetime, or null when the employee has no recorded admission yet. */
   admissionDate: string | null;
+  /** Last day of work (YYYY-MM-DD or ISO datetime) when a desligamento is planned or done; null = none. */
+  terminationDate?: string | null;
   /** Day-of-month rotation group; null for fixed-weekday staff (e.g. commercial/admin). */
   parity: EmployeeParityGroup | null;
   /**
@@ -103,8 +105,17 @@ export function employeeAvailability(input: EmployeeAvailabilityInput): Employee
   // status to ACTIVE automatically once the date arrives, so treating it the
   // same as ACTIVE here (and only here) is what makes a future hire become
   // schedulable on their real admission date without manual intervention.
-  if (employee.status !== "ACTIVE" && employee.status !== "SCHEDULED_ADMISSION") {
+  // A desligado (or a planned desligamento) still counts up to its last day of work.
+  const terminationDay = employee.terminationDate ? employee.terminationDate.slice(0, 10) : null;
+  const activeOnDate =
+    employee.status === "ACTIVE" ||
+    employee.status === "SCHEDULED_ADMISSION" ||
+    (employee.status === "TERMINATED" && terminationDay !== null && date <= terminationDay);
+  if (!activeOnDate) {
     reasons.push("EMPLOYEE_INACTIVE");
+  }
+  if (terminationDay !== null && date > terminationDay) {
+    reasons.push("AFTER_TERMINATION");
   }
   if (!employee.admissionDate || employee.admissionDate.slice(0, 10) > date) {
     reasons.push("FUTURE_ADMISSION");

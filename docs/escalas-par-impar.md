@@ -100,8 +100,38 @@ mês não se aplica a ela).
   no grupo DIURNO (ou NOTURNO, conforme o início do turno), com o horário do turno, `D` de segunda a
   sexta e `F` no fim de semana, e conta só os dias úteis na cobertura. Na lista de colaboradores a
   coluna Rodízio mostra "5x2"; na planilha de colaboradores, a escala sai como "Comercial (5x2)".
-- **Pendência (negócio):** o sistema não tem calendário de feriados. Um feriado em dia útil aparece
-  como `D` para quem é 5x2 (e segue o rodízio normal para quem é 12x36); hoje isso se resolve com o
-  ajuste manual do dia (clicar na célula). Se a regra for gerar feriado automaticamente (ex.: `F`
-  ou `FE` para 5x2), é preciso definir a lista de feriados e o código a usar.
+- **Feriados:** ver a seção "Feriados" abaixo (a pendência anterior sobre feriados foi resolvida
+  quanto à pintura; quanto ao que o 5x2 faz no feriado, continua sem regra — o dia segue `D`).
 
+## Feriados (pintados como na planilha de referência)
+
+- **Padrão da planilha:** lido nos arquivos de referência de outubro/2026. No **HMB**, a coluna do
+  feriado (12/10, segunda) é pintada com o mesmo azul `B4C6E7` dos fins de semana — cabeçalho do dia e
+  todas as linhas de colaboradores. No **HETRIN** a planilha de referência não pinta fim de semana nem
+  feriado (cada código já tem seu preenchimento), então nada extra é pintado.
+  Por isso a cor vem do `weekendTint` do modelo (`null` no HETRIN). O cabeçalho dos dias de fim de semana
+  do HMB também passou a ser azul, como na referência.
+- **Calendário** (`packages/shared/src/holidays.ts`): só feriados legais — Confraternização Universal,
+  Sexta-feira Santa (móvel), Tiradentes, Dia do Trabalho, Independência, N. Sra. Aparecida, Finados,
+  Proclamação da República, Consciência Negra e Natal; HMB (cidade de São Paulo) soma o aniversário da
+  cidade (25/01) e o 9 de Julho. **Ponto facultativo** (Carnaval, Corpus Christi) não entra. Datas
+  estaduais/municipais do HETRIN (Trindade/GO) não foram informadas: hoje só os feriados nacionais — basta
+  incluí-las em `unitHolidays`.
+- **Onde aparece:** a geração grava `grid.holidays`; a tela de Escalas pinta o cabeçalho e a coluna do dia
+  e mostra "Feriado: 12/10 Nossa Senhora Aparecida" na legenda; a exportação usa o mesmo dado. Versões
+  geradas antes deste recurso não têm a lista — são pintadas a partir do calendário (que é fixo), então
+  também saem marcadas.
+- Feriado **só marca o dia**: não muda quem trabalha (rodízio e 5x2 seguem iguais).
+
+## Desligamento programado (`Employee.terminationDate`, migração 0014)
+
+- Campo "Desligamento programado (último dia de trabalho)" na aba Status. **Até essa data inclusive** a
+  pessoa aparece normalmente na escala; **depois dela os dias ficam em branco**, sem pendência e sem
+  contar na cobertura necessária.
+- A pessoa continua `Ativo` até alguém marcar `Desligado`; a lista mostra "Desliga em dd/mm/aaaa" (e avisa
+  quando a data já passou). Em mês em que a data é anterior ao primeiro dia, a pessoa nem entra na grade.
+- Um `Desligado` **com data** continua aparecendo até a data (inclusive no mês em que saiu), sem alertar
+  "colaborador inativo". `Desligado` sem data (cadastros antigos) segue fora da escala como antes.
+- Botão **Desligar** sem data grava hoje (ou hoje no lugar de uma data futura planejada); **Reativar** limpa a
+  data. A planilha de Colaboradores ganhou a coluna "Desligamento programado".
+- Ajuste manual de um dia continua valendo sobre o desligamento (o override é aplicado antes).

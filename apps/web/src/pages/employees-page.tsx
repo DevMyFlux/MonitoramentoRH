@@ -56,6 +56,10 @@ const monthLabelPt = (value: string) => {
   const [year, month] = value.split("-").map(Number);
   return `${monthNamesPt[(month ?? 1) - 1] ?? ""}/${year}`;
 };
+/** "2026-11-10..." -> "10/11/2026" (no timezone shift: it is a calendar date). */
+const dateBr = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+/** Today's calendar day (YYYY-MM-DD) in the user's timezone. */
+const currentDay = () => new Date().toLocaleDateString("en-CA");
 const parityWord = (group: ParityGroup) => (group === "ODD" ? "Ímpar" : "Par");
 const titleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 
@@ -76,6 +80,8 @@ type EmployeeForm = {
   council: string;
   identifier: string;
   admissionDate: string;
+  /** Last day of work (YYYY-MM-DD) when a desligamento is planned; "" = none. */
+  terminationDate: string;
   status: string;
   shift: string;
   scaleType: ScaleType;
@@ -94,6 +100,7 @@ const emptyForm = (operationId: string): EmployeeForm => ({
   council: "",
   identifier: "",
   admissionDate: "",
+  terminationDate: "",
   status: "ACTIVE",
   shift: "",
   scaleType: "",
@@ -277,6 +284,7 @@ export function EmployeesPage() {
       council: text(row.council ?? ""),
       identifier: text(row.identifier),
       admissionDate: row.admissionDate ? String(row.admissionDate).slice(0, 10) : "",
+      terminationDate: row.terminationDate ? String(row.terminationDate).slice(0, 10) : "",
       status: text(row.status),
       shift: text(row.shift ?? ""),
       scaleType: deriveScaleType(text(row.operationId), text(row.shift ?? ""), text(row.parity ?? "")),
@@ -344,6 +352,11 @@ export function EmployeesPage() {
   // alterações" button below calls this directly instead.
   async function saveEmployee() {
     if (saving) return;
+    if (form.terminationDate && form.admissionDate && form.terminationDate < form.admissionDate) {
+      setFormError("O desligamento não pode ser anterior à data de admissão.");
+      setActiveTab("status");
+      return;
+    }
     // Anyone who enters the schedule needs a complete scale, otherwise the schedule would
     // leave them blank (no turno) or on duty every day (12x36 without Par/Ímpar).
     if (form.status === "ACTIVE" || form.status === "SCHEDULED_ADMISSION") {
@@ -373,6 +386,7 @@ export function EmployeesPage() {
         council: form.council || null,
         identifier: form.identifier,
         admissionDate: form.admissionDate ? new Date(`${form.admissionDate}T00:00:00`).toISOString() : null,
+        terminationDate: form.terminationDate ? new Date(`${form.terminationDate}T00:00:00`).toISOString() : null,
         status: form.status,
         shift: form.shift || null,
         parity: form.scaleType === "FIVE_BY_TWO" ? null : form.parity || null,
@@ -607,6 +621,12 @@ export function EmployeesPage() {
                       <Badge tone={statusTone[text(row.status)] ?? "neutral"}>
                         {labels[text(row.status)] ?? text(row.status)}
                       </Badge>
+                      {row.terminationDate && text(row.status) !== "TERMINATED" && (
+                        <div className="mt-1 text-xs text-amber-700">
+                          Desliga em {dateBr(String(row.terminationDate))}
+                          {String(row.terminationDate).slice(0, 10) < currentDay() ? " (já passou — marque Desligar)" : ""}
+                        </div>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
                       <div className="flex justify-end gap-2">
@@ -903,6 +923,13 @@ export function EmployeesPage() {
                       type="date"
                       value={form.admissionDate}
                       onChange={(v) => setForm((f) => ({ ...f, admissionDate: v }))}
+                    />
+                    <TextField
+                      label="Desligamento programado (último dia de trabalho)"
+                      type="date"
+                      value={form.terminationDate}
+                      onChange={(v) => setForm((f) => ({ ...f, terminationDate: v }))}
+                      helper="Até esta data a pessoa aparece normalmente na escala; depois, os dias ficam em branco. Deixe vazio se não há desligamento previsto."
                     />
                     <label className="block text-sm">
                       Observações

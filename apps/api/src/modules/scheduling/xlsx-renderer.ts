@@ -17,7 +17,12 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import ExcelJS from "exceljs";
-import { scheduleCodeMap, type ScheduleFooterBox, type ScheduleTemplateConfig } from "@my-flux/shared";
+import {
+  holidaysOfMonth,
+  scheduleCodeMap,
+  type ScheduleFooterBox,
+  type ScheduleTemplateConfig
+} from "@my-flux/shared";
 
 export type ScheduleGridRow = {
   /** Not rendered on the sheet — carried through so callers (the Escalas UI) can key overrides by employee. */
@@ -47,6 +52,13 @@ export type ScheduleGridData = {
   /** 1-12. */
   month: number;
   sections: ScheduleGridSection[];
+  /**
+   * Holidays of the month (legal holidays only), recorded when the schedule was generated.
+   * Painted like weekends on units whose template shades weekend/holiday columns.
+   * Absent on schedules generated before holidays existed — those are painted from the
+   * (fixed) calendar when rendered, so older versions get their holidays marked too.
+   */
+  holidays?: { day: number; name: string }[];
 };
 
 /** Matches exceljs's own xl/xform/drawing/ext-xform.js EMU_PER_PIXEL_AT_96_DPI constant. */
@@ -183,11 +195,21 @@ export async function renderScheduleWorkbook(
   row = titleRow + 2;
 
   const headerRow = row;
+  const holidays = data.holidays ?? holidaysOfMonth(data.year, data.month, template.unitCode);
+  const holidayDays = new Set(holidays.map((holiday) => holiday.day));
   columns.forEach((label, i) => {
     const cell = sheet.getCell(headerRow, i + 1);
     cell.value = label;
     cell.font = { name: BOX_FONT, size: 11, bold: true };
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: HEADER_FILL } };
+    const headerDay = i - fixedColumns.length + 1;
+    const tintedHeader =
+      headerDay >= 1 && headerDay <= dayCount && isOffDay(data.year, data.month, headerDay, holidayDays);
+    // Same as the reference sheet: a weekend/holiday column is shaded from its header down.
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: tintedHeader && template.weekendTint ? template.weekendTint : HEADER_FILL }
+    };
     cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
     cell.border = allBorders;
   });
@@ -225,7 +247,7 @@ export async function renderScheduleWorkbook(
         cell.alignment = { vertical: "middle", wrapText: true };
         const dayIndex = i - fixedColumns.length;
         if (dayIndex >= 0 && dayIndex < dayCount) {
-          applyDayCellStyle(cell, String(value), data.year, data.month, dayIndex + 1, template);
+          applyDayCellStyle(cell, String(value), data.year, data.month, dayIndex + 1, template, holidayDays);
         }
       });
       row += 1;
@@ -265,7 +287,8 @@ function applyDayCellStyle(
   year: number,
   month: number,
   day: number,
-  template: ScheduleTemplateConfig
+  template: ScheduleTemplateConfig,
+  holidayDays: Set<number>
 ): void {
   cell.alignment = { horizontal: "center", vertical: "middle" };
   // A unit's own override (its original file's real per-code fill, e.g.
@@ -279,14 +302,20 @@ function applyDayCellStyle(
       return;
     }
   }
-  // weekendTint is a real but HMB-only convention (its own weekend-column
-  // shading) — null for a unit whose every code already carries its own
-  // static fill, so no fallback should paint over it.
+  // weekendTint is a real but HMB-only convention (its own weekend- and
+  // holiday-column shading, confirmed on the reference sheet) — null for a unit whose
+  // every code already carries its own static fill (HETRIN: its reference sheet does not
+  // shade weekends or holidays), so no fallback should paint over it.
   if (!template.weekendTint) return;
-  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
-  if (weekday === 0 || weekday === 6) {
+  if (isOffDay(year, month, day, holidayDays)) {
     cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: template.weekendTint } };
   }
+}
+
+/** Saturday, Sunday or a holiday — the days the reference sheet shades. */
+function isOffDay(year: number, month: number, day: number, holidayDays: Set<number>): boolean {
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+  return weekday === 0 || weekday === 6 || holidayDays.has(day);
 }
 
 /**

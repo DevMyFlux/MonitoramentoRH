@@ -84,6 +84,24 @@ describe("buildEmployeeExportRows", () => {
     expect(row).toMatchObject({ shiftLabel: "Comercial", scheduleLabel: "Comercial (5x2)", parityLabel: "", hours: "08:00–17:00" });
   });
 
+  it("carries the planned desligamento date into the sheet (column 'Desligamento programado')", async () => {
+    const rows = buildEmployeeExportRows(
+      [employee({ terminationDate: new Date("2026-11-10T00:00:00Z") })],
+      shiftParameters,
+      new Map(),
+      new Date("2026-10-15T15:00:00Z")
+    );
+    expect(rows[0]!.terminationDate!.toISOString().slice(0, 10)).toBe("2026-11-10");
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load((await renderEmployeesWorkbook(rows)) as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const sheet = workbook.getWorksheet("Colaboradores")!;
+    const headers = (sheet.getRow(1).values as unknown[]).slice(1);
+    const column = headers.indexOf("Desligamento programado") + 1;
+    expect(column).toBeGreaterThan(0);
+    const value = sheet.getRow(2).getCell(column).value;
+    expect(value instanceof Date ? value.toISOString().slice(0, 10) : String(value)).toBe("2026-11-10");
+  });
+
   it("labels a rotation-less employee instead of inventing a parity", () => {
     const [row] = buildEmployeeExportRows([employee({ parity: null })], shiftParameters, new Map());
     expect(row!.scheduleLabel).toBe("Diurno (sem rodízio)");

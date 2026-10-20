@@ -13,7 +13,7 @@
  */
 import { createHash } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
-import { effectiveParity, scheduleCodeMap } from "@my-flux/shared";
+import { effectiveParity, holidaysOfMonth, scheduleCodeMap } from "@my-flux/shared";
 import type { AuthenticatedUser } from "@my-flux/types";
 import { HttpError } from "../../lib/http-error.js";
 import { json, scopedOperation } from "../identity/access.js";
@@ -73,7 +73,7 @@ export async function buildEmployeeScheduleSnapshot(
   operationId: string,
   month: string
 ): Promise<EmployeeScheduleSnapshot> {
-  await scopedOperation(db, user, operationId);
+  const operation = await scopedOperation(db, user, operationId);
   const { year, monthNumber, first, last } = monthRange(month);
   const dayCount = daysInMonth(year, monthNumber);
 
@@ -82,7 +82,22 @@ export async function buildEmployeeScheduleSnapshot(
     // working yet: employeeAvailability() is what actually gates them day-by-day
     // via admissionDate. Filtering to status:"ACTIVE" alone silently dropped them
     // from the whole sheet, before or after their real admission date.
-    where: { operationId, recordStatus: "ACTIVE", status: { in: ["ACTIVE", "SCHEDULED_ADMISSION"] } },
+    // Desligamento: until its last day of work a person is on the schedule — also when
+    // already marked Desligado (it still belongs to the month it left in). A person whose
+    // termination date is before this month has nothing left to show, so is left out.
+    where: {
+      operationId,
+      recordStatus: "ACTIVE",
+      AND: [
+        { OR: [{ terminationDate: null }, { terminationDate: { gte: first } }] },
+        {
+          OR: [
+            { status: { in: ["ACTIVE", "SCHEDULED_ADMISSION"] } },
+            { status: "TERMINATED", terminationDate: { not: null } }
+          ]
+        }
+      ]
+    },
     include: {
       function: true,
       documents: { where: { status: "ACTIVE" } },
@@ -135,6 +150,7 @@ export async function buildEmployeeScheduleSnapshot(
       id: employee.id,
       status: employee.status,
       admissionDate: employee.admissionDate?.toISOString() ?? null,
+      terminationDate: employee.terminationDate?.toISOString().slice(0, 10) ?? null,
       parity: employee.parity,
       parityReferenceMonth: employee.parityReferenceMonth
     };
@@ -187,10 +203,16 @@ export async function buildEmployeeScheduleSnapshot(
       });
 
       const notYetAdmitted = profile.admissionDate && profile.admissionDate.slice(0, 10) > date;
+      const afterTermination = profile.terminationDate && date > profile.terminationDate;
       const override = overrideByKey.get(`${employee.id}|${date}`);
       let code: string;
       if (override) {
         code = override.code;
+      } else if (afterTermination) {
+        // Desligamento (programado ou efetivo): after the last day of work the person is no
+        // longer on the team — blank day, no pendency, and not counted as required coverage.
+        days.push("");
+        continue;
       } else if (notYetAdmitted) {
         // Blank (not a work letter) either way — but only surface a pendency
         // when the rotation would actually have put them on duty; an
@@ -257,7 +279,9 @@ export async function buildEmployeeScheduleSnapshot(
     ...(noturno.length ? [{ label: "NOTURNO", rows: noturno }] : [])
   ];
 
-  const grid: ScheduleGridData = { year, month: monthNumber, sections };
+  // Holiday columns are painted like the unit's sheet paints weekends (see xlsx-renderer).
+  const holidays = holidaysOfMonth(year, monthNumber, operation.code);
+  const grid: ScheduleGridData = { year, month: monthNumber, sections, holidays };
   const metrics: EmployeeScheduleMetrics = {
     required,
     covered,

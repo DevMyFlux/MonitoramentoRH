@@ -14,6 +14,7 @@ type EmployeeInput = {
   employmentType?: string | null | undefined;
   jobTitle?: string | null | undefined;
   admissionDate?: string | null | undefined;
+  terminationDate?: string | null | undefined;
   status: EmployeeStatus;
   workRegime?: string | null | undefined;
   shift?: string | null | undefined;
@@ -33,6 +34,7 @@ type UpdateEmployeeInput = {
   employmentType?: string | null | undefined;
   jobTitle?: string | null | undefined;
   admissionDate?: string | null | undefined;
+  terminationDate?: string | null | undefined;
   status?: EmployeeStatus | undefined;
   workRegime?: string | null | undefined;
   shift?: string | null | undefined;
@@ -171,6 +173,7 @@ export class EmployeeRepository {
         employmentType: data.employmentType ?? null,
         jobTitle: data.jobTitle ?? null,
         admissionDate: data.admissionDate ? new Date(data.admissionDate) : null,
+        terminationDate: data.terminationDate ? new Date(data.terminationDate) : null,
         status: data.status,
         workRegime: data.workRegime ?? null,
         shift: data.shift ?? null,
@@ -215,6 +218,7 @@ export class EmployeeRepository {
       data.admissionDate ? new Date(data.admissionDate) : data.admissionDate
     );
     applyDefined(updateData, "status", data.status);
+    applyTerminationDate(updateData, before, data);
     applyDefined(updateData, "workRegime", data.workRegime);
     applyDefined(updateData, "shift", data.shift);
     applyDefined(updateData, "parity", data.parity);
@@ -401,4 +405,34 @@ export async function resolveRotation(
     );
   }
   return { parity: input.parity, weekdayOnly: false };
+}
+
+/** Today on the São Paulo calendar, as a date-only Date (UTC midnight) like the DATE column. */
+function todayInSaoPaulo(now: Date = new Date()): Date {
+  return new Date(`${now.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })}T00:00:00.000Z`);
+}
+
+/**
+ * Employee.terminationDate (last day of work) on update:
+ *   - a date sent by the form is stored as given (empty clears it);
+ *   - the "Desligar" action (status -> TERMINATED, no date sent) records today, or today
+ *     instead of a later planned date, since the person leaves now;
+ *   - reactivating a desligado (status back to something else, no date sent) clears the date.
+ */
+export function applyTerminationDate(
+  updateData: Prisma.EmployeeUncheckedUpdateInput,
+  before: { status: string; terminationDate: Date | null },
+  data: { status?: string | undefined; terminationDate?: string | null | undefined },
+  now: Date = new Date()
+) {
+  if (data.terminationDate !== undefined) {
+    updateData.terminationDate = data.terminationDate ? new Date(data.terminationDate) : null;
+    return;
+  }
+  if (data.status === "TERMINATED" && before.status !== "TERMINATED") {
+    const today = todayInSaoPaulo(now);
+    if (!before.terminationDate || before.terminationDate > today) updateData.terminationDate = today;
+  } else if (before.status === "TERMINATED" && data.status && data.status !== "TERMINATED") {
+    updateData.terminationDate = null;
+  }
 }

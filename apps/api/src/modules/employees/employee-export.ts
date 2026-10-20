@@ -30,6 +30,8 @@ export type ExportSourceEmployee = {
   employmentType: string | null;
   workRegime: string | null;
   admissionDate: Date | null;
+  /** Last day of work when a desligamento is planned (or done). */
+  terminationDate?: Date | null;
   status: string;
   shift: string | null;
   parity: "ODD" | "EVEN" | null;
@@ -299,7 +301,7 @@ export function buildEmployeeExportRows(
       team: employee.team ?? "",
       statusLabel: statusLabels[employee.status] ?? employee.status,
       admissionDate: employee.admissionDate,
-      terminationDate: terminationDateOf(employee),
+      terminationDate: employee.terminationDate ?? terminationDateOf(employee),
       notes: employee.notes ?? "",
       jobTitle: employee.jobTitle ?? "",
       employmentType: employee.employmentType ?? "",
@@ -382,6 +384,7 @@ export async function renderEmployeesWorkbook(rows: EmployeeExportRow[]): Promis
     { header: "Equipe", key: "team", width: 16 },
     { header: "Situação", key: "statusLabel", width: 20 },
     { header: "Admissão", key: "admissionDate", width: 13 },
+    { header: "Desligamento programado", key: "terminationDate", width: 24 },
     { header: "Afastamentos (qtd.)", key: "leaveCount", width: 13 },
     { header: "Afastamento vigente", key: "currentLeave", width: 40 },
     { header: "Próximo afastamento", key: "nextLeave", width: 40 },
@@ -399,8 +402,10 @@ export async function renderEmployeesWorkbook(rows: EmployeeExportRow[]): Promis
     });
   }
   styleHeader(main, columns.length);
-  main.getColumn("admissionDate").numFmt = "dd/mm/yyyy";
-  main.getColumn("admissionDate").alignment = { horizontal: "center" };
+  for (const key of ["admissionDate", "terminationDate"]) {
+    main.getColumn(key).numFmt = "dd/mm/yyyy";
+    main.getColumn(key).alignment = { horizontal: "center" };
+  }
 
   const leaves = workbook.addWorksheet("Afastamentos e licenças");
   const leaveColumns = [

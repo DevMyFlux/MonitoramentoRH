@@ -12,7 +12,7 @@ import {
   Trash2,
   X
 } from "lucide-react";
-import { scheduleCodes } from "@my-flux/shared";
+import { holidaysOfMonth, scheduleCodes } from "@my-flux/shared";
 import { Badge, Button } from "../components/ui";
 import { download, request, text, date, type Row } from "../features/my-flux/client";
 import { labels } from "../features/my-flux/resources";
@@ -30,7 +30,13 @@ type GridRow = {
   observation: string | null;
 };
 type GridSection = { label: string; rows: GridRow[] };
-type Grid = { year: number; month: number; sections: GridSection[] };
+type Grid = {
+  year: number;
+  month: number;
+  sections: GridSection[];
+  /** Legal holidays of the month, recorded at generation (absent on older schedules). */
+  holidays?: { day: number; name: string }[];
+};
 type Pendency = { employeeId: string; employeeName: string; date: string; reasonCodes: string[] };
 type Metrics = { required: number; covered: number; coverage: number };
 type SelectedCell = {
@@ -406,6 +412,11 @@ export function MonthlySchedulePage() {
         </div>
       );
     }
+    // Older versions were saved without the holiday list: the calendar is fixed, so derive it.
+    const unitCode = text(operations.find((o) => o.id === s.operationId)?.code ?? "");
+    const holidayByDay = new Map(
+      (grid.holidays ?? holidaysOfMonth(grid.year, grid.month, unitCode)).map((holiday) => [holiday.day, holiday.name])
+    );
     return (
       <div className="mt-5 space-y-4 border-t border-slate-100 pt-4">
         <div className="flex flex-wrap gap-3 text-xs text-slate-500">
@@ -426,6 +437,15 @@ export function MonthlySchedulePage() {
           <span className="inline-flex items-center gap-1">
             <span className="inline-block h-3 w-3 rounded bg-slate-200" />F — Folga
           </span>
+          {holidayByDay.size > 0 && (
+            <span className="inline-flex items-center gap-1">
+              <span className="inline-block h-3 w-3 rounded" style={{ backgroundColor: "#B4C6E7" }} />
+              Feriado:{" "}
+              {[...holidayByDay]
+                .map(([day, name]) => `${pad(day)}/${pad(grid.month)} ${name}`)
+                .join(" · ")}
+            </span>
+          )}
         </div>
         <div className="overflow-x-auto rounded border border-slate-200">
           <table className="text-xs">
@@ -435,7 +455,12 @@ export function MonthlySchedulePage() {
                 <th className="px-2 py-2 text-left">Escala</th>
                 <th className="px-2 py-2 text-left">Horário</th>
                 {Array.from({ length: grid.sections[0]?.rows[0]?.days.length ?? 0 }, (_, i) => (
-                  <th className="px-1 py-2 text-center" key={i}>
+                  <th
+                    className="px-1 py-2 text-center"
+                    key={i}
+                    title={holidayByDay.get(i + 1) ? `Feriado: ${holidayByDay.get(i + 1)}` : undefined}
+                    style={holidayByDay.has(i + 1) ? { backgroundColor: "#B4C6E7", color: "#1F3A63" } : undefined}
+                  >
                     {i + 1}
                   </th>
                 ))}
@@ -479,9 +504,17 @@ export function MonthlySchedulePage() {
                                 ? `#${color.fill}`
                                 : hasOverride
                                   ? "#ECFDF5"
-                                  : undefined
+                                  : holidayByDay.has(dayIndex + 1)
+                                    ? "#DCE6F5"
+                                    : undefined
                             }}
-                            title={hasOverride ? "Ajuste manual" : undefined}
+                            title={
+                              hasOverride
+                                ? "Ajuste manual"
+                                : holidayByDay.get(dayIndex + 1)
+                                  ? `Feriado: ${holidayByDay.get(dayIndex + 1)}`
+                                  : undefined
+                            }
                           >
                             {code || "—"}
                           </td>

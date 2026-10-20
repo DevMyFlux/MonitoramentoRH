@@ -169,6 +169,8 @@ export const employeeInputSchema = z.object({
   employmentType: z.string().max(80).nullable().optional(),
   jobTitle: z.string().max(120).nullable().optional(),
   admissionDate: z.string().datetime().nullable().optional(),
+  /** Last day of work (desligamento programado ou efetivo); empty = none planned. */
+  terminationDate: z.string().datetime().nullable().optional(),
   status: employeeStatusSchema.default("ACTIVE"),
   workRegime: z.string().max(80).nullable().optional(),
   shift: z.string().max(80).nullable().optional(),

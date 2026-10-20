@@ -461,6 +461,9 @@ model Employee {
   employmentType String?
   jobTitle     String?
   admissionDate DateTime?
+  /// Desligamento (programado ou efetivo): last day the person works. Until this date the
+  /// schedule shows them normally; the days after it are blank. Null = no termination planned.
+  terminationDate DateTime? @db.Date
   status       EmployeeStatus      @default(ACTIVE)
   workRegime   String?
   shift        String?
