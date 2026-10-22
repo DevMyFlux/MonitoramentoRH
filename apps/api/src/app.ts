@@ -9,6 +9,7 @@ import type { ApiErrorShape, HealthStatus } from "@my-flux/types";
 import { healthStatusSchema } from "@my-flux/validation";
 import Fastify, { type FastifyInstance } from "fastify";
 import { ZodError } from "zod";
+import { errorPayload, validationErrorPayload } from "./lib/error-payload.js";
 import { HttpError } from "./lib/http-error.js";
 import { prisma } from "./lib/prisma.js";
 import { AptitudeRepository } from "./modules/aptitude/aptitude-repository.js";
@@ -82,34 +83,55 @@ export async function buildApp(): Promise<FastifyInstance> {
     return payload;
   });
 
-  app.setErrorHandler((error, _request, reply) => {
-    if (typeof error === 'object' && error && 'code' in error && ['P2002','P2003','P2025','P2034','P2004'].includes(String(error.code))) return reply.status(409).send({code:'DATA_CONFLICT',message:'Conflito de dados, v�nculo ou atualiza��o simult�nea. Recarregue e verifique o registro.'});
-    if (error instanceof HttpError) {
-      const payload: ApiErrorShape = {
-        code: error.code,
-        message: error.message,
-        details: error.details
-      };
+  app.setErrorHandler((error, request, reply) => {
+    // Conflitos do banco (chave duplicada, vínculo, atualização simultânea): o texto fica no catálogo de mensagens.
+    if (
+      typeof error === "object" &&
+      error &&
+      "code" in error &&
+      ["P2002", "P2003", "P2025", "P2034", "P2004"].includes(String(error.code))
+    ) {
+      request.log.warn({ errorCode: "DATA_CONFLICT", prismaCode: String(error.code) }, "data conflict");
+      return reply.status(409).send(errorPayload({ code: "DATA_CONFLICT", statusCode: 409 }));
+    }
 
-      return reply.status(error.statusCode).send(payload);
+    if (error instanceof HttpError) {
+      // O código técnico e a mensagem original vão para o log; quem chama recebe a mensagem amigável.
+      request.log.info(
+        { errorCode: error.code, statusCode: error.statusCode, technicalMessage: error.message },
+        "request rejected"
+      );
+      return reply
+        .status(error.statusCode)
+        .send(
+          errorPayload({
+            code: error.code,
+            statusCode: error.statusCode,
+            message: error.message,
+            details: error.details,
+            requestId: request.id
+          })
+        );
     }
 
     if (error instanceof ZodError) {
-      const payload: ApiErrorShape = {
-        code: "VALIDATION_ERROR",
-        message: "Payload invalido.",
-        details: { issues: error.issues }
-      };
-
-      return reply.status(400).send(payload);
+      request.log.info({ errorCode: "VALIDATION_ERROR", issues: error.issues.length }, "validation failed");
+      return reply.status(400).send(validationErrorPayload(error, request.id));
     }
 
     const statusCode = getErrorStatusCode(error);
-    const payload: ApiErrorShape = {
+    if (statusCode >= 500) {
+      // Detalhe completo só no log (com a referência da requisição); a resposta não expõe nada interno.
+      request.log.error({ err: error, errorCode: "INTERNAL_SERVER_ERROR" }, "unexpected error");
+    } else {
+      request.log.info({ errorCode: "REQUEST_ERROR", statusCode, technicalMessage: getErrorMessage(error) }, "request error");
+    }
+    const payload: ApiErrorShape = errorPayload({
       code: statusCode >= 500 ? "INTERNAL_SERVER_ERROR" : "REQUEST_ERROR",
-      message: statusCode >= 500 ? "Erro interno do servidor." : getErrorMessage(error),
-      details: {}
-    };
+      statusCode,
+      message: getErrorMessage(error),
+      requestId: request.id
+    });
 
     return reply.status(statusCode).send(payload);
   });
@@ -131,7 +153,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       const entry=previous && previous.reset>now ? previous : {count:0,reset:now+60000};
       entry.count++; attempts.set(key,entry);
       if (attempts.size > 10000) for(const [k,v] of attempts) if(v.reset<now)attempts.delete(k);
-      if(entry.count>30)return reply.status(429).send({code:'RATE_LIMITED',message:'Muitas tentativas. Aguarde um minuto.'});
+      if(entry.count>30)return reply.status(429).send(errorPayload({ code: 'RATE_LIMITED', statusCode: 429 }));
     }
   });
   const userRepository = new UserRepository(prisma);
@@ -236,21 +258,16 @@ export async function buildApp(): Promise<FastifyInstance> {
   // dev never has this directory (the web app runs on its own Vite server
   // there), so this whole block is a no-op outside a real deploy.
   const publicDir = fileURLToPath(new URL("./public/", import.meta.url));
-  if (existsSync(publicDir)) {
-    await app.register(fastifyStatic, { root: publicDir });
-    app.setNotFoundHandler((request, reply) => {
-      if (request.raw.url?.startsWith(apiPrefix)) {
-        const payload: ApiErrorShape = {
-          code: "NOT_FOUND",
-          message: "Rota nao encontrada.",
-          details: {}
-        };
-        return reply.status(404).send(payload);
-      }
-      // Client-side routes (React Router) all resolve through index.html.
-      return reply.sendFile("index.html");
-    });
-  }
+  const hasPublicDir = existsSync(publicDir);
+  if (hasPublicDir) await app.register(fastifyStatic, { root: publicDir });
+  app.setNotFoundHandler((request, reply) => {
+    if (!hasPublicDir || request.raw.url?.startsWith(apiPrefix)) {
+      const payload: ApiErrorShape = errorPayload({ code: "NOT_FOUND", statusCode: 404, message: "Rota nao encontrada." });
+      return reply.status(404).send(payload);
+    }
+    // Client-side routes (React Router) all resolve through index.html.
+    return reply.sendFile("index.html");
+  });
 
   return app;
 }

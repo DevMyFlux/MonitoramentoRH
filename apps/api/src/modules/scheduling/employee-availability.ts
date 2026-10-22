@@ -69,6 +69,11 @@ export type EmployeeAvailabilityResult = {
   available: boolean;
   reasonCodes: string[];
   /**
+   * Frases já legíveis das regras de origem (ex.: "NR-10 ausente ou vencido.", "Férias: Férias"), cada uma com o
+   * código a que pertence. Só apoiam a mensagem amigável; o contrato continua sendo `reasonCodes`.
+   */
+  reasonDetails: Array<{ code: string; message: string }>;
+  /**
    * EventType.code of whichever absence(s) block this day (e.g. "AT", "FR").
    * Lets the caller (Fase 6 generation) show the specific leave letter instead
    * of a generic rest/work code, without re-deriving the overlap itself.
@@ -99,6 +104,7 @@ export function isScheduledDay(
 export function employeeAvailability(input: EmployeeAvailabilityInput): EmployeeAvailabilityResult {
   const { employee, date, shift, events, aptitude } = input;
   const reasons: string[] = [];
+  const details: Array<{ code: string; message: string }> = [];
 
   // SCHEDULED_ADMISSION is not a block by itself — it means "not started yet",
   // which admissionDate already expresses precisely below. Nothing flips this
@@ -131,6 +137,7 @@ export function employeeAvailability(input: EmployeeAvailabilityInput): Employee
   const availability = calculateAvailability(events, { startsAt: dayStart, endsAt: dayEnd });
   if (!availability.available) {
     reasons.push(...availability.reasonCodes);
+    details.push(...availability.reasons.map((reason) => ({ code: reason.code, message: reason.message })));
   }
   const blockingEventTypeCodes = availability.reasons
     .map((reason) => events.find((event) => event.id === reason.eventId)?.type.code)
@@ -142,12 +149,14 @@ export function employeeAvailability(input: EmployeeAvailabilityInput): Employee
   const aptitudeResult = calculateAptitude({ ...aptitude, today: dayEnd });
   if (aptitudeResult.status !== "GREEN") {
     reasons.push(...aptitudeResult.reasonCodes);
+    details.push(...aptitudeResult.reasons.map((reason) => ({ code: reason.code, message: reason.message })));
   }
 
   return {
     scheduled,
     available: reasons.length === 0,
     reasonCodes: reasons,
+    reasonDetails: details,
     blockingEventTypeCodes
   };
 }

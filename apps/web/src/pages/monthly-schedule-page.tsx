@@ -12,9 +12,10 @@ import {
   Trash2,
   X
 } from "lucide-react";
-import { holidaysOfMonth, scheduleCodes } from "@my-flux/shared";
+import { groupPendencies, holidaysOfMonth, scheduleCodes, type SchedulePendencyLike } from "@my-flux/shared";
 import { Badge, Button } from "../components/ui";
-import { download, request, text, date, type Row } from "../features/my-flux/client";
+import { IssueList } from "../components/issue-list";
+import { download, errorText, request, text, date, type Row } from "../features/my-flux/client";
 import { labels } from "../features/my-flux/resources";
 
 const demoOp = "55555555-5555-4555-8555-555555555555";
@@ -37,7 +38,7 @@ type Grid = {
   /** Legal holidays of the month, recorded at generation (absent on older schedules). */
   holidays?: { day: number; name: string }[];
 };
-type Pendency = { employeeId: string; employeeName: string; date: string; reasonCodes: string[] };
+type Pendency = SchedulePendencyLike & { employeeId: string };
 type Metrics = { required: number; covered: number; coverage: number };
 type SelectedCell = {
   employeeId: string;
@@ -117,6 +118,7 @@ export function MonthlySchedulePage() {
   const selected = schedules.find((s) => s.id === selectedId) ?? null;
   const grid = getGrid(selected);
   const pendencies = getPendencies(selected);
+  const issueGroups = useMemo(() => groupPendencies(pendencies), [selected?.id, selected?.generatedResult]);
 
   // Units never mix on this screen: everything below is the schedules of the
   // unit picked in "Operação", most recently generated first. The first one is
@@ -141,7 +143,7 @@ export function MonthlySchedulePage() {
       setOperations(o);
       if (o.length && !o.some((x) => x.id === operationId)) setOperationId(o.at(0)?.id ?? demoOp);
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Falha ao carregar escalas.");
+      setNotice(errorText(e, "Falha ao carregar escalas."));
     }
   }
   useEffect(() => {
@@ -203,7 +205,7 @@ export function MonthlySchedulePage() {
       setNotice("Escala gerada a partir dos colaboradores ativos desta unidade.");
     } catch (e) {
       setNotice(
-        e instanceof Error ? e.message : "Geração bloqueada; verifique os colaboradores desta unidade."
+        errorText(e, "Geração bloqueada; verifique os colaboradores desta unidade.")
       );
     }
   }
@@ -217,7 +219,7 @@ export function MonthlySchedulePage() {
       setSchedules((s) => s.map((x) => (x.id === id ? { ...x, ...row } : x)));
       setNotice(`Escala ${labels[next] ?? next}.`);
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Transição não permitida para este perfil.");
+      setNotice(errorText(e, "Transição não permitida para este perfil."));
     }
   }
 
@@ -226,7 +228,7 @@ export function MonthlySchedulePage() {
       // No explicit name: the server picks it (e.g. "Escala Hetrin - Setembro.xlsx").
       await download(`/employee-schedules/${version.id}/export`);
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Não foi possível exportar esta versão.");
+      setNotice(errorText(e, "Não foi possível exportar esta versão."));
     }
   }
 
@@ -249,7 +251,7 @@ export function MonthlySchedulePage() {
       setSchedules((current) => current.filter((x) => x.id !== version.id));
       setNotice(`Escala ${monthLabel(version.month)} · versão ${text(version.version)} excluída.`);
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Não foi possível excluir a escala.");
+      setNotice(errorText(e, "Não foi possível excluir a escala."));
     } finally {
       setDeletingId(null);
     }
@@ -311,7 +313,7 @@ export function MonthlySchedulePage() {
       setCell(null);
       void loadOverrides(selected);
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Não foi possível salvar o ajuste manual.");
+      setNotice(errorText(e, "Não foi possível salvar o ajuste manual."));
     } finally {
       setSaving(false);
     }
@@ -326,7 +328,7 @@ export function MonthlySchedulePage() {
       setCell(null);
       if (selected) void loadOverrides(selected);
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Não foi possível remover o ajuste manual.");
+      setNotice(errorText(e, "Não foi possível remover o ajuste manual."));
     } finally {
       setSaving(false);
     }
@@ -528,18 +530,7 @@ export function MonthlySchedulePage() {
           </table>
         </div>
 
-        {pendencies.length > 0 && (
-          <div className="rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-            <p className="mb-1 font-semibold">Pendências ({pendencies.length})</p>
-            <ul className="space-y-0.5">
-              {pendencies.slice(0, 20).map((p, i) => (
-                <li key={i}>
-                  {p.employeeName} · {p.date} · {p.reasonCodes.join(", ")}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <IssueList groups={issueGroups} />
       </div>
     );
   }

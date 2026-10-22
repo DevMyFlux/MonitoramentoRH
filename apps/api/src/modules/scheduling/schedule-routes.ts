@@ -31,7 +31,7 @@ export async function registerScheduleRoutes(
     const user = await authenticateRequest(request, users);
     assertCanPreviewSchedule(user.role);
     scheduleVersionInputSchema.parse(request.body);
-    throw new HttpError(409, "SERVER_SNAPSHOT_REQUIRED", "Use /schedules/generate com operação e mês. A aptidão deve ser calculada no servidor.");
+    throw new HttpError(409, "SERVER_SNAPSHOT_REQUIRED", "Use /schedules/generate com operaÃ§Ã£o e mÃªs. A aptidÃ£o deve ser calculada no servidor.");
   });
 
   app.patch("/schedules/:id/status", async (request) => {

@@ -59,11 +59,8 @@ async function getErrorMessage(response: Response, fallback: string): Promise<st
   try {
     const payload = (await response.json()) as { code?: unknown; message?: unknown };
 
-    if (typeof payload.message === "string") {
-      return typeof payload.code === "string"
-        ? `${payload.code}: ${payload.message}`
-        : payload.message;
-    }
+    // O código técnico não é mostrado ao usuário (a mensagem já é amigável); ele continua na resposta da API.
+    if (typeof payload.message === "string") return payload.message;
 
     return fallback;
   } catch {

@@ -29,6 +29,8 @@ export type EmployeeSchedulePendency = {
   employeeName: string;
   date: string;
   reasonCodes: string[];
+  /** Frases legíveis das regras de origem, por código (opcional: escalas antigas não têm). */
+  details?: Array<{ code: string; message: string }>;
 };
 
 export type EmployeeScheduleMetrics = {
@@ -242,7 +244,8 @@ export async function buildEmployeeScheduleSnapshot(
             employeeId: employee.id,
             employeeName: employee.name,
             date,
-            reasonCodes: result.reasonCodes
+            reasonCodes: result.reasonCodes,
+            ...(result.reasonDetails.length ? { details: result.reasonDetails } : {})
           });
         }
       }
