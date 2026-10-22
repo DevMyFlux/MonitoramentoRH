@@ -1,4 +1,4 @@
-import { assertRole } from "../identity/access.js";
+import { can, requirePermission } from "../identity/authorization.js";
 import type { AuthenticatedUser } from "@my-flux/types";
 import { Prisma, type AuditAction, type PrismaClient, type WorkflowStatus } from "@prisma/client";
 import { HttpError } from "../../lib/http-error.js";
@@ -50,7 +50,7 @@ export class QlpRepository {
   }
 
   async createVersion(user: AuthenticatedUser, data: QlpInput) {
-    assertRole(user, ["DEV", "ADMIN"]);
+    requirePermission(user, "qlp:manage");
     await this.assertOperationScope(user, data.operationId);
     const last = await this.db.qLPVersion.findFirst({
       where: { operationId: data.operationId, kind: data.kind },
@@ -106,7 +106,7 @@ export class QlpRepository {
       unitId: before.operation.unitId
     });
 
-    if (!canTransitionQlp(before.status, next, user.role)) {
+    if (!canTransitionQlp(before.status, next, can(user, "qlp:manage"))) {
       throw new HttpError(403, "QLP_WORKFLOW_FORBIDDEN", "Transicao de QLP nao permitida.");
     }
 
@@ -188,7 +188,7 @@ export class QlpRepository {
   }
 
   async createPosition(user: AuthenticatedUser, data: PositionInput) {
-    assertRole(user, ["DEV", "ADMIN"]);
+    requirePermission(user, "qlp:manage");
     await this.assertOperationScope(user, data.operationId);
     throw new HttpError(409, "QLP_ORIGIN_REQUIRED", "Posições são materializadas pela aprovação do QLP operacional.");
     /* legacy manual creation disabled

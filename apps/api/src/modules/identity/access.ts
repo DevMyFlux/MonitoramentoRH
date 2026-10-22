@@ -3,10 +3,6 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { HttpError } from "../../lib/http-error.js";
 import { canAccessScope } from "./scope-policy.js";
 
-export function assertRole(user: AuthenticatedUser, roles: string[]) {
-  if (!roles.includes(user.role))
-    throw new HttpError(403, "FORBIDDEN", "Perfil sem permissão para esta ação.");
-}
 export function operationWhere(user: AuthenticatedUser): Prisma.OperationWhereInput {
   if (user.scopes.some((scope) => scope.isGlobal)) return { status: "ACTIVE" };
   return {

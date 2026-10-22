@@ -30,7 +30,7 @@ export const roleLabels: Record<Role, string> = {
   COMUM: "Comum"
 };
 
-export type PermissionGroup = "Acesso" | "Cadastros" | "Escalas";
+export type PermissionGroup = "Acesso" | "Cadastros" | "Operação" | "Escalas";
 
 export type PermissionDefinition = {
   code: string;
@@ -100,6 +100,60 @@ export const permissionCatalog = [
     label: "Configurar substituições",
     description: "Definir quem cobre um colaborador durante as férias.",
     group: "Cadastros"
+  },
+  {
+    code: "masterdata:manage",
+    label: "Gerenciar cadastros-mestre",
+    description: "Criar, editar e arquivar empresas, clientes, unidades, contratos, operações, serviços, obrigações e funções.",
+    group: "Cadastros"
+  },
+  {
+    code: "aptitude:manage",
+    label: "Gerenciar aptidão",
+    description: "Cadastrar requisitos, documentos e competências usados no cálculo de aptidão.",
+    group: "Operação"
+  },
+  {
+    code: "evaluations:manage",
+    label: "Gerenciar avaliações",
+    description: "Criar avaliações e conduzi-las pelo fluxo de análise do RH.",
+    group: "Operação"
+  },
+  {
+    code: "imports:run",
+    label: "Importar bases (todos os tipos)",
+    description: "Importar qualquer base: colaboradores, funções, requisitos e demais.",
+    group: "Operação"
+  },
+  {
+    code: "imports:employees",
+    label: "Importar colaboradores",
+    description: "Importar somente a base de colaboradores.",
+    group: "Operação"
+  },
+  {
+    code: "qlp:manage",
+    label: "Gerenciar o QLP",
+    description: "Criar versões do QLP, aprová-las e arquivá-las, e gerar a escala a partir do QLP.",
+    group: "Operação"
+  },
+  {
+    code: "positions:assign",
+    label: "Atribuir colaboradores às posições",
+    description: "Alocar colaboradores nas posições do quadro.",
+    group: "Operação"
+  },
+  {
+    code: "parameters:manage",
+    label: "Gerenciar parâmetros",
+    description: "Cadastrar e alterar parâmetros da operação, como turnos.",
+    group: "Operação"
+  },
+  {
+    code: "recruitment:manage",
+    label: "Gerenciar recrutamento",
+    description: "Conduzir vagas, candidatos e candidaturas.",
+    group: "Operação"
   },
   {
     code: "schedules:read",
@@ -178,6 +232,11 @@ export const defaultRolePermissions: Record<Role, readonly PermissionCode[]> = {
     "employees:manage",
     "leaves:manage",
     "substitutions:manage",
+    "aptitude:manage",
+    "evaluations:manage",
+    "imports:employees",
+    "positions:assign",
+    "recruitment:manage",
     "schedules:read",
     "schedules:generate",
     "schedules:edit",

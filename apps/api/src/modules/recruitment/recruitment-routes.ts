@@ -4,7 +4,8 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 import { HttpError } from "../../lib/http-error.js";
 import { authenticateRequest } from "../auth/auth-routes.js";
 import type { UserRepository } from "../users/user-repository.js";
-import { assertRole, json, operationWhere, scopedOperation } from "../identity/access.js";
+import { json, operationWhere, scopedOperation } from "../identity/access.js";
+import { requirePermission } from "../identity/authorization.js";
 import { assertAdmissionTransition } from "./recruitment-workflow.js";
 
 const idSchema = z.object({ id: z.string().uuid() });
@@ -57,7 +58,7 @@ export async function registerRecruitmentRoutes(
   });
   app.post("/recruitment/requests", async (req) => {
     const user = await authenticateRequest(req, users);
-    assertRole(user, ["DEV", "ADMIN", "RH"]);
+    requirePermission(user, "recruitment:manage");
     const input = requestSchema.parse(req.body);
     return {
       data: await db.$transaction(
@@ -112,7 +113,7 @@ export async function registerRecruitmentRoutes(
   });
   app.post("/recruitment/candidates", async (req) => {
     const user = await authenticateRequest(req, users);
-    assertRole(user, ["DEV", "ADMIN", "RH"]);
+    requirePermission(user, "recruitment:manage");
     const input = candidateSchema.parse(req.body);
     const request = await db.recruitmentRequest.findUnique({
       where: { id: input.requestId },
@@ -154,7 +155,7 @@ export async function registerRecruitmentRoutes(
   });
   app.post("/recruitment/candidates/:id/transition", async (req) => {
     const user = await authenticateRequest(req, users);
-    assertRole(user, ["DEV", "ADMIN", "RH"]);
+    requirePermission(user, "recruitment:manage");
     const { id } = idSchema.parse(req.params);
     const input = transitionSchema.parse(req.body);
     return {

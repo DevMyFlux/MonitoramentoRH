@@ -1,26 +1,28 @@
-import type { EvaluationStatus, RoleName } from "@prisma/client";
+import type { EvaluationStatus } from "@prisma/client";
 
-const rhWorkflowRoles: RoleName[] = ["DEV", "ADMIN", "RH"];
-
+/**
+ * Transições do fluxo de avaliação. `canManage` vem da permissão `evaluations:manage` (e não do nome do perfil):
+ * quem a tem conduz a avaliação pelas etapas de análise do RH.
+ */
 export function canTransitionEvaluation(
   current: EvaluationStatus,
   next: EvaluationStatus,
-  role: RoleName
+  canManage: boolean
 ): boolean {
   if (current === "ARCHIVED") {
     return false;
   }
 
   if (next === "IN_RH_REVIEW") {
-    return current === "DRAFT" && rhWorkflowRoles.includes(role);
+    return current === "DRAFT" && canManage;
   }
 
   if (next === "APPROVED" || next === "REJECTED") {
-    return current === "IN_RH_REVIEW" && rhWorkflowRoles.includes(role);
+    return current === "IN_RH_REVIEW" && canManage;
   }
 
   if (next === "ARCHIVED") {
-    return rhWorkflowRoles.includes(role);
+    return canManage;
   }
 
   return false;

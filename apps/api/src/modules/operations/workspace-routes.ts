@@ -3,7 +3,8 @@ import { z } from "zod";
 import { type PrismaClient } from "@prisma/client";
 import { authenticateRequest } from "../auth/auth-routes.js";
 import type { UserRepository } from "../users/user-repository.js";
-import { assertRole, json, operationWhere, scopedOperation } from "../identity/access.js";
+import { json, operationWhere, scopedOperation } from "../identity/access.js";
+import { requirePermission } from "../identity/authorization.js";
 import { HttpError } from "../../lib/http-error.js";
 import {
   calendarConfigSchema,
@@ -29,7 +30,7 @@ export async function registerWorkspaceRoutes(
   });
   app.post("/parameters", async (req) => {
     const user = await authenticateRequest(req, users);
-    assertRole(user, ["DEV", "ADMIN"]);
+    requirePermission(user, "parameters:manage");
     const input = z
       .object({
         operationId: z.string().uuid(),
@@ -69,7 +70,7 @@ export async function registerWorkspaceRoutes(
   });
   app.post("/schedules/generate", async (req) => {
     const user = await authenticateRequest(req, users);
-    assertRole(user, ["DEV", "ADMIN"]);
+    requirePermission(user, "qlp:manage");
     const input = z
       .object({
         operationId: z.string().uuid(),
@@ -105,7 +106,7 @@ export async function registerWorkspaceRoutes(
   });
   app.post("/positions/:id/assign", async (req) => {
     const user = await authenticateRequest(req, users);
-    assertRole(user, ["DEV", "ADMIN", "RH"]);
+    requirePermission(user, "positions:assign");
     const { id } = ids.parse(req.params);
     const input = z
       .object({

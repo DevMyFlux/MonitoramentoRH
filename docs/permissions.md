@@ -20,7 +20,7 @@ perfil: todo DEV é criado com escopo global, e a migração `0016` garante isso
 |---|---|---|
 | `DEV` | Administrador técnico | todas |
 | `ADMIN` | Administrador | todas |
-| `RH` | Opera as escalas | colaboradores, afastamentos, substituições, gerar/editar/enviar/publicar/excluir escalas, criar/convidar usuários |
+| `RH` | Opera as escalas | colaboradores, afastamentos, substituições, gerar/editar/enviar/publicar/excluir escalas, criar/convidar usuários, aptidão, avaliações, posições, recrutamento e importar colaboradores |
 | `APPROVER` | Aprova ou reprova escalas | consultar escalas, aprovar, reprovar |
 | `COMUM` | Consulta | consultar escalas |
 
@@ -34,8 +34,8 @@ permissões de um perfil igual ou acima do seu (o DEV, no topo, pode gerir os de
 
 ## Catálogo de permissões
 
-Fonte única: `packages/shared/src/permissions.ts`. A migração `0016_permissions_and_approver` popula o banco com o mesmo catálogo
-(há um teste que compara os dois).
+Fonte única: `packages/shared/src/permissions.ts`. As migrações `0016_permissions_and_approver` e `0020_legacy_modules_permissions` populam o
+banco com o mesmo catálogo (há um teste que compara o código com a soma das migrações).
 
 | Grupo | Permissão | O que libera |
 |---|---|---|
@@ -48,6 +48,14 @@ Fonte única: `packages/shared/src/permissions.ts`. A migração `0016_permissio
 | Cadastros | `employees:manage` | criar, editar e arquivar colaboradores |
 | | `leaves:manage` | registrar, alterar e cancelar afastamentos |
 | | `substitutions:manage` | configurar substituições temporárias |
+| | `masterdata:manage` | empresas, clientes, unidades, contratos, operações, serviços, obrigações e funções |
+| Operação | `parameters:manage` | parâmetros da operação (turnos etc.) |
+| | `aptitude:manage` | requisitos, documentos e competências de aptidão |
+| | `evaluations:manage` | avaliações e o fluxo de análise do RH |
+| | `imports:run` / `imports:employees` | importar qualquer base / importar só colaboradores |
+| | `qlp:manage` | criar, aprovar e arquivar o QLP e gerar a escala por QLP |
+| | `positions:assign` | atribuir colaboradores às posições |
+| | `recruitment:manage` | vagas, candidatos e candidaturas |
 | Escalas | `schedules:read` | consultar escalas, versões, pendências e histórico |
 | | `schedules:generate` | gerar a escala mensal |
 | | `schedules:edit` | ajustar células/atribuições |
@@ -111,10 +119,23 @@ Não existe publicação que pule a aprovação (o antigo "override de DEV" nunc
 
 Ações críticas criam registros em `AuditLog` com usuário, perfil, entidade, id, antes/depois e origem. A tela de auditoria exige `audit:read`.
 
-## Módulos ainda por perfil (legado)
+## Módulos antigos (cadastros-mestre, aptidão, avaliações, importações, QLP, parâmetros, recrutamento)
 
-QLP, recrutamento, avaliações, aptidão, importações, parâmetros e relatórios continuam decididos por lista de perfis no código
-(estão ocultos no menu). Quem não está na lista — inclusive o novo Aprovador — é negado por padrão. Migrá-los para permissões é o próximo passo natural.
+Também decidem o acesso por **permissão** (migração `0020`), no servidor — não há mais nenhuma checagem pelo nome do perfil nesses módulos.
+A matriz padrão é **idêntica** à regra que existia no código; nenhum perfil ganhou nem perdeu acesso:
+
+| Perfil | Padrão nesses módulos |
+|---|---|
+| `DEV`, `ADMIN` | todas as permissões acima |
+| `RH` | `aptitude:manage`, `evaluations:manage`, `imports:employees`, `positions:assign`, `recruitment:manage` |
+| `APPROVER`, `COMUM` | nenhuma |
+
+Há um teste de equivalência (`legacy-permissions-equivalence.test.ts`) com uma cópia congelada da regra antiga e um teste de ponta a ponta
+(`legacy-modules-access.integration.test.ts`) que chama uma operação de cada módulo com cada perfil.
+
+Observação: a **visibilidade** das importações (quem vê os lotes dos outros) agora segue o **escopo global** da conta, não o nome do perfil.
+Antes só o `DEV` via os lotes de todos; agora qualquer conta com escopo global vê (o `DEV` sempre tem). As regras de **hierarquia** de
+delegação (`role-policy`: quem cria/gerencia quem) continuam por nível de perfil, de propósito: impedem escalada de privilégio e não concedem acesso.
 
 ## Revisão de segurança (etapa final)
 
@@ -132,7 +153,6 @@ em toda rota de escala, afastamento e substituição (um usuário de outra unida
 
 | # | Ponto | Risco | Sugestão |
 |---|---|---|---|
-| 1 | Módulos antigos (cadastros-mestre, aptidão, avaliações, importações, QLP, recrutamento, parâmetros) ainda decidem acesso pelo **nome do perfil** (≈ 66 pontos), não pela matriz editável; o administrador não consegue ajustá-los e DEV/ADMIN têm acesso por título. Estão ocultos no menu, mas as rotas existem. | Médio | Migrar para permissões com uma matriz padrão idêntica à regra atual (nenhuma mudança de comportamento) e uma migração `0020`. |
 | 2 | Não há limite de tentativas por IP (só o bloqueio por conta, 5 erros/15 min). Quem erra 5 vezes uma conta de outra pessoa a bloqueia por 15 min. | Médio | Limitar `/auth/*` por IP. Exige decidir `trustProxy` conforme a hospedagem (Railway/Cloud Run ficam atrás de proxy) e, possivelmente, uma dependência (`@fastify/rate-limit`). |
 | 3 | `GET /betting/*` (proxy de odds do BetFlux) é público e usa a chave da API de terceiros do servidor. | Baixo | Exigir login, ou remover se o módulo não for usado. Fora do escopo do RH. |
 | 4 | O refresh token vale 30 dias e não é rotacionado a cada uso. | Baixo | Rotacionar e detectar reutilização. |

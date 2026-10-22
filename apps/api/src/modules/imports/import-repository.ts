@@ -6,6 +6,7 @@ import { Prisma, type ImportType, type PrismaClient } from "@prisma/client";
 import { HttpError } from "../../lib/http-error.js";
 import type { ImportIssue, ParsedImportRow } from "./import-parser.js";
 import type { EmployeeRepository } from "../employees/employee-repository.js";
+import { hasGlobalScope } from "../identity/authorization.js";
 
 type CreateImportBatchData = {
   type: ImportType;
@@ -25,7 +26,7 @@ export class ImportRepository {
   async list(user: AuthenticatedUser) {
 
     return this.db.importBatch.findMany({
-      where: user.role === "DEV" ? {} : { createdBy: user.id },
+      where: hasGlobalScope(user) ? {} : { createdBy: user.id },
       orderBy: { createdAt: "desc" },
       take: 50
     });
@@ -101,7 +102,7 @@ export class ImportRepository {
       throw new HttpError(404, "IMPORT_NOT_FOUND", "Importacao nao encontrada.");
     }
 
-    if (user.role !== "DEV" && batch.createdBy !== user.id) throw new HttpError(403,"SCOPE_FORBIDDEN","Importação de outro usuário.");
+    if (!hasGlobalScope(user) && batch.createdBy !== user.id) throw new HttpError(403,"SCOPE_FORBIDDEN","Importação de outro usuário.");
     return batch;
   }
 

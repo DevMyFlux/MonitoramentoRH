@@ -3,6 +3,7 @@ import { Prisma, type AuditAction, type EvaluationStatus, type PrismaClient } fr
 import { HttpError } from "../../lib/http-error.js";
 import { canAccessScope } from "../identity/scope-policy.js";
 import { canTransitionEvaluation } from "./evaluation-workflow.js";
+import { can } from "../identity/authorization.js";
 
 type CriterionInput = {
   code: string;
@@ -132,7 +133,7 @@ export class EvaluationRepository {
       operationId: before.employee.operationId,
       unitId: before.employee.operation.unitId
     });
-    if (!canTransitionEvaluation(before.status, status, user.role)) {
+    if (!canTransitionEvaluation(before.status, status, can(user, "evaluations:manage"))) {
       throw new HttpError(
         403,
         "EVALUATION_WORKFLOW_FORBIDDEN",

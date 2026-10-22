@@ -6,10 +6,10 @@ import {
   idParamsSchema
 } from "@my-flux/validation";
 import type { FastifyInstance } from "fastify";
-import { HttpError } from "../../lib/http-error.js";
 import type { UserRepository } from "../users/user-repository.js";
 import { authenticateRequest } from "../auth/authenticate.js";
 import type { EvaluationRepository } from "./evaluation-repository.js";
+import { requirePermission } from "../identity/authorization.js";
 
 export async function registerEvaluationRoutes(
   app: FastifyInstance,
@@ -23,7 +23,7 @@ export async function registerEvaluationRoutes(
 
   app.post("/evaluation-criteria", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageEvaluations(user.role);
+    requirePermission(user, "evaluations:manage");
     return {
       data: await repository.createCriterion(
         user,
@@ -34,7 +34,7 @@ export async function registerEvaluationRoutes(
 
   app.delete("/evaluation-criteria/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageEvaluations(user.role);
+    requirePermission(user, "evaluations:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveCriterion(user, params.id) };
   });
@@ -46,7 +46,7 @@ export async function registerEvaluationRoutes(
 
   app.post("/evaluations", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageEvaluations(user.role);
+    requirePermission(user, "evaluations:manage");
     return {
       data: await repository.createEvaluation(
         user,
@@ -57,7 +57,7 @@ export async function registerEvaluationRoutes(
 
   app.patch("/evaluations/:id/status", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageEvaluations(user.role);
+    requirePermission(user, "evaluations:manage");
     const params = idParamsSchema.parse(request.params);
     const payload = evaluationTransitionInputSchema.parse(request.body);
     return {
@@ -72,7 +72,7 @@ export async function registerEvaluationRoutes(
 
   app.post("/development-plans", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageEvaluations(user.role);
+    requirePermission(user, "evaluations:manage");
     return {
       data: await repository.createDevelopmentPlan(
         user,
@@ -82,10 +82,3 @@ export async function registerEvaluationRoutes(
   });
 }
 
-function assertCanManageEvaluations(role: string) {
-  if (role === "DEV" || role === "ADMIN" || role === "RH") {
-    return;
-  }
-
-  throw new HttpError(403, "FORBIDDEN", "Usuario sem permissao para gerenciar avaliacoes.");
-}

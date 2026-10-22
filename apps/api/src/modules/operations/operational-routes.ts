@@ -12,7 +12,7 @@ import {
 } from "@my-flux/validation";
 import type { UserRepository } from "../users/user-repository.js";
 import { authenticateRequest } from "../auth/authenticate.js";
-import { assertCanManageMasterData } from "./master-data-policy.js";
+import { requirePermission } from "../identity/authorization.js";
 import type { OperationalRepository } from "./operational-repository.js";
 
 export async function registerOperationalRoutes(
@@ -27,13 +27,13 @@ export async function registerOperationalRoutes(
 
   app.post("/companies", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     return { data: await repository.createCompany(user, companyInputSchema.parse(request.body)) };
   });
 
   app.patch("/companies/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return {
       data: await repository.updateCompany(
@@ -46,7 +46,7 @@ export async function registerOperationalRoutes(
 
   app.delete("/companies/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveCompany(user, params.id) };
   });
@@ -58,13 +58,13 @@ export async function registerOperationalRoutes(
 
   app.post("/clients", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     return { data: await repository.createClient(user, clientInputSchema.parse(request.body)) };
   });
 
   app.patch("/clients/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return {
       data: await repository.updateClient(
@@ -77,7 +77,7 @@ export async function registerOperationalRoutes(
 
   app.delete("/clients/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveClient(user, params.id) };
   });
@@ -89,13 +89,13 @@ export async function registerOperationalRoutes(
 
   app.post("/units", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     return { data: await repository.createUnit(user, unitInputSchema.parse(request.body)) };
   });
 
   app.patch("/units/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return {
       data: await repository.updateUnit(
@@ -108,7 +108,7 @@ export async function registerOperationalRoutes(
 
   app.delete("/units/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveUnit(user, params.id) };
   });
@@ -120,13 +120,13 @@ export async function registerOperationalRoutes(
 
   app.post("/contracts", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     return { data: await repository.createContract(user, contractInputSchema.parse(request.body)) };
   });
 
   app.patch("/contracts/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return {
       data: await repository.updateContract(
@@ -139,7 +139,7 @@ export async function registerOperationalRoutes(
 
   app.delete("/contracts/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveContract(user, params.id) };
   });
@@ -151,7 +151,7 @@ export async function registerOperationalRoutes(
 
   app.post("/operations", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     return {
       data: await repository.createOperation(user, operationInputSchema.parse(request.body))
     };
@@ -159,7 +159,7 @@ export async function registerOperationalRoutes(
 
   app.patch("/operations/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return {
       data: await repository.updateOperation(
@@ -172,7 +172,7 @@ export async function registerOperationalRoutes(
 
   app.delete("/operations/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveOperation(user, params.id) };
   });
@@ -184,13 +184,13 @@ export async function registerOperationalRoutes(
 
   app.post("/services", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     return { data: await repository.createService(user, serviceInputSchema.parse(request.body)) };
   });
 
   app.patch("/services/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return {
       data: await repository.updateService(
@@ -203,7 +203,7 @@ export async function registerOperationalRoutes(
 
   app.delete("/services/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveService(user, params.id) };
   });
@@ -215,7 +215,7 @@ export async function registerOperationalRoutes(
 
   app.post("/obligations", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     return {
       data: await repository.createObligation(user, obligationInputSchema.parse(request.body))
     };
@@ -223,7 +223,7 @@ export async function registerOperationalRoutes(
 
   app.patch("/obligations/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return {
       data: await repository.updateObligation(
@@ -236,7 +236,7 @@ export async function registerOperationalRoutes(
 
   app.delete("/obligations/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveObligation(user, params.id) };
   });
@@ -248,7 +248,7 @@ export async function registerOperationalRoutes(
 
   app.post("/functions", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     return {
       data: await repository.createJobFunction(user, jobFunctionInputSchema.parse(request.body))
     };
@@ -256,7 +256,7 @@ export async function registerOperationalRoutes(
 
   app.patch("/functions/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return {
       data: await repository.updateJobFunction(
@@ -269,7 +269,7 @@ export async function registerOperationalRoutes(
 
   app.delete("/functions/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageMasterData(user);
+    requirePermission(user, "masterdata:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveJobFunction(user, params.id) };
   });

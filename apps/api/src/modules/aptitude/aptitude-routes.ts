@@ -7,10 +7,10 @@ import {
 } from "@my-flux/validation";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { HttpError } from "../../lib/http-error.js";
 import type { UserRepository } from "../users/user-repository.js";
 import { authenticateRequest } from "../auth/authenticate.js";
 import type { AptitudeRepository } from "./aptitude-repository.js";
+import { requirePermission } from "../identity/authorization.js";
 
 const employeeQuerySchema = z.object({
   employeeId: z.string().uuid().optional()
@@ -28,7 +28,7 @@ export async function registerAptitudeRoutes(
 
   app.post("/requirements", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageAptitude(user.role);
+    requirePermission(user, "aptitude:manage");
     return {
       data: await repository.createRequirement(
         user,
@@ -39,7 +39,7 @@ export async function registerAptitudeRoutes(
 
   app.patch("/requirements/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageAptitude(user.role);
+    requirePermission(user, "aptitude:manage");
     const params = idParamsSchema.parse(request.params);
     return {
       data: await repository.updateRequirement(
@@ -52,7 +52,7 @@ export async function registerAptitudeRoutes(
 
   app.delete("/requirements/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageAptitude(user.role);
+    requirePermission(user, "aptitude:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveRequirement(user, params.id) };
   });
@@ -65,7 +65,7 @@ export async function registerAptitudeRoutes(
 
   app.post("/documents", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageAptitude(user.role);
+    requirePermission(user, "aptitude:manage");
     return {
       data: await repository.createDocument(user, employeeDocumentInputSchema.parse(request.body))
     };
@@ -73,7 +73,7 @@ export async function registerAptitudeRoutes(
 
   app.delete("/documents/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageAptitude(user.role);
+    requirePermission(user, "aptitude:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveDocument(user, params.id) };
   });
@@ -85,7 +85,7 @@ export async function registerAptitudeRoutes(
 
   app.post("/competency-matrix", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageAptitude(user.role);
+    requirePermission(user, "aptitude:manage");
     return {
       data: await repository.createMatrixItem(
         user,
@@ -96,7 +96,7 @@ export async function registerAptitudeRoutes(
 
   app.delete("/competency-matrix/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageAptitude(user.role);
+    requirePermission(user, "aptitude:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveMatrixItem(user, params.id) };
   });
@@ -109,7 +109,7 @@ export async function registerAptitudeRoutes(
 
   app.post("/employee-competencies", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageAptitude(user.role);
+    requirePermission(user, "aptitude:manage");
     return {
       data: await repository.createEmployeeCompetency(
         user,
@@ -120,7 +120,7 @@ export async function registerAptitudeRoutes(
 
   app.delete("/employee-competencies/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageAptitude(user.role);
+    requirePermission(user, "aptitude:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveEmployeeCompetency(user, params.id) };
   });
@@ -132,10 +132,3 @@ export async function registerAptitudeRoutes(
   });
 }
 
-function assertCanManageAptitude(role: string) {
-  if (role === "DEV" || role === "ADMIN" || role === "RH") {
-    return;
-  }
-
-  throw new HttpError(403, "FORBIDDEN", "Usuario sem permissao para gerenciar aptidao.");
-}
