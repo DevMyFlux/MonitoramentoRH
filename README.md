@@ -52,6 +52,28 @@ O login é sempre exigido. Para entrar sozinho **apenas no servidor de desenvolv
 
 O web padrão fica em `http://localhost:5173` e a API em `http://localhost:3333/api/v1`. O script local usa as portas `5175` e `3334` para permitir manter outro ambiente em execução.
 
+## Segredos de produção e deploy
+
+Em `NODE_ENV=production` o servidor **não sobe** sem `JWT_ACCESS_SECRET` e `JWT_REFRESH_SECRET` próprios (e diferentes entre si); sem eles
+qualquer pessoa conseguiria forjar uma sessão, porque o valor padrão está no repositório. O comando de produção (`pnpm run deploy:start`)
+também roda `prisma migrate deploy` antes de iniciar, então as migrações pendentes são aplicadas no próprio deploy.
+
+1. Gere os segredos na sua máquina (nada é gravado; não commite os valores):
+
+   ```powershell
+   node scripts/generate-jwt-secrets.mjs
+   ```
+
+2. Defina as duas variáveis no serviço de produção, **antes** do deploy:
+   - **Railway:** serviço → _Variables_ → adicione `JWT_ACCESS_SECRET` e `JWT_REFRESH_SECRET` (ou `railway variables --set "NOME=valor"`).
+   - **Google Cloud Run:** crie os segredos no Secret Manager e ligue-os ao serviço, por exemplo
+     `gcloud run services update SERVICO --region REGIAO --update-secrets=JWT_ACCESS_SECRET=jwt-access:latest,JWT_REFRESH_SECRET=jwt-refresh:latest`.
+3. Confirme que o serviço roda com `NODE_ENV=production` (a imagem Docker já define; no Cloud Run, inclua `--set-env-vars NODE_ENV=production`). A trava dos segredos só atua nesse modo.
+4. Faça o deploy. Ao subir, o servidor confere os segredos (ausentes, de exemplo ou iguais entre si impedem o início; menos de 32 caracteres gera aviso).
+
+Trocar os segredos encerra todas as sessões abertas: as pessoas entram de novo. Faça isso também se houver suspeita de vazamento.
+Como o seed demonstrativo não roda em produção, o primeiro Aprovador precisa ser cadastrado por um Administrador na tela de usuários.
+
 ## Qualidade
 
 ```powershell

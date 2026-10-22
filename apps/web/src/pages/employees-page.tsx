@@ -149,6 +149,7 @@ export function EmployeesPage() {
   const [leaveNotes, setLeaveNotes] = useState("");
   const [leaveSaving, setLeaveSaving] = useState(false);
   const [leaveError, setLeaveError] = useState("");
+  const [newLeaveId, setNewLeaveId] = useState<string | null>(null);
 
   const [exporting, setExporting] = useState(false);
   const [newFunctionOpen, setNewFunctionOpen] = useState(false);
@@ -469,6 +470,7 @@ export function EmployeesPage() {
         notes: leaveNotes || null
       });
       setEvents((current) => [created, ...current]);
+      setNewLeaveId(created.id);
       setLeaveTypeId("");
       setLeaveStart("");
       setLeaveEnd("");
@@ -991,6 +993,7 @@ export function EmployeesPage() {
                             employees={employees}
                             canLeaves={canLeaves}
                             canSubstitute={canSubstitute}
+                            autoOpenSubstitution={event.id === newLeaveId}
                             onUpdated={(row) =>
                               setEvents((current) =>
                                 current.map((item) => (item.id === row.id ? { ...item, ...row } : item))

@@ -52,6 +52,8 @@ Quando duas substituições disputam o mesmo dia, **a mais antiga (por criação
 (substituto cobrindo o dia ao lado do próprio plantão) geram o aviso de descanso menor que o do turno
 (`EDIT_REST_TIME_SHORT`), igual a uma edição manual, e ficam registrados na escala.
 
+O plano (`dryRun`) já mostra esses avisos de descanso **antes** de gravar.
+
 Uma configuração que **não cobriria nenhum plantão** é recusada (`SUBSTITUTION_NOTHING_TO_COVER`) com os motivos.
 
 ## Endpoints
@@ -129,6 +131,7 @@ quem/quando/motivo. Nada é excluído. Auditoria em `AuditLog` (`entity: LeaveSu
 - Quem tem `substitutions:manage` consegue, por esta rota, atualizar a escala mesmo sem `schedules:edit` (a mudança é
   consequência da substituição, não uma edição de célula). Se o negócio quiser exigir os dois, é só conferir os dois
   em `substitution-routes.ts`.
+- Na tela de Colaboradores, ao registrar um afastamento o formulário de substituto já abre (continua opcional).
 - Não há ainda uma visão por mês das substituições na tela de Escalas; as coberturas aparecem como `C` na grade e os
   alertas, na lista de pendências.
 
@@ -140,3 +143,7 @@ quem/quando/motivo. Nada é excluído. Auditoria em `AuditLog` (`entity: LeaveSu
   rascunho, idempotência, escala em análise/publicada, dois meses, cancelamento, mudança de datas, cancelamento das
   férias, convivência com a edição manual.
 - `friendly-messages.test.ts` — tradução de todos os códigos novos.
+
+Também cobertos: isolamento entre unidades (um RH de outra unidade não lê, cria, altera, cancela nem aplica; o afastamento também
+é protegido), edição de afastamento sem substituição, criação simultânea de dois substitutos e as rotas de referência que passaram a
+exigir login.

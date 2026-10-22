@@ -767,6 +767,162 @@ describe.skipIf(!hasDatabase)("substituição temporária", () => {
     });
   });
 
+  describe("isolamento entre unidades", () => {
+    /** Um RH que só enxerga OUTRA unidade. */
+    async function outsider() {
+      const f = await createFixture();
+      const user = await createUser({
+        role: "RH",
+        suffix: `${f.suffix}x`,
+        scope: f.scope,
+        createdBy: f.seededAdminId
+      });
+      return api.token(user.email);
+    }
+
+    it("quem é de outra unidade não lê, cria, altera, cancela nem aplica substituições alheias", async () => {
+      const u = await unit();
+      const leaveId = await leave(u.ana, D(10), D(20));
+      const created = await substitute({
+        leaveEventId: leaveId,
+        substituteId: u.bia,
+        rotation: "HABITUAL"
+      });
+      const id = created.body.data.substitution.id as string;
+      const other = await outsider();
+
+      const list = await api.call("GET", `/substitutions?leaveEventId=${leaveId}`, other);
+      expect(list.status).toBe(200);
+      expect(list.body.data).toEqual([]); // não enxerga
+      const all = await api.call("GET", "/substitutions", other);
+      expect(all.body.data.some((s: { id: string }) => s.id === id)).toBe(false);
+
+      const body = { leaveEventId: leaveId, substituteId: u.carlos, rotation: "HABITUAL" };
+      expect((await substitute(body, other)).status).toBe(403);
+      expect((await api.call("PATCH", `/substitutions/${id}`, other, { notes: "x" })).status).toBe(
+        403
+      );
+      expect(
+        (
+          await api.call("POST", `/substitutions/${id}/cancel`, other, {
+            reason: "motivo qualquer"
+          })
+        ).status
+      ).toBe(403);
+      expect((await api.call("POST", `/substitutions/${id}/apply`, other, {})).status).toBe(403);
+
+      // o afastamento também é protegido
+      expect(
+        (await api.call("PATCH", `/calendar/events/${leaveId}`, other, { endsAt: at(D(12)) }))
+          .status
+      ).toBe(403);
+      expect((await api.call("DELETE", `/calendar/events/${leaveId}`, other)).status).toBe(403);
+
+      // nada mudou
+      const row = await prisma.leaveSubstitution.findUniqueOrThrow({ where: { id } });
+      expect(row).toMatchObject({ status: "ACTIVE", substituteId: u.bia, notes: null });
+      const event = await prisma.calendarEvent.findUniqueOrThrow({ where: { id: leaveId } });
+      expect(event.status).toBe("ACTIVE");
+      expect(event.endsAt.toISOString()).toBe(at(D(20)));
+    });
+  });
+
+  describe("afastamento sem substituição e rotas de referência", () => {
+    it("alterar datas ou título de um afastamento sem substituição funciona e não mexe nas escalas", async () => {
+      const u = await unit();
+      const leaveId = await leave(u.ana, D(10), D(20));
+      const v = await generate(u);
+      const before = await prisma.scheduleVersion.findUniqueOrThrow({ where: { id: v.id } });
+
+      const r = await api.call("PATCH", `/calendar/events/${leaveId}`, t.rh, {
+        title: "Férias de outubro",
+        endsAt: at(D(22))
+      });
+      expect(r.status, JSON.stringify(r.body)).toBe(200);
+      expect(r.body.data.title).toBe("Férias de outubro");
+      expect(r.body.data.substitutionSync).toBeUndefined(); // sem substituição, nada a reconciliar
+      const after = await prisma.scheduleVersion.findUniqueOrThrow({ where: { id: v.id } });
+      expect(after.contentHash).toBe(before.contentHash);
+      expect(after.revision).toBe(before.revision);
+
+      const audit = await prisma.auditLog.findFirst({
+        where: { entity: "CalendarEvent", entityId: leaveId, action: "UPDATE" }
+      });
+      expect(audit?.userId).toBe(rh.id);
+      // sem informar nada para alterar, é recusado
+      expect((await api.call("PATCH", `/calendar/events/${leaveId}`, t.rh, {})).status).toBe(400);
+      // o Aprovador não altera afastamentos
+      expect(
+        (await api.call("PATCH", `/calendar/events/${leaveId}`, t.approver, { title: "Outro" }))
+          .status
+      ).toBe(403);
+    });
+
+    it("tipos de afastamento e critérios de avaliação exigem login", async () => {
+      expect((await api.call("GET", "/event-types")).status).toBe(401);
+      expect((await api.call("GET", "/evaluation-criteria")).status).toBe(401);
+      expect((await api.call("GET", "/event-types", t.approver)).status).toBe(200);
+      expect((await api.call("GET", "/evaluation-criteria", t.approver)).status).toBe(200);
+    });
+  });
+
+  describe("plano e simultaneidade", () => {
+    it("o plano (dryRun) já mostra o aviso de descanso dos dias que cobrem ao lado do plantão", async () => {
+      const u = await unit();
+      const leaveId = await leave(u.ana, D(10), D(20));
+      const r = await substitute({
+        leaveEventId: leaveId,
+        substituteId: u.bia,
+        rotation: "HABITUAL",
+        dryRun: true
+      });
+      expect(r.status, JSON.stringify(r.body)).toBe(200);
+      const rest = (
+        r.body.data.plan.issues as Array<{ code: string; severity: string; employeeName: string }>
+      ).find((i) => i.code === "EDIT_REST_TIME_SHORT");
+      expect(rest).toMatchObject({ severity: "warning", employeeName: "Bia Lima" });
+    });
+
+    it("dois substitutos configurados ao mesmo tempo: no fim, cada plantão tem uma única cobertura e reaplicar não muda nada", async () => {
+      const u = await unit();
+      const dani = await prisma.employee.create({
+        data: {
+          operationId: u.operationId,
+          name: "Dani Reis",
+          identifier: "D1",
+          initials: "DAN",
+          status: "ACTIVE",
+          admissionDate: new Date("2020-01-01T00:00:00Z"),
+          shift: "DIURNO",
+          parity: "EVEN"
+        }
+      });
+      const leaveId = await leave(u.ana, D(10), D(20));
+      const v = await generate(u);
+      const [a, b] = await Promise.all([
+        substitute({ leaveEventId: leaveId, substituteId: u.bia, rotation: "HABITUAL" }),
+        substitute({ leaveEventId: leaveId, substituteId: dani.id, rotation: "HABITUAL" })
+      ]);
+      expect([a.status, b.status]).toEqual([200, 200]);
+
+      // reaplica cada uma (a simultaneidade pode ter deixado um mês para conferir) e confere o estado final
+      for (const r of [a, b]) {
+        const id = r.body.data.substitution.id as string;
+        expect((await api.call("POST", `/substitutions/${id}/apply`, t.rh, {})).status).toBe(200);
+      }
+      const bia = withCode(await days(v.id, u.bia), "C");
+      const danis = withCode(await days(v.id, dani.id), "C");
+      expect([...bia, ...danis].sort((x, y) => x - y)).toEqual([11, 13, 15, 17, 19]); // cada dia, uma só pessoa
+      expect(bia.filter((d) => danis.includes(d))).toEqual([]);
+
+      for (const r of [a, b]) {
+        const id = r.body.data.substitution.id as string;
+        const again = await api.call("POST", `/substitutions/${id}/apply`, t.rh, {});
+        expect(again.body.data.schedules[0].outcome).toBe("UNCHANGED");
+      }
+    });
+  });
+
   describe("convivência com a edição manual", () => {
     it("o ajuste manual de um dia coberto vale sobre a substituição e não é desfeito ao reaplicar", async () => {
       const u = await unit();

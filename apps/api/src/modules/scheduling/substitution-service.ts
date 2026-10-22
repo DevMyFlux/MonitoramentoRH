@@ -14,19 +14,20 @@
  *     a configuração fica com a situação "cancelada" e quem/quando/por quê.
  */
 import { randomUUID } from "node:crypto";
-import { groupPendencies, type IssueGroup } from "@my-flux/shared";
+import { groupPendencies, type IssueGroup, type SchedulePendencyLike } from "@my-flux/shared";
 import type { AuthenticatedUser } from "@my-flux/types";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { HttpError } from "../../lib/http-error.js";
 import { json, operationWhere, scopedOperation } from "../identity/access.js";
 import {
+  evaluateCell,
   loadScheduleContext,
   prepareById,
   ruleCodeFor,
   type ContextSubstitution
 } from "./schedule-context.js";
 import { editScheduleCells } from "./schedule-edit-service.js";
-import { gridRows, type EditChange } from "./schedule-validation.js";
+import { gridRows, validateCell, type EditChange } from "./schedule-validation.js";
 import { isEditableInPlace } from "./schedule-workflow.js";
 import { coverageOf, leaveDate, type SubstitutionCellRef } from "./substitution-context.js";
 import { eachDate, toPendency } from "./substitution-planner.js";
@@ -371,7 +372,7 @@ async function planConfig(
   const from = leaveDate(candidate.leaveEvent.startsAt);
   const to = leaveDate(candidate.leaveEvent.endsAt);
   const months: PlanMonth[] = [];
-  const issues: Array<ReturnType<typeof toPendency>> = [];
+  const issues: SchedulePendencyLike[] = [];
   for (const month of monthsBetween(from, to)) {
     const ctx = await loadScheduleContext(db, user, candidate.operationId, month);
     // a configuração candidata entra no lugar da gravada (se houver), mantendo a ordem de prioridade por criação
@@ -388,6 +389,7 @@ async function planConfig(
       skippedByRotation: planned.skippedByRotation
     });
     issues.push(...planned.issues.map(toPendency));
+    issues.push(...restWarnings(ctx, candidate.substituteId, planned.coveredDates));
   }
   const sum = (pick: (m: PlanMonth) => number) => months.reduce((total, m) => total + pick(m), 0);
   const demandCount = sum((m) => m.demandDates.length);
@@ -401,6 +403,31 @@ async function planConfig(
     uncoveredCount: demandCount - coveredCount - skippedByRotationCount,
     issues: groupPendencies(issues)
   };
+}
+
+/**
+ * Avisos das regras de edição para os dias que o substituto vai cobrir (ex.: descanso menor que o do turno quando o
+ * dia cobre ao lado do próprio plantão). São os mesmos que a escala guarda depois de gravar; aqui aparecem ANTES.
+ */
+function restWarnings(
+  ctx: Awaited<ReturnType<typeof loadScheduleContext>>,
+  substituteId: string,
+  coveredDates: string[]
+): SchedulePendencyLike[] {
+  const prep = prepareById(ctx, substituteId);
+  if (!prep || !coveredDates.length) return [];
+  const coverage = coverageOf(ctx);
+  const days = Array.from({ length: ctx.dayCount }, (_, i) => {
+    const date = `${ctx.month}-${String(i + 1).padStart(2, "0")}`;
+    const key = cellKey(substituteId, date);
+    return (
+      evaluateCell(prep, date, ctx.overrideByKey.get(key), undefined, coverage.cells.has(key))
+        ?.code ?? ""
+    );
+  });
+  return coveredDates.flatMap((date) =>
+    validateCell(prep, date, "C", days, { editTime: false, hasReason: true })
+  );
 }
 
 /** Recusa a configuração que não cobriria nenhum plantão — e diz por quê, em vez de gravar algo inútil. */

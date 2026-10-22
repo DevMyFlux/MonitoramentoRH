@@ -115,3 +115,27 @@ Ações críticas criam registros em `AuditLog` com usuário, perfil, entidade, 
 
 QLP, recrutamento, avaliações, aptidão, importações, parâmetros e relatórios continuam decididos por lista de perfis no código
 (estão ocultos no menu). Quem não está na lista — inclusive o novo Aprovador — é negado por padrão. Migrá-los para permissões é o próximo passo natural.
+
+## Revisão de segurança (etapa final)
+
+Revisão das quatro frentes (acesso, mensagens, edição/aprovação e substituição). Inventário de todas as rotas da API, leitura do
+núcleo de autenticação e do fluxo de aprovação, e testes de isolamento entre unidades.
+
+**Confere e está coberto por testes:** senhas e tokens de sessão guardados só com hash; bloqueio por tentativas sem revelar se o
+e-mail existe; usuário desativado ou com perfil trocado perde o acesso na hora (o usuário e as permissões são lidos do banco a cada
+chamada); aprovação presa ao conteúdo e à revisão (aprovação antiga não vale para versão diferente); escopo por unidade conferido
+em toda rota de escala, afastamento e substituição (um usuário de outra unidade não lê nem altera); permissão conferida no servidor.
+
+**Ajustado nesta revisão:** `GET /event-types` e `GET /evaluation-criteria` agora exigem login (eram públicos).
+
+**Pontos em aberto (decisão do negócio ou de infraestrutura):**
+
+| # | Ponto | Risco | Sugestão |
+|---|---|---|---|
+| 1 | Módulos antigos (cadastros-mestre, aptidão, avaliações, importações, QLP, recrutamento, parâmetros) ainda decidem acesso pelo **nome do perfil** (≈ 66 pontos), não pela matriz editável; o administrador não consegue ajustá-los e DEV/ADMIN têm acesso por título. Estão ocultos no menu, mas as rotas existem. | Médio | Migrar para permissões com uma matriz padrão idêntica à regra atual (nenhuma mudança de comportamento) e uma migração `0020`. |
+| 2 | Não há limite de tentativas por IP (só o bloqueio por conta, 5 erros/15 min). Quem erra 5 vezes uma conta de outra pessoa a bloqueia por 15 min. | Médio | Limitar `/auth/*` por IP. Exige decidir `trustProxy` conforme a hospedagem (Railway/Cloud Run ficam atrás de proxy) e, possivelmente, uma dependência (`@fastify/rate-limit`). |
+| 3 | `GET /betting/*` (proxy de odds do BetFlux) é público e usa a chave da API de terceiros do servidor. | Baixo | Exigir login, ou remover se o módulo não for usado. Fora do escopo do RH. |
+| 4 | O refresh token vale 30 dias e não é rotacionado a cada uso. | Baixo | Rotacionar e detectar reutilização. |
+| 5 | A trava de segredos JWT só atua com `NODE_ENV=production`. | Médio | Confirmar que o serviço de produção define `NODE_ENV=production` (a imagem Docker já define; em Cloud Run/buildpacks, defina explicitamente). |
+| 6 | Quem tem `schedules:submit` e `schedules:approve` pode aprovar a própria escala (não há separação de funções). | Baixo | Se o negócio exigir, impedir que quem enviou aprove. |
+

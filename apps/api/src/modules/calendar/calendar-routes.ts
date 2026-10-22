@@ -21,7 +21,10 @@ export async function registerCalendarRoutes(
   repository: CalendarRepository,
   db: PrismaClient
 ): Promise<void> {
-  app.get("/event-types", async () => ({ data: await repository.listEventTypes() }));
+  app.get("/event-types", async (request) => {
+    await authenticateRequest(request, users); // dado de referência, mas só para quem está logado
+    return { data: await repository.listEventTypes() };
+  });
 
   app.post("/event-types", async (request) => {
     const user = await authenticateRequest(request, users);

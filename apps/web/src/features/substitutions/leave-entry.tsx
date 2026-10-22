@@ -158,6 +158,7 @@ export function LeaveEntry({
   employees,
   canLeaves,
   canSubstitute,
+  autoOpenSubstitution = false,
   onUpdated,
   onRemoved,
   notify
@@ -167,6 +168,8 @@ export function LeaveEntry({
   employees: Row[];
   canLeaves: boolean;
   canSubstitute: boolean;
+  /** Afastamento recém-registrado: já abre o formulário de substituto (que continua opcional). */
+  autoOpenSubstitution?: boolean;
   onUpdated: (row: Row) => void;
   onRemoved: (id: string) => void;
   notify: (message: string) => void;
@@ -425,6 +428,7 @@ export function LeaveEntry({
 
         {canSubstitute && (
           <SubstitutionForm
+            startOpen={autoOpenSubstitution}
             leaveEventId={String(event.id)}
             leave={{ from, to }}
             titular={titular}

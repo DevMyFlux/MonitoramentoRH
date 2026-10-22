@@ -16,7 +16,10 @@ export async function registerEvaluationRoutes(
   users: UserRepository,
   repository: EvaluationRepository
 ): Promise<void> {
-  app.get("/evaluation-criteria", async () => ({ data: await repository.listCriteria() }));
+  app.get("/evaluation-criteria", async (request) => {
+    await authenticateRequest(request, users); // dado de referência, mas só para quem está logado
+    return { data: await repository.listCriteria() };
+  });
 
   app.post("/evaluation-criteria", async (request) => {
     const user = await authenticateRequest(request, users);
