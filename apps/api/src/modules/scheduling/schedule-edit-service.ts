@@ -25,6 +25,7 @@ import {
   type EditChange,
   type EditIssue
 } from "./schedule-validation.js";
+import { coverageCellRefs, coverageOf, type SubstitutionCellRef } from "./substitution-context.js";
 import { isEditableInPlace } from "./schedule-workflow.js";
 import type {
   EmployeeScheduleMetrics,
@@ -37,12 +38,20 @@ export type EditInput = {
   changes: EditChange[];
   justification?: string | null | undefined;
   dryRun?: boolean | undefined;
+  /**
+   * A alteração vem do sistema (reconciliação de uma substituição), não de um ajuste manual do usuário: não cria
+   * "ajuste manual" (ScheduleDayOverride), dispensa a justificativa por célula (vale a do histórico) e atualiza o
+   * registro das células de Cobertura. Todo o resto — validação, versão, aprovação, histórico — é igual.
+   */
+  system?: { origin: "SUBSTITUTION" } | undefined;
 };
 
 type StoredResult = {
   grid?: ScheduleGridData;
   pendencies?: EmployeeSchedulePendency[];
   metrics?: EmployeeScheduleMetrics;
+  /** Células de Cobertura (C) postas por substituições (para poder desfazê-las). */
+  substitutionCells?: SubstitutionCellRef[];
 };
 
 export type EditOutcome = {
@@ -110,11 +119,17 @@ export async function editScheduleCells(
   // O que está na grade e o que a regra colocaria em cada célula pedida (só dias válidos do mês). Vai na resposta,
   // inclusive na recusa, para a tela saber se o ajuste foge do rodízio (e então exige justificativa).
   const ruleOf = new Map<string, string>();
+  // Dia em que uma substituição pôs o colaborador de Cobertura (C): é o "previsto" desse dia enquanto ela valer.
+  const trackedCoverage = new Set(
+    (stored.substitutionCells ?? []).map((c) => cellKey(c.employeeId, c.date))
+  );
   const cells: EditOutcome["cells"] = input.changes.flatMap((c) => {
     const employee = ctx.employees.find((e) => e.id === c.employeeId);
     const day = Number(c.date.slice(8, 10));
     if (!employee || !c.date.startsWith(`${month}-`) || day < 1 || day > ctx.dayCount) return [];
-    const rule = ruleCodeFor(prepareEmployee(ctx, employee), c.date);
+    const rule = trackedCoverage.has(cellKey(c.employeeId, c.date))
+      ? "C"
+      : ruleCodeFor(prepareEmployee(ctx, employee), c.date);
     ruleOf.set(cellKey(c.employeeId, c.date), rule);
     return [
       {
@@ -132,6 +147,8 @@ export async function editScheduleCells(
   const issues = validateChanges(ctx, stored.grid, edited, {
     justification: input.justification ?? null
   });
+  // (o ajuste de um dia coberto por substituição para outro código precisa ficar registrado como ajuste manual,
+  // mesmo que o código coincida com o do rodízio — senão a próxima reconciliação desfaria a escolha da pessoa)
   const blocking = blockingEditIssues(issues);
   if (blocking.length) {
     const groups = friendly(blocking);
@@ -173,7 +190,11 @@ export async function editScheduleCells(
   const toSet: EditChange[] = [];
   for (const change of effective) {
     const key = cellKey(change.employeeId, change.date);
-    if (change.code === ruleOf.get(key)) {
+    if (input.system) continue; // reconciliação do sistema: não mexe nos ajustes manuais
+    const followsRule = trackedCoverage.has(key)
+      ? change.code === "C"
+      : change.code === ruleOf.get(key);
+    if (followsRule) {
       finalOverrides.delete(key);
       toArchive.push(change);
     } else {
@@ -183,10 +204,20 @@ export async function editScheduleCells(
   }
   const newGrid = applyChanges(stored.grid, effective);
   const recomputed = recomputeResult(ctx, newGrid, finalOverrides);
+  // Registro das células de Cobertura da grade: o do sistema vem do plano; numa edição manual, só perde as células
+  // que a pessoa mudou para outro código (o plano não entra aqui — a grade só ganha cobertura na reconciliação).
+  const editedAway = new Set(
+    effective.filter((c) => c.code !== "C").map((c) => cellKey(c.employeeId, c.date))
+  );
   const newResult = {
     grid: newGrid,
     pendencies: recomputed.pendencies,
-    metrics: recomputed.metrics
+    metrics: recomputed.metrics,
+    substitutionCells: input.system
+      ? coverageCellRefs(coverageOf(ctx))
+      : (stored.substitutionCells ?? []).filter(
+          (c) => !editedAway.has(cellKey(c.employeeId, c.date))
+        )
   };
   const newHash = contentHashOf(json(newResult));
   const names = new Map(ctx.employees.map((e) => [e.id, e.name]));
@@ -313,7 +344,8 @@ export async function editScheduleCells(
               revision,
               contentHash: newHash,
               changes: changeLog,
-              warnings: warnings.length
+              warnings: warnings.length,
+              ...(input.system ? { origin: input.system.origin } : {})
             } as unknown as Prisma.InputJsonObject,
             reason: justification,
             createdBy: user.id
@@ -349,7 +381,8 @@ export async function editScheduleCells(
                   revision: 1,
                   contentHash: newHash,
                   changes: changeLog,
-                  warnings: warnings.length
+                  warnings: warnings.length,
+                  ...(input.system ? { origin: input.system.origin } : {})
                 } as unknown as Prisma.InputJsonObject,
                 reason:
                   justification ??

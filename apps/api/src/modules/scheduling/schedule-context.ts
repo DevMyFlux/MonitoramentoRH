@@ -27,6 +27,15 @@ export type ContextEmployee = Prisma.EmployeeGetPayload<{
   };
 }>;
 
+/** Substituição ativa que toca o mês (com o afastamento a que está vinculada e o nome das pessoas). */
+export type ContextSubstitution = Prisma.LeaveSubstitutionGetPayload<{
+  include: {
+    leaveEvent: true;
+    titular: { select: { name: true } };
+    substitute: { select: { name: true } };
+  };
+}>;
+
 export type ScheduleContext = {
   operation: Awaited<ReturnType<typeof scopedOperation>>;
   month: string;
@@ -41,6 +50,8 @@ export type ScheduleContext = {
   competencyMatrix: Prisma.CompetencyMatrixItemGetPayload<object>[];
   overrides: ScheduleDayOverride[];
   overrideByKey: Map<string, ScheduleDayOverride>;
+  /** Substituições ativas (em ordem de criação) cujo afastamento toca este mês; o plano sai de `coverageOf(ctx)`. */
+  substitutionRows: ContextSubstitution[];
 };
 
 export function monthRange(month: string): {
@@ -144,6 +155,21 @@ export async function loadScheduleContext(
     overrides.map((o) => [`${o.employeeId}|${o.date.toISOString().slice(0, 10)}`, o])
   );
 
+  // Substituições ativas: só valem enquanto o afastamento a que estão ligadas continuar ativo.
+  const substitutionRows = await db.leaveSubstitution.findMany({
+    where: {
+      operationId,
+      status: "ACTIVE",
+      leaveEvent: { status: "ACTIVE", startsAt: { lte: last }, endsAt: { gte: first } }
+    },
+    include: {
+      leaveEvent: true,
+      titular: { select: { name: true } },
+      substitute: { select: { name: true } }
+    },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }]
+  });
+
   return {
     operation,
     month,
@@ -157,7 +183,8 @@ export async function loadScheduleContext(
     documentRequirements,
     competencyMatrix,
     overrides,
-    overrideByKey
+    overrideByKey,
+    substitutionRows
   };
 }
 
@@ -227,6 +254,24 @@ export function prepareEmployee(ctx: ScheduleContext, employee: ContextEmployee)
   };
 }
 
+const preparedCache = new WeakMap<ScheduleContext, Map<string, PreparedEmployee>>();
+
+/** Colaborador preparado (turno, afastamentos, aptidão), calculado uma vez por contexto; `undefined` se não está nele. */
+export function prepareById(
+  ctx: ScheduleContext,
+  employeeId: string
+): PreparedEmployee | undefined {
+  let cache = preparedCache.get(ctx);
+  if (!cache) preparedCache.set(ctx, (cache = new Map()));
+  const hit = cache.get(employeeId);
+  if (hit) return hit;
+  const employee = ctx.employees.find((e) => e.id === employeeId);
+  if (!employee) return undefined;
+  const prep = prepareEmployee(ctx, employee);
+  cache.set(employeeId, prep);
+  return prep;
+}
+
 export function availabilityOn(prep: PreparedEmployee, date: string): EmployeeAvailabilityResult {
   return employeeAvailability({
     employee: prep.profile,
@@ -249,18 +294,23 @@ export type CellEvaluation = {
   isWork: boolean;
   pendency: CellPendency | null;
   availability: EmployeeAvailabilityResult;
+  /** O `C` desta célula vem de uma substituição (e não de um ajuste manual): o dia do titular já foi contado como necessário. */
+  substitution: boolean;
 };
 
 /**
  * Avalia UMA célula. Sem `storedCode`, deriva o código pelas regras (é o que a geração faz); com `storedCode`, aceita o
  * código que já está na grade e só refaz a contabilidade (pendência, necessário/coberto) — é o que a revalidação faz.
  * Ajustes manuais (override) valem sobre tudo e não geram pendência automática. `null` = célula em branco que não conta.
+ * `coverage` = uma substituição planejou a Cobertura (`C`) neste dia para esta pessoa: o planejador já conferiu a
+ * disponibilidade, então o dia de folga do rodízio não vira pendência. O ajuste manual continua valendo sobre ela.
  */
 export function evaluateCell(
   prep: PreparedEmployee,
   date: string,
   override: Pick<ScheduleDayOverride, "code"> | undefined,
-  storedCode?: string
+  storedCode?: string,
+  coverage = false
 ): CellEvaluation | null {
   if (!prep.configured) return null;
   const availability = availabilityOn(prep, date);
@@ -278,11 +328,15 @@ export function evaluateCell(
   } else if (storedCode !== undefined) {
     code = storedCode;
     if (afterTermination && code === "") return null;
-    if (code === "" && notYetAdmitted && availability.scheduled) {
+    if (coverage && code === "C") {
+      // Cobertura de substituição: válida por construção (ver o planejador).
+    } else if (code === "" && notYetAdmitted && availability.scheduled) {
       pendency = { reasonCodes: ["FUTURE_ADMISSION"] };
     } else if (isWorkCode(code) && !availability.available) {
       pendency = pendencyOf(availability);
     }
+  } else if (coverage) {
+    code = "C";
   } else if (afterTermination) {
     // Desligamento (programado ou efetivo): after the last day of work the person is no
     // longer on the team — blank day, no pendency, and not counted as required coverage.
@@ -312,7 +366,8 @@ export function evaluateCell(
     scheduled: availability.scheduled,
     isWork: isWorkCode(code),
     pendency,
-    availability
+    availability,
+    substitution: coverage && !override && code === "C"
   };
 }
 

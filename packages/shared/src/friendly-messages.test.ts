@@ -272,3 +272,112 @@ describe("friendlyFieldIssue", () => {
     ).toBe("E-mail: e-mail inválido; Senha: campo obrigatório");
   });
 });
+
+describe("substituição temporária", () => {
+  const codes = [
+    "SUBSTITUTION_SUBSTITUTE_NOT_IN_SCHEDULE",
+    "SUBSTITUTION_SUBSTITUTE_NOT_CONFIGURED",
+    "SUBSTITUTION_SUBSTITUTE_NOT_ACTIVE",
+    "SUBSTITUTION_SUBSTITUTE_ON_LEAVE",
+    "SUBSTITUTION_SUBSTITUTE_APTITUDE",
+    "SUBSTITUTION_SUBSTITUTE_ON_DUTY",
+    "SUBSTITUTION_SUBSTITUTE_ALREADY_COVERING",
+    "SUBSTITUTION_DAY_ALREADY_COVERED",
+    "SUBSTITUTION_MANUAL_ADJUSTMENT"
+  ];
+
+  it("todo código de cobertura tem tradução, nomeia titular e substituto e nunca mostra o código ao usuário", () => {
+    for (const code of codes) {
+      const issue = describeIssue(code, {
+        employeeName: "Ana Souza",
+        otherName: "Bia Lima",
+        dates: ["2026-10-11", "2026-10-13"]
+      });
+      expect(issue.known, code).toBe(true);
+      expect(issue.code).toBe(code); // o código técnico segue preservado
+      const text = `${issue.title} ${issue.detail}`;
+      expect(text, code).toContain("Bia Lima");
+      expect(text, code).not.toMatch(/SUBSTITUTION_|undefined/);
+      expect(issue.title + issue.detail, code).toMatch(/Ana Souza|Bia Lima/);
+    }
+  });
+
+  it("os conflitos que deixam um plantão sem cobertura são alertas (não impedem o envio) e dizem o que fazer", () => {
+    for (const code of codes.filter((c) => !/ALREADY_COVERED|MANUAL/.test(c))) {
+      const issue = describeIssue(code, {
+        employeeName: "Ana",
+        otherName: "Bia",
+        date: "2026-10-11"
+      });
+      expect(issue.severity, code).toBe("warning");
+      expect(issue.action, code).toBeTruthy();
+    }
+    expect(describeIssue("SUBSTITUTION_DAY_ALREADY_COVERED").severity).toBe("info");
+    expect(describeIssue("SUBSTITUTION_MANUAL_ADJUSTMENT").severity).toBe("info");
+  });
+
+  it("explica o conflito de rodízio em linguagem de RH", () => {
+    const issue = describeIssue("SUBSTITUTION_SUBSTITUTE_ON_DUTY", {
+      employeeName: "Ana",
+      otherName: "Carlos",
+      date: "2026-10-11"
+    });
+    expect(issue.title).toBe("Plantão de Ana sem cobertura");
+    expect(issue.detail).toBe(
+      "Carlos já trabalha na data de 11/10/2026 pelo próprio rodízio e não pode assumir dois plantões ao mesmo tempo."
+    );
+    expect(issue.action).toContain("rodízio específico");
+  });
+
+  it("o agrupamento mantém o substituto: o mesmo problema com substitutos diferentes não se mistura", () => {
+    const groups = groupPendencies([
+      {
+        employeeId: "a",
+        employeeName: "Ana",
+        otherName: "Bia",
+        date: "2026-10-11",
+        reasonCodes: ["SUBSTITUTION_SUBSTITUTE_ON_DUTY"]
+      },
+      {
+        employeeId: "a",
+        employeeName: "Ana",
+        otherName: "Bia",
+        date: "2026-10-13",
+        reasonCodes: ["SUBSTITUTION_SUBSTITUTE_ON_DUTY"]
+      },
+      {
+        employeeId: "a",
+        employeeName: "Ana",
+        otherName: "Carlos",
+        date: "2026-10-15",
+        reasonCodes: ["SUBSTITUTION_SUBSTITUTE_ON_DUTY"]
+      }
+    ]);
+    expect(groups).toHaveLength(2);
+    const bia = groups.find((g) => g.detail.startsWith("Bia"))!;
+    expect(bia.count).toBe(2);
+    expect(bia.detail).toContain("nas datas de 11/10 e 13/10/2026");
+    expect(groups.find((g) => g.detail.startsWith("Carlos"))!.count).toBe(1);
+  });
+
+  it("os erros de API da substituição têm mensagem própria e ação", () => {
+    for (const code of [
+      "SUBSTITUTION_NOT_FOUND",
+      "SUBSTITUTION_SAME_PERSON",
+      "SUBSTITUTE_OUT_OF_UNIT",
+      "SUBSTITUTION_PARITY_REQUIRED",
+      "SUBSTITUTION_DATES_OUTSIDE_LEAVE",
+      "SUBSTITUTION_NOTHING_TO_COVER",
+      "SUBSTITUTION_DUPLICATE",
+      "SUBSTITUTION_ALREADY_CANCELLED",
+      "SUBSTITUTION_CANCEL_REASON_REQUIRED",
+      "SUBSTITUTION_LEAVE_INVALID",
+      "SUBSTITUTION_LEAVE_INACTIVE",
+      "EVENT_DATES_INVALID"
+    ]) {
+      const error = describeApiError({ code, status: 409 });
+      expect(error.known, code).toBe(true);
+      expect(error.message, code).not.toMatch(/SUBSTITUTION_|_/);
+    }
+  });
+});

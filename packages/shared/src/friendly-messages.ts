@@ -85,6 +85,7 @@ export function describeWhen(c: IssueContext): string {
 }
 
 const name = (c: IssueContext, fallback = "o colaborador") => c.employeeName?.trim() || fallback;
+const other = (c: IssueContext) => c.otherName?.trim() || "O substituto";
 const nameDe = (c: IssueContext) => `de ${c.employeeName?.trim() || "um colaborador"}`;
 const detailsText = (c: IssueContext, fallback: string) =>
   c.details?.filter(Boolean).join(" ") || fallback;
@@ -258,6 +259,71 @@ const issueCatalog = {
     detail: (c) =>
       `${name(c, "O colaborador")} trabalharia ${describeWhen(c)} pelo rodízio; com a folga, a cobertura desse dia diminui.`
   },
+  // ── Substituição temporária (o titular é `employeeName`; o substituto, `otherName`) ──────────────
+  SUBSTITUTION_SUBSTITUTE_NOT_IN_SCHEDULE: {
+    severity: "warning",
+    title: (c) => `Plantão ${nameDe(c)} sem cobertura`,
+    detail: (c) =>
+      `${other(c)} não faz parte da escala deste mês, então não pôde cobrir ${describeWhen(c)}.`,
+    action: () => "Confira se o substituto está ativo na unidade ou escolha outro substituto."
+  },
+  SUBSTITUTION_SUBSTITUTE_NOT_CONFIGURED: {
+    severity: "warning",
+    title: (c) => `Plantão ${nameDe(c)} sem cobertura`,
+    detail: (c) =>
+      `${other(c)} não tem turno ou rodízio configurado, então não pôde cobrir ${describeWhen(c)}.`,
+    action: (c) => `Complete o cadastro de ${other(c)} (turno e rodízio) e confirme a substituição.`
+  },
+  SUBSTITUTION_SUBSTITUTE_NOT_ACTIVE: {
+    severity: "warning",
+    title: (c) => `Plantão ${nameDe(c)} sem cobertura`,
+    detail: (c) =>
+      `${other(c)} não estava ativo ${describeWhen(c)} (cadastro inativo, antes da admissão ou depois do desligamento).`,
+    action: () => "Escolha outro substituto para esses dias."
+  },
+  SUBSTITUTION_SUBSTITUTE_ON_LEAVE: {
+    severity: "warning",
+    title: (c) => `Plantão ${nameDe(c)} sem cobertura`,
+    detail: (c) =>
+      `${other(c)} está afastado ${describeWhen(c)}${c.details?.length ? ` (${c.details.join(" ")})` : ""} e não pode cobrir.`,
+    action: () => "Defina outro substituto para esses dias ou ajuste as datas do afastamento."
+  },
+  SUBSTITUTION_SUBSTITUTE_APTITUDE: {
+    severity: "warning",
+    title: (c) => `Plantão ${nameDe(c)} sem cobertura`,
+    detail: (c) =>
+      detailsText(c, `${other(c)} não está apto a assumir esse plantão ${describeWhen(c)}.`),
+    action: (c) =>
+      `Regularize os documentos/competências de ${other(c)} ou escolha outro substituto.`
+  },
+  SUBSTITUTION_SUBSTITUTE_ON_DUTY: {
+    severity: "warning",
+    title: (c) => `Plantão ${nameDe(c)} sem cobertura`,
+    detail: (c) =>
+      `${other(c)} já trabalha ${describeWhen(c)} pelo próprio rodízio e não pode assumir dois plantões ao mesmo tempo.`,
+    action: () =>
+      "Escolha um substituto de outro rodízio ou use o rodízio específico (Par/Ímpar) para cobrir os outros dias."
+  },
+  SUBSTITUTION_SUBSTITUTE_ALREADY_COVERING: {
+    severity: "warning",
+    title: (c) => `Plantão ${nameDe(c)} sem cobertura`,
+    detail: (c) =>
+      `${other(c)} já cobre outro colaborador ${describeWhen(c)}; a primeira substituição cadastrada tem prioridade.`,
+    action: () => "Defina outro substituto para esses dias."
+  },
+  SUBSTITUTION_DAY_ALREADY_COVERED: {
+    severity: "info",
+    title: (c) => `Plantão ${nameDe(c)} já tem cobertura`,
+    detail: (c) =>
+      `O plantão ${describeWhen(c)} já está coberto por outra substituição; ${other(c)} não foi escalado para ele.`
+  },
+  SUBSTITUTION_MANUAL_ADJUSTMENT: {
+    severity: "info",
+    title: (c) => `Dia de ${other(c)} ajustado manualmente`,
+    detail: (c) =>
+      `O dia de ${other(c)} ${describeWhen(c)} tem um ajuste manual, que vale sobre a substituição; por isso o plantão ${nameDe(c)} não foi coberto por essa pessoa.`,
+    action: () => "Desfaça o ajuste manual se a cobertura for desejada."
+  },
   NO_APPLICABLE_REQUIREMENTS: {
     severity: "info",
     title: (c) => `Sem requisitos aplicáveis ${nameDe(c)}`,
@@ -327,6 +393,8 @@ export type SchedulePendencyLike = {
   date: string;
   reasonCodes: string[];
   details?: Array<{ code: string; message: string }>;
+  /** Outra pessoa envolvida (ex.: o substituto). */
+  otherName?: string;
 };
 
 export type IssueGroup = FriendlyIssue & {
@@ -342,13 +410,20 @@ export type IssueGroup = FriendlyIssue & {
 export function groupPendencies(pendencies: SchedulePendencyLike[]): IssueGroup[] {
   const groups = new Map<
     string,
-    { employeeName: string; code: string; dates: string[]; details: Set<string> }
+    {
+      employeeName: string;
+      otherName: string | null;
+      code: string;
+      dates: string[];
+      details: Set<string>;
+    }
   >();
   for (const p of pendencies) {
     for (const code of p.reasonCodes) {
-      const key = `${p.employeeId ?? p.employeeName}|${code}`;
+      const key = `${p.employeeId ?? p.employeeName}|${p.otherName ?? ""}|${code}`;
       const group = groups.get(key) ?? {
         employeeName: p.employeeName,
+        otherName: p.otherName ?? null,
         code,
         dates: [],
         details: new Set<string>()
@@ -363,6 +438,7 @@ export function groupPendencies(pendencies: SchedulePendencyLike[]): IssueGroup[
       const dates = [...new Set(g.dates)].sort();
       const issue = describeIssue(g.code, {
         employeeName: g.employeeName,
+        otherName: g.otherName,
         dates,
         details: [...g.details]
       });
@@ -554,6 +630,54 @@ const apiErrorCatalog: Record<string, ApiEntry> = {
   SCHEDULE_SUPERSEDED: {
     message: (original) => original || "Esta versão foi substituída por uma mais recente.",
     action: "Atualize a página e trabalhe na versão mais recente."
+  },
+  SUBSTITUTION_NOT_FOUND: { message: "A substituição não foi encontrada.", action: notFoundAction },
+  SUBSTITUTION_LEAVE_INVALID: {
+    message: (original) =>
+      original || "Só é possível configurar substituição para um afastamento de um colaborador.",
+    action: "Escolha um afastamento (férias, licença, atestado...) que já esteja cadastrado."
+  },
+  SUBSTITUTION_SAME_PERSON: {
+    message: "O substituto precisa ser uma pessoa diferente do colaborador afastado.",
+    action: "Escolha outro colaborador como substituto."
+  },
+  SUBSTITUTE_OUT_OF_UNIT: {
+    message: "O substituto precisa trabalhar na mesma unidade do colaborador afastado.",
+    action: "Escolha um colaborador da mesma unidade."
+  },
+  SUBSTITUTION_PARITY_REQUIRED: {
+    message: "No rodízio específico é preciso escolher Par ou Ímpar.",
+    action: "Escolha Par ou Ímpar, ou use o rodízio habitual do substituto."
+  },
+  SUBSTITUTION_DATES_OUTSIDE_LEAVE: {
+    message: (original) =>
+      original || "Algumas datas escolhidas estão fora do período do afastamento.",
+    action: "Escolha apenas datas dentro do período do afastamento."
+  },
+  SUBSTITUTION_NOTHING_TO_COVER: {
+    message: (original) =>
+      original || "Com essa configuração nenhum plantão do afastado pôde ser coberto.",
+    action: "Veja os motivos indicados e escolha outro substituto, outro rodízio ou outras datas."
+  },
+  SUBSTITUTION_DUPLICATE: {
+    message: "Esse substituto já está configurado para este afastamento.",
+    action: "Edite a configuração que já existe em vez de criar outra."
+  },
+  SUBSTITUTION_ALREADY_CANCELLED: {
+    message: "Esta substituição já foi cancelada e não pode mais ser alterada.",
+    action: "Cadastre uma nova substituição, se necessário."
+  },
+  SUBSTITUTION_LEAVE_INACTIVE: {
+    message: "O afastamento desta substituição foi cancelado.",
+    action: "Cadastre o afastamento novamente antes de configurar a substituição."
+  },
+  SUBSTITUTION_CANCEL_REASON_REQUIRED: {
+    message: "Para cancelar uma substituição é preciso informar o motivo.",
+    action: "Explique por que a substituição está sendo cancelada (mínimo de 5 caracteres)."
+  },
+  EVENT_DATES_INVALID: {
+    message: "A data final do afastamento não pode ser anterior à data inicial.",
+    action: "Corrija as datas e tente de novo."
   },
   SCHEDULE_REVISION_CONFLICT: {
     message: (original) => original || "Esta escala foi alterada por outra pessoa.",

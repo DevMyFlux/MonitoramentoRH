@@ -122,7 +122,8 @@ function fakeDb(
           date: new Date(`${o.date}T00:00:00Z`),
           status: "ACTIVE"
         }))
-    }
+    },
+    leaveSubstitution: { findMany: async () => [] }
   } as unknown as PrismaClient;
 }
 

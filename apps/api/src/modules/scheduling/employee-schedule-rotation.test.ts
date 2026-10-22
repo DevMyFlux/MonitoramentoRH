@@ -54,7 +54,8 @@ function fakeDb(employees: ReturnType<typeof employee>[]): PrismaClient {
     operationalParameter: { findMany: async () => shifts.map((s) => ({ ...s, operationId: "op", kind: "SHIFT", status: "ACTIVE" })) },
     complianceRequirement: { findMany: async () => [] },
     competencyMatrixItem: { findMany: async () => [] },
-    scheduleDayOverride: { findMany: async () => [] }
+    scheduleDayOverride: { findMany: async () => [] },
+    leaveSubstitution: { findMany: async () => [] }
   } as unknown as PrismaClient;
 }
 

@@ -9,7 +9,6 @@ import {
   Plus,
   RefreshCw,
   Search,
-  Trash2,
   UserCheck,
   UserX
 } from "lucide-react";
@@ -24,8 +23,9 @@ import {
 } from "@my-flux/shared";
 import { Badge, Button, Drawer, Tabs } from "../components/ui";
 import { usePermissions } from "../features/auth/session-store";
-import { download, request, text, date, type Row } from "../features/my-flux/client";
+import { download, request, text, type Row } from "../features/my-flux/client";
 import { labels } from "../features/my-flux/resources";
+import { LeaveEntry } from "../features/substitutions/leave-entry";
 
 const demoOp = "55555555-5555-4555-8555-555555555555";
 
@@ -116,6 +116,7 @@ export function EmployeesPage() {
   const { can } = usePermissions();
   const canManage = can("employees:manage");
   const canLeaves = can("leaves:manage");
+  const canSubstitute = can("substitutions:manage");
   const guarded = (node: ReactNode) => (
     <fieldset disabled={!canManage} className="contents">
       {node}
@@ -476,16 +477,6 @@ export function EmployeesPage() {
       setLeaveError(err instanceof Error ? err.message : "Não foi possível registrar o afastamento.");
     } finally {
       setLeaveSaving(false);
-    }
-  }
-
-  async function removeLeave(id: string) {
-    if (!window.confirm("Remover este afastamento?")) return;
-    try {
-      await request<Row>(`/calendar/events/${id}`, "DELETE");
-      setEvents((current) => current.filter((item) => item.id !== id));
-    } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Não foi possível remover o afastamento.");
     }
   }
 
@@ -993,26 +984,21 @@ export function EmployeesPage() {
                     <div className="space-y-2">
                       {employeeEvents.length ? (
                         employeeEvents.map((event) => (
-                          <div
+                          <LeaveEntry
                             key={event.id}
-                            className="flex items-center justify-between gap-2 rounded border border-slate-200 p-3 text-sm"
-                          >
-                            <div>
-                              <p className="font-medium">{text(event.title)}</p>
-                              <p className="text-xs text-slate-500">
-                                {date(event.startsAt)} – {date(event.endsAt)}
-                              </p>
-                            </div>
-                            {canLeaves && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                icon={<Trash2 size={14} />}
-                                onClick={() => void removeLeave(event.id)}
-                                aria-label="Remover afastamento"
-                              />
-                            )}
-                          </div>
+                            event={event}
+                            titular={employees.find((e) => e.id === editingId)}
+                            employees={employees}
+                            canLeaves={canLeaves}
+                            canSubstitute={canSubstitute}
+                            onUpdated={(row) =>
+                              setEvents((current) =>
+                                current.map((item) => (item.id === row.id ? { ...item, ...row } : item))
+                              )
+                            }
+                            onRemoved={(id) => setEvents((current) => current.filter((item) => item.id !== id))}
+                            notify={setNotice}
+                          />
                         ))
                       ) : (
                         <p className="text-sm text-slate-500">Nenhum afastamento registrado.</p>

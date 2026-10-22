@@ -25,6 +25,13 @@ import {
   prepareEmployee,
   workLetter
 } from "./schedule-context.js";
+import { validateCell } from "./schedule-validation.js";
+import {
+  coverageCellRefs,
+  coverageOf,
+  coveragePendencies,
+  type SubstitutionCellRef
+} from "./substitution-context.js";
 import type { ScheduleGridData, ScheduleGridRow } from "./xlsx-renderer.js";
 
 export type EmployeeSchedulePendency = {
@@ -34,6 +41,8 @@ export type EmployeeSchedulePendency = {
   reasonCodes: string[];
   /** Frases legíveis das regras de origem, por código (opcional: escalas antigas não têm). */
   details?: Array<{ code: string; message: string }>;
+  /** Outra pessoa envolvida (ex.: o substituto, nas ocorrências de cobertura). */
+  otherName?: string;
 };
 
 export type EmployeeScheduleMetrics = {
@@ -46,6 +55,8 @@ export type EmployeeScheduleSnapshot = {
   grid: ScheduleGridData;
   pendencies: EmployeeSchedulePendency[];
   metrics: EmployeeScheduleMetrics;
+  /** Células de Cobertura (C) postas por substituições: permitem desfazê-las se a substituição mudar. */
+  substitutionCells: SubstitutionCellRef[];
   hash: string;
 };
 
@@ -64,6 +75,7 @@ export async function buildEmployeeScheduleSnapshot(
 
   const diurno: ScheduleGridRow[] = [];
   const noturno: ScheduleGridRow[] = [];
+  const coverage = coverageOf(ctx);
 
   for (const employee of ctx.employees) {
     const prep = prepareEmployee(ctx, employee);
@@ -78,22 +90,41 @@ export async function buildEmployeeScheduleSnapshot(
     }
 
     const days: string[] = [];
+    const coveredDays: string[] = [];
     for (let day = 1; day <= dayCount; day++) {
       const date = `${month}-${String(day).padStart(2, "0")}`;
-      const cell = evaluateCell(prep, date, ctx.overrideByKey.get(`${employee.id}|${date}`));
+      const key = `${employee.id}|${date}`;
+      const cell = evaluateCell(
+        prep,
+        date,
+        ctx.overrideByKey.get(key),
+        undefined,
+        coverage.cells.has(key)
+      );
       if (!cell) {
         days.push("");
         continue;
       }
       if (cell.pendency) {
-        pendencies.push({ employeeId: employee.id, employeeName: employee.name, date, ...cell.pendency });
+        pendencies.push({
+          employeeId: employee.id,
+          employeeName: employee.name,
+          date,
+          ...cell.pendency
+        });
       }
       // A manual override can add coverage on a day the rotation did not require
       // (e.g. calling someone in on a day off) — count that day as "required" too,
       // so coverage% never reads above 100%.
-      if (cell.scheduled || cell.isWork) required += 1;
+      // A Cobertura de uma substituição cobre o plantão do titular, que já está em "necessário": só soma em "coberto".
+      if ((cell.scheduled || cell.isWork) && !cell.substitution) required += 1;
       if (cell.isWork) covered += 1;
+      if (cell.substitution) coveredDays.push(date);
       days.push(cell.code);
+    }
+    // Os dias de Cobertura passam pelas mesmas regras de uma edição (ex.: descanso entre dias seguidos de trabalho).
+    for (const date of coveredDays) {
+      pendencies.push(...validateCell(prep, date, "C", days, { editTime: false, hasReason: true }));
     }
 
     const row: ScheduleGridRow = {
@@ -114,6 +145,9 @@ export async function buildEmployeeScheduleSnapshot(
     (workLetter(shiftConfig?.startHour) === "N" ? noturno : diurno).push(row);
   }
 
+  // Ocorrências das substituições (plantão do titular que ficou sem cobertura, e por quê).
+  pendencies.push(...coveragePendencies(coverage));
+
   const sections = [
     ...(diurno.length ? [{ label: "DIURNO", rows: diurno }] : []),
     ...(noturno.length ? [{ label: "NOTURNO", rows: noturno }] : [])
@@ -131,7 +165,7 @@ export async function buildEmployeeScheduleSnapshot(
     .update(JSON.stringify({ grid, overrideIds: overrides.map((o) => o.id).sort() }))
     .digest("hex");
 
-  return { grid, pendencies, metrics, hash };
+  return { grid, pendencies, metrics, substitutionCells: coverageCellRefs(coverage), hash };
 }
 
 export async function generateEmployeeSchedule(
@@ -156,7 +190,8 @@ export async function generateEmployeeSchedule(
       const generatedResult = {
         grid: snapshot.grid,
         pendencies: snapshot.pendencies,
-        metrics: snapshot.metrics
+        metrics: snapshot.metrics,
+        substitutionCells: snapshot.substitutionCells
       };
       const row = await tx.scheduleVersion.create({
         data: {

@@ -37,6 +37,7 @@ import { registerReportRoutes } from "./modules/reports/report-routes.js";
 import { ScheduleRepository } from "./modules/scheduling/schedule-repository.js";
 import { registerScheduleRoutes } from "./modules/scheduling/schedule-routes.js";
 import { registerEmployeeScheduleRoutes } from "./modules/scheduling/employee-schedule-routes.js";
+import { registerSubstitutionRoutes } from "./modules/scheduling/substitution-routes.js";
 import { RoleRepository } from "./modules/identity/role-repository.js";
 import { registerRoleRoutes } from "./modules/identity/role-routes.js";
 import { UserAdminRepository } from "./modules/users/user-admin-repository.js";
@@ -220,7 +221,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   );
   await app.register(
     async (versionedApp) =>
-      registerCalendarRoutes(versionedApp, userRepository, calendarRepository),
+      registerCalendarRoutes(versionedApp, userRepository, calendarRepository, prisma),
     {
       prefix: apiPrefix
     }
@@ -255,6 +256,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(async a => registerRecruitmentRoutes(a, userRepository, prisma), { prefix: apiPrefix });
   await app.register(async a => registerWorkspaceRoutes(a, userRepository, prisma), { prefix: apiPrefix });
   await app.register(async a => registerEmployeeScheduleRoutes(a, userRepository, prisma), { prefix: apiPrefix });
+  await app.register(async a => registerSubstitutionRoutes(a, userRepository, prisma), { prefix: apiPrefix });
   await app.register(
     async (a) => registerUserAdminRoutes(a, userRepository, new UserAdminRepository(prisma)),
     { prefix: apiPrefix }

@@ -112,28 +112,34 @@ export class CalendarRepository {
     return created;
   }
 
-  async archiveEvent(user: AuthenticatedUser, id: string) {
-    const before = await this.db.calendarEvent.findUnique({
+  /** Carrega um afastamento/evento e confere que está dentro do escopo do usuário. */
+  private async loadScopedEvent(user: AuthenticatedUser, id: string) {
+    const event = await this.db.calendarEvent.findUnique({
       where: { id },
       include: { employee: { include: { operation: true } }, operation: true }
     });
-    if (!before) {
+    if (!event) {
       throw new HttpError(404, "EVENT_NOT_FOUND", "Evento nao encontrado.");
     }
-    if (before.employee) {
+    if (event.employee) {
       assertScoped(user, {
-        companyId: before.employee.operation.companyId,
-        operationId: before.employee.operationId,
-        unitId: before.employee.operation.unitId
+        companyId: event.employee.operation.companyId,
+        operationId: event.employee.operationId,
+        unitId: event.employee.operation.unitId
       });
     }
-    if (before.operation) {
+    if (event.operation) {
       assertScoped(user, {
-        companyId: before.operation.companyId,
-        operationId: before.operation.id,
-        unitId: before.operation.unitId
+        companyId: event.operation.companyId,
+        operationId: event.operation.id,
+        unitId: event.operation.unitId
       });
     }
+    return event;
+  }
+
+  async archiveEvent(user: AuthenticatedUser, id: string) {
+    const before = await this.loadScopedEvent(user, id);
 
     const updated = await this.db.calendarEvent.update({
       where: { id },
@@ -141,6 +147,45 @@ export class CalendarRepository {
     });
     await this.audit(user, "ARCHIVE", "CalendarEvent", id, before, updated);
     return updated;
+  }
+
+  /** Altera título, datas ou observação de um afastamento ativo. O tipo e o colaborador não mudam. */
+  async updateEvent(
+    user: AuthenticatedUser,
+    id: string,
+    data: {
+      title?: string | undefined;
+      startsAt?: string | undefined;
+      endsAt?: string | undefined;
+      notes?: string | null | undefined;
+    }
+  ) {
+    const before = await this.loadScopedEvent(user, id);
+    if (before.status !== "ACTIVE") {
+      throw new HttpError(404, "EVENT_NOT_FOUND", "Evento nao encontrado.");
+    }
+    const startsAt = data.startsAt ? new Date(data.startsAt) : before.startsAt;
+    const endsAt = data.endsAt ? new Date(data.endsAt) : before.endsAt;
+    if (endsAt < startsAt) {
+      throw new HttpError(
+        400,
+        "EVENT_DATES_INVALID",
+        "A data final do afastamento nao pode ser anterior a data inicial."
+      );
+    }
+    const updated = await this.db.calendarEvent.update({
+      where: { id },
+      data: {
+        ...(data.title !== undefined ? { title: data.title } : {}),
+        ...(data.notes !== undefined ? { notes: data.notes } : {}),
+        startsAt,
+        endsAt,
+        updatedBy: user.id
+      },
+      include: { type: true }
+    });
+    await this.audit(user, "UPDATE", "CalendarEvent", id, before, updated);
+    return { before, updated };
   }
 
   async employeeAvailability(

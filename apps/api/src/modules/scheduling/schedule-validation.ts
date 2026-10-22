@@ -14,12 +14,13 @@ import {
   evaluateCell,
   isLeaveCode,
   isWorkCode,
-  prepareEmployee,
+  prepareById,
   ruleCodeFor,
   type PreparedEmployee,
   type ScheduleContext
 } from "./schedule-context.js";
 import type { EmployeeSchedulePendency } from "./employee-schedule-service.js";
+import { coverageOf, coveragePendencies } from "./substitution-context.js";
 import type { ScheduleGridData, ScheduleGridRow } from "./xlsx-renderer.js";
 
 export type EditChange = {
@@ -220,20 +221,7 @@ export function blockingEditIssues(issues: EditIssue[]): EditIssue[] {
 
 // ── recálculo das pendências e métricas a partir da grade que já existe ──────────────────────────────
 
-const preparedCache = new WeakMap<ScheduleContext, Map<string, PreparedEmployee>>();
-
-/** Colaborador preparado (turno, afastamentos, aptidão), calculado uma vez por contexto. */
-function prepareFrom(ctx: ScheduleContext, employeeId: string): PreparedEmployee | undefined {
-  let cache = preparedCache.get(ctx);
-  if (!cache) preparedCache.set(ctx, (cache = new Map()));
-  const hit = cache.get(employeeId);
-  if (hit) return hit;
-  const employee = ctx.employees.find((e) => e.id === employeeId);
-  if (!employee) return undefined;
-  const prep = prepareEmployee(ctx, employee);
-  cache.set(employeeId, prep);
-  return prep;
-}
+const prepareFrom = prepareById;
 
 /**
  * Refaz pendências e métricas de uma grade existente SEM regerar as células: as células automáticas mantêm o código
@@ -250,6 +238,8 @@ export function recomputeResult(
   const pendencies: EmployeeSchedulePendency[] = [];
   let required = 0;
   let covered = 0;
+  // o plano considera os ajustes manuais que valem DEPOIS desta edição (`overrides`), não só os já gravados
+  const coverage = coverageOf(ctx, new Set(overrides.keys()));
 
   for (const employee of ctx.employees) {
     const row = rows.get(employee.id);
@@ -270,7 +260,13 @@ export function recomputeResult(
       // chegou a esta grade não conta aqui (a célula segue a regra, com o código que ela já tem).
       const candidate = overrides.get(cellKey(employee.id, date));
       const override = candidate && candidate.code === storedCode ? candidate : undefined;
-      const cell = evaluateCell(prep, date, override, storedCode);
+      const cell = evaluateCell(
+        prep,
+        date,
+        override,
+        storedCode,
+        coverage.cells.has(cellKey(employee.id, date))
+      );
       if (!cell) continue;
       if (cell.pendency) {
         pendencies.push({
@@ -280,15 +276,21 @@ export function recomputeResult(
           ...cell.pendency
         });
       }
-      if (cell.scheduled || cell.isWork) required += 1;
+      if ((cell.scheduled || cell.isWork) && !cell.substitution) required += 1;
       if (cell.isWork) covered += 1;
       if (override) {
         pendencies.push(
           ...validateCell(prep, date, override.code, row.days, { editTime: false, hasReason: true })
         );
+      } else if (cell.substitution) {
+        // Cobertura de substituição: mesma conferência de uma edição (descanso entre dias seguidos de trabalho etc.)
+        pendencies.push(
+          ...validateCell(prep, date, storedCode, row.days, { editTime: false, hasReason: true })
+        );
       }
     }
   }
+  pendencies.push(...coveragePendencies(coverage));
   return {
     pendencies,
     metrics: { required, covered, coverage: required ? Math.round((covered / required) * 100) : 0 }

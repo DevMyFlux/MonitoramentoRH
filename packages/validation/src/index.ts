@@ -361,6 +361,92 @@ export const calendarEventInputSchema = z
     path: ["endsAt"]
   });
 
+/** Edição de um afastamento já cadastrado (datas, título, observação). O tipo e o colaborador não mudam. */
+export const calendarEventUpdateSchema = z
+  .object({
+    title: z.string().min(2).max(180).optional(),
+    startsAt: z.string().datetime().optional(),
+    endsAt: z.string().datetime().optional(),
+    notes: z.string().max(2000).nullable().optional(),
+    /** Confirma criar nova versão em rascunho nas escalas em análise/aprovadas/publicadas afetadas pela mudança. */
+    applyToLockedSchedules: z.boolean().optional()
+  })
+  .refine(
+    (value) =>
+      value.title !== undefined ||
+      value.startsAt !== undefined ||
+      value.endsAt !== undefined ||
+      value.notes !== undefined,
+    { message: "Informe ao menos um campo para alterar." }
+  );
+
+const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use o formato AAAA-MM-DD.");
+
+const substitutionFields = {
+  substituteId: z.string().uuid(),
+  /** HABITUAL: cobre nos dias de folga do próprio rodízio. SPECIFIC: cobre só os plantões dos dias Par/Ímpar escolhidos. */
+  rotation: z.enum(["HABITUAL", "SPECIFIC"]),
+  specificParity: z.enum(["ODD", "EVEN"]).nullable().optional(),
+  /** Plantões do titular a cobrir; ausente/vazio = todos os do período do afastamento. */
+  coveredDates: z.array(isoDay).max(400).optional(),
+  notes: z.string().max(1000).nullable().optional(),
+  /** Só mostra o plano (o que seria coberto e os conflitos), sem gravar nada. */
+  dryRun: z.boolean().optional(),
+  /** Confirma criar nova versão em rascunho nas escalas em análise/aprovadas/publicadas afetadas. */
+  applyToLockedSchedules: z.boolean().optional()
+};
+
+const requireParityWhenSpecific = (value: {
+  rotation?: string | undefined;
+  specificParity?: string | null | undefined;
+}) => value.rotation !== "SPECIFIC" || Boolean(value.specificParity);
+const parityMessage = {
+  message: "No rodízio específico escolha Par ou Ímpar.",
+  path: ["specificParity"]
+};
+
+export const substitutionCreateSchema = z
+  .object({ leaveEventId: z.string().uuid(), ...substitutionFields })
+  .refine(requireParityWhenSpecific, parityMessage);
+
+export const substitutionUpdateSchema = z
+  .object({ ...substitutionFields })
+  .partial()
+  .refine(requireParityWhenSpecific, parityMessage);
+
+export const substitutionCancelSchema = z.object({
+  reason: z.string().trim().min(5, "Informe o motivo (mínimo de 5 caracteres).").max(500),
+  applyToLockedSchedules: z.boolean().optional()
+});
+
+export const substitutionApplySchema = z
+  .object({
+    applyToLockedSchedules: z.boolean().optional(),
+    /**
+     * Período em que as linhas do titular também são conferidas contra as regras (usado para confirmar, numa escala em
+     * análise/aprovada/publicada, o que mudou quando as férias tiveram as datas alteradas ou foram canceladas).
+     */
+    refreshFrom: isoDay.optional(),
+    refreshTo: isoDay.optional()
+  })
+  .refine((value) => (value.refreshFrom === undefined) === (value.refreshTo === undefined), {
+    message: "Informe o início e o fim do período a conferir.",
+    path: ["refreshTo"]
+  })
+  .refine(
+    (value) => !value.refreshFrom || !value.refreshTo || value.refreshFrom <= value.refreshTo,
+    {
+      message: "O fim do período não pode ser anterior ao início.",
+      path: ["refreshTo"]
+    }
+  );
+
+export const substitutionQuerySchema = z.object({
+  operationId: z.string().uuid().optional(),
+  leaveEventId: z.string().uuid().optional(),
+  employeeId: z.string().uuid().optional()
+});
+
 export const availabilityQuerySchema = z
   .object({
     employeeId: z.string().uuid(),

@@ -300,6 +300,7 @@ model Operation {
   requirements ComplianceRequirement[]
   competencyMatrix CompetencyMatrixItem[]
   calendarEvents CalendarEvent[]
+  leaveSubstitutions LeaveSubstitution[]
   scheduleVersions ScheduleVersion[]
   scheduleDayOverrides ScheduleDayOverride[]
 
@@ -495,6 +496,8 @@ model Employee {
   developmentPlans DevelopmentPlan[]
   calendarEvents CalendarEvent[]
   scheduleDayOverrides ScheduleDayOverride[]
+  substitutionsAsTitular LeaveSubstitution[] @relation("SubstitutionTitular")
+  substitutionsAsSubstitute LeaveSubstitution[] @relation("SubstitutionSubstitute")
 
   @@unique([operationId, identifier])
   @@index([operationId])
@@ -736,11 +739,62 @@ model CalendarEvent {
   createdBy   String?      @db.Uuid
   updatedBy   String?      @db.Uuid
   archivedAt  DateTime?
+  substitutions LeaveSubstitution[]
 
   @@index([typeId])
   @@index([employeeId])
   @@index([operationId])
   @@index([startsAt, endsAt])
+}
+
+enum SubstitutionRotation {
+  /// O substituto cobre nos dias em que está de folga pelo próprio rodízio (nada muda no cadastro dele).
+  HABITUAL
+  /// O substituto cobre só os plantões dos dias do Par/Ímpar escolhido, durante o período da substituição.
+  SPECIFIC
+}
+
+enum SubstitutionStatus {
+  ACTIVE
+  CANCELLED
+}
+
+/// Substituição temporária: durante um afastamento (férias, licença...), outro colaborador cobre os plantões do
+/// titular. É ADITIVA: o substituto mantém a escala dele e recebe dias de Cobertura (código C) nos plantões
+/// escolhidos. Nada é apagado: cancelar ou o afastamento mudar de datas só deixa de gerar as coberturas.
+model LeaveSubstitution {
+  id           String               @id @default(uuid()) @db.Uuid
+  operationId  String               @db.Uuid
+  operation    Operation            @relation(fields: [operationId], references: [id])
+  /// Afastamento a que a substituição está vinculada (as datas vêm dele).
+  leaveEventId String               @db.Uuid
+  leaveEvent   CalendarEvent        @relation(fields: [leaveEventId], references: [id])
+  titularId    String               @db.Uuid
+  titular      Employee             @relation("SubstitutionTitular", fields: [titularId], references: [id])
+  substituteId String               @db.Uuid
+  substitute   Employee             @relation("SubstitutionSubstitute", fields: [substituteId], references: [id])
+  rotation     SubstitutionRotation @default(HABITUAL)
+  /// Par/Ímpar do rodízio específico (só com `rotation = SPECIFIC`); vale apenas para esta substituição.
+  specificParity EmployeeParity?
+  /// Mês (AAAA-MM) em que `specificParity` é verdadeiro (a classificação inverte após meses de 31 dias).
+  parityReferenceMonth String?
+  /// Plantões do titular a cobrir (AAAA-MM-DD). Vazio = todos os plantões do titular no período do afastamento.
+  coveredDates String[]             @default([])
+  status       SubstitutionStatus   @default(ACTIVE)
+  notes        String?
+  cancelReason String?
+  cancelledAt  DateTime?
+  cancelledBy  String?              @db.Uuid
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  createdBy    String?              @db.Uuid
+  updatedBy    String?              @db.Uuid
+
+  @@index([operationId])
+  @@index([leaveEventId])
+  @@index([titularId])
+  @@index([substituteId])
+  @@index([status])
 }
 
 model EvaluationCriterion {

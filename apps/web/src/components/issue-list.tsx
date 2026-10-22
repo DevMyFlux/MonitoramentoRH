@@ -62,7 +62,10 @@ export function IssueList({
             </summary>
             <ul className="mt-2 space-y-2">
               {items.map((issue) => (
-                <li key={`${issue.employeeName}|${issue.code}`} className="rounded bg-white/60 p-2">
+                <li
+                  key={`${issue.employeeName}|${issue.code}|${issue.detail}`}
+                  className="rounded bg-white/60 p-2"
+                >
                   <p className="font-semibold">{issue.title}</p>
                   <p>{issue.detail}</p>
                   {issue.action ? (
