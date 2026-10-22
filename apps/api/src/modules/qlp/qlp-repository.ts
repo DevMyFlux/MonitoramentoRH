@@ -250,7 +250,7 @@ function assertScoped(
   user: AuthenticatedUser,
   resource: { companyId?: string | null; operationId?: string | null; unitId?: string | null }
 ) {
-  if (user.role === "DEV" || canAccessScope(user.scopes, resource)) {
+  if (canAccessScope(user.scopes, resource)) {
     return;
   }
 
@@ -258,7 +258,7 @@ function assertScoped(
 }
 
 function operationScopeWhere(user: AuthenticatedUser): Record<string, unknown> {
-  if (user.role === "DEV" || user.scopes.some((scope) => scope.isGlobal)) {
+  if (user.scopes.some((scope) => scope.isGlobal)) {
     return {};
   }
 

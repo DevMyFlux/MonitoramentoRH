@@ -1,4 +1,4 @@
-export type Role = "DEV" | "ADMIN" | "RH" | "COMUM";
+export type Role = "DEV" | "ADMIN" | "RH" | "APPROVER" | "COMUM";
 
 export type UserScope = {
   companyId?: string | null;
@@ -12,6 +12,8 @@ export type AuthenticatedUser = {
   email: string;
   name: string;
   role: Role;
+  /** Códigos `recurso:ação` concedidos ao perfil no banco. A autorização depende disto, não do nome do perfil. */
+  permissions: string[];
   scopes: UserScope[];
 };
 

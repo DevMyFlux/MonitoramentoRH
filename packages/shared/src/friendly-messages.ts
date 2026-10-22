@@ -434,6 +434,32 @@ const apiErrorCatalog: Record<string, ApiEntry> = {
     message: "Para gerar a escala, informe a unidade e o mês.",
     action: "Use a tela de Escalas."
   },
+  PERMISSION_DENIED: {
+    message: (original) => original || "Seu perfil não tem permissão para esta ação.",
+    action: "Se precisar desse acesso, peça a um administrador."
+  },
+  PERMISSION_CHANGE_FORBIDDEN: {
+    message: (original) => original || "Esta alteração de permissões não é permitida.",
+    action: "Você só pode alterar perfis abaixo do seu e conceder o que você mesmo possui."
+  },
+  ROLE_NOT_FOUND: { message: "O perfil não foi encontrado.", action: notFoundAction },
+  ACCOUNT_LOCKED: {
+    message:
+      "Sua conta está bloqueada temporariamente por tentativas de acesso seguidas sem sucesso.",
+    action: "Aguarde alguns minutos ou peça a um administrador para desbloquear."
+  },
+  ACCOUNT_DISABLED: {
+    message: "Sua conta está desativada.",
+    action: "Procure um administrador para reativar o seu acesso."
+  },
+  CANNOT_CHANGE_OWN_ROLE: {
+    message: "Você não pode alterar o próprio perfil.",
+    action: "Peça a outro administrador."
+  },
+  CANNOT_DISABLE_SELF: {
+    message: "Você não pode desativar a própria conta.",
+    action: "Peça a outro administrador."
+  },
   DATA_CONFLICT: {
     message: "Os dados foram alterados por outra pessoa ou existe um vínculo com outro registro.",
     action: "Recarregue a página e confira o registro antes de tentar de novo."

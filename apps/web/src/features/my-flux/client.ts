@@ -1,5 +1,6 @@
 const base = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3334/api/v1";
 export type Row = Record<string, unknown> & { id: string };
+import { setSessionUser } from "../auth/session-store";
 let refreshing: Promise<void> | null = null;
 
 /**
@@ -67,6 +68,7 @@ export function saveSession(access: string, refresh: string) {
   localStorage.setItem("my-flux.refreshToken", refresh);
 }
 export function clearSession() {
+  setSessionUser(null);
   sessionStorage.removeItem("flux.access");
   sessionStorage.removeItem("flux.refresh");
   localStorage.removeItem("my-flux.accessToken");

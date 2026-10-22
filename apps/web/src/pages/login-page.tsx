@@ -34,9 +34,12 @@ export function LoginPage() {
       const response = await apiPost<LoginResponse, LoginForm>("/auth/login", values);
       storeSession(response.data.accessToken, response.data.refreshToken);
       navigate("/");
-    } catch {
+    } catch (error) {
+      // A API já devolve a frase certa para cada caso (senha incorreta, conta bloqueada ou desativada...).
       setMessage(
-        "Não foi possível entrar. Confira seus dados e tente novamente. Se o problema continuar, procure o administrador."
+        error instanceof Error && error.message
+          ? error.message
+          : "Não foi possível entrar. Confira seus dados e tente novamente."
       );
     }
   }
@@ -167,8 +170,8 @@ export function LoginPage() {
               <p className="mb-3 mt-3 text-xs leading-5 text-slate-500">
                 Escolha um perfil para preencher o acesso local.
               </p>
-              <div className="grid grid-cols-4 gap-2">
-                {["DEV", "ADMIN", "RH", "COMUM"].map((role) => (
+              <div className="grid grid-cols-5 gap-2">
+                {["DEV", "ADMIN", "RH", "APPROVER", "COMUM"].map((role) => (
                   <button
                     key={role}
                     type="button"

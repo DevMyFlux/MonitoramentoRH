@@ -5,10 +5,10 @@ import {
   evaluationTransitionInputSchema,
   idParamsSchema
 } from "@my-flux/validation";
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { HttpError } from "../../lib/http-error.js";
-import { verifyAccessToken } from "../auth/token-service.js";
 import type { UserRepository } from "../users/user-repository.js";
+import { authenticateRequest } from "../auth/authenticate.js";
 import type { EvaluationRepository } from "./evaluation-repository.js";
 
 export async function registerEvaluationRoutes(
@@ -85,26 +85,4 @@ function assertCanManageEvaluations(role: string) {
   }
 
   throw new HttpError(403, "FORBIDDEN", "Usuario sem permissao para gerenciar avaliacoes.");
-}
-
-async function authenticateRequest(request: FastifyRequest, users: UserRepository) {
-  const authorization = request.headers.authorization;
-
-  if (!authorization?.startsWith("Bearer ")) {
-    throw new HttpError(401, "AUTHENTICATION_REQUIRED", "Autenticacao obrigatoria.");
-  }
-
-  const payload = verifyAccessToken(authorization.slice("Bearer ".length));
-
-  if (!payload) {
-    throw new HttpError(401, "INVALID_ACCESS_TOKEN", "Token invalido.");
-  }
-
-  const user = await users.findById(payload.sub);
-
-  if (!user) {
-    throw new HttpError(401, "INVALID_ACCESS_TOKEN", "Usuario da sessao nao encontrado.");
-  }
-
-  return user;
 }

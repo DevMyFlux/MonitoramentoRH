@@ -8,7 +8,7 @@ export function assertRole(user: AuthenticatedUser, roles: string[]) {
     throw new HttpError(403, "FORBIDDEN", "Perfil sem permissão para esta ação.");
 }
 export function operationWhere(user: AuthenticatedUser): Prisma.OperationWhereInput {
-  if (user.role === "DEV" || user.scopes.some((scope) => scope.isGlobal)) return { status: "ACTIVE" };
+  if (user.scopes.some((scope) => scope.isGlobal)) return { status: "ACTIVE" };
   return {
     status: "ACTIVE",
     OR: user.scopes
@@ -29,7 +29,6 @@ export async function scopedOperation(
   if (!operation || operation.status !== "ACTIVE")
     throw new HttpError(404, "OPERATION_NOT_FOUND", "Operação não encontrada.");
   if (
-    user.role !== "DEV" &&
     !canAccessScope(user.scopes, {
       companyId: operation.companyId,
       operationId: id,
@@ -40,7 +39,7 @@ export async function scopedOperation(
   return operation;
 }
 export function assertDelegatedScopes(actor: AuthenticatedUser, scopes: UserScope[]) {
-  if (actor.role === "DEV") return;
+  if (actor.scopes.some((scope) => scope.isGlobal)) return;
   if (
     !scopes.length ||
     scopes.some(

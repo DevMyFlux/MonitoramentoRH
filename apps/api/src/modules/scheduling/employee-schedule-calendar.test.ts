@@ -11,7 +11,8 @@ import { employeeAvailability } from "./employee-availability.js";
 import { buildEmployeeScheduleSnapshot } from "./employee-schedule-service.js";
 import { renderScheduleWorkbook } from "./xlsx-renderer.js";
 
-const user = { id: "u1", role: "DEV", scopes: [] } as unknown as AuthenticatedUser;
+// Acesso a todas as unidades vem do escopo global, não do nome do perfil.
+const user = { id: "u1", role: "DEV", permissions: [], scopes: [{ isGlobal: true }] } as unknown as AuthenticatedUser;
 
 const shifts = [
   { code: "DIURNO", configuration: { startHour: 7, durationHours: 12, restHours: 36, weekdays: [0, 1, 2, 3, 4, 5, 6], minimumTeam: 0 } },

@@ -10,10 +10,17 @@ const userSelect = {
   email: true,
   name: true,
   passwordHash: true,
+  failedLoginAttempts: true,
+  lockedUntil: true,
   role: {
     select: {
       id: true,
-      name: true
+      name: true,
+      // O que o perfil pode fazer vem do banco a cada requisição: revogar uma permissão vale na hora.
+      permissions: {
+        where: { permission: { status: "ACTIVE" } },
+        select: { permission: { select: { code: true } } }
+      }
     }
   },
   scopes: {
@@ -50,6 +57,16 @@ export type CreateInvitationData = {
   actorId: string;
 };
 
+export type LoginCandidate = {
+  user: AuthenticatedUser & { passwordHash: string };
+  isActive: boolean;
+  failedLoginAttempts: number;
+  lockedUntil: Date | null;
+};
+
+/** 5 senhas erradas seguidas bloqueiam a conta por 15 minutos (um administrador pode desbloquear antes). */
+export const loginLockPolicy = { maxAttempts: 5, lockMinutes: 15 };
+
 export class UserRepository {
   constructor(private readonly db: PrismaClient) {}
 
@@ -60,6 +77,58 @@ export class UserRepository {
     });
 
     return user?.isActive && user.status === "ACTIVE" ? mapUserWithPassword(user) : null;
+  }
+
+  /**
+   * Usuário para o fluxo de LOGIN, inclusive desativado ou bloqueado (quem decide o que responder é a rota, depois de
+   * conferir a senha — assim o erro nunca revela se o e-mail existe).
+   */
+  async findLoginCandidate(email: string): Promise<LoginCandidate | null> {
+    const user = await this.db.user.findUnique({ where: { email }, select: userSelect });
+    if (!user) return null;
+    return {
+      user: mapUserWithPassword(user),
+      isActive: user.isActive && user.status === "ACTIVE",
+      failedLoginAttempts: user.failedLoginAttempts,
+      lockedUntil: user.lockedUntil
+    };
+  }
+
+  /** Conta uma falha de login. Ao atingir o limite a conta fica bloqueada por `lockMinutes` e o contador recomeça. */
+  async registerLoginFailure(
+    userId: string,
+    now: Date = new Date(),
+    policy: { maxAttempts: number; lockMinutes: number } = loginLockPolicy
+  ): Promise<{ locked: boolean; lockedUntil: Date | null }> {
+    const updated = await this.db.user.update({
+      where: { id: userId },
+      data: { failedLoginAttempts: { increment: 1 } },
+      select: { failedLoginAttempts: true }
+    });
+    if (updated.failedLoginAttempts < policy.maxAttempts) return { locked: false, lockedUntil: null };
+    const lockedUntil = new Date(now.getTime() + policy.lockMinutes * 60_000);
+    await this.db.$transaction([
+      this.db.user.update({ where: { id: userId }, data: { lockedUntil, failedLoginAttempts: 0 } }),
+      this.db.auditLog.create({
+        data: {
+          userId,
+          action: "UPDATE",
+          entity: "User",
+          entityId: userId,
+          after: { lockedUntil: lockedUntil.toISOString() },
+          justification: "Conta bloqueada temporariamente por falhas seguidas de login.",
+          origin: "api"
+        }
+      })
+    ]);
+    return { locked: true, lockedUntil };
+  }
+
+  async registerLoginSuccess(userId: string): Promise<void> {
+    await this.db.user.updateMany({
+      where: { id: userId, OR: [{ failedLoginAttempts: { gt: 0 } }, { lockedUntil: { not: null } }] },
+      data: { failedLoginAttempts: 0, lockedUntil: null }
+    });
   }
 
   async findById(id: string): Promise<AuthenticatedUser | null> {
@@ -315,6 +384,7 @@ function mapUserWithPassword(user: UserWithAuth): AuthenticatedUser & { password
     name: user.name,
     passwordHash: user.passwordHash,
     role: user.role.name,
+    permissions: [...new Set(user.role.permissions.map((entry) => entry.permission.code))].sort(),
     scopes: user.scopes
   };
 }

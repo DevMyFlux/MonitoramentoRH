@@ -78,8 +78,7 @@ export class ScheduleRepository {
     user: AuthenticatedUser,
     id: string,
     status: WorkflowStatus,
-    reason?: string | null,
-    overrideJustification?: string | null
+    reason?: string | null
   ) {
     const before = await this.db.scheduleVersion.findUnique({
       where: { id },
@@ -94,8 +93,7 @@ export class ScheduleRepository {
       unitId: before.operation.unitId
     });
 
-    const hasOverride = Boolean(overrideJustification);
-    if (!canTransitionSchedule(before.status, status, user.role, hasOverride)) {
+    if (!canTransitionSchedule(before.status, status, user.permissions)) {
       throw new HttpError(403, "SCHEDULE_WORKFLOW_FORBIDDEN", "Transicao de escala nao permitida.");
     }
 
@@ -107,7 +105,7 @@ export class ScheduleRepository {
           action: status,
           before: toJson(before),
           after: toJson({ status }),
-          reason: overrideJustification ?? reason ?? null,
+          reason: reason ?? null,
           createdBy: user.id
         }
       }
@@ -119,9 +117,6 @@ export class ScheduleRepository {
     if (status === "PUBLISHED") {
       updateData.publishedAt = new Date();
       updateData.publishedBy = user.id;
-    }
-    if (overrideJustification) {
-      updateData.overrideJustification = overrideJustification;
     }
     if (status === "ARCHIVED") {
       updateData.archivedAt = new Date();
@@ -175,7 +170,7 @@ export class ScheduleRepository {
 }
 
 function operationScopeWhere(user: AuthenticatedUser): Record<string, unknown> {
-  if (user.role === "DEV" || user.scopes.some((scope) => scope.isGlobal)) {
+  if (user.scopes.some((scope) => scope.isGlobal)) {
     return {};
   }
 
@@ -192,7 +187,7 @@ function assertScoped(
   user: AuthenticatedUser,
   resource: { companyId?: string | null; operationId?: string | null; unitId?: string | null }
 ): void {
-  if (user.role === "DEV" || canAccessScope(user.scopes, resource)) {
+  if (canAccessScope(user.scopes, resource)) {
     return;
   }
 

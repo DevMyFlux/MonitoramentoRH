@@ -35,7 +35,14 @@ export async function apiPost<TResponse, TBody extends object>(
 }
 
 async function fetchWithTimeout(input: string, init: RequestInit) {
-  return fetch(input, { ...init, signal: AbortSignal.timeout(55_000) });
+  try {
+    return await fetch(input, { ...init, signal: AbortSignal.timeout(55_000) });
+  } catch {
+    // "Failed to fetch" / timeout: sem resposta do servidor. Nada técnico para o usuário.
+    throw new Error(
+      "Não foi possível se conectar ao servidor. Verifique sua conexão e tente novamente."
+    );
+  }
 }
 
 export function storeSession(accessToken: string, refreshToken: string): void {
@@ -60,7 +67,10 @@ async function getErrorMessage(response: Response, fallback: string): Promise<st
     const payload = (await response.json()) as { code?: unknown; message?: unknown };
 
     // O código técnico não é mostrado ao usuário (a mensagem já é amigável); ele continua na resposta da API.
-    if (typeof payload.message === "string") return payload.message;
+    if (typeof payload.message === "string") {
+      const action = (payload as { details?: { action?: unknown } }).details?.action;
+      return typeof action === "string" ? `${payload.message} ${action}` : payload.message;
+    }
 
     return fallback;
   } catch {

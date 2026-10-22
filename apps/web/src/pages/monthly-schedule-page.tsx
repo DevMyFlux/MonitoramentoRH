@@ -15,6 +15,7 @@ import {
 import { groupPendencies, holidaysOfMonth, scheduleCodes, type SchedulePendencyLike } from "@my-flux/shared";
 import { Badge, Button } from "../components/ui";
 import { IssueList } from "../components/issue-list";
+import { usePermissions } from "../features/auth/session-store";
 import { download, errorText, request, text, date, type Row } from "../features/my-flux/client";
 import { labels } from "../features/my-flux/resources";
 
@@ -100,6 +101,9 @@ function generatedAt(value: unknown): string {
 }
 
 export function MonthlySchedulePage() {
+  // Só a interface: a API valida cada permissão no servidor. Aqui se evita mostrar o que o perfil não pode fazer.
+  const { can } = usePermissions();
+  const canEdit = can("schedules:edit");
   const [schedules, setSchedules] = useState<Row[]>([]);
   const [operations, setOperations] = useState<Row[]>([]);
   const [operationId, setOperationId] = useState(demoOp);
@@ -344,12 +348,12 @@ export function MonthlySchedulePage() {
   function statusActions(s: Row) {
     return (
       <>
-        {text(s.status) === "DRAFT" && (
+        {text(s.status) === "DRAFT" && can("schedules:submit") && (
           <Button size="sm" icon={<Check size={14} />} onClick={() => void status(s.id, "IN_REVIEW")}>
             Enviar
           </Button>
         )}
-        {text(s.status) === "IN_REVIEW" && (
+        {text(s.status) === "IN_REVIEW" && can("schedules:approve") && (
           <Button
             size="sm"
             icon={<CheckCircle2 size={14} />}
@@ -358,7 +362,7 @@ export function MonthlySchedulePage() {
             Aprovar
           </Button>
         )}
-        {text(s.status) === "APPROVED" && (
+        {text(s.status) === "APPROVED" && can("schedules:publish") && (
           <Button size="sm" onClick={() => void status(s.id, "PUBLISHED")}>
             Publicar
           </Button>
@@ -495,10 +499,10 @@ export function MonthlySchedulePage() {
                         return (
                           <td
                             key={dayIndex}
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => openCell(sectionIndex, rowIndex, dayIndex)}
-                            className="w-7 cursor-pointer px-0.5 py-1.5 text-center hover:bg-emerald-50"
+                            role={canEdit ? "button" : undefined}
+                            tabIndex={canEdit ? 0 : undefined}
+                            onClick={() => canEdit && openCell(sectionIndex, rowIndex, dayIndex)}
+                            className={`w-7 px-0.5 py-1.5 text-center ${canEdit ? "cursor-pointer hover:bg-emerald-50" : ""}`}
                             style={{
                               color: color ? `#${color.font}` : undefined,
                               fontWeight: color?.bold ? 700 : 400,
@@ -588,9 +592,13 @@ export function MonthlySchedulePage() {
             />
           </label>
           <div className="flex items-end">
-            <Button icon={<CalendarDays size={16} />} onClick={() => void generate()}>
-              Gerar escala
-            </Button>
+            {can("schedules:generate") ? (
+              <Button icon={<CalendarDays size={16} />} onClick={() => void generate()}>
+                Gerar escala
+              </Button>
+            ) : (
+              <p className="pb-2 text-xs text-slate-500">Seu perfil consulta as escalas, mas não gera novas.</p>
+            )}
           </div>
         </div>
       </section>
@@ -694,15 +702,17 @@ export function MonthlySchedulePage() {
                         Exportar .xlsx
                       </Button>
                       {statusActions(s)}
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        icon={<Trash2 size={14} />}
-                        onClick={() => void removeSchedule(s)}
-                        disabled={deletingId === s.id}
-                      >
-                        {deletingId === s.id ? "Excluindo..." : "Excluir escala"}
-                      </Button>
+                      {can("schedules:archive") && (
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          icon={<Trash2 size={14} />}
+                          onClick={() => void removeSchedule(s)}
+                          disabled={deletingId === s.id}
+                        >
+                          {deletingId === s.id ? "Excluindo..." : "Excluir escala"}
+                        </Button>
+                      )}
                     </div>
                   </div>
                   {index !== 0 && scheduleViewer(s)}

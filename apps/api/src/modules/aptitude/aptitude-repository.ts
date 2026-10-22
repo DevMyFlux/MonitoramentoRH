@@ -451,7 +451,7 @@ export class AptitudeRepository {
 }
 
 function operationScopeWhere(user: AuthenticatedUser): Record<string, unknown> {
-  if (user.role === "DEV" || user.scopes.some((scope) => scope.isGlobal)) {
+  if (user.scopes.some((scope) => scope.isGlobal)) {
     return {};
   }
 
@@ -465,7 +465,7 @@ function operationScopeWhere(user: AuthenticatedUser): Record<string, unknown> {
 }
 
 function requirementScopeWhere(user: AuthenticatedUser): Record<string, unknown> {
-  if (user.role === "DEV" || user.scopes.some((scope) => scope.isGlobal)) {
+  if (user.scopes.some((scope) => scope.isGlobal)) {
     return {};
   }
 
@@ -478,7 +478,7 @@ function requirementScopeWhere(user: AuthenticatedUser): Record<string, unknown>
 }
 
 function matrixScopeWhere(user: AuthenticatedUser): Record<string, unknown> {
-  if (user.role === "DEV" || user.scopes.some((scope) => scope.isGlobal)) {
+  if (user.scopes.some((scope) => scope.isGlobal)) {
     return {};
   }
 
@@ -494,7 +494,7 @@ function assertScoped(
   user: AuthenticatedUser,
   resource: { companyId?: string | null; operationId?: string | null; unitId?: string | null }
 ): void {
-  if (user.role === "DEV" || canAccessScope(user.scopes, resource)) {
+  if (canAccessScope(user.scopes, resource)) {
     return;
   }
 

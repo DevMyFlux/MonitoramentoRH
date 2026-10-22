@@ -1,5 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, type RoleName } from "@prisma/client";
+import { defaultRolePermissions, permissionCatalog } from "@my-flux/shared";
 import { hashPassword } from "../src/modules/auth/password-service";
 
 const connectionString =
@@ -12,16 +13,12 @@ const roles: Array<{ name: RoleName; level: number; description: string }> = [
   { name: "DEV", level: 4, description: "Acesso tecnico total ao sistema." },
   { name: "ADMIN", level: 3, description: "Responsavel operacional por escopos atribuidos." },
   { name: "RH", level: 2, description: "Responsavel pelo dominio Pessoas dentro do escopo." },
+  { name: "APPROVER", level: 2, description: "Analisa e decide (aprova ou reprova) as escalas enviadas pelo RH." },
   { name: "COMUM", level: 1, description: "Usuario operacional com permissoes explicitas." }
 ];
 
-const permissionSeeds = [
-  ["users:create", "Criar usuarios respeitando a hierarquia."],
-  ["users:invite", "Convidar usuarios respeitando a hierarquia."],
-  ["auth:me", "Consultar a propria sessao."],
-  ["audit:read", "Consultar auditoria permitida."],
-  ["scope:manage", "Gerenciar escopos permitidos."]
-] as const;
+// Catálogo e matriz padrão vêm de @my-flux/shared (mesma fonte da migração 0016 e dos testes).
+const permissionSeeds = permissionCatalog.map((p) => [p.code, `${p.label}. ${p.description}`] as const);
 
 async function main() {
   for (const role of roles) {
@@ -46,6 +43,7 @@ async function main() {
   const devRole = await prisma.role.findUniqueOrThrow({ where: { name: "DEV" } });
   const adminRole = await prisma.role.findUniqueOrThrow({ where: { name: "ADMIN" } });
   const rhRole = await prisma.role.findUniqueOrThrow({ where: { name: "RH" } });
+  const approverRole = await prisma.role.findUniqueOrThrow({ where: { name: "APPROVER" } });
   const comumRole = await prisma.role.findUniqueOrThrow({ where: { name: "COMUM" } });
 
   const permissions = await prisma.permission.findMany({
@@ -53,14 +51,9 @@ async function main() {
     select: { id: true, code: true }
   });
   const permissionByCode = new Map(permissions.map((permission) => [permission.code, permission.id]));
-  const rolePermissions: Record<RoleName, string[]> = {
-    DEV: permissionSeeds.map(([code]) => code),
-    ADMIN: ["users:create", "users:invite", "auth:me", "audit:read", "scope:manage"],
-    RH: ["users:create", "users:invite", "auth:me"],
-    COMUM: ["auth:me"]
-  };
-  for (const [roleName, codes] of Object.entries(rolePermissions) as Array<[RoleName, string[]]>) {
-    const role = { DEV: devRole, ADMIN: adminRole, RH: rhRole, COMUM: comumRole }[roleName];
+  const rolePermissions: Record<RoleName, readonly string[]> = defaultRolePermissions;
+  for (const [roleName, codes] of Object.entries(rolePermissions) as Array<[RoleName, readonly string[]]>) {
+    const role = { DEV: devRole, ADMIN: adminRole, RH: rhRole, APPROVER: approverRole, COMUM: comumRole }[roleName];
     for (const code of codes) {
       const permissionId = permissionByCode.get(code);
       if (!permissionId) continue;
@@ -109,6 +102,17 @@ async function main() {
       name: "Usuario RH Inicial",
       passwordHash,
       roleId: rhRole.id
+    }
+  });
+
+  await prisma.user.upsert({
+    where: { email: "approver@myflux.local" },
+    update: { passwordHash, isActive: true, status: "ACTIVE" },
+    create: {
+      email: "approver@myflux.local",
+      name: "Usuario APROVADOR Inicial",
+      passwordHash,
+      roleId: approverRole.id
     }
   });
 

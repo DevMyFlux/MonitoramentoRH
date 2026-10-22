@@ -1,9 +1,9 @@
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { employeeInputSchema, idParamsSchema } from "@my-flux/validation";
-import { HttpError } from "../../lib/http-error.js";
-import { verifyAccessToken } from "../auth/token-service.js";
 import type { UserRepository } from "../users/user-repository.js";
+import { authenticateRequest } from "../auth/authenticate.js";
+import { requirePermission } from "../identity/authorization.js";
 import {
   attachmentHeader,
   buildEmployeeExportRows,
@@ -47,13 +47,13 @@ export async function registerEmployeeRoutes(
 
   app.post("/employees", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageEmployees(user.role);
+    requirePermission(user, "employees:manage");
     return { data: await repository.create(user, employeeInputSchema.parse(request.body)) };
   });
 
   app.patch("/employees/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageEmployees(user.role);
+    requirePermission(user, "employees:manage");
     const params = idParamsSchema.parse(request.params);
     return {
       data: await repository.update(
@@ -66,38 +66,8 @@ export async function registerEmployeeRoutes(
 
   app.delete("/employees/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageEmployees(user.role);
+    requirePermission(user, "employees:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archive(user, params.id) };
   });
-}
-
-function assertCanManageEmployees(role: string) {
-  if (role === "DEV" || role === "ADMIN" || role === "RH") {
-    return;
-  }
-
-  throw new HttpError(403, "FORBIDDEN", "Usuario sem permissao para gerenciar colaboradores.");
-}
-
-async function authenticateRequest(request: FastifyRequest, users: UserRepository) {
-  const authorization = request.headers.authorization;
-
-  if (!authorization?.startsWith("Bearer ")) {
-    throw new HttpError(401, "AUTHENTICATION_REQUIRED", "Autenticacao obrigatoria.");
-  }
-
-  const payload = verifyAccessToken(authorization.slice("Bearer ".length));
-
-  if (!payload) {
-    throw new HttpError(401, "INVALID_ACCESS_TOKEN", "Token invalido.");
-  }
-
-  const user = await users.findById(payload.sub);
-
-  if (!user) {
-    throw new HttpError(401, "INVALID_ACCESS_TOKEN", "Usuario da sessao nao encontrado.");
-  }
-
-  return user;
 }

@@ -2,7 +2,7 @@
    tabbed drawer (profissional / unidade e escala / horário / status /
    afastamentos) instead of the generic single-form CRUD in resource-page.tsx. */
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import {
   CalendarPlus,
   Download,
@@ -23,6 +23,7 @@ import {
   type ParityGroup
 } from "@my-flux/shared";
 import { Badge, Button, Drawer, Tabs } from "../components/ui";
+import { usePermissions } from "../features/auth/session-store";
 import { download, request, text, date, type Row } from "../features/my-flux/client";
 import { labels } from "../features/my-flux/resources";
 
@@ -111,6 +112,15 @@ const emptyForm = (operationId: string): EmployeeForm => ({
 });
 
 export function EmployeesPage() {
+  // Só a interface: a API valida cada permissão no servidor. Aqui se evita oferecer o que o perfil não pode fazer.
+  const { can } = usePermissions();
+  const canManage = can("employees:manage");
+  const canLeaves = can("leaves:manage");
+  const guarded = (node: ReactNode) => (
+    <fieldset disabled={!canManage} className="contents">
+      {node}
+    </fieldset>
+  );
   const [operations, setOperations] = useState<Row[]>([]);
   const [functions, setFunctions] = useState<Row[]>([]);
   const [eventTypes, setEventTypes] = useState<Row[]>([]);
@@ -504,9 +514,11 @@ export function EmployeesPage() {
           >
             {exporting ? "Gerando..." : "Extrair XLSX"}
           </Button>
-          <Button icon={<Plus size={16} />} onClick={openCreate} disabled={!operations.length}>
-            Novo colaborador
-          </Button>
+          {canManage && (
+            <Button icon={<Plus size={16} />} onClick={openCreate} disabled={!operations.length}>
+              Novo colaborador
+            </Button>
+          )}
         </div>
       </div>
 
@@ -631,22 +643,24 @@ export function EmployeesPage() {
                     <td className="whitespace-nowrap px-4 py-3">
                       <div className="flex justify-end gap-2">
                         <Button size="sm" variant="ghost" onClick={() => openEdit(row)}>
-                          Editar
+                          {canManage ? "Editar" : "Ver"}
                         </Button>
-                        <Button
-                          size="sm"
-                          variant={text(row.status) === "TERMINATED" ? "secondary" : "danger"}
-                          icon={
-                            text(row.status) === "TERMINATED" ? (
-                              <UserCheck size={14} />
-                            ) : (
-                              <UserX size={14} />
-                            )
-                          }
-                          onClick={() => void toggleTermination(row)}
-                        >
-                          {text(row.status) === "TERMINATED" ? "Reativar" : "Desligar"}
-                        </Button>
+                        {canManage && (
+                          <Button
+                            size="sm"
+                            variant={text(row.status) === "TERMINATED" ? "secondary" : "danger"}
+                            icon={
+                              text(row.status) === "TERMINATED" ? (
+                                <UserCheck size={14} />
+                              ) : (
+                                <UserX size={14} />
+                              )
+                            }
+                            onClick={() => void toggleTermination(row)}
+                          >
+                            {text(row.status) === "TERMINATED" ? "Reativar" : "Desligar"}
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -670,7 +684,7 @@ export function EmployeesPage() {
               {
                 id: "profissional",
                 label: "Profissional",
-                content: (
+                content: guarded(
                   <div className="space-y-3">
                     <TextField
                       label="Nome"
@@ -752,7 +766,7 @@ export function EmployeesPage() {
               {
                 id: "unidade",
                 label: "Unidade e escala",
-                content: (
+                content: guarded(
                   <div className="space-y-3">
                     <SelectField
                       label="Unidade"
@@ -879,7 +893,7 @@ export function EmployeesPage() {
               {
                 id: "horario",
                 label: "Horário",
-                content: (
+                content: guarded(
                   <div className="space-y-2 text-sm">
                     {form.shift ? (
                       matchedShiftParameter ? (
@@ -909,7 +923,7 @@ export function EmployeesPage() {
               {
                 id: "status",
                 label: "Status",
-                content: (
+                content: guarded(
                   <div className="space-y-3">
                     <SelectField
                       label="Situação"
@@ -951,6 +965,7 @@ export function EmployeesPage() {
                   </p>
                 ) : (
                   <div className="space-y-4">
+                    {canLeaves ? (
                     <form onSubmit={addLeave} className="space-y-2 rounded border border-slate-200 p-3">
                       <SelectField
                         label="Tipo"
@@ -972,6 +987,9 @@ export function EmployeesPage() {
                         {leaveSaving ? "Registrando..." : "Registrar afastamento"}
                       </Button>
                     </form>
+                    ) : (
+                      <p className="text-xs text-slate-500">Seu perfil consulta os afastamentos, mas não registra novos.</p>
+                    )}
                     <div className="space-y-2">
                       {employeeEvents.length ? (
                         employeeEvents.map((event) => (
@@ -985,13 +1003,15 @@ export function EmployeesPage() {
                                 {date(event.startsAt)} – {date(event.endsAt)}
                               </p>
                             </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              icon={<Trash2 size={14} />}
-                              onClick={() => void removeLeave(event.id)}
-                              aria-label="Remover afastamento"
-                            />
+                            {canLeaves && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                icon={<Trash2 size={14} />}
+                                onClick={() => void removeLeave(event.id)}
+                                aria-label="Remover afastamento"
+                              />
+                            )}
                           </div>
                         ))
                       ) : (
@@ -1012,9 +1032,11 @@ export function EmployeesPage() {
             <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={saving}>
               Fechar
             </Button>
-            <Button type="button" onClick={() => void saveEmployee()} disabled={saving}>
-              {saving ? "Salvando..." : editingId ? "Salvar alterações" : "Cadastrar colaborador"}
-            </Button>
+            {canManage && (
+              <Button type="button" onClick={() => void saveEmployee()} disabled={saving}>
+                {saving ? "Salvando..." : editingId ? "Salvar alterações" : "Cadastrar colaborador"}
+              </Button>
+            )}
           </div>
         </div>
       </Drawer>

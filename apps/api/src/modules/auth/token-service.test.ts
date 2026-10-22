@@ -8,6 +8,7 @@ describe("token service", () => {
       email: "dev@myflux.local",
       name: "Usuario DEV Inicial",
       role: "DEV",
+      permissions: [],
       scopes: [{ isGlobal: true }]
     });
 

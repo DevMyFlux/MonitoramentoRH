@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const roleSchema = z.enum(["DEV", "ADMIN", "RH", "COMUM"]);
+export const roleSchema = z.enum(["DEV", "ADMIN", "RH", "APPROVER", "COMUM"]);
 
 export const apiErrorSchema = z.object({
   code: z.string().min(1),
@@ -61,6 +61,16 @@ export const invitationRequestSchema = z.object({
   name: z.string().min(2).max(160),
   role: roleSchema,
   scopes: z.array(scopeInputSchema).default([])
+});
+
+export const rolePermissionsUpdateSchema = z.object({
+  permissions: z.array(z.string().min(3).max(80)).max(100),
+  justification: z.string().min(5).max(500).nullable().optional()
+});
+
+export const userRoleChangeSchema = z.object({
+  role: roleSchema,
+  justification: z.string().min(5).max(500).nullable().optional()
 });
 
 export const idParamsSchema = z.object({
@@ -411,8 +421,7 @@ export const scheduleVersionInputSchema = z.object({
 
 export const scheduleTransitionInputSchema = z.object({
   status: z.enum(["IN_REVIEW", "APPROVED", "PUBLISHED", "ARCHIVED"]),
-  reason: z.string().max(1000).nullable().optional(),
-  overrideJustification: z.string().min(5).max(1000).nullable().optional()
+  reason: z.string().max(1000).nullable().optional()
 });
 
 export const reportKindSchema = z.enum(["INCONSISTENCIES", "GAPS"]);

@@ -4,10 +4,10 @@ import {
   eventTypeInputSchema,
   idParamsSchema
 } from "@my-flux/validation";
-import type { FastifyInstance, FastifyRequest } from "fastify";
-import { HttpError } from "../../lib/http-error.js";
-import { verifyAccessToken } from "../auth/token-service.js";
+import type { FastifyInstance } from "fastify";
 import type { UserRepository } from "../users/user-repository.js";
+import { authenticateRequest } from "../auth/authenticate.js";
+import { requirePermission } from "../identity/authorization.js";
 import type { CalendarRepository } from "./calendar-repository.js";
 
 export async function registerCalendarRoutes(
@@ -19,7 +19,7 @@ export async function registerCalendarRoutes(
 
   app.post("/event-types", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageCalendar(user.role);
+    requirePermission(user, "leaves:manage");
     return {
       data: await repository.createEventType(user, eventTypeInputSchema.parse(request.body))
     };
@@ -27,7 +27,7 @@ export async function registerCalendarRoutes(
 
   app.delete("/event-types/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageCalendar(user.role);
+    requirePermission(user, "leaves:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveEventType(user, params.id) };
   });
@@ -39,7 +39,7 @@ export async function registerCalendarRoutes(
 
   app.post("/calendar/events", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageCalendar(user.role);
+    requirePermission(user, "leaves:manage");
     return {
       data: await repository.createEvent(user, calendarEventInputSchema.parse(request.body))
     };
@@ -47,7 +47,7 @@ export async function registerCalendarRoutes(
 
   app.delete("/calendar/events/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertCanManageCalendar(user.role);
+    requirePermission(user, "leaves:manage");
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveEvent(user, params.id) };
   });
@@ -62,34 +62,4 @@ export async function registerCalendarRoutes(
       })
     };
   });
-}
-
-function assertCanManageCalendar(role: string) {
-  if (role === "DEV" || role === "ADMIN" || role === "RH") {
-    return;
-  }
-
-  throw new HttpError(403, "FORBIDDEN", "Usuario sem permissao para gerenciar calendario.");
-}
-
-async function authenticateRequest(request: FastifyRequest, users: UserRepository) {
-  const authorization = request.headers.authorization;
-
-  if (!authorization?.startsWith("Bearer ")) {
-    throw new HttpError(401, "AUTHENTICATION_REQUIRED", "Autenticacao obrigatoria.");
-  }
-
-  const payload = verifyAccessToken(authorization.slice("Bearer ".length));
-
-  if (!payload) {
-    throw new HttpError(401, "INVALID_ACCESS_TOKEN", "Token invalido.");
-  }
-
-  const user = await users.findById(payload.sub);
-
-  if (!user) {
-    throw new HttpError(401, "INVALID_ACCESS_TOKEN", "Usuario da sessao nao encontrado.");
-  }
-
-  return user;
 }

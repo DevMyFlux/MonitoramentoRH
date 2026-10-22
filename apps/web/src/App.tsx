@@ -2,20 +2,23 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AppShell } from "./components/layout";
 import { clearSession, request, saveSession, session } from "./features/my-flux/client";
+import { setSessionUser, type SessionUser } from "./features/auth/session-store";
 
-// Temporary, explicitly requested: skip the /login screen as the app's entry
-// gate and sign straight in as the seeded DEV user (apps/api/prisma/seed.ts)
-// instead of redirecting to it. /login itself is untouched (still reachable
-// directly, e.g. after clicking "Sair") — this only short-circuits the
-// "no session yet"/"session expired" branches below. To restore the normal
-// login gate, set this back to false.
-const DEV_AUTO_LOGIN = true;
+// Atalho de DESENVOLVIMENTO (opcional): entra sozinho com uma conta de teste em vez de passar pela tela de login.
+// Só existe no servidor de desenvolvimento (`import.meta.env.DEV`) e só quando `VITE_DEV_AUTO_LOGIN=true`; o e-mail e a
+// senha vêm de variáveis locais (`.env.local`, fora do git) — nenhuma credencial fica escrita no código.
+// Em produção (build) esta constante é falsa e o login é SEMPRE exigido.
+const DEV_AUTO_LOGIN = import.meta.env.DEV && import.meta.env.VITE_DEV_AUTO_LOGIN === "true";
 
 async function autoLoginAsDev(): Promise<void> {
+  const email = import.meta.env.VITE_DEV_AUTO_LOGIN_EMAIL;
+  const password = import.meta.env.VITE_DEV_AUTO_LOGIN_PASSWORD;
+  if (!email || !password)
+    throw new Error("Defina VITE_DEV_AUTO_LOGIN_EMAIL e VITE_DEV_AUTO_LOGIN_PASSWORD.");
   const payload = await request<{ accessToken: string; refreshToken: string }>(
     "/auth/login",
     "POST",
-    { email: "dev@myflux.local", password: "ChangeMe!2026" }
+    { email, password }
   );
   saveSession(payload.accessToken, payload.refreshToken);
 }
@@ -39,6 +42,11 @@ export function App({
   useEffect(() => {
     let mounted = true;
 
+    async function loadUser(): Promise<void> {
+      const me = await request<{ user: SessionUser }>("/auth/me");
+      setSessionUser(me.user);
+    }
+
     async function ensureSession(): Promise<void> {
       if (!session()) {
         if (!DEV_AUTO_LOGIN) {
@@ -54,7 +62,7 @@ export function App({
       }
 
       try {
-        await request<{ user: unknown }>("/auth/me");
+        await loadUser();
         if (mounted) {
           setChecking(false);
           setAuthError(false);
@@ -68,6 +76,7 @@ export function App({
         }
         try {
           await autoLoginAsDev();
+          await loadUser();
           if (mounted) {
             setChecking(false);
             setAuthError(false);
@@ -101,8 +110,10 @@ export function App({
     return (
       <main className="grid min-h-screen place-items-center bg-slate-100 p-6 text-center text-sm text-slate-600">
         <div>
-          <p>Não foi possível entrar automaticamente como Dev.</p>
-          <p className="mt-2">Verifique se a API está no ar e recarregue a página.</p>
+          <p>Não foi possível entrar automaticamente com a conta de teste.</p>
+          <p className="mt-2">
+            Verifique se a API está no ar e as variáveis VITE_DEV_AUTO_LOGIN_*.
+          </p>
         </div>
       </main>
     );

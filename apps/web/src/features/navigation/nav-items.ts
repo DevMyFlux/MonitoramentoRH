@@ -4,6 +4,7 @@ import {
   FileCheck2,
   FileCog,
   FileWarning,
+  KeyRound,
   Gauge,
   LayoutDashboard,
   Network,
@@ -14,6 +15,7 @@ import {
   Workflow
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { PermissionCode } from "@my-flux/shared";
 
 export type NavigationItem = {
   label: string;
@@ -21,6 +23,8 @@ export type NavigationItem = {
   icon: LucideIcon;
   /** Temporarily hidden from the sidebar without removing the route/page/API behind it. */
   hidden?: boolean;
+  /** O item só aparece para quem tem esta permissão (a API valida de novo no servidor). */
+  permission?: PermissionCode;
 };
 
 export type NavigationGroup = {
@@ -82,13 +86,18 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     label: "Gestão",
-    hidden: true,
     items: [
-      { label: "Planos de desenvolvimento", href: "/planos", icon: Workflow },
-      { label: "Importações", href: "/importacoes", icon: FileCog },
-      { label: "Auditoria", href: "/auditoria", icon: ShieldCheck },
-      { label: "Usuários", href: "/usuarios", icon: UserCog },
-      { label: "Parâmetros", href: "/parametros", icon: Settings }
+      { label: "Planos de desenvolvimento", href: "/planos", icon: Workflow, hidden: true },
+      { label: "Importações", href: "/importacoes", icon: FileCog, hidden: true },
+      { label: "Auditoria", href: "/auditoria", icon: ShieldCheck, permission: "audit:read" },
+      { label: "Usuários", href: "/usuarios", icon: UserCog, permission: "users:manage" },
+      {
+        label: "Perfis e permissões",
+        href: "/perfis",
+        icon: KeyRound,
+        permission: "permissions:manage"
+      },
+      { label: "Parâmetros", href: "/parametros", icon: Settings, hidden: true }
     ]
   }
 ];

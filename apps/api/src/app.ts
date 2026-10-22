@@ -37,6 +37,10 @@ import { registerReportRoutes } from "./modules/reports/report-routes.js";
 import { ScheduleRepository } from "./modules/scheduling/schedule-repository.js";
 import { registerScheduleRoutes } from "./modules/scheduling/schedule-routes.js";
 import { registerEmployeeScheduleRoutes } from "./modules/scheduling/employee-schedule-routes.js";
+import { RoleRepository } from "./modules/identity/role-repository.js";
+import { registerRoleRoutes } from "./modules/identity/role-routes.js";
+import { UserAdminRepository } from "./modules/users/user-admin-repository.js";
+import { registerUserAdminRoutes } from "./modules/users/user-admin-routes.js";
 import { UserRepository } from "./modules/users/user-repository.js";
 
 const version = "0.0.0";
@@ -251,6 +255,13 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(async a => registerRecruitmentRoutes(a, userRepository, prisma), { prefix: apiPrefix });
   await app.register(async a => registerWorkspaceRoutes(a, userRepository, prisma), { prefix: apiPrefix });
   await app.register(async a => registerEmployeeScheduleRoutes(a, userRepository, prisma), { prefix: apiPrefix });
+  await app.register(
+    async (a) => registerUserAdminRoutes(a, userRepository, new UserAdminRepository(prisma)),
+    { prefix: apiPrefix }
+  );
+  await app.register(async (a) => registerRoleRoutes(a, userRepository, new RoleRepository(prisma)), {
+    prefix: apiPrefix
+  });
 
   // Production deploy serves the built web app (apps/web/dist, copied to
   // dist/public alongside this bundled server — see scripts/bundle.mjs) from

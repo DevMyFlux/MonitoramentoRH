@@ -92,7 +92,7 @@ export class ReportRepository {
 }
 
 function operationScopeWhere(user: AuthenticatedUser): Record<string, unknown> {
-  if (user.role === "DEV" || user.scopes.some((scope) => scope.isGlobal)) {
+  if (user.scopes.some((scope) => scope.isGlobal)) {
     return {};
   }
 

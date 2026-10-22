@@ -491,7 +491,7 @@ export class OperationalRepository {
     // shape below: Prisma drops an empty relation filter used as an OR branch instead of
     // treating it as "always true", which silently turned this into "operationId: null" only
     // and hid every scoped function from unrestricted users. Skip the OR entirely for them.
-    const unrestricted = user.role === "DEV" || user.scopes.some((scope) => scope.isGlobal);
+    const unrestricted = user.scopes.some((scope) => scope.isGlobal);
     return this.db.jobFunction.findMany({
       where: {
         status: "ACTIVE",
@@ -613,7 +613,7 @@ function assertScoped(
   user: AuthenticatedUser,
   resource: { companyId?: string | null; operationId?: string | null; unitId?: string | null }
 ): void {
-  if (user.role === "DEV" || canAccessScope(user.scopes, resource)) {
+  if (canAccessScope(user.scopes, resource)) {
     return;
   }
 
@@ -621,7 +621,7 @@ function assertScoped(
 }
 
 function scopeWhere(user: AuthenticatedUser, field: "companyId"): Record<string, unknown> {
-  if (user.role === "DEV" || user.scopes.some((scope) => scope.isGlobal)) {
+  if (user.scopes.some((scope) => scope.isGlobal)) {
     return {};
   }
 
@@ -633,7 +633,7 @@ function scopeWhere(user: AuthenticatedUser, field: "companyId"): Record<string,
 }
 
 function operationScopeWhere(user: AuthenticatedUser): Record<string, unknown> {
-  if (user.role === "DEV" || user.scopes.some((scope) => scope.isGlobal)) {
+  if (user.scopes.some((scope) => scope.isGlobal)) {
     return {};
   }
 

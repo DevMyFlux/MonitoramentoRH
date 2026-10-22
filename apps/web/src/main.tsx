@@ -11,6 +11,7 @@ import { resources } from "./features/my-flux/resources";
 import { QlpPage } from "./pages/qlp-page";
 import { RecruitmentPage } from "./pages/recruitment-page";
 import { MonthlySchedulePage } from "./pages/monthly-schedule-page";
+import { RolesPage } from "./pages/roles-page";
 import { UsersPage } from "./pages/users-page";
 import { EmployeesPage } from "./pages/employees-page";
 import "./styles.css";
@@ -90,6 +91,14 @@ const router = createBrowserRouter([
     element: (
       <App breadcrumbs={["MY FLUX", "Usuários"]}>
         <UsersPage />
+      </App>
+    )
+  },
+  {
+    path: "/perfis",
+    element: (
+      <App breadcrumbs={["MY FLUX", "Perfis e permissões"]}>
+        <RolesPage />
       </App>
     )
   },

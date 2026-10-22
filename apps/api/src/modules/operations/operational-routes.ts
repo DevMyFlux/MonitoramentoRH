@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import {
   clientInputSchema,
   companyInputSchema,
@@ -10,9 +10,8 @@ import {
   serviceInputSchema,
   unitInputSchema
 } from "@my-flux/validation";
-import { HttpError } from "../../lib/http-error.js";
-import { verifyAccessToken } from "../auth/token-service.js";
 import type { UserRepository } from "../users/user-repository.js";
+import { authenticateRequest } from "../auth/authenticate.js";
 import { assertCanManageMasterData } from "./master-data-policy.js";
 import type { OperationalRepository } from "./operational-repository.js";
 
@@ -274,26 +273,4 @@ export async function registerOperationalRoutes(
     const params = idParamsSchema.parse(request.params);
     return { data: await repository.archiveJobFunction(user, params.id) };
   });
-}
-
-async function authenticateRequest(request: FastifyRequest, users: UserRepository) {
-  const authorization = request.headers.authorization;
-
-  if (!authorization?.startsWith("Bearer ")) {
-    throw new HttpError(401, "AUTHENTICATION_REQUIRED", "Autenticacao obrigatoria.");
-  }
-
-  const payload = verifyAccessToken(authorization.slice("Bearer ".length));
-
-  if (!payload) {
-    throw new HttpError(401, "INVALID_ACCESS_TOKEN", "Token invalido.");
-  }
-
-  const user = await users.findById(payload.sub);
-
-  if (!user) {
-    throw new HttpError(401, "INVALID_ACCESS_TOKEN", "Usuario da sessao nao encontrado.");
-  }
-
-  return user;
 }

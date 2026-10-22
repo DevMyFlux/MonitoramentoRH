@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowUpRight, Search, X } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
+import { usePermissions } from "../../features/auth/session-store";
 import { navigationGroups } from "../../features/navigation/nav-items";
 import { cn } from "../../lib/cn";
 import { Brand } from "../brand";
@@ -8,6 +9,7 @@ import { Brand } from "../brand";
 type SidebarProps = { isOpen?: boolean; onNavigate?: () => void };
 export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
   const [query, setQuery] = useState("");
+  const { can } = usePermissions();
   const normalize = (value: string) =>
     value
       .normalize("NFD")
@@ -18,7 +20,10 @@ export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
     .map((group) => ({
       ...group,
       items: group.items.filter(
-        (item) => !item.hidden && normalize(item.label).includes(normalize(query))
+        (item) =>
+          !item.hidden &&
+          (!item.permission || can(item.permission)) &&
+          normalize(item.label).includes(normalize(query))
       )
     }))
     .filter((group) => group.items.length);

@@ -81,6 +81,7 @@ async function main() {
   const scopedDemoUsers = [
     { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", email: "admin@myflux.local" },
     { id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", email: "rh@myflux.local" },
+    { id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", email: "approver@myflux.local" },
     { id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", email: "comum@myflux.local" }
   ];
   for (const entry of scopedDemoUsers) {

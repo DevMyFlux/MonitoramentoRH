@@ -61,7 +61,7 @@ export class CalendarRepository {
     // empty relation filter (what operationScopeWhere returns for DEV/global users) when it is
     // used as an OR branch, instead of treating it as "always true" — that silently hid every
     // event from unrestricted users. Skip the OR entirely for them.
-    const unrestricted = user.role === "DEV" || user.scopes.some((scope) => scope.isGlobal);
+    const unrestricted = user.scopes.some((scope) => scope.isGlobal);
     return this.db.calendarEvent.findMany({
       where: {
         status: "ACTIVE",
@@ -226,7 +226,7 @@ export class CalendarRepository {
 }
 
 function operationScopeWhere(user: AuthenticatedUser): Record<string, unknown> {
-  if (user.role === "DEV" || user.scopes.some((scope) => scope.isGlobal)) {
+  if (user.scopes.some((scope) => scope.isGlobal)) {
     return {};
   }
 
@@ -243,7 +243,7 @@ function assertScoped(
   user: AuthenticatedUser,
   resource: { companyId?: string | null; operationId?: string | null; unitId?: string | null }
 ): void {
-  if (user.role === "DEV" || canAccessScope(user.scopes, resource)) {
+  if (canAccessScope(user.scopes, resource)) {
     return;
   }
 

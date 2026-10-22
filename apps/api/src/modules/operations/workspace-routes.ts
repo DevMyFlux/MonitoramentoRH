@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { Prisma, type PrismaClient } from "@prisma/client";
+import { type PrismaClient } from "@prisma/client";
 import { authenticateRequest } from "../auth/auth-routes.js";
 import type { UserRepository } from "../users/user-repository.js";
 import { assertRole, json, operationWhere, scopedOperation } from "../identity/access.js";
@@ -170,68 +170,6 @@ export async function registerWorkspaceRoutes(
         });
         return row;
       })
-    };
-  });
-  app.get("/users", async (req) => {
-    const user = await authenticateRequest(req, users);
-    assertRole(user, ["DEV", "ADMIN", "RH"]);
-    return {
-      data: await db.user.findMany({
-        where: user.role === "DEV" ? {} : { createdBy: user.id },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          isActive: true,
-          role: { select: { name: true } },
-          scopes: { select: { companyId: true, operationId: true, unitId: true, isGlobal: true } }
-        },
-        orderBy: { name: "asc" }
-      })
-    };
-  });
-  app.patch("/users/:id/status", async (req) => {
-    const user = await authenticateRequest(req, users);
-    assertRole(user, ["DEV", "ADMIN", "RH"]);
-    const { id } = ids.parse(req.params);
-    const { isActive } = z.object({ isActive: z.boolean() }).parse(req.body);
-    return {
-      data: await db.$transaction(
-        async (tx) => {
-          const target = await tx.user.findUnique({ where: { id }, include: { role: true } });
-          if (!target) throw new HttpError(404, "USER_NOT_FOUND", "Usuário não encontrado.");
-          const levels = { DEV: 4, ADMIN: 3, RH: 2, COMUM: 1 };
-          if (
-            user.role !== "DEV" &&
-            (levels[target.role.name] >= levels[user.role] || target.createdBy !== user.id)
-          )
-            throw new HttpError(403, "FORBIDDEN", "Não é permitido gerenciar este usuário.");
-          if (
-            !isActive &&
-            target.role.name === "DEV" &&
-            (await tx.user.count({ where: { isActive: true, role: { name: "DEV" } } })) <= 1
-          )
-            throw new HttpError(409, "LAST_DEV", "O último DEV ativo deve ser preservado.");
-          await tx.user.update({ where: { id }, data: { isActive, updatedBy: user.id } });
-          await tx.refreshSession.updateMany({
-            where: { userId: id },
-            data: { revokedAt: new Date(), status: "ARCHIVED" }
-          });
-          await tx.auditLog.create({
-            data: {
-              userId: user.id,
-              userRole: user.role,
-              action: "USER_DISABLE",
-              entity: "User",
-              entityId: id,
-              after: { isActive },
-              origin: "api"
-            }
-          });
-          return { id, isActive };
-        },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
-      )
     };
   });
 }

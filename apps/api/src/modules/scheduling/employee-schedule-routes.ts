@@ -1,12 +1,13 @@
 import { getScheduleTemplate, scheduleCodeMap, scheduleTemplates } from "@my-flux/shared";
 import { scheduleDayOverrideInputSchema } from "@my-flux/validation";
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { HttpError } from "../../lib/http-error.js";
-import { verifyAccessToken } from "../auth/token-service.js";
 import type { UserRepository } from "../users/user-repository.js";
-import { assertRole, json, scopedOperation } from "../identity/access.js";
+import { authenticateRequest } from "../auth/authenticate.js";
+import { json, scopedOperation } from "../identity/access.js";
+import { requirePermission } from "../identity/authorization.js";
 import { generateEmployeeSchedule } from "./employee-schedule-service.js";
 import { ScheduleDayOverrideRepository } from "./schedule-day-override-repository.js";
 import { renderScheduleWorkbook, scheduleFileName, type ScheduleGridData } from "./xlsx-renderer.js";
@@ -23,13 +24,14 @@ export async function registerEmployeeScheduleRoutes(
 
   app.post("/employee-schedules/generate", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertRole(user, ["DEV", "ADMIN", "RH"]);
+    requirePermission(user, "schedules:generate");
     const input = z.object({ operationId: z.string().uuid(), month: monthSchema }).parse(request.body);
     return { data: await generateEmployeeSchedule(db, user, input.operationId, input.month) };
   });
 
   app.get("/employee-schedules/:id/export", async (request, reply) => {
     const user = await authenticateRequest(request, users);
+    requirePermission(user, "schedules:read");
     const { id } = idSchema.parse(request.params);
     const version = await db.scheduleVersion.findUnique({ where: { id }, include: { operation: true } });
     if (!version || version.archivedAt) {
@@ -77,7 +79,7 @@ export async function registerEmployeeScheduleRoutes(
    */
   app.delete("/employee-schedules/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertRole(user, ["DEV", "ADMIN", "RH"]);
+    requirePermission(user, "schedules:archive");
     const { id } = idSchema.parse(request.params);
     const version = await db.scheduleVersion.findUnique({ where: { id } });
     if (!version || version.archivedAt) {
@@ -127,6 +129,7 @@ export async function registerEmployeeScheduleRoutes(
 
   app.get("/schedule-day-overrides", async (request) => {
     const user = await authenticateRequest(request, users);
+    requirePermission(user, "schedules:read");
     const query = z
       .object({ operationId: z.string().uuid(), month: monthSchema })
       .parse(request.query);
@@ -135,7 +138,7 @@ export async function registerEmployeeScheduleRoutes(
 
   app.post("/schedule-day-overrides", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertRole(user, ["DEV", "ADMIN", "RH"]);
+    requirePermission(user, "schedules:edit");
     const input = scheduleDayOverrideInputSchema.parse(request.body);
     if (!(input.code in scheduleCodeMap)) {
       throw new HttpError(400, "UNKNOWN_SCHEDULE_CODE", "Código de escala desconhecido.");
@@ -145,30 +148,9 @@ export async function registerEmployeeScheduleRoutes(
 
   app.delete("/schedule-day-overrides/:id", async (request) => {
     const user = await authenticateRequest(request, users);
-    assertRole(user, ["DEV", "ADMIN", "RH"]);
+    requirePermission(user, "schedules:edit");
     const { id } = idSchema.parse(request.params);
     return { data: await overrides.remove(user, id) };
   });
 }
 
-async function authenticateRequest(request: FastifyRequest, users: UserRepository) {
-  const authorization = request.headers.authorization;
-
-  if (!authorization?.startsWith("Bearer ")) {
-    throw new HttpError(401, "AUTHENTICATION_REQUIRED", "Autenticacao obrigatoria.");
-  }
-
-  const payload = verifyAccessToken(authorization.slice("Bearer ".length));
-
-  if (!payload) {
-    throw new HttpError(401, "INVALID_ACCESS_TOKEN", "Token invalido.");
-  }
-
-  const user = await users.findById(payload.sub);
-
-  if (!user) {
-    throw new HttpError(401, "INVALID_ACCESS_TOKEN", "Usuario da sessao nao encontrado.");
-  }
-
-  return user;
-}

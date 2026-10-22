@@ -3,11 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "../ui";
 import { Breadcrumbs } from "./breadcrumbs";
+import { usePermissions } from "../../features/auth/session-store";
 import { clearSession } from "../../features/my-flux/client";
 type HeaderProps = { breadcrumbs: string[]; onOpenMenu: () => void };
 export function Header({ breadcrumbs, onOpenMenu }: HeaderProps) {
   const navigate = useNavigate();
   const cache = useQueryClient();
+  const { user, roleLabel } = usePermissions();
   function logout() {
     clearSession();
     cache.clear();
@@ -44,6 +46,15 @@ export function Header({ breadcrumbs, onOpenMenu }: HeaderProps) {
             <Settings size={18} />
           </Link>
           <span className="mx-1 h-6 w-px bg-slate-200" />
+          {user && (
+            <span
+              className="hidden text-right text-xs leading-tight text-slate-600 sm:block"
+              data-testid="current-user"
+            >
+              <span className="block font-medium text-slate-800">{user.name}</span>
+              <span>{roleLabel}</span>
+            </span>
+          )}
           <Button icon={<LogOut size={16} />} onClick={logout} variant="ghost">
             Sair
           </Button>
