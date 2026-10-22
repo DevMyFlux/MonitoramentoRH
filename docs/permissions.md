@@ -84,8 +84,26 @@ auditoria (`PERMISSION_CHANGE`, com antes, depois e justificativa).
 ## Fluxo da escala
 
 ```text
-DRAFT ──schedules:submit──▶ IN_REVIEW ──schedules:approve──▶ APPROVED ──schedules:publish──▶ PUBLISHED
+DRAFT ─┐
+       ├─schedules:submit─▶ IN_REVIEW ─schedules:approve─▶ APPROVED ─schedules:publish─▶ PUBLISHED
+REJECTED ┘                       │
+   ▲                             └─schedules:reject (motivo obrigatório)─▶ REJECTED
+   └── a reprovada volta a ser editável na mesma versão e é reenviada
 ```
+
+Regras (todas no servidor, dentro de uma transação):
+
+- **Só problemas impeditivos barram o envio** (ex.: colaborador sem turno configurado — `SHIFT_NOT_CONFIGURED`). Alertas e informações não barram. A resposta
+  diz quem, quando e o que corrigir.
+- **A aprovação fica atrelada ao conteúdo.** O envio grava o hash (sha256) da grade, das pendências e das métricas; aprovar e publicar conferem que ele não mudou
+  (`APPROVAL_STALE`). Uma aprovação antiga nunca autoriza uma versão diferente. Versões enviadas antes desta regra (sem hash) seguem como estavam.
+- **Reprovar exige motivo** (mínimo de 5 caracteres). O RH vê o motivo, corrige e reenvia; a reprovação anterior sai do estado atual e fica no histórico.
+- **Concorrência otimista**: a tela envia a `revision` que o usuário viu (`expectedRevision`); se a escala mudou desde então, a decisão é recusada
+  (`SCHEDULE_REVISION_CONFLICT`). Duas decisões simultâneas: só uma vale.
+- **Versões substituídas**: publicar uma versão marca a publicada anterior do mesmo mês e unidade como substituída (`supersededAt`), preservando a situação
+  que ela tinha; uma versão substituída não pode mais ser decidida (`SCHEDULE_SUPERSEDED`).
+- **Histórico de decisões** (`GET /schedules/:id/history`, permissão `schedules:read`): gerada, enviada, aprovada, reprovada (com motivo), publicada,
+  substituída — cada uma com quem fez e quando. A auditoria registra o mesmo, de forma enxuta (sem duplicar a escala inteira).
 
 Não existe publicação que pule a aprovação (o antigo "override de DEV" nunca foi implementado e foi removido).
 

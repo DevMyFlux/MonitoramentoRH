@@ -17,6 +17,7 @@ import { effectiveParity, holidaysOfMonth, scheduleCodeMap } from "@my-flux/shar
 import type { AuthenticatedUser } from "@my-flux/types";
 import { HttpError } from "../../lib/http-error.js";
 import { json, scopedOperation } from "../identity/access.js";
+import { contentHashOf } from "./schedule-content.js";
 import {
   employeeAvailability,
   type EmployeeScheduleProfile
@@ -316,17 +317,19 @@ export async function generateEmployeeSchedule(
         where: { operationId, month: monthDate },
         orderBy: { version: "desc" }
       });
+      const generatedResult = {
+        grid: snapshot.grid,
+        pendencies: snapshot.pendencies,
+        metrics: snapshot.metrics
+      };
       const row = await tx.scheduleVersion.create({
         data: {
           operationId,
           month: monthDate,
           version: (previous?.version ?? 0) + 1,
           generatedInput: json({ engine: "employee-schedule", hash: snapshot.hash, month }),
-          generatedResult: json({
-            grid: snapshot.grid,
-            pendencies: snapshot.pendencies,
-            metrics: snapshot.metrics
-          }),
+          generatedResult: json(generatedResult),
+          contentHash: contentHashOf(json(generatedResult)),
           createdBy: user.id,
           history: {
             create: {

@@ -74,6 +74,7 @@ enum WorkflowStatus {
   APPROVED
   PUBLISHED
   ARCHIVED
+  REJECTED
 }
 
 enum RequirementKind {
@@ -637,6 +638,22 @@ model ScheduleVersion {
   publishedBy  String?          @db.Uuid
   publishedAt  DateTime?
   overrideJustification String?
+  /// Contador de alterações: toda mudança de situação/conteúdo exige o valor que o usuário viu (concorrência otimista).
+  revision     Int              @default(1)
+  /// Hash do conteúdo (grade + pendências + métricas) no último envio/edição. A aprovação fica atrelada a ele.
+  contentHash  String?
+  submittedBy  String?          @db.Uuid
+  submittedAt  DateTime?
+  rejectedBy   String?          @db.Uuid
+  rejectedAt   DateTime?
+  rejectionReason String?
+  /// Hash do conteúdo no momento da aprovação; publicar exige que o conteúdo atual ainda seja este.
+  approvedContentHash String?
+  /// Versão da qual esta foi derivada (editar uma escala enviada/aprovada/publicada gera uma nova versão).
+  basedOnVersionId String?      @db.Uuid
+  /// Quando foi substituída por uma versão mais nova (a situação original é preservada, para o histórico).
+  supersededAt DateTime?
+  supersededById String?        @db.Uuid
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   createdBy    String?          @db.Uuid
@@ -646,6 +663,7 @@ model ScheduleVersion {
   history      ScheduleHistory[]
 
   @@unique([operationId, version, month])
+  @@index([basedOnVersionId])
   @@index([operationId])
   @@index([status])
   @@index([month])

@@ -460,6 +460,27 @@ const apiErrorCatalog: Record<string, ApiEntry> = {
     message: "Você não pode desativar a própria conta.",
     action: "Peça a outro administrador."
   },
+  SCHEDULE_HAS_BLOCKING_ISSUES: {
+    message: (original) => original || "A escala tem problemas que impedem o envio.",
+    action:
+      "Corrija os itens indicados (cadastro e configuração) e gere ou envie a escala novamente."
+  },
+  SCHEDULE_SUPERSEDED: {
+    message: (original) => original || "Esta versão foi substituída por uma mais recente.",
+    action: "Atualize a página e trabalhe na versão mais recente."
+  },
+  SCHEDULE_REVISION_CONFLICT: {
+    message: (original) => original || "Esta escala foi alterada por outra pessoa.",
+    action: "Atualize a página, confira o que mudou e tente de novo."
+  },
+  APPROVAL_STALE: {
+    message: (original) => original || "A aprovação não vale mais para o conteúdo atual da escala.",
+    action: "A escala precisa ser reenviada para uma nova análise."
+  },
+  REJECTION_REASON_REQUIRED: {
+    message: "Para reprovar uma escala é obrigatório informar o motivo.",
+    action: "Explique o que precisa ser corrigido (mínimo de 5 caracteres)."
+  },
   DATA_CONFLICT: {
     message: "Os dados foram alterados por outra pessoa ou existe um vínculo com outro registro.",
     action: "Recarregue a página e confira o registro antes de tentar de novo."

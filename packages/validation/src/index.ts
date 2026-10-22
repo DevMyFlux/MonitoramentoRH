@@ -419,9 +419,21 @@ export const scheduleVersionInputSchema = z.object({
   overrideJustification: z.string().min(5).max(1000).nullable().optional()
 });
 
-export const scheduleTransitionInputSchema = z.object({
-  status: z.enum(["IN_REVIEW", "APPROVED", "PUBLISHED", "ARCHIVED"]),
-  reason: z.string().max(1000).nullable().optional()
-});
+export const scheduleTransitionInputSchema = z
+  .object({
+    status: z.enum(["IN_REVIEW", "APPROVED", "REJECTED", "PUBLISHED", "ARCHIVED"]),
+    reason: z.string().max(1000).nullable().optional(),
+    /** Revisão que o usuário viu; se a escala mudou desde então, a operação é recusada (concorrência otimista). */
+    expectedRevision: z.number().int().positive().optional()
+  })
+  .superRefine((value, ctx) => {
+    if (value.status === "REJECTED" && (value.reason ?? "").trim().length < 5) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["reason"],
+        message: "Informe o motivo da reprovação (mínimo de 5 caracteres)."
+      });
+    }
+  });
 
 export const reportKindSchema = z.enum(["INCONSISTENCIES", "GAPS"]);

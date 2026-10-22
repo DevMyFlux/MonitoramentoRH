@@ -22,6 +22,14 @@ export async function registerScheduleRoutes(
     return { data: await repository.list(user) };
   });
 
+  /** Histórico de decisões da versão: quem enviou, aprovou, reprovou, publicou e o motivo. */
+  app.get("/schedules/:id/history", async (request) => {
+    const user = await authenticateRequest(request, users);
+    requirePermission(user, "schedules:read");
+    const params = idParamsSchema.parse(request.params);
+    return { data: await repository.history(user, params.id) };
+  });
+
   app.post("/schedule/preview", async (request) => {
     const user = await authenticateRequest(request, users);
     requirePermission(user, "schedules:generate");
@@ -42,7 +50,13 @@ export async function registerScheduleRoutes(
     requirePermission(user, "schedules:read");
     const params = idParamsSchema.parse(request.params);
     const payload = scheduleTransitionInputSchema.parse(request.body);
-    const updated = await repository.transition(user, params.id, payload.status, payload.reason);
+    const updated = await repository.transition(
+      user,
+      params.id,
+      payload.status,
+      payload.reason,
+      payload.expectedRevision
+    );
     return {
       data: {
         id: updated.id,
@@ -50,6 +64,8 @@ export async function registerScheduleRoutes(
         version: updated.version,
         month: updated.month,
         status: updated.status,
+        revision: updated.revision,
+        rejectionReason: updated.rejectionReason,
         generatedResult: compactResult(updated.generatedResult)
       }
     };

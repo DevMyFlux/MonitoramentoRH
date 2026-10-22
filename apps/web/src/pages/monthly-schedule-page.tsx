@@ -51,10 +51,26 @@ type SelectedCell = {
   currentCode: string;
 };
 
+/** Situação da escala em português. "Reprovada" é próprio da escala (as avaliações usam "Rejeitado" no mapa compartilhado). */
+const statusLabel = (status: string) => (status === "REJECTED" ? "Reprovada" : (labels[status] ?? status));
+
+const historyLabels: Record<string, string> = {
+  SCHEDULE_GENERATE: "Gerada",
+  SUBMIT: "Enviada para aprovação",
+  APPROVE: "Aprovada",
+  REJECT: "Reprovada",
+  PUBLISH: "Publicada",
+  SUPERSEDED: "Substituída por versão mais recente",
+  ARCHIVE: "Excluída",
+  DELETE: "Excluída"
+};
+type HistoryEntry = { id: string; action: string; reason: string | null; at: string; byName: string | null };
+
 const statusTone: Record<string, "success" | "warning" | "danger" | "neutral" | "info"> = {
   DRAFT: "neutral",
   IN_REVIEW: "warning",
   APPROVED: "info",
+  REJECTED: "danger",
   PUBLISHED: "success",
   ARCHIVED: "neutral"
 };
@@ -118,6 +134,10 @@ export function MonthlySchedulePage() {
   const [editReason, setEditReason] = useState("");
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [rejecting, setRejecting] = useState<Row | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [historyOf, setHistoryOf] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   const selected = schedules.find((s) => s.id === selectedId) ?? null;
   const grid = getGrid(selected);
@@ -135,6 +155,8 @@ export function MonthlySchedulePage() {
     [schedules, operationId]
   );
   const latest = unitSchedules[0] ?? null;
+  // escalas em análise e ainda válidas (não substituídas), de todas as unidades do acesso do usuário
+  const pendingApprovals = schedules.filter((s) => text(s.status) === "IN_REVIEW" && !s.supersededAt);
   const unitName = text(operations.find((o) => o.id === operationId)?.name ?? "—");
 
   async function load() {
@@ -214,16 +236,35 @@ export function MonthlySchedulePage() {
     }
   }
 
-  async function status(id: string, next: string) {
+  async function status(version: Row, next: string, reason?: string) {
     try {
-      const row = await request<Row>(`/schedules/${id}/status`, "PATCH", {
+      await request<Row>(`/schedules/${version.id}/status`, "PATCH", {
         status: next,
-        reason: `Fluxo manual: ${next}`
+        // a revisão que a pessoa está vendo: se alguém mudou a escala nesse meio-tempo, a API recusa em vez de sobrescrever
+        expectedRevision: Number(version.revision) || undefined,
+        ...(reason ? { reason } : {})
       });
-      setSchedules((s) => s.map((x) => (x.id === id ? { ...x, ...row } : x)));
-      setNotice(`Escala ${labels[next] ?? next}.`);
+      setNotice(`Escala ${statusLabel(next).toLowerCase()}.`);
+      setRejecting(null);
+      setRejectReason("");
+      await load();
+      if (historyOf === version.id) void openHistory(version);
     } catch (e) {
       setNotice(errorText(e, "Transição não permitida para este perfil."));
+      await load(); // a escala pode ter mudado: mostra o estado atual
+    }
+  }
+
+  async function openHistory(version: Row) {
+    if (historyOf === version.id && history.length) {
+      setHistoryOf(null);
+      return;
+    }
+    try {
+      setHistory(await request<HistoryEntry[]>(`/schedules/${version.id}/history`));
+      setHistoryOf(version.id);
+    } catch (e) {
+      setNotice(errorText(e, "Não foi possível carregar o histórico."));
     }
   }
 
@@ -244,7 +285,7 @@ export function MonthlySchedulePage() {
         `Unidade: ${text(operations.find((o) => o.id === version.operationId)?.name ?? "—")}\n` +
         `Período: ${monthLabel(version.month)} · Versão ${text(version.version)}\n` +
         `Gerada em: ${generatedAt(version.createdAt)}\n` +
-        `Status: ${labels[text(version.status)] ?? text(version.status)}\n\n` +
+        `Status: ${statusLabel(text(version.status))}\n\n` +
         (published ? "ATENÇÃO: esta escala está PUBLICADA.\n\n" : "") +
         `Só esta escala sai da lista. Colaboradores, outras escalas e outras unidades não são afetados.`
     );
@@ -346,28 +387,82 @@ export function MonthlySchedulePage() {
   // Workflow buttons — unchanged meaning, identical for the latest card and the
   // history rows.
   function statusActions(s: Row) {
+    const current = text(s.status);
+    if (s.supersededAt) return null; // versão substituída: não se decide mais
     return (
       <>
-        {text(s.status) === "DRAFT" && can("schedules:submit") && (
-          <Button size="sm" icon={<Check size={14} />} onClick={() => void status(s.id, "IN_REVIEW")}>
-            Enviar
+        {(current === "DRAFT" || current === "REJECTED") && can("schedules:submit") && (
+          <Button size="sm" icon={<Check size={14} />} onClick={() => void status(s, "IN_REVIEW")}>
+            {current === "REJECTED" ? "Reenviar para aprovação" : "Enviar para aprovação"}
           </Button>
         )}
-        {text(s.status) === "IN_REVIEW" && can("schedules:approve") && (
-          <Button
-            size="sm"
-            icon={<CheckCircle2 size={14} />}
-            onClick={() => void status(s.id, "APPROVED")}
-          >
+        {current === "IN_REVIEW" && can("schedules:approve") && (
+          <Button size="sm" icon={<CheckCircle2 size={14} />} onClick={() => void status(s, "APPROVED")}>
             Aprovar
           </Button>
         )}
-        {text(s.status) === "APPROVED" && can("schedules:publish") && (
-          <Button size="sm" onClick={() => void status(s.id, "PUBLISHED")}>
+        {current === "IN_REVIEW" && can("schedules:reject") && (
+          <Button
+            size="sm"
+            variant="danger"
+            icon={<X size={14} />}
+            onClick={() => {
+              setRejecting(s);
+              setRejectReason("");
+            }}
+          >
+            Reprovar
+          </Button>
+        )}
+        {current === "APPROVED" && can("schedules:publish") && (
+          <Button size="sm" onClick={() => void status(s, "PUBLISHED")}>
             Publicar
           </Button>
         )}
       </>
+    );
+  }
+
+  /** Motivo da reprovação, substituição por versão mais nova e o histórico de decisões (quem, quando, por quê). */
+  function decisionNotes(s: Row) {
+    const superseded = s.supersededAt
+      ? unitSchedules.find((x) => x.id === s.supersededById)
+      : undefined;
+    return (
+      <div className="mt-3 space-y-2">
+        {text(s.status) === "REJECTED" && s.rejectionReason ? (
+          <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+            <p className="font-semibold">Reprovada em {generatedAt(s.rejectedAt)}</p>
+            <p className="mt-0.5">Motivo: {text(s.rejectionReason)}</p>
+            <p className="mt-1 text-xs">Corrija a escala, ajuste o que for preciso e reenvie para aprovação.</p>
+          </div>
+        ) : null}
+        {s.supersededAt ? (
+          <p className="rounded border border-slate-200 bg-slate-50 p-2 text-xs text-slate-600">
+            Esta versão foi substituída{superseded ? ` pela versão ${text(superseded.version)}` : " por uma mais recente"} e
+            fica só para consulta.
+          </p>
+        ) : null}
+        <button
+          type="button"
+          className="text-xs font-medium text-emerald-800 hover:underline"
+          onClick={() => void openHistory(s)}
+        >
+          {historyOf === s.id ? "Ocultar histórico de decisões" : "Ver histórico de decisões"}
+        </button>
+        {historyOf === s.id && (
+          <ol className="space-y-1 rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+            {history.map((h) => (
+              <li key={h.id}>
+                <span className="text-slate-500">{generatedAt(h.at)}</span> ·{" "}
+                <b>{historyLabels[h.action] ?? h.action}</b>
+                {h.byName ? ` — ${h.byName}` : ""}
+                {h.reason ? <span className="text-slate-600"> · {h.reason}</span> : null}
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
     );
   }
 
@@ -559,6 +654,67 @@ export function MonthlySchedulePage() {
           {notice}
         </div>
       )}
+      {can("schedules:approve") && pendingApprovals.length > 0 && (
+        <div className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <p className="font-semibold">
+            {pendingApprovals.length === 1
+              ? "Há 1 escala aguardando a sua decisão."
+              : `Há ${pendingApprovals.length} escalas aguardando a sua decisão.`}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {pendingApprovals.slice(0, 6).map((p) => (
+              <Button
+                key={p.id}
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setUnitTouched(true);
+                  setOperationId(text(p.operationId));
+                  setSelectedId(p.id);
+                  void loadOverrides(p);
+                }}
+              >
+                {text(operations.find((o) => o.id === p.operationId)?.name ?? "Unidade")} · {monthLabel(p.month)}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+      {rejecting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
+          <div className="w-full max-w-lg rounded bg-white p-6 shadow-2xl" role="dialog" aria-label="Reprovar escala">
+            <h2 className="font-semibold">Reprovar escala</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              {monthLabel(rejecting.month)} · Versão {text(rejecting.version)}. O motivo é obrigatório e o RH o verá para
+              corrigir e reenviar.
+            </p>
+            <label className="mt-4 block text-sm">
+              Motivo da reprovação
+              <textarea
+                className="mt-1 w-full rounded border p-2"
+                rows={4}
+                value={rejectReason}
+                maxLength={1000}
+                onChange={(e) => setRejectReason(e.target.value)}
+                autoFocus
+              />
+            </label>
+            <p className="mt-1 text-xs text-slate-500">Mínimo de 5 caracteres.</p>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setRejecting(null)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                disabled={rejectReason.trim().length < 5}
+                onClick={() => void status(rejecting, "REJECTED", rejectReason.trim())}
+              >
+                Reprovar escala
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       <section className="rounded border border-slate-200 bg-white p-5 shadow-sm">
         <div className="grid gap-4 md:grid-cols-3">
           <label className="text-sm">
@@ -630,7 +786,7 @@ export function MonthlySchedulePage() {
                 </h3>
                 <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
                   <Badge tone={statusTone[text(latest.status)] ?? "neutral"}>
-                    {labels[text(latest.status)] ?? text(latest.status)}
+                    {statusLabel(text(latest.status))}
                   </Badge>
                   <span>Gerada em {generatedAt(latest.createdAt)}</span>
                 </p>
@@ -649,6 +805,7 @@ export function MonthlySchedulePage() {
               </div>
             </div>
             {metricsRow(latest)}
+            {decisionNotes(latest)}
             {scheduleViewer(latest)}
           </article>
         )}
@@ -680,7 +837,7 @@ export function MonthlySchedulePage() {
                       <p className="flex flex-wrap items-center gap-2 font-medium">
                         {monthLabel(s.month)} · Versão {text(s.version)}
                         <Badge tone={statusTone[text(s.status)] ?? "neutral"}>
-                          {labels[text(s.status)] ?? text(s.status)}
+                          {statusLabel(text(s.status))}
                         </Badge>
                         {index === 0 && <Badge tone="info">Atual</Badge>}
                       </p>
@@ -715,6 +872,7 @@ export function MonthlySchedulePage() {
                       )}
                     </div>
                   </div>
+                  {index !== 0 && decisionNotes(s)}
                   {index !== 0 && scheduleViewer(s)}
                 </article>
               ))
