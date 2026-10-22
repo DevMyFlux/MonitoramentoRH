@@ -172,6 +172,92 @@ const issueCatalog = {
       `${detailsText(c, "Uma competência obrigatória vence em breve.")} O dia foi sinalizado ${describeWhen(c)}.`,
     action: () => "Providencie a renovação antes do vencimento."
   },
+  // ── Edição de escala já gerada ───────────────────────────────────────────
+  EDIT_UNKNOWN_CODE: {
+    severity: "blocking",
+    title: (c) => `Código de escala inválido ${nameDe(c)}`,
+    detail: (c) => `O código escolhido ${describeWhen(c)} não existe na legenda da escala.`,
+    action: () => "Escolha um código da lista."
+  },
+  EDIT_EMPLOYEE_NOT_IN_SCHEDULE: {
+    severity: "blocking",
+    title: () => "Colaborador fora desta escala",
+    detail: (c) =>
+      `${name(c, "O colaborador")} não faz parte desta escala, então o dia não pode ser alterado.`,
+    action: () => "Gere a escala novamente se a pessoa passou a fazer parte da unidade."
+  },
+  EDIT_DATE_OUTSIDE_MONTH: {
+    severity: "blocking",
+    title: () => "Data fora do mês da escala",
+    detail: (c) => `A data ${describeWhen(c)} não pertence ao mês desta escala.`,
+    action: () => "Escolha um dia do mês da escala."
+  },
+  EDIT_DUPLICATE_CHANGE: {
+    severity: "blocking",
+    title: () => "Alteração repetida",
+    detail: (c) => `Há mais de uma alteração para ${name(c, "o colaborador")} ${describeWhen(c)}.`,
+    action: () => "Mantenha uma única alteração por colaborador e dia."
+  },
+  EDIT_LEAVE_CODE_NOT_ALLOWED: {
+    severity: "blocking",
+    title: () => "Afastamento não pode ser lançado direto na escala",
+    detail: (c) =>
+      `Férias, licenças e atestados vêm do cadastro de afastamentos ${nameDe(c)}, e ${describeWhen(c)} não há esse afastamento registrado.`,
+    action: () => "Registre o afastamento na ficha do colaborador e atualize a escala."
+  },
+  EDIT_EMPLOYEE_ON_LEAVE: {
+    severity: "blocking",
+    title: (c) => `${name(c, "O colaborador")} tem afastamento registrado`,
+    detail: (c) =>
+      `${detailsText(c, "Há um afastamento registrado")} (${describeWhen(c)}). O dia deve continuar como afastamento.`,
+    action: () =>
+      "Para cobrir o dia, escolha outro colaborador ou ajuste o afastamento no cadastro."
+  },
+  EDIT_EMPLOYEE_NOT_ACTIVE: {
+    severity: "blocking",
+    title: (c) => `${name(c, "O colaborador")} não está ativo nesse dia`,
+    detail: (c) =>
+      `Não é possível escalar ${describeWhen(c)}: a pessoa ainda não foi admitida, já foi desligada ou o cadastro não está ativo.`,
+    action: () => "Escolha outro colaborador."
+  },
+  EDIT_WORK_ON_REST_DAY: {
+    severity: "blocking",
+    title: (c) => `Dia de folga ${nameDe(c)} pelo rodízio`,
+    detail: (c) =>
+      `Pelo rodízio o colaborador não trabalha ${describeWhen(c)}. Um turno normal não pode ser lançado em dia de folga.`,
+    action: () => "Se for um dia extra de trabalho, use Cobertura (C)."
+  },
+  EDIT_JUSTIFICATION_REQUIRED: {
+    severity: "blocking",
+    title: (c) => `Informe o motivo do ajuste ${nameDe(c)}`,
+    detail: (c) => `A alteração ${describeWhen(c)} foge do rodízio e precisa de uma justificativa.`,
+    action: () => "Escreva o motivo; ele fica registrado no histórico da escala."
+  },
+  EDIT_APTITUDE_NOT_OK: {
+    severity: "warning",
+    title: (c) => `Pendência de documentos ou competências ${nameDe(c)}`,
+    detail: (c) => `${detailsText(c, "O cadastro tem uma pendência.")} (${describeWhen(c)}).`,
+    action: () => "Regularize o cadastro ou escolha outro colaborador."
+  },
+  EDIT_REST_TIME_SHORT: {
+    severity: "warning",
+    title: (c) => `Descanso menor que o previsto ${nameDe(c)}`,
+    detail: (c) => detailsText(c, "O descanso entre os turnos é menor que o previsto."),
+    action: () => "Confirme se esse dia extra é realmente necessário."
+  },
+  EDIT_COVERAGE_ON_WORKDAY: {
+    severity: "warning",
+    title: (c) => `Cobertura em dia que já é de trabalho ${nameDe(c)}`,
+    detail: (c) =>
+      `${name(c, "O colaborador")} já trabalha ${describeWhen(c)} pelo rodízio; a cobertura (C) não acrescenta pessoal nesse dia.`,
+    action: () => "Use Cobertura (C) em um dia de folga do colaborador."
+  },
+  EDIT_COVERAGE_REDUCED: {
+    severity: "info",
+    title: (c) => `Dia de trabalho virou folga ${nameDe(c)}`,
+    detail: (c) =>
+      `${name(c, "O colaborador")} trabalharia ${describeWhen(c)} pelo rodízio; com a folga, a cobertura desse dia diminui.`
+  },
   NO_APPLICABLE_REQUIREMENTS: {
     severity: "info",
     title: (c) => `Sem requisitos aplicáveis ${nameDe(c)}`,
@@ -480,6 +566,14 @@ const apiErrorCatalog: Record<string, ApiEntry> = {
   REJECTION_REASON_REQUIRED: {
     message: "Para reprovar uma escala é obrigatório informar o motivo.",
     action: "Explique o que precisa ser corrigido (mínimo de 5 caracteres)."
+  },
+  SCHEDULE_EDIT_INVALID: {
+    message: (original) => original || "A alteração não pôde ser aplicada.",
+    action: "Corrija os itens indicados e tente de novo; nada foi alterado na escala."
+  },
+  SCHEDULE_NOT_EDITABLE: {
+    message: "Esta versão da escala foi gerada por um fluxo anterior e não pode ser editada.",
+    action: "Gere uma nova escala pela tela de Escalas."
   },
   DATA_CONFLICT: {
     message: "Os dados foram alterados por outra pessoa ou existe um vínculo com outro registro.",

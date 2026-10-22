@@ -31,7 +31,16 @@ const sections: Record<
  * Pendências e validações da escala em linguagem simples. Mostra o que fazer e deixa o código técnico num bloco
  * recolhido ("Detalhes técnicos") para quem faz o suporte. Só `blocking` impede o envio para aprovação.
  */
-export function IssueList({ groups, className }: { groups: IssueGroup[]; className?: string }) {
+export function IssueList({
+  groups,
+  className,
+  blockingHeading
+}: {
+  groups: IssueGroup[];
+  className?: string;
+  /** Título da seção impeditiva quando o contexto não é o envio para aprovação (ex.: edição de um dia). */
+  blockingHeading?: (n: number) => string;
+}) {
   if (groups.length === 0) return null;
   return (
     <div className={cn("space-y-2", className)}>
@@ -47,7 +56,9 @@ export function IssueList({ groups, className }: { groups: IssueGroup[]; classNa
           >
             <summary className="flex cursor-pointer items-center gap-1.5 font-semibold">
               {section.icon}
-              {section.heading(items.length)}
+              {severity === "blocking" && blockingHeading
+                ? blockingHeading(items.length)
+                : section.heading(items.length)}
             </summary>
             <ul className="mt-2 space-y-2">
               {items.map((issue) => (

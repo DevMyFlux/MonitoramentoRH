@@ -85,4 +85,4 @@ Em ambientes Windows gerenciados que bloqueiam criação de processos, testes e 
 - Entidades críticas usam histórico e arquivamento.
 - Usuários demonstrativos são definidos em `apps/api/prisma/seed.ts`; os exemplos operacionais, em `apps/api/prisma/demo-seed.ts`.
 
-Consulte [ARCHITECTURE.md](ARCHITECTURE.md), [docs/permissions.md](docs/permissions.md) e [docs/domain-decisions.md](docs/domain-decisions.md).
+Consulte [ARCHITECTURE.md](ARCHITECTURE.md), [docs/permissions.md](docs/permissions.md), [docs/schedule-editing.md](docs/schedule-editing.md) e [docs/domain-decisions.md](docs/domain-decisions.md).

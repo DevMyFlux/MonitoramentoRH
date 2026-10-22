@@ -1,6 +1,6 @@
 /* This page synchronizes the persisted monthly schedule when mounted. */
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
-import { Fragment, useMemo, useState, useEffect } from "react";
+import { Fragment, useMemo, useRef, useState, useEffect } from "react";
 import {
   CalendarDays,
   Check,
@@ -9,14 +9,22 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
+  RotateCcw,
   Trash2,
   X
 } from "lucide-react";
-import { groupPendencies, holidaysOfMonth, scheduleCodes, type SchedulePendencyLike } from "@my-flux/shared";
+import {
+  groupPendencies,
+  holidaysOfMonth,
+  scheduleCodeMap,
+  scheduleCodes,
+  type IssueGroup,
+  type SchedulePendencyLike
+} from "@my-flux/shared";
 import { Badge, Button } from "../components/ui";
 import { IssueList } from "../components/issue-list";
 import { usePermissions } from "../features/auth/session-store";
-import { download, errorText, request, text, date, type Row } from "../features/my-flux/client";
+import { ApiRequestError, download, errorText, request, text, date, type Row } from "../features/my-flux/client";
 import { labels } from "../features/my-flux/resources";
 
 const demoOp = "55555555-5555-4555-8555-555555555555";
@@ -61,10 +69,44 @@ const historyLabels: Record<string, string> = {
   REJECT: "Reprovada",
   PUBLISH: "Publicada",
   SUPERSEDED: "Substituída por versão mais recente",
+  EDIT: "Editada",
+  NEW_VERSION_DRAFTED: "Nova versão em rascunho criada para revisar esta escala",
   ARCHIVE: "Excluída",
   DELETE: "Excluída"
 };
 type HistoryEntry = { id: string; action: string; reason: string | null; at: string; byName: string | null };
+
+type EditOutcome = {
+  changed: boolean;
+  derived: boolean;
+  versionId: string;
+  revision: number;
+  issues: IssueGroup[];
+  cells: Array<{ employeeId: string; date: string; current: string; rule: string }>;
+};
+/** Resultado da pré-validação de um ajuste (a API valida de verdade ao salvar; isto só adianta a resposta). */
+type EditPreview = { issues: IssueGroup[]; blocked: boolean; problem: string | null };
+const JUSTIFICATION_ISSUE = "EDIT_JUSTIFICATION_REQUIRED";
+
+/** O código que a regra colocaria na célula, vindo dos detalhes de uma recusa do servidor. */
+function ruleFromDetails(details: Record<string, unknown>): string | undefined {
+  const cells = details.cells as EditOutcome["cells"] | undefined;
+  return Array.isArray(cells) ? cells[0]?.rule : undefined;
+}
+
+/** O que acontece ao salvar um ajuste, conforme a situação da escala. `null` = edita a própria versão. */
+function versionNotice(status: string): string | null {
+  switch (status) {
+    case "IN_REVIEW":
+      return "Esta escala está em análise. Ao salvar, é criada uma nova versão em rascunho com este ajuste; a análise atual perde a validade e a nova versão precisa ser enviada para aprovação.";
+    case "APPROVED":
+      return "Esta escala já foi aprovada. Ao salvar, é criada uma nova versão em rascunho com este ajuste; a aprovação atual não vale para ela e a nova versão precisa ser aprovada de novo.";
+    case "PUBLISHED":
+      return "Esta escala está publicada. Ao salvar, é criada uma nova versão em rascunho; a publicada continua valendo até a nova ser aprovada e publicada.";
+    default:
+      return null;
+  }
+}
 
 const statusTone: Record<string, "success" | "warning" | "danger" | "neutral" | "info"> = {
   DRAFT: "neutral",
@@ -133,6 +175,9 @@ export function MonthlySchedulePage() {
   const [editCode, setEditCode] = useState("");
   const [editReason, setEditReason] = useState("");
   const [saving, setSaving] = useState(false);
+  const [preview, setPreview] = useState<EditPreview | null>(null);
+  const [ruleCode, setRuleCode] = useState<string | null>(null);
+  const previewSeq = useRef(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<Row | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -140,6 +185,8 @@ export function MonthlySchedulePage() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   const selected = schedules.find((s) => s.id === selectedId) ?? null;
+  // Versão substituída só se consulta; o resto depende da permissão (a API confere de novo ao salvar).
+  const editable = canEdit && Boolean(selected) && !selected?.supersededAt;
   const grid = getGrid(selected);
   const pendencies = getPendencies(selected);
   const issueGroups = useMemo(() => groupPendencies(pendencies), [selected?.id, selected?.generatedResult]);
@@ -317,63 +364,74 @@ export function MonthlySchedulePage() {
     });
     setEditCode(row.days[dayIndex] ?? "");
     setEditReason("");
+    setPreview(null);
+    setRuleCode(null);
   }
 
-  const existingOverride = cell ? overridesIndex.get(`${cell.employeeId}|${cell.date}`) : undefined;
+  function editBody(dryRun: boolean) {
+    const reason = editReason.trim();
+    return {
+      expectedRevision: Number(selected?.revision),
+      dryRun,
+      changes: [{ employeeId: cell?.employeeId, date: cell?.date, code: editCode, ...(reason ? { reason } : {}) }],
+      ...(reason ? { justification: reason } : {})
+    };
+  }
 
-  async function saveOverride() {
+  // Pré-validação enquanto a pessoa escolhe o código/escreve o motivo: mostra, em linguagem simples, o que a API
+  // recusaria ou avisaria — sem gravar nada. Respostas atrasadas são descartadas.
+  useEffect(() => {
+    if (!cell || !selected || !editable) return;
+    const seq = ++previewSeq.current;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const out = await request<EditOutcome>(`/employee-schedules/${selected.id}/cells`, "PATCH", editBody(true));
+          if (seq !== previewSeq.current) return;
+          setRuleCode(out.cells[0]?.rule ?? null);
+          setPreview({ issues: out.issues, blocked: false, problem: null });
+        } catch (e) {
+          if (seq !== previewSeq.current) return;
+          if (e instanceof ApiRequestError && e.code === "SCHEDULE_EDIT_INVALID" && Array.isArray(e.details.issues)) {
+            setRuleCode(ruleFromDetails(e.details) ?? null);
+            setPreview({ issues: e.details.issues as IssueGroup[], blocked: true, problem: null });
+          } else {
+            setPreview({ issues: [], blocked: false, problem: errorText(e, "Não foi possível validar o ajuste.") });
+          }
+        }
+      })();
+    }, 250);
+    return () => {
+      previewSeq.current++;
+      window.clearTimeout(timer);
+    };
+  }, [cell?.employeeId, cell?.date, editCode, editReason, selected?.id, selected?.revision]);
+
+  async function saveEdit() {
     if (!cell || !selected || saving) return;
     setSaving(true);
     try {
-      await request("/schedule-day-overrides", "POST", {
-        operationId: selected.operationId,
-        employeeId: cell.employeeId,
-        date: cell.date,
-        code: editCode,
-        reason: editReason || null
-      });
-      // Patch the currently displayed grid immediately (per the flow we agreed on:
-      // gerar automaticamente, depois editar célula a célula por cima do resultado).
-      setSchedules((current) =>
-        current.map((s) => {
-          if (s.id !== selected.id) return s;
-          const result = s.generatedResult as Row;
-          const g = result.grid as Grid;
-          const sections = g.sections.map((section, si) =>
-            si !== cell.sectionIndex
-              ? section
-              : {
-                  ...section,
-                  rows: section.rows.map((row, ri) =>
-                    ri !== cell.rowIndex
-                      ? row
-                      : { ...row, days: row.days.map((d, di) => (di === cell.dayIndex ? editCode : d)) }
-                  )
-                }
-          );
-          return { ...s, generatedResult: { ...result, grid: { ...g, sections } } };
-        })
+      const out = await request<EditOutcome>(`/employee-schedules/${selected.id}/cells`, "PATCH", editBody(false));
+      setCell(null);
+      setNotice(
+        !out.changed
+          ? "Nada a alterar: este dia já está com esse código."
+          : out.derived
+            ? "Ajuste salvo em uma nova versão (rascunho). A aprovação anterior não vale para ela: envie para aprovação quando terminar os ajustes."
+            : "Ajuste salvo e a escala foi revalidada. Ele será mantido nas próximas gerações desta unidade/mês."
       );
-      setNotice("Ajuste manual salvo. Ele será mantido nas próximas gerações desta unidade/mês.");
-      setCell(null);
-      void loadOverrides(selected);
+      await load();
+      if (out.derived) setSelectedId(out.versionId);
+      else void loadOverrides(selected); // realce dos dias com ajuste manual
     } catch (e) {
-      setNotice(errorText(e, "Não foi possível salvar o ajuste manual."));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function removeOverride() {
-    if (!existingOverride || saving) return;
-    setSaving(true);
-    try {
-      await request(`/schedule-day-overrides/${existingOverride.id}`, "DELETE");
-      setNotice("Ajuste manual removido. Gere a escala novamente para recalcular este dia.");
-      setCell(null);
-      if (selected) void loadOverrides(selected);
-    } catch (e) {
-      setNotice(errorText(e, "Não foi possível remover o ajuste manual."));
+      if (e instanceof ApiRequestError && e.code === "SCHEDULE_EDIT_INVALID" && Array.isArray(e.details.issues)) {
+        setRuleCode(ruleFromDetails(e.details) ?? ruleCode);
+        setPreview({ issues: e.details.issues as IssueGroup[], blocked: true, problem: null });
+      } else {
+        setCell(null);
+        setNotice(errorText(e, "Não foi possível salvar o ajuste."));
+        await load(); // a escala pode ter mudado: mostra o estado atual
+      }
     } finally {
       setSaving(false);
     }
@@ -594,10 +652,10 @@ export function MonthlySchedulePage() {
                         return (
                           <td
                             key={dayIndex}
-                            role={canEdit ? "button" : undefined}
-                            tabIndex={canEdit ? 0 : undefined}
-                            onClick={() => canEdit && openCell(sectionIndex, rowIndex, dayIndex)}
-                            className={`w-7 px-0.5 py-1.5 text-center ${canEdit ? "cursor-pointer hover:bg-emerald-50" : ""}`}
+                            role={editable ? "button" : undefined}
+                            tabIndex={editable ? 0 : undefined}
+                            onClick={() => editable && openCell(sectionIndex, rowIndex, dayIndex)}
+                            className={`w-7 px-0.5 py-1.5 text-center ${editable ? "cursor-pointer hover:bg-emerald-50" : ""}`}
                             style={{
                               color: color ? `#${color.font}` : undefined,
                               fontWeight: color?.bold ? 700 : 400,
@@ -633,6 +691,19 @@ export function MonthlySchedulePage() {
       </div>
     );
   }
+
+  const leaveCell = cell ? scheduleCodeMap[cell.currentCode]?.category === "LEAVE" : false;
+  const needReason =
+    Boolean(cell) && Boolean(ruleCode) && editCode !== cell?.currentCode && editCode !== ruleCode;
+  // O motivo obrigatório aparece no próprio campo; os demais impeditivos vêm em lista, em linguagem simples.
+  const shownIssues = (preview?.issues ?? []).filter((g) => g.code !== JUSTIFICATION_ISSUE);
+  const blockedByRule = shownIssues.some((g) => g.severity === "blocking");
+  const canSave =
+    !saving &&
+    Boolean(cell) &&
+    editCode !== cell?.currentCode &&
+    !blockedByRule &&
+    !(needReason && !editReason.trim());
 
   return (
     <div className="space-y-6">
@@ -881,9 +952,13 @@ export function MonthlySchedulePage() {
         )}
       </section>
 
-      {cell && (
+      {cell && selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-          <div className="w-full max-w-sm rounded bg-white p-5 shadow-2xl">
+          <div
+            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded bg-white p-5 shadow-2xl"
+            role="dialog"
+            aria-label="Ajustar dia"
+          >
             <div className="flex items-center justify-between">
               <h3 className="font-semibold">Ajustar dia</h3>
               <button type="button" onClick={() => setCell(null)} aria-label="Fechar">
@@ -893,45 +968,86 @@ export function MonthlySchedulePage() {
             <p className="mt-1 text-sm text-slate-500">
               {cell.employeeName} · {date(cell.date)}
             </p>
-            <label className="mt-4 block text-sm">
-              Código
-              <select
-                className="mt-1 w-full rounded border p-2"
-                value={editCode}
-                onChange={(e) => setEditCode(e.target.value)}
-              >
-                {scheduleCodes.map((c) => (
-                  <option value={c.code} key={c.code}>
-                    {c.code} — {c.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="mt-3 block text-sm">
-              Motivo (opcional)
-              <input
-                className="mt-1 w-full rounded border p-2"
-                value={editReason}
-                onChange={(e) => setEditReason(e.target.value)}
-                placeholder="Ex.: cobertura pontual combinada com o supervisor"
-              />
-            </label>
-            <div className="mt-5 flex justify-between gap-2">
-              {existingOverride ? (
-                <Button variant="danger" size="sm" onClick={() => void removeOverride()} disabled={saving}>
-                  Remover ajuste
+            <p className="mt-1 text-xs text-slate-500">
+              Hoje: <b>{cell.currentCode || "—"}</b>
+              {ruleCode && ruleCode !== cell.currentCode ? (
+                <>
+                  {" "}
+                  · Previsto pela regra: <b>{ruleCode}</b>
+                </>
+              ) : null}
+            </p>
+
+            {versionNotice(text(selected.status)) ? (
+              <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+                {versionNotice(text(selected.status))}
+              </p>
+            ) : null}
+
+            {leaveCell ? (
+              <p className="mt-3 rounded border border-slate-200 bg-slate-50 p-2 text-xs text-slate-700">
+                Este dia é de {scheduleCodeMap[cell.currentCode]?.label.toLowerCase()} e vem do cadastro de
+                afastamentos. Para mudar, ajuste o afastamento do colaborador (as datas) e gere a escala de novo.
+              </p>
+            ) : (
+              <>
+                <label className="mt-4 block text-sm">
+                  Código
+                  <select
+                    className="mt-1 w-full rounded border p-2"
+                    value={editCode}
+                    onChange={(e) => setEditCode(e.target.value)}
+                  >
+                    {scheduleCodes
+                      // afastamentos vêm do cadastro de afastamentos, não se lançam à mão aqui
+                      .filter((c) => c.category !== "LEAVE")
+                      .map((c) => (
+                        <option value={c.code} key={c.code}>
+                          {c.code} — {c.label}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                {ruleCode && ruleCode !== editCode ? (
+                  <button
+                    type="button"
+                    className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-800 hover:underline"
+                    onClick={() => setEditCode(ruleCode)}
+                  >
+                    <RotateCcw size={12} aria-hidden /> Voltar ao previsto pela regra ({ruleCode})
+                  </button>
+                ) : null}
+                <label className="mt-3 block text-sm">
+                  Motivo{needReason ? " (obrigatório: foge do rodízio)" : " (opcional)"}
+                  <input
+                    className="mt-1 w-full rounded border p-2"
+                    value={editReason}
+                    maxLength={500}
+                    onChange={(e) => setEditReason(e.target.value)}
+                    placeholder="Ex.: cobertura pontual combinada com o supervisor"
+                  />
+                </label>
+              </>
+            )}
+
+            {preview?.problem ? (
+              <p className="mt-3 rounded border border-red-200 bg-red-50 p-2 text-xs text-red-800">{preview.problem}</p>
+            ) : null}
+            <IssueList
+              className="mt-3"
+              groups={shownIssues}
+              blockingHeading={(n) => `Impedem este ajuste (${n})`}
+            />
+
+            <div className="mt-5 flex justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setCell(null)} disabled={saving}>
+                Cancelar
+              </Button>
+              {!leaveCell && (
+                <Button size="sm" onClick={() => void saveEdit()} disabled={!canSave}>
+                  {saving ? "Salvando..." : versionNotice(text(selected.status)) ? "Salvar em nova versão" : "Salvar"}
                 </Button>
-              ) : (
-                <span />
               )}
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={() => setCell(null)} disabled={saving}>
-                  Cancelar
-                </Button>
-                <Button size="sm" onClick={() => void saveOverride()} disabled={saving}>
-                  {saving ? "Salvando..." : "Salvar"}
-                </Button>
-              </div>
             </div>
           </div>
         </div>

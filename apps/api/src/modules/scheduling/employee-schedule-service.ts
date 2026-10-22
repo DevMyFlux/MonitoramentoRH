@@ -13,17 +13,19 @@
  */
 import { createHash } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
-import { effectiveParity, holidaysOfMonth, scheduleCodeMap } from "@my-flux/shared";
+import { effectiveParity, holidaysOfMonth } from "@my-flux/shared";
 import type { AuthenticatedUser } from "@my-flux/types";
 import { HttpError } from "../../lib/http-error.js";
 import { json, scopedOperation } from "../identity/access.js";
 import { contentHashOf } from "./schedule-content.js";
 import {
-  employeeAvailability,
-  type EmployeeScheduleProfile
-} from "./employee-availability.js";
-import { calendarConfigSchema } from "./monthly-service.js";
-import { daysInMonth, type ScheduleGridData, type ScheduleGridRow } from "./xlsx-renderer.js";
+  evaluateCell,
+  hoursLabel,
+  loadScheduleContext,
+  prepareEmployee,
+  workLetter
+} from "./schedule-context.js";
+import type { ScheduleGridData, ScheduleGridRow } from "./xlsx-renderer.js";
 
 export type EmployeeSchedulePendency = {
   employeeId: string;
@@ -47,89 +49,14 @@ export type EmployeeScheduleSnapshot = {
   hash: string;
 };
 
-function monthRange(month: string): { year: number; monthNumber: number; first: Date; last: Date } {
-  const [year, monthNumber] = month.split("-").map(Number) as [number, number];
-  return {
-    year,
-    monthNumber,
-    first: new Date(Date.UTC(year, monthNumber - 1, 1)),
-    last: new Date(Date.UTC(year, monthNumber - 1, daysInMonth(year, monthNumber), 23, 59, 59))
-  };
-}
-
-/** Rough day/night letter from the shift's configured start hour (07:00 -> D, 19:00 -> N). */
-function workLetter(startHour: number | undefined): string {
-  if (startHour === undefined) return "D";
-  return startHour >= 18 || startHour < 5 ? "N" : "D";
-}
-
-function hoursLabel(config: { startHour: number; durationHours: number } | undefined): string {
-  if (!config) return "";
-  const end = (config.startHour + config.durationHours) % 24;
-  const pad = (n: number) => String(Math.floor(n)).padStart(2, "0");
-  return `${pad(config.startHour)}:00–${pad(end)}:00`;
-}
-
 export async function buildEmployeeScheduleSnapshot(
   db: PrismaClient,
   user: AuthenticatedUser,
   operationId: string,
   month: string
 ): Promise<EmployeeScheduleSnapshot> {
-  const operation = await scopedOperation(db, user, operationId);
-  const { year, monthNumber, first, last } = monthRange(month);
-  const dayCount = daysInMonth(year, monthNumber);
-
-  const employees = await db.employee.findMany({
-    // SCHEDULED_ADMISSION must stay in the query even though these people are not
-    // working yet: employeeAvailability() is what actually gates them day-by-day
-    // via admissionDate. Filtering to status:"ACTIVE" alone silently dropped them
-    // from the whole sheet, before or after their real admission date.
-    // Desligamento: until its last day of work a person is on the schedule — also when
-    // already marked Desligado (it still belongs to the month it left in). A person whose
-    // termination date is before this month has nothing left to show, so is left out.
-    where: {
-      operationId,
-      recordStatus: "ACTIVE",
-      AND: [
-        { OR: [{ terminationDate: null }, { terminationDate: { gte: first } }] },
-        {
-          OR: [
-            { status: { in: ["ACTIVE", "SCHEDULED_ADMISSION"] } },
-            { status: "TERMINATED", terminationDate: { not: null } }
-          ]
-        }
-      ]
-    },
-    include: {
-      function: true,
-      documents: { where: { status: "ACTIVE" } },
-      competencies: { where: { status: "ACTIVE" } },
-      calendarEvents: { where: { status: "ACTIVE" }, include: { type: true } }
-    },
-    orderBy: { name: "asc" }
-  });
-
-  const shiftParams = await db.operationalParameter.findMany({
-    where: { operationId, kind: "SHIFT", status: "ACTIVE" }
-  });
-  const shiftByCode = new Map(
-    shiftParams.map((p) => [p.code, calendarConfigSchema.parse(p.configuration)])
-  );
-
-  const documentRequirements = await db.complianceRequirement.findMany({
-    where: { status: "ACTIVE", kind: "DOCUMENT", OR: [{ operationId }, { operationId: null }] }
-  });
-  const competencyMatrix = await db.competencyMatrixItem.findMany({
-    where: { status: "ACTIVE", OR: [{ operationId }, { operationId: null }] }
-  });
-
-  const overrides = await db.scheduleDayOverride.findMany({
-    where: { operationId, status: "ACTIVE", date: { gte: first, lte: last } }
-  });
-  const overrideByKey = new Map(
-    overrides.map((o) => [`${o.employeeId}|${o.date.toISOString().slice(0, 10)}`, o])
-  );
+  const ctx = await loadScheduleContext(db, user, operationId, month);
+  const { year, monthNumber, dayCount, overrides } = ctx;
 
   const pendencies: EmployeeSchedulePendency[] = [];
   let required = 0;
@@ -138,9 +65,10 @@ export async function buildEmployeeScheduleSnapshot(
   const diurno: ScheduleGridRow[] = [];
   const noturno: ScheduleGridRow[] = [];
 
-  for (const employee of employees) {
-    const shiftConfig = employee.shift ? shiftByCode.get(employee.shift) : undefined;
-    if (!employee.parity && !shiftConfig) {
+  for (const employee of ctx.employees) {
+    const prep = prepareEmployee(ctx, employee);
+    const { shiftConfig } = prep;
+    if (!prep.configured) {
       pendencies.push({
         employeeId: employee.id,
         employeeName: employee.name,
@@ -149,115 +77,23 @@ export async function buildEmployeeScheduleSnapshot(
       });
     }
 
-    const profile: EmployeeScheduleProfile = {
-      id: employee.id,
-      status: employee.status,
-      admissionDate: employee.admissionDate?.toISOString() ?? null,
-      terminationDate: employee.terminationDate?.toISOString().slice(0, 10) ?? null,
-      parity: employee.parity,
-      parityReferenceMonth: employee.parityReferenceMonth
-    };
-    const events = employee.calendarEvents.map((event) => ({
-      id: event.id,
-      title: event.title,
-      startsAt: event.startsAt,
-      endsAt: event.endsAt,
-      type: { code: event.type.code, name: event.type.name, blocksAvailability: event.type.blocksAvailability }
-    }));
-    const aptitude = {
-      documentRequirements: documentRequirements
-        .filter((r) => !r.functionId || r.functionId === employee.functionId)
-        .map((r) => ({
-          code: r.code,
-          name: r.name,
-          warningDays: r.warningDays,
-          required: r.required,
-          documents: employee.documents
-            .filter((d) => d.requirementId === r.id)
-            .map((d) => ({ expiresAt: d.expiresAt, status: d.status }))
-        })),
-      competencyRequirements: competencyMatrix
-        .filter((r) => r.functionId === employee.functionId)
-        .map((r) => ({
-          competencyCode: r.competencyCode,
-          competencyName: r.competencyName,
-          requiredLevel: r.requiredLevel,
-          warningDays: r.warningDays,
-          required: r.required,
-          competencies: employee.competencies
-            .filter((c) => c.competencyCode === r.competencyCode)
-            .map((c) => ({ level: c.level, expiresAt: c.expiresAt, status: c.status }))
-        }))
-    };
-
     const days: string[] = [];
     for (let day = 1; day <= dayCount; day++) {
       const date = `${month}-${String(day).padStart(2, "0")}`;
-      if (!shiftConfig && !employee.parity) {
+      const cell = evaluateCell(prep, date, ctx.overrideByKey.get(`${employee.id}|${date}`));
+      if (!cell) {
         days.push("");
         continue;
       }
-      const result = employeeAvailability({
-        employee: profile,
-        date,
-        shift: { weekdays: shiftConfig?.weekdays ?? [] },
-        events,
-        aptitude
-      });
-
-      const notYetAdmitted = profile.admissionDate && profile.admissionDate.slice(0, 10) > date;
-      const afterTermination = profile.terminationDate && date > profile.terminationDate;
-      const override = overrideByKey.get(`${employee.id}|${date}`);
-      let code: string;
-      if (override) {
-        code = override.code;
-      } else if (afterTermination) {
-        // Desligamento (programado ou efetivo): after the last day of work the person is no
-        // longer on the team — blank day, no pendency, and not counted as required coverage.
-        days.push("");
-        continue;
-      } else if (notYetAdmitted) {
-        // Blank (not a work letter) either way — but only surface a pendency
-        // when the rotation would actually have put them on duty; an
-        // off-rotation day before admission needed no coverage.
-        code = "";
-        if (result.scheduled) {
-          pendencies.push({
-            employeeId: employee.id,
-            employeeName: employee.name,
-            date,
-            reasonCodes: ["FUTURE_ADMISSION"]
-          });
-        }
-      } else if (result.blockingEventTypeCodes.length) {
-        // An absence (férias/atestado/...) blocks every day of its own date
-        // range, regardless of whether the day-of-month rotation would have
-        // scheduled a shift or a rest day that day — checked before
-        // `!result.scheduled` so a leave doesn't alternate with plain "F" on
-        // the person's normal off-days within the same leave period.
-        code = result.blockingEventTypeCodes[0]!;
-      } else if (!result.scheduled) {
-        code = "F";
-      } else {
-        code = workLetter(shiftConfig?.startHour);
-        if (!result.available) {
-          pendencies.push({
-            employeeId: employee.id,
-            employeeName: employee.name,
-            date,
-            reasonCodes: result.reasonCodes,
-            ...(result.reasonDetails.length ? { details: result.reasonDetails } : {})
-          });
-        }
+      if (cell.pendency) {
+        pendencies.push({ employeeId: employee.id, employeeName: employee.name, date, ...cell.pendency });
       }
-
-      const isWorkDay = scheduleCodeMap[code]?.category === "WORK";
       // A manual override can add coverage on a day the rotation did not require
       // (e.g. calling someone in on a day off) — count that day as "required" too,
       // so coverage% never reads above 100%.
-      if (result.scheduled || isWorkDay) required += 1;
-      if (isWorkDay) covered += 1;
-      days.push(code);
+      if (cell.scheduled || cell.isWork) required += 1;
+      if (cell.isWork) covered += 1;
+      days.push(cell.code);
     }
 
     const row: ScheduleGridRow = {
@@ -284,7 +120,7 @@ export async function buildEmployeeScheduleSnapshot(
   ];
 
   // Holiday columns are painted like the unit's sheet paints weekends (see xlsx-renderer).
-  const holidays = holidaysOfMonth(year, monthNumber, operation.code);
+  const holidays = holidaysOfMonth(year, monthNumber, ctx.operation.code);
   const grid: ScheduleGridData = { year, month: monthNumber, sections, holidays };
   const metrics: EmployeeScheduleMetrics = {
     required,

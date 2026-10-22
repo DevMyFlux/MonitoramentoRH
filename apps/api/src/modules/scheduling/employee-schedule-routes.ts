@@ -1,5 +1,5 @@
 import { getScheduleTemplate, scheduleCodeMap, scheduleTemplates } from "@my-flux/shared";
-import { scheduleDayOverrideInputSchema } from "@my-flux/validation";
+import { scheduleCellEditSchema, scheduleDayOverrideInputSchema } from "@my-flux/validation";
 import type { FastifyInstance } from "fastify";
 import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
@@ -9,6 +9,7 @@ import { authenticateRequest } from "../auth/authenticate.js";
 import { json, scopedOperation } from "../identity/access.js";
 import { requirePermission } from "../identity/authorization.js";
 import { generateEmployeeSchedule } from "./employee-schedule-service.js";
+import { editScheduleCells } from "./schedule-edit-service.js";
 import { ScheduleDayOverrideRepository } from "./schedule-day-override-repository.js";
 import { renderScheduleWorkbook, scheduleFileName, type ScheduleGridData } from "./xlsx-renderer.js";
 
@@ -77,6 +78,19 @@ export async function registerEmployeeScheduleRoutes(
    * day overrides, which belong to unit+month rather than to one version and
    * keep applying to the next generation.
    */
+  /**
+   * Edita células de uma escala já gerada. Valida antes de gravar (rodízio, admissão, afastamentos, aptidão, descanso);
+   * em rascunho/reprovada edita na própria versão, nos demais casos cria uma nova versão em rascunho e a aprovação
+   * anterior deixa de valer. `dryRun` só valida e mostra o efeito, sem gravar.
+   */
+  app.patch("/employee-schedules/:id/cells", async (request) => {
+    const user = await authenticateRequest(request, users);
+    requirePermission(user, "schedules:edit");
+    const { id } = idSchema.parse(request.params);
+    const input = scheduleCellEditSchema.parse(request.body);
+    return { data: await editScheduleCells(db, user, id, input) };
+  });
+
   app.delete("/employee-schedules/:id", async (request) => {
     const user = await authenticateRequest(request, users);
     requirePermission(user, "schedules:archive");

@@ -436,4 +436,24 @@ export const scheduleTransitionInputSchema = z
     }
   });
 
+/** Edição de células de uma escala já gerada (ver schedule-edit-service). */
+export const scheduleCellEditSchema = z.object({
+  /** Revisão da escala que o usuário viu; se mudou, a edição é recusada (concorrência otimista). */
+  expectedRevision: z.number().int().positive(),
+  changes: z
+    .array(
+      z.object({
+        employeeId: z.string().uuid(),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use o formato AAAA-MM-DD."),
+        code: z.string().min(1).max(8),
+        reason: z.string().max(500).nullable().optional()
+      })
+    )
+    .min(1)
+    .max(200),
+  justification: z.string().max(1000).nullable().optional(),
+  /** Só valida e devolve os problemas e o efeito na cobertura, sem gravar nada. */
+  dryRun: z.boolean().optional()
+});
+
 export const reportKindSchema = z.enum(["INCONSISTENCIES", "GAPS"]);
