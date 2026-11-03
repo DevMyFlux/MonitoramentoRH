@@ -10,6 +10,7 @@ import {
   Users,
   CalendarDays
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Button, Input } from "../components/ui";
@@ -20,6 +21,7 @@ type LoginForm = { email: string; password: string };
 type LoginResponse = { data: { accessToken: string; refreshToken: string } };
 export function LoginPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [message, setMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const {
@@ -33,6 +35,9 @@ export function LoginPage() {
     try {
       const response = await apiPost<LoginResponse, LoginForm>("/auth/login", values);
       storeSession(response.data.accessToken, response.data.refreshToken);
+      // Quem entrou pode não ser quem estava antes (sessão que expirou): descarta o que a tela
+      // anterior guardou, como o perfil usado no menu.
+      queryClient.clear();
       navigate("/");
     } catch {
       setMessage(

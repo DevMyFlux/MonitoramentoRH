@@ -1,5 +1,25 @@
 const base = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3334/api/v1";
 export type Row = Record<string, unknown> & { id: string };
+
+/**
+ * Uma resposta de erro da API. Continua sendo um `Error` com a mesma mensagem de sempre; além
+ * disso guarda o status e o código estável ({ code, message, details }), que as telas do
+ * Leadership Lab usam para reagir ao motivo em vez de comparar texto.
+ */
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code: string | undefined;
+  readonly details: Record<string, unknown>;
+
+  constructor(message: string, status: number, code?: string, details?: Record<string, unknown>) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.details = details ?? {};
+  }
+}
+
 let refreshing: Promise<void> | null = null;
 export function session() {
   return sessionStorage.getItem("flux.access") ?? localStorage.getItem("my-flux.accessToken");
@@ -59,13 +79,16 @@ export async function request<T>(
     data: T;
     message?: string;
     code?: string;
-    details?: { issues?: { path: string[]; message: string }[] };
+    details?: { issues?: { path: string[]; message: string }[]; [campo: string]: unknown };
   };
   if (!response.ok)
-    throw new Error(
+    throw new ApiError(
       payload.details?.issues?.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ") ||
         payload.message ||
-        "Não foi possível concluir a operação."
+        "Não foi possível concluir a operação.",
+      response.status,
+      payload.code,
+      payload.details
     );
   return payload.data;
 }

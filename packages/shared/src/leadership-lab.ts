@@ -104,6 +104,19 @@ export const labAgentesIa = ["agente_lab", "guarda", "autor", "analista", "agent
 export type LabAgenteIa = (typeof labAgentesIa)[number];
 
 /**
+ * A situação que é o marco do teste, e só ela (o banco confere o mesmo, com CHECK). A API a usa
+ * para validar o que a IA devolve; a tela, para marcar o mapa do caminho.
+ */
+export const labSituacaoDoMarco = 3;
+
+/**
+ * Teto do campo livre ("o que mais você faria?"), em caracteres. É um limite de proteção contra
+ * abuso (o texto vai para a Guarda e para a IA, que cobram por token), não uma regra pedagógica.
+ * A API recusa acima disso; a tela o mostra como contador.
+ */
+export const labLimiteCaracteresCampoLivre = 1000;
+
+/**
  * Versão do termo de ciência exibido no primeiro acesso. O texto do termo ainda não foi
  * definido; este valor é um marcador. Trocá-lo exige novo aceite de todos os participantes.
  */

@@ -1,13 +1,10 @@
 // Leadership Lab — o que o participante pode enviar ao motor. Estrito: campo desconhecido é
 // recusado (a aderência, por exemplo, nunca é aceita de fora).
-import { labEscolhas } from "@my-flux/shared";
+import { labEscolhas, labLimiteCaracteresCampoLivre } from "@my-flux/shared";
 import { z } from "zod";
 
-/**
- * Teto do campo livre ("o que mais você faria?"). É um limite de proteção contra abuso (o texto
- * vai para a Guarda e para a IA, que cobram por token), não uma regra pedagógica.
- */
-export const LIMITE_CARACTERES_CAMPO_LIVRE = 1000;
+/** Teto do campo livre. Definido em packages/shared, para a tela mostrar o mesmo limite. */
+export const LIMITE_CARACTERES_CAMPO_LIVRE = labLimiteCaracteresCampoLivre;
 
 const numeroDaSituacao = z.int().min(1).max(10);
 
