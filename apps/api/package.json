@@ -33,6 +33,7 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@types/pg": "^8.23.1",
     "esbuild": "^0.28.2",
     "tsx": "^4.21.0"
   }

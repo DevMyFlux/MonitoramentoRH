@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["public", "leadership_lab"]
 }
 
 enum RoleName {
@@ -11,12 +12,14 @@ enum RoleName {
   ADMIN
   RH
   COMUM
+  @@schema("public")
 }
 
 enum RecordStatus {
   ACTIVE
   INACTIVE
   ARCHIVED
+  @@schema("public")
 }
 
 enum AuditAction {
@@ -33,12 +36,14 @@ enum AuditAction {
   PERMISSION_CHANGE
   USER_INVITE
   USER_DISABLE
+  @@schema("public")
 }
 
 enum ImportType {
   EMPLOYEES
   QLP
   SCHEDULE
+  @@schema("public")
 }
 
 enum ImportStatus {
@@ -46,11 +51,13 @@ enum ImportStatus {
   VALIDATED
   COMMITTED
   REJECTED
+  @@schema("public")
 }
 
 enum ImportIssueSeverity {
   ERROR
   WARNING
+  @@schema("public")
 }
 
 enum EmployeeStatus {
@@ -60,11 +67,13 @@ enum EmployeeStatus {
   VACATION
   TERMINATED
   SCHEDULED_ADMISSION
+  @@schema("public")
 }
 
 enum QLPKind {
   CONTRACTUAL
   OPERATIONAL
+  @@schema("public")
 }
 
 enum WorkflowStatus {
@@ -73,17 +82,20 @@ enum WorkflowStatus {
   APPROVED
   PUBLISHED
   ARCHIVED
+  @@schema("public")
 }
 
 enum RequirementKind {
   DOCUMENT
   COMPETENCY
+  @@schema("public")
 }
 
 enum AptitudeStatus {
   GREEN
   YELLOW
   RED
+  @@schema("public")
 }
 
 enum EvaluationStatus {
@@ -92,6 +104,7 @@ enum EvaluationStatus {
   APPROVED
   REJECTED
   ARCHIVED
+  @@schema("public")
 }
 
 enum CalendarEventCategory {
@@ -102,6 +115,7 @@ enum CalendarEventCategory {
   TERMINATION
   TIME_OFF
   OTHER
+  @@schema("public")
 }
 
 model User {
@@ -123,6 +137,11 @@ model User {
   refreshSessions      RefreshSession[]
   invitationsCreated   UserInvitation[]     @relation("InvitationCreatedBy")
   passwordResetTokens  PasswordResetToken[]
+  /// Leadership Lab: relações inversas (campos virtuais do Prisma, sem coluna em "User").
+  labParticipante      LabParticipante?
+  labPermissoes        LabPermissaoUsuario[]
+  labTurmas            LabTurma[]
+  @@schema("public")
 }
 
 model Role {
@@ -139,6 +158,7 @@ model Role {
   users       User[]
   permissions RolePermission[]
   invitations UserInvitation[]
+  @@schema("public")
 }
 
 model Permission {
@@ -152,6 +172,7 @@ model Permission {
   updatedBy   String?          @db.Uuid
   archivedAt  DateTime?
   roles       RolePermission[]
+  @@schema("public")
 }
 
 model RolePermission {
@@ -162,6 +183,7 @@ model RolePermission {
   createdAt    DateTime   @default(now())
 
   @@id([roleId, permissionId])
+  @@schema("public")
 }
 
 model UserScope {
@@ -186,6 +208,7 @@ model UserScope {
   @@index([companyId])
   @@index([operationId])
   @@index([unitId])
+  @@schema("public")
 }
 
 model Company {
@@ -203,6 +226,7 @@ model Company {
   units      Unit[]
   operations Operation[]
   scopes     UserScope[]
+  @@schema("public")
 }
 
 model Client {
@@ -222,6 +246,7 @@ model Client {
   operations Operation[]
 
   @@index([companyId])
+  @@schema("public")
 }
 
 model Unit {
@@ -243,6 +268,7 @@ model Unit {
 
   @@index([companyId])
   @@index([clientId])
+  @@schema("public")
 }
 
 model Contract {
@@ -265,6 +291,7 @@ model Contract {
 
   @@index([companyId])
   @@index([clientId])
+  @@schema("public")
 }
 
 model Operation {
@@ -302,6 +329,7 @@ model Operation {
   @@index([clientId])
   @@index([contractId])
   @@index([unitId])
+  @@schema("public")
 }
 
 model Service {
@@ -319,6 +347,7 @@ model Service {
   obligations Obligation[]
 
   @@index([operationId])
+  @@schema("public")
 }
 
 model Obligation {
@@ -338,6 +367,7 @@ model Obligation {
 
   @@index([operationId])
   @@index([serviceId])
+  @@schema("public")
 }
 
 model JobFunction {
@@ -358,8 +388,11 @@ model JobFunction {
   positions   Position[]
   requirements ComplianceRequirement[]
   competencyMatrix CompetencyMatrixItem[]
+  /// Leadership Lab: relação inversa (campo virtual do Prisma, sem coluna em "JobFunction").
+  labMolde LabMoldeCargo?
 
   @@index([operationId])
+  @@schema("public")
 }
 
 model QLPVersion {
@@ -385,6 +418,7 @@ model QLPVersion {
   @@unique([operationId, version, kind])
   @@index([operationId])
   @@index([status])
+  @@schema("public")
 }
 
 model QLPRequirement {
@@ -408,6 +442,7 @@ model QLPRequirement {
 
   @@index([versionId])
   @@index([functionId])
+  @@schema("public")
 }
 
 model Position {
@@ -436,11 +471,13 @@ model Position {
 
   @@index([operationId])
   @@index([functionId])
+  @@schema("public")
 }
 
 enum EmployeeParity {
   ODD
   EVEN
+  @@schema("public")
 }
 
 model Employee {
@@ -490,11 +527,14 @@ model Employee {
   developmentPlans DevelopmentPlan[]
   calendarEvents CalendarEvent[]
   scheduleDayOverrides ScheduleDayOverride[]
+  /// Leadership Lab: relação inversa (campo virtual do Prisma, sem coluna em "Employee").
+  labParticipante LabParticipante?
 
   @@unique([operationId, identifier])
   @@index([operationId])
   @@index([functionId])
   @@index([status])
+  @@schema("public")
 }
 
 /// Manual, per-employee, per-day correction applied on top of the automatically
@@ -521,6 +561,7 @@ model ScheduleDayOverride {
   @@index([operationId])
   @@index([employeeId])
   @@index([date])
+  @@schema("public")
 }
 
 model ComplianceRequirement {
@@ -548,6 +589,7 @@ model ComplianceRequirement {
   @@index([operationId])
   @@index([functionId])
   @@index([kind])
+  @@schema("public")
 }
 
 model EmployeeDocument {
@@ -571,6 +613,7 @@ model EmployeeDocument {
   @@index([employeeId])
   @@index([requirementId])
   @@index([expiresAt])
+  @@schema("public")
 }
 
 model CompetencyMatrixItem {
@@ -595,6 +638,7 @@ model CompetencyMatrixItem {
   @@unique([operationId, functionId, competencyCode])
   @@index([operationId])
   @@index([functionId])
+  @@schema("public")
 }
 
 model EmployeeCompetency {
@@ -617,6 +661,7 @@ model EmployeeCompetency {
   @@index([employeeId])
   @@index([competencyCode])
   @@index([expiresAt])
+  @@schema("public")
 }
 
 model ScheduleVersion {
@@ -645,6 +690,7 @@ model ScheduleVersion {
   @@index([operationId])
   @@index([status])
   @@index([month])
+  @@schema("public")
 }
 
 model ScheduleAssignment {
@@ -663,6 +709,7 @@ model ScheduleAssignment {
   @@index([scheduleId])
   @@index([employeeId])
   @@index([positionId])
+  @@schema("public")
 }
 
 model ScheduleHistory {
@@ -677,6 +724,7 @@ model ScheduleHistory {
   createdBy  String?         @db.Uuid
 
   @@index([scheduleId])
+  @@schema("public")
 }
 
 model EventType {
@@ -693,6 +741,7 @@ model EventType {
   updatedBy   String?               @db.Uuid
   archivedAt  DateTime?
   events      CalendarEvent[]
+  @@schema("public")
 }
 
 model CalendarEvent {
@@ -719,6 +768,7 @@ model CalendarEvent {
   @@index([employeeId])
   @@index([operationId])
   @@index([startsAt, endsAt])
+  @@schema("public")
 }
 
 model EvaluationCriterion {
@@ -734,6 +784,7 @@ model EvaluationCriterion {
   updatedBy   String?      @db.Uuid
   archivedAt  DateTime?
   scores      EvaluationScore[]
+  @@schema("public")
 }
 
 model EmployeeEvaluation {
@@ -759,6 +810,7 @@ model EmployeeEvaluation {
 
   @@index([employeeId])
   @@index([status])
+  @@schema("public")
 }
 
 model EvaluationScore {
@@ -777,6 +829,7 @@ model EvaluationScore {
   @@unique([evaluationId, criterionId])
   @@index([evaluationId])
   @@index([criterionId])
+  @@schema("public")
 }
 
 model DevelopmentPlan {
@@ -799,6 +852,7 @@ model DevelopmentPlan {
   @@index([employeeId])
   @@index([evaluationId])
   @@index([status])
+  @@schema("public")
 }
 
 model DevelopmentPlanItem {
@@ -817,6 +871,7 @@ model DevelopmentPlanItem {
   archivedAt  DateTime?
 
   @@index([planId])
+  @@schema("public")
 }
 
 model EvaluationHistory {
@@ -831,6 +886,7 @@ model EvaluationHistory {
   createdBy    String?            @db.Uuid
 
   @@index([evaluationId])
+  @@schema("public")
 }
 
 model EmployeeAssignment {
@@ -850,6 +906,7 @@ model EmployeeAssignment {
 
   @@index([employeeId])
   @@index([positionId])
+  @@schema("public")
 }
 
 model EmployeeHistory {
@@ -863,6 +920,7 @@ model EmployeeHistory {
   createdBy  String?  @db.Uuid
 
   @@index([employeeId])
+  @@schema("public")
 }
 
 model ImportBatch {
@@ -885,6 +943,7 @@ model ImportBatch {
   @@index([type])
   @@index([status])
   @@index([checksum])
+  @@schema("public")
 }
 
 model ImportRow {
@@ -897,6 +956,7 @@ model ImportRow {
   createdAt DateTime    @default(now())
 
   @@index([batchId])
+  @@schema("public")
 }
 
 model ImportIssue {
@@ -913,6 +973,7 @@ model ImportIssue {
 
   @@index([batchId])
   @@index([severity])
+  @@schema("public")
 }
 
 model RefreshSession {
@@ -930,6 +991,7 @@ model RefreshSession {
   archivedAt   DateTime?
 
   @@index([userId])
+  @@schema("public")
 }
 
 model UserInvitation {
@@ -952,6 +1014,7 @@ model UserInvitation {
 
   @@index([email])
   @@index([createdById])
+  @@schema("public")
 }
 
 model PasswordResetToken {
@@ -969,6 +1032,7 @@ model PasswordResetToken {
   archivedAt DateTime?
 
   @@index([userId])
+  @@schema("public")
 }
 
 model AuditLog {
@@ -991,6 +1055,7 @@ model AuditLog {
   @@index([userId])
   @@index([entity, entityId])
   @@index([createdAt])
+  @@schema("public")
 }
 
 enum AdmissionStage {
@@ -1003,6 +1068,7 @@ enum AdmissionStage {
   ADMITTED
   WITHDRAWN
   CANCELLED
+  @@schema("public")
 }
 model RecruitmentRequest {
   id String @id @default(uuid()) @db.Uuid
@@ -1016,6 +1082,7 @@ model RecruitmentRequest {
   updatedAt DateTime @updatedAt
   applications CandidateApplication[]
   @@index([positionId, status])
+  @@schema("public")
 }
 model CandidateApplication {
   id String @id @default(uuid()) @db.Uuid
@@ -1035,6 +1102,7 @@ model CandidateApplication {
   updatedAt DateTime @updatedAt
   history RecruitmentStageHistory[]
   @@index([requestId, stage])
+  @@schema("public")
 }
 model RecruitmentStageHistory {
   id String @id @default(uuid()) @db.Uuid
@@ -1046,6 +1114,7 @@ model RecruitmentStageHistory {
   createdBy String @db.Uuid
   createdAt DateTime @default(now())
   @@index([applicationId])
+  @@schema("public")
 }
 model OperationalParameter {
   id String @id @default(uuid()) @db.Uuid
@@ -1060,4 +1129,346 @@ model OperationalParameter {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@unique([operationId, kind, code])
+  @@schema("public")
+}
+
+// =============================================================================
+// Leadership Lab — schema PostgreSQL "leadership_lab".
+//
+// O que o Prisma não expressa (CHECK, índices parciais, view, dados iniciais)
+// está em migrations/0015_leadership_lab/migration.sql. Valores fechados são
+// TEXT + CHECK (não enums do Postgres), como pede a documentação do módulo; as
+// listas oficiais ficam em packages/shared/src/leadership-lab.ts e um teste de
+// integração confere que o banco e o código dizem a mesma coisa.
+//
+// Colunas de ator (criadoPor, validadoPor, tratadoPor, decididoPor...) são UUID
+// de "User" sem FK, a mesma convenção de createdBy/updatedBy do restante do
+// repositório; a trilha completa fica em "AuditLog".
+//
+// O schema "leadership_lab_ia" (sessões do ADK) é criado pela migration, mas
+// suas tabelas pertencem ao serviço de IA e não são modeladas aqui.
+// =============================================================================
+
+/// As 8 skills do piloto (4 hard e 4 soft). O id é um slug estável, ex.: "gestao-os".
+model LabSkill {
+  id     String  @id
+  nome   String
+  tipo   String
+  ativo  Boolean @default(true)
+  turnos LabTurnoSkill[]
+  perfis LabPerfilSkill[]
+  alertas LabAlerta[]
+
+  @@map("skill")
+  @@schema("leadership_lab")
+}
+
+/// Molde por nível de liderança. Nasce inativo: só ativa com tempo limite definido.
+model LabMolde {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nivel           String   @unique
+  nome            String
+  temas           Json     @default("[]")
+  numeroSituacoes Int      @default(5) @map("numero_situacoes")
+  tempoLimiteS    Int?     @map("tempo_limite_s")
+  ativo           Boolean  @default(false)
+  atualizadoPor   String?  @map("atualizado_por") @db.Uuid
+  criadoEm        DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+  atualizadoEm    DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+  cargos          LabMoldeCargo[]
+  sessoes         LabSessao[]
+
+  @@map("molde")
+  @@schema("leadership_lab")
+}
+
+/// Cargo do RH (JobFunction) → molde. Uma função pertence a no máximo um molde.
+model LabMoldeCargo {
+  jobFunctionId String      @id @map("job_function_id") @db.Uuid
+  jobFunction   JobFunction @relation(fields: [jobFunctionId], references: [id])
+  moldeId       String      @map("molde_id") @db.Uuid
+  molde         LabMolde    @relation(fields: [moldeId], references: [id])
+  criadoPor     String?     @map("criado_por") @db.Uuid
+  criadoEm      DateTime    @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  @@index([moldeId])
+  @@map("molde_cargo")
+  @@schema("leadership_lab")
+}
+
+/// Liga um login (User) a um colaborador (Employee). Todas as tabelas do módulo
+/// apontam para cá, então "User" e "Employee" ganham um único campo virtual cada.
+model LabParticipante {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @unique @map("user_id") @db.Uuid
+  user       User     @relation(fields: [userId], references: [id])
+  employeeId String   @unique @map("employee_id") @db.Uuid
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  ativo      Boolean  @default(true)
+  criadoPor  String?  @map("criado_por") @db.Uuid
+  criadoEm   DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+  turmas     LabTurmaParticipante[]
+  termos     LabTermoAceite[]
+  sessoes    LabSessao[]
+  perfilSkills LabPerfilSkill[]
+
+  @@map("participante")
+  @@schema("leadership_lab")
+}
+
+/// Permissão por usuário: lab_gestao ou lab_especialista. Revogar = apagar a linha
+/// (o histórico fica em AuditLog, ação PERMISSION_CHANGE).
+model LabPermissaoUsuario {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  user        User     @relation(fields: [userId], references: [id])
+  permissao   String
+  concedidaPor String? @map("concedida_por") @db.Uuid
+  concedidaEm DateTime @default(now()) @map("concedida_em") @db.Timestamptz(3)
+
+  @@unique([userId, permissao])
+  @@map("permissao_usuario")
+  @@schema("leadership_lab")
+}
+
+model LabTurma {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome          String
+  curadorId     String   @map("curador_id") @db.Uuid
+  curador       User     @relation(fields: [curadorId], references: [id])
+  ativa         Boolean  @default(true)
+  criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+  participantes LabTurmaParticipante[]
+
+  @@index([curadorId])
+  @@map("turma")
+  @@schema("leadership_lab")
+}
+
+model LabTurmaParticipante {
+  turmaId        String          @map("turma_id") @db.Uuid
+  turma          LabTurma        @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  participanteId String          @map("participante_id") @db.Uuid
+  participante   LabParticipante @relation(fields: [participanteId], references: [id])
+  adicionadoEm   DateTime        @default(now()) @map("adicionado_em") @db.Timestamptz(3)
+
+  @@id([turmaId, participanteId])
+  @@index([participanteId])
+  @@map("turma_participante")
+  @@schema("leadership_lab")
+}
+
+/// Termo de ciência versionado, aceito no primeiro acesso.
+model LabTermoAceite {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  participanteId String          @map("participante_id") @db.Uuid
+  participante   LabParticipante @relation(fields: [participanteId], references: [id])
+  versaoTermo    String          @map("versao_termo")
+  aceitoEm       DateTime        @default(now()) @map("aceito_em") @db.Timestamptz(3)
+
+  @@unique([participanteId, versaoTermo])
+  @@map("termo_aceite")
+  @@schema("leadership_lab")
+}
+
+/// Um teste. Modo "validado" e teste_versao_id entram na versão 1.
+model LabSessao {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  participanteId String          @map("participante_id") @db.Uuid
+  participante   LabParticipante @relation(fields: [participanteId], references: [id])
+  moldeId        String          @map("molde_id") @db.Uuid
+  molde          LabMolde        @relation(fields: [moldeId], references: [id])
+  modo           String          @default("dinamico")
+  /// Identificador opaco da conversa no serviço de IA. Nunca é o id do usuário.
+  iaSessaoId     String?         @unique @map("ia_sessao_id")
+  status         String          @default("em_andamento")
+  iniciadaEm     DateTime        @default(now()) @map("iniciada_em") @db.Timestamptz(3)
+  concluidaEm    DateTime?       @map("concluida_em") @db.Timestamptz(3)
+  turnos         LabTurno[]
+  resultado      LabResultado?
+  perfilSkills   LabPerfilSkill[]
+  alertas        LabAlerta[]
+  contribuicoes  LabContribuicao[]
+  logsIa         LabLogIa[]
+
+  @@index([participanteId, iniciadaEm(sort: Desc)])
+  @@index([status])
+  @@map("sessao")
+  @@schema("leadership_lab")
+}
+
+/// Cada situação do teste. Aderência, estilo, skills e alerta ficam aqui, mas
+/// nunca saem do backend durante o teste.
+model LabTurno {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessaoId        String    @map("sessao_id") @db.Uuid
+  sessao          LabSessao @relation(fields: [sessaoId], references: [id])
+  numero          Int
+  marco           Boolean   @default(false)
+  texto           String
+  opcoes          Json
+  estiloAdequado  String    @map("estilo_adequado")
+  apresentadaEm   DateTime  @default(now()) @map("apresentada_em") @db.Timestamptz(3)
+  respondidaEm    DateTime? @map("respondida_em") @db.Timestamptz(3)
+  escolha         String?
+  tempoRespostaMs Int?      @map("tempo_resposta_ms")
+  tempoEsgotado   Boolean   @default(false) @map("tempo_esgotado")
+  aderencia       Int?
+  estilo          String?
+  alerta          String?
+  justificativa   String?
+  consequencia    String?
+  /// Texto já tratado pela Guarda. Texto bloqueado nunca é gravado.
+  textoLivre      String?   @map("texto_livre")
+  decisaoGuarda   String?   @map("decisao_guarda")
+  skills          LabTurnoSkill[]
+  alertas         LabAlerta[]
+  contribuicao    LabContribuicao?
+
+  @@unique([sessaoId, numero])
+  @@map("turno")
+  @@schema("leadership_lab")
+}
+
+/// Skills ligadas a uma escolha (N:N, com FK para a skill).
+model LabTurnoSkill {
+  turnoId String   @map("turno_id") @db.Uuid
+  turno   LabTurno @relation(fields: [turnoId], references: [id], onDelete: Cascade)
+  skillId String   @map("skill_id")
+  skill   LabSkill @relation(fields: [skillId], references: [id])
+
+  @@id([turnoId, skillId])
+  @@index([skillId])
+  @@map("turno_skill")
+  @@schema("leadership_lab")
+}
+
+/// Fechamento do teste. Os números vêm do backend; o texto, da IA.
+model LabResultado {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessaoId              String    @unique @map("sessao_id") @db.Uuid
+  sessao                LabSessao @relation(fields: [sessaoId], references: [id])
+  aderenciaGeral        Float     @map("aderencia_geral")
+  agilidade             Float
+  estiloPredominante    String?   @map("estilo_predominante")
+  flexibilidadePct      Float?    @map("flexibilidade_pct")
+  flexibilidade         String?
+  niveisPorSkill        Json      @default("{}") @map("niveis_por_skill")
+  resumo                String
+  pontoForte            String?   @map("ponto_forte")
+  pontoDesenvolvimento  String?   @map("ponto_desenvolvimento")
+  sugestoes             Json      @default("[]")
+  respostaIa            Json      @map("resposta_ia")
+  statusValidacao       String    @default("aguardando_validacao") @map("status_validacao")
+  validadoPor           String?   @map("validado_por") @db.Uuid
+  validadoEm            DateTime? @map("validado_em") @db.Timestamptz(3)
+  justificativaValidacao String?  @map("justificativa_validacao")
+  criadoEm              DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
+  contestacoes          LabContestacao[]
+
+  @@map("resultado")
+  @@schema("leadership_lab")
+}
+
+/// Histórico do nível por skill: uma linha nova a cada resultado.
+/// "nivel" é o calculado pelo backend; "nivelValidado" é o definido pelo curador.
+model LabPerfilSkill {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  participanteId String          @map("participante_id") @db.Uuid
+  participante   LabParticipante @relation(fields: [participanteId], references: [id])
+  skillId        String          @map("skill_id")
+  skill          LabSkill        @relation(fields: [skillId], references: [id])
+  sessaoId       String          @map("sessao_id") @db.Uuid
+  sessao         LabSessao       @relation(fields: [sessaoId], references: [id])
+  nivel          Int
+  nEvidencias    Int             @map("n_evidencias")
+  validado       Boolean         @default(false)
+  nivelValidado  Int?            @map("nivel_validado")
+  criadoEm       DateTime        @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  @@unique([sessaoId, skillId])
+  @@index([participanteId, skillId, criadoEm(sort: Desc)])
+  @@map("perfil_skill")
+  @@schema("leadership_lab")
+}
+
+/// Vermelho: escolha com aderência 10 (turnoId). Amarelo: skill com média abaixo
+/// de 50 em dois testes seguidos (skillId). Alertas são pedagógicos, não disciplinares.
+model LabAlerta {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessaoId   String    @map("sessao_id") @db.Uuid
+  sessao     LabSessao @relation(fields: [sessaoId], references: [id])
+  turnoId    String?   @map("turno_id") @db.Uuid
+  turno      LabTurno? @relation(fields: [turnoId], references: [id], onDelete: Restrict)
+  cor        String
+  skillId    String?   @map("skill_id")
+  skill      LabSkill? @relation(fields: [skillId], references: [id], onDelete: Restrict)
+  status     String    @default("aberto")
+  tratadoPor String?   @map("tratado_por") @db.Uuid
+  tratadoEm  DateTime? @map("tratado_em") @db.Timestamptz(3)
+  nota       String?
+  criadoEm   DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  @@index([status, cor])
+  @@index([sessaoId])
+  @@map("alerta")
+  @@schema("leadership_lab")
+}
+
+/// Ideia que melhora o procedimento; entra na fila do curador.
+model LabContribuicao {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessaoId   String    @map("sessao_id") @db.Uuid
+  sessao     LabSessao @relation(fields: [sessaoId], references: [id])
+  turnoId    String    @unique @map("turno_id") @db.Uuid
+  turno      LabTurno  @relation(fields: [turnoId], references: [id])
+  texto      String
+  status     String    @default("pendente")
+  decididoPor String?  @map("decidido_por") @db.Uuid
+  decididoEm DateTime? @map("decidido_em") @db.Timestamptz(3)
+  criadoEm   DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  @@index([status])
+  @@index([sessaoId])
+  @@map("contribuicao")
+  @@schema("leadership_lab")
+}
+
+model LabContestacao {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  resultadoId  String       @map("resultado_id") @db.Uuid
+  resultado    LabResultado @relation(fields: [resultadoId], references: [id])
+  ponto        String
+  motivo       String
+  status       String       @default("pendente")
+  decididoPor  String?      @map("decidido_por") @db.Uuid
+  decididoEm   DateTime?    @map("decidido_em") @db.Timestamptz(3)
+  notaDecisao  String?      @map("nota_decisao")
+  criadoEm     DateTime     @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  @@index([status])
+  @@index([resultadoId])
+  @@map("contestacao")
+  @@schema("leadership_lab")
+}
+
+/// Uma linha por chamada à IA. Não guarda conteúdo, só metadados de auditoria e custo.
+model LabLogIa {
+  id               String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agente           String
+  versaoInstrucao  String     @map("versao_instrucao")
+  modelo           String
+  tokensEntrada    Int?       @map("tokens_entrada")
+  tokensSaida      Int?       @map("tokens_saida")
+  latenciaMs       Int        @map("latencia_ms")
+  sucesso          Boolean
+  codigoErro       String?    @map("codigo_erro")
+  sessaoId         String?    @map("sessao_id") @db.Uuid
+  sessao           LabSessao? @relation(fields: [sessaoId], references: [id])
+  criadoEm         DateTime   @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  @@index([criadoEm])
+  @@index([sessaoId])
+  @@map("log_ia")
+  @@schema("leadership_lab")
 }
