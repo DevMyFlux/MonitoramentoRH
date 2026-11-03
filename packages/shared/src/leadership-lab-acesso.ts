@@ -45,6 +45,7 @@ export type LinhaDaMatriz = Readonly<Partial<Record<PapelLab, EscopoDados>>>;
 const matriz = {
   // --- Participante (rotas /painel, /termo, /moldes, /sessoes, /resultados/:id/contestacoes)
   "painel:ler": { participante: "proprios" },
+  "termo:ler": { participante: "proprios" },
   "termo:aceitar": { participante: "proprios" },
   "moldes:listar": { participante: "proprios" },
   "sessao:iniciar": { participante: "proprios" },

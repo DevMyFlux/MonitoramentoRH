@@ -16,7 +16,13 @@
 //  - A IA só vê o molde, os temas, a escolha e o campo livre depois da Guarda; nunca o
 //    participante, o colaborador, a operação nem a unidade.
 //  - Resposta da IA fora do contrato não grava nada.
-import { type LabAtor, type LabEscolha, medirResposta } from "@my-flux/shared";
+import {
+  type LabAtor,
+  type LabEscolha,
+  type LabMoldeNivel,
+  labMoldeNiveis,
+  medirResposta
+} from "@my-flux/shared";
 import {
   Prisma,
   type LabMolde,
@@ -54,6 +60,20 @@ import {
   visaoDaSituacao,
   visaoDoResultado
 } from "./visoes.js";
+
+/** Um molde, como o participante o vê na tela de início. */
+export type MoldeVisivel = {
+  id: string;
+  nivel: LabMoldeNivel;
+  nome: string;
+  temas: string[];
+  numeroSituacoes: number;
+  /** Só quando o molde está liberado; nulo caso contrário. */
+  tempoLimiteS: number | null;
+  /** Ativo, com tempo e com temas. Só estes podem ser iniciados. */
+  disponivel: boolean;
+  doMeuCargo: boolean;
+};
 
 export type LoggerDoMotor = { warn(dados: object, mensagem: string): void };
 
@@ -108,6 +128,63 @@ export class MotorDoTeste {
       update: {}
     });
     return { versaoTermo: aceite.versaoTermo, aceitoEm: aceite.aceitoEm };
+  }
+
+  /** O termo atual e se este participante já o aceitou. A tela de início usa para decidir se o mostra. */
+  async situacaoDoTermo(
+    ator: LabAtor
+  ): Promise<{ versaoAtual: string; aceito: boolean; aceitoEm: Date | null }> {
+    assertAcesso(ator, "termo:ler");
+    const participanteId = this.participanteDe(ator);
+    const versaoAtual = this.config.versaoTermo;
+    const aceite = await this.db.labTermoAceite.findUnique({
+      where: { participanteId_versaoTermo: { participanteId, versaoTermo: versaoAtual } }
+    });
+    return { versaoAtual, aceito: aceite !== null, aceitoEm: aceite?.aceitoEm ?? null };
+  }
+
+  // =========================================================================
+  // Moldes
+  // =========================================================================
+
+  /**
+   * Os moldes, com o do cargo do participante marcado. Só o que a tela de início mostra: nada
+   * de quem o configurou, e o tempo só aparece quando o molde está de fato liberado.
+   */
+  async listarMoldes(
+    ator: LabAtor
+  ): Promise<{ moldes: MoldeVisivel[]; meuMoldeId: string | null }> {
+    assertAcesso(ator, "moldes:listar");
+    const participanteId = this.participanteDe(ator);
+    const [moldes, resolvido] = await Promise.all([
+      this.db.labMolde.findMany(),
+      this.resolverMolde(participanteId)
+    ]);
+    const meuMoldeId = "molde" in resolvido ? resolvido.molde.id : null;
+    // Ordem fixa dos níveis: os três moldes nascem na mesma instrução e empatam em qualquer data.
+    moldes.sort(
+      (a, b) =>
+        labMoldeNiveis.indexOf(a.nivel as LabMoldeNivel) -
+        labMoldeNiveis.indexOf(b.nivel as LabMoldeNivel)
+    );
+    return {
+      meuMoldeId,
+      moldes: moldes.map((molde) => {
+        const temas = z.array(z.string()).safeParse(molde.temas);
+        const disponivel =
+          molde.ativo && molde.tempoLimiteS !== null && temas.success && temas.data.length > 0;
+        return {
+          id: molde.id,
+          nivel: molde.nivel as MoldeVisivel["nivel"],
+          nome: molde.nome,
+          temas: temas.success ? temas.data : [],
+          numeroSituacoes: molde.numeroSituacoes,
+          tempoLimiteS: disponivel ? molde.tempoLimiteS : null,
+          disponivel,
+          doMeuCargo: molde.id === meuMoldeId
+        };
+      })
+    };
   }
 
   // =========================================================================
@@ -620,19 +697,27 @@ export class MotorDoTeste {
     });
   }
 
-  private async moldeDoParticipante(participanteId: string): Promise<LabMolde> {
+  /** O molde do cargo do participante, ou o que falta no cadastro para haver um. */
+  private async resolverMolde(
+    participanteId: string
+  ): Promise<{ molde: LabMolde } | { falta: "cargo" | "mapeamento" }> {
     const participante = await this.db.labParticipante.findUniqueOrThrow({
       where: { id: participanteId },
       select: { employee: { select: { functionId: true } } }
     });
     const funcao = participante.employee.functionId;
-    if (funcao === null) throw erros.cargoNaoInformado();
+    if (funcao === null) return { falta: "cargo" };
     const mapeado = await this.db.labMoldeCargo.findUnique({
       where: { jobFunctionId: funcao },
       include: { molde: true }
     });
-    if (!mapeado) throw erros.moldeNaoMapeado();
-    return mapeado.molde;
+    return mapeado ? { molde: mapeado.molde } : { falta: "mapeamento" };
+  }
+
+  private async moldeDoParticipante(participanteId: string): Promise<LabMolde> {
+    const resolvido = await this.resolverMolde(participanteId);
+    if ("molde" in resolvido) return resolvido.molde;
+    throw resolvido.falta === "cargo" ? erros.cargoNaoInformado() : erros.moldeNaoMapeado();
   }
 
   /** Molde utilizável: ativo, com tempo e com temas. */

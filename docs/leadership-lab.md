@@ -179,15 +179,17 @@ A proposta, para alinhar na Etapa 2 com o `agent.py` real:
 
 ## Motor do teste
 
-`apps/api/src/modules/leadership-lab/motor/`. Conduz um teste de ponta a ponta. Ainda **não há rotas HTTP nem cliente HTTP real da IA**: o motor recebe o ator (`LabAtor`) e um `ClienteIa` (interface em `cliente-ia.ts`), e os testes usam a `IaFalsa`, que obedece ao contrato e valida o que recebe. Quando as rotas existirem, são finas: autenticar, `carregarAtorLab`, chamar o motor.
+`apps/api/src/modules/leadership-lab/motor/`. Conduz um teste de ponta a ponta. O motor recebe o ator (`LabAtor`) e um `ClienteIa` (interface em `cliente-ia.ts`). Em produção o cliente é o `ClienteIaHttp`; nos testes, a `IaFalsa`, que obedece ao contrato e valida o que recebe. As rotas HTTP (seção seguinte) são finas: autenticar, `carregarAtorLab`, chamar o motor.
 
-| Método                              | Rota prevista                      | Faz                                                                                    |
-| ----------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------- |
-| `aceitarTermo(ator)`                | `POST /termo`                      | Registra o aceite da versão atual do termo (idempotente)                               |
-| `iniciar(ator, {moldeId?})`         | `POST /sessoes`                    | Inicia um teste, ou retoma o que está em andamento                                     |
-| `responder(ator, id, entrada)`      | `POST /sessoes/:id/respostas`      | Registra a resposta; devolve consequência e próxima situação, ou o resultado           |
-| `tempoEsgotado(ator, id, {numero})` | `POST /sessoes/:id/tempo-esgotado` | O cliente avisa que o relógio zerou; o servidor confere                                |
-| `obterResultado(ator, id)`          | `GET /sessoes/:id/resultado`       | Resultado de um teste concluído (do participante, ou de quem está na turma do curador) |
+| Método                              | Faz                                                                                    |
+| ----------------------------------- | -------------------------------------------------------------------------------------- |
+| `situacaoDoTermo(ator)`             | A versão atual do termo e se este participante já a aceitou                            |
+| `aceitarTermo(ator)`                | Registra o aceite da versão atual do termo (idempotente)                               |
+| `listarMoldes(ator)`                | Os moldes, com o do cargo do participante marcado                                      |
+| `iniciar(ator, {moldeId?})`         | Inicia um teste, ou retoma o que está em andamento                                     |
+| `responder(ator, id, entrada)`      | Registra a resposta; devolve consequência e próxima situação, ou o resultado           |
+| `tempoEsgotado(ator, id, {numero})` | O cliente avisa que o relógio zerou; o servidor confere                                |
+| `obterResultado(ator, id)`          | Resultado de um teste concluído (do participante, ou de quem está na turma do curador) |
 
 ### Garantias (todas com teste de integração contra PostgreSQL real)
 
@@ -228,7 +230,40 @@ A proposta, para alinhar na Etapa 2 com o `agent.py` real:
 
 ### Variáveis de ambiente
 
-`lerConfigDoLab(process.env)` lê: `LAB_TOLERANCIA_TEMPO_S` (**obrigatória, sem valor padrão**), `LAB_LIMITE_TESTES_DIA` (opcional, sem limite se ausente) e `LAB_IA_TIMEOUT_MS` (padrão 25 000; fica abaixo dos 30 s do cliente web). `LAB_IA_URL` e `LAB_IA_TOKEN` pertencem ao cliente HTTP, ainda por fazer.
+| Variável                 | Obrigatória?                  | Para quê                                                                                       |
+| ------------------------ | ----------------------------- | ---------------------------------------------------------------------------------------------- |
+| `LAB_IA_URL`             | **É o interruptor do módulo** | Endereço do serviço de IA. Sem ela, o módulo fica desligado (rotas inexistentes, 404)          |
+| `LAB_IA_TOKEN`           | sim, se `LAB_IA_URL` existe   | Segredo enviado em `X-Servico-Token`. O mesmo valor de `TOKEN_SERVICO` do serviço de IA        |
+| `LAB_TOLERANCIA_TEMPO_S` | sim, se `LAB_IA_URL` existe   | **Sem valor padrão.** Segundos de latência de rede descontados do tempo de resposta (0 = nada) |
+| `LAB_LIMITE_TESTES_DIA`  | não                           | Testes por participante por dia. Sem ela, sem limite                                           |
+| `LAB_IA_TIMEOUT_MS`      | não                           | Tempo máximo de cada chamada à IA. Padrão 25 000; fica abaixo dos 30 s do cliente web          |
+
+Ligado e mal configurado, o servidor **não sobe** e diz o que falta, em vez de começar a falhar na frente do participante. Desligado, o resto do sistema sobe exatamente como antes.
+
+## Rotas HTTP
+
+`apps/api/src/modules/leadership-lab/lab-routes.ts`, sob `/api/v1/leadership-lab`. Mesmo JWT do restante do sistema. Sucesso: `{ "data": ... }`. Erro: `{ "code", "message", "details" }`, pelo tratador global. Toda resposta do módulo, inclusive de erro, sai com `Cache-Control: no-store`.
+
+| Rota                               | Faz                                               |
+| ---------------------------------- | ------------------------------------------------- |
+| `GET /termo`                       | `{ versaoAtual, aceito, aceitoEm }`               |
+| `POST /termo`                      | Aceita a versão atual                             |
+| `GET /moldes`                      | `{ moldes: [...], meuMoldeId }`                   |
+| `POST /sessoes`                    | Inicia, ou retoma; corpo opcional `{ moldeId? }`  |
+| `POST /sessoes/:id/respostas`      | `{ numero, escolha: "A"\|"B"\|"C", textoLivre? }` |
+| `POST /sessoes/:id/tempo-esgotado` | `{ numero }`                                      |
+| `GET /sessoes/:id/resultado`       | O resultado de um teste concluído                 |
+
+- Corpos com campo desconhecido (como `aderencia`) são recusados com 400; o corpo de cada POST tem teto de 16 KB.
+- Sessão inexistente, mal formada ou de outra pessoa respondem o mesmo 404.
+- Repetir uma requisição de resposta devolve **exatamente o mesmo corpo**.
+- Ainda não há `GET /painel` nem as rotas do curador, do administrador e da gestão.
+
+### Cliente HTTP da IA
+
+`ClienteIaHttp` chama `POST /teste/sessoes`, `POST /teste/turnos` e `POST /agentes/guarda`, com o token em `X-Servico-Token`. **Não segue redirecionamento** (o token nunca vai para um endereço que o operador não configurou), limita o tamanho da resposta, aplica o tempo limite também à leitura do corpo, e nenhuma mensagem de erro carrega o corpo da resposta, a credencial ou o token. O endereço deve ser `https` fora de uma rede privada.
+
+Se o serviço estiver no Cloud Run sem acesso público, o gancho `autorizacao` fornece o ID token (cabeçalho `Authorization: Bearer`). Ele não está ligado a nada ainda, porque depende de onde o RH roda (Railway ou Cloud Run), decisão em aberto: no GCP basta o servidor de metadados; fora dele é preciso uma chave de conta de serviço ou Workload Identity Federation.
 
 ### Decisões que tomei e o negócio pode rever
 
@@ -244,7 +279,8 @@ A proposta, para alinhar na Etapa 2 com o `agent.py` real:
 
 ## Pendências
 
-- Rotas HTTP do módulo e cliente HTTP real da IA (token de serviço, ID token do Cloud Run, timeout): dependem do alinhamento com o serviço Python.
+- ID token do Cloud Run para o `ClienteIaHttp` (gancho `autorizacao`): depende de onde o RH roda.
+- `GET /painel`, contestação do participante (`POST /resultados/:id/contestacoes`) e as rotas do curador, do administrador e da gestão.
 - Alinhar o contrato com o serviço Python (Etapa 2): itens marcados como proposta acima. Dependem do `agent.py` e do prompt de desenvolvimento.
 - Limite de testes por dia: decisão de negócio em aberto. Por ora é a variável `LAB_LIMITE_TESTES_DIA` do backend; se virar configuração editável, entra uma tabela.
 - Desistir ou cancelar um teste em andamento: o status `cancelada` existe e é respeitado, mas nenhum fluxo o aciona ainda. Enquanto isso, um teste abandonado fica aberto e é retomado na volta do participante.

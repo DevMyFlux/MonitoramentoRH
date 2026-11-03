@@ -54,6 +54,7 @@ const gestores: NomeDoAtor[] = ["comumGestao", "rhGestao", "adminGestao"];
  */
 const podem: Record<LabAcao, NomeDoAtor[]> = {
   "painel:ler": participantes,
+  "termo:ler": participantes,
   "termo:aceitar": participantes,
   "moldes:listar": participantes,
   "sessao:iniciar": participantes,
