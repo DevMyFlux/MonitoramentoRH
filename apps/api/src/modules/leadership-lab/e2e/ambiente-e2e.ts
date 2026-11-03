@@ -54,7 +54,11 @@ function compilarOFront(destino: string): void {
   execFileSync(
     "pnpm",
     ["--filter", "@my-flux/web", "exec", "vite", "build", "--outDir", destino, "--emptyOutDir"],
-    { cwd: raiz, env: { ...process.env, VITE_API_BASE_URL: "/api/v1" }, stdio: "pipe" }
+    {
+      cwd: raiz,
+      env: { ...process.env, VITE_API_BASE_URL: "/api/v1", VITE_MODO_TESTE_SEM_LOGIN: "false" },
+      stdio: "pipe"
+    }
   );
 }
 

@@ -3,13 +3,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AppShell } from "./components/layout";
 import { clearSession, request, saveSession, session } from "./features/my-flux/client";
 
-// Convenience for LOCAL development only: skip the /login screen and sign straight in as the
-// seeded DEV user (apps/api/prisma/seed.ts). It used to be a constant set to `true`, which shipped
-// the demo credentials below in the production bundle and signed EVERY visitor in as DEV. Now it
-// needs `VITE_DEV_AUTO_LOGIN=true` (e.g. in apps/web/.env.local) AND the Vite dev server
-// (`import.meta.env.DEV`), so a production build can never turn it on, whatever the environment
-// says, and the bundler drops the credentials from it altogether.
-const DEV_AUTO_LOGIN = import.meta.env.DEV && import.meta.env.VITE_DEV_AUTO_LOGIN === "true";
+// TEST MODE (temporary, at the system owner's request): no login screen, every visitor is signed
+// in as the seeded DEV user (apps/api/prisma/seed.ts), in production too, and the demo credentials
+// below ship in the bundle. To require login again, build the web app with
+// VITE_MODO_TESTE_SEM_LOGIN=false (or change the default here): the /login screen comes back and
+// the bundler drops the credentials from the output.
+const DEV_AUTO_LOGIN = import.meta.env.VITE_MODO_TESTE_SEM_LOGIN !== "false";
 
 async function autoLoginAsDev(): Promise<void> {
   const payload = await request<{ accessToken: string; refreshToken: string }>(
