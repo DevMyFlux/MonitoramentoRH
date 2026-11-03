@@ -53,6 +53,7 @@ import {
 
 const LAB_MIGRATION = "0015_leadership_lab";
 const ENGINE_MIGRATION = "0016_leadership_lab_engine";
+const PAINEL_MIGRATION = "0017_leadership_lab_painel_sem_vazamento";
 const PRE_LAB_MIGRATION = "0014_employee_termination_date";
 const rolesScript = readFileSync(
   fileURLToPath(new URL("../../../../prisma/ops/leadership-lab-roles.sql", import.meta.url)),
@@ -111,7 +112,11 @@ suite("migração 0015_leadership_lab: subir, descer e subir de novo", () => {
 
   it("tem down.sql nas migrações do Lab, e só nelas (as anteriores seguem sem descida)", () => {
     const comDescida = readMigrations().filter((m) => m.down !== null);
-    expect(comDescida.map((m) => m.name)).toEqual([LAB_MIGRATION, ENGINE_MIGRATION]);
+    expect(comDescida.map((m) => m.name)).toEqual([
+      LAB_MIGRATION,
+      ENGINE_MIGRATION,
+      PAINEL_MIGRATION
+    ]);
   });
 
   it("sobe sobre a cadeia atual, desce sem tocar no schema public e sobe de novo", async () => {
@@ -181,6 +186,52 @@ suite("migração 0015_leadership_lab: subir, descer e subir de novo", () => {
 
     await db.client.query(motor.up);
     expect((await db.client.query(colunaDoLease)).rows[0].n).toBe(1);
+  }, 60_000);
+
+  it("0017: subir corrige a view do painel, descer restaura a contagem antiga, subir corrige de novo", async () => {
+    const painel = readMigrations().find((m) => m.name === PAINEL_MIGRATION)!;
+    const base = await criarBase(db.client);
+    const ctx = await criarParticipante(db.client, base);
+    const sessao = await criarSessao(db.client, ctx); // em andamento
+    const turno = await inserir(
+      db.client,
+      "leadership_lab.turno",
+      turnoRespondido(sessao, 1, { escolha: "C", aderencia: 10, alerta: "vermelho" })
+    );
+    await inserir(db.client, "leadership_lab.alerta", {
+      sessao_id: sessao,
+      cor: "vermelho",
+      turno_id: turno
+    });
+    const alertasAbertos = async () =>
+      (
+        await db.client.query(
+          `SELECT alertas_abertos FROM leadership_lab.vw_painel_participante WHERE participante_id = $1`,
+          [ctx.participanteId]
+        )
+      ).rows[0].alertas_abertos;
+
+    expect(await alertasAbertos()).toBe(1); // a view da 0015 vaza
+    await db.client.query(painel.up);
+    expect(await alertasAbertos()).toBe(0);
+    await db.client.query(painel.down!);
+    expect(await alertasAbertos()).toBe(1);
+    await db.client.query(painel.up);
+    expect(await alertasAbertos()).toBe(0);
+    // A view segue com as mesmas colunas, na mesma ordem.
+    const { rows } = await db.client.query(
+      `SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'leadership_lab' AND table_name = 'vw_painel_participante' ORDER BY ordinal_position`
+    );
+    expect(rows.map((r) => r.column_name)).toEqual([
+      "participante_id",
+      "testes_feitos",
+      "testes_validados",
+      "aderencia_media",
+      "agilidade_media",
+      "ultimo_teste_em",
+      "alertas_abertos"
+    ]);
   }, 60_000);
 });
 
@@ -1167,6 +1218,45 @@ suite("schema leadership_lab", () => {
         ultimo_teste_em: null,
         alertas_abertos: 0
       });
+    });
+
+    it("não conta alertas de um teste em andamento: a avaliação não pode aparecer antes do fim", async () => {
+      const ctx = await criarParticipante(client, base);
+      const sessao = await criarSessao(client, ctx); // em andamento
+      const turno = await inserir(
+        client,
+        "leadership_lab.turno",
+        turnoRespondido(sessao, 1, { escolha: "C", aderencia: 10, alerta: "vermelho" })
+      );
+      await inserir(client, "leadership_lab.alerta", {
+        sessao_id: sessao,
+        cor: "vermelho",
+        turno_id: turno
+      });
+      const alertasAbertos = async () =>
+        (
+          await client.query(
+            `SELECT alertas_abertos FROM leadership_lab.vw_painel_participante WHERE participante_id = $1`,
+            [ctx.participanteId]
+          )
+        ).rows[0].alertas_abertos;
+
+      // O curador já foi avisado (o alerta existe), mas o participante ainda não pode saber.
+      expect(await alertasAbertos()).toBe(0);
+
+      // Concluído o teste, o alerta passa a contar.
+      await client.query(
+        `UPDATE leadership_lab.sessao SET status = 'concluida', concluida_em = now() + interval '1 minute' WHERE id = $1`,
+        [sessao]
+      );
+      await inserir(client, "leadership_lab.resultado", {
+        sessao_id: sessao,
+        aderencia_geral: 10,
+        agilidade: 50,
+        resumo: "Resumo.",
+        resposta_ia: "{}"
+      });
+      expect(await alertasAbertos()).toBe(1);
     });
   });
 

@@ -38,6 +38,8 @@ Desfazer. O Prisma Migrate não executa descida, então o arquivo é aplicado à
 psql -v ON_ERROR_STOP=1 -f apps/api/prisma/migrations/0015_leadership_lab/down.sql "$DATABASE_URL"
 ```
 
+As migrações seguintes têm o próprio `down.sql`, aplicado do mesmo jeito e em ordem inversa à de subida (0017, 0016, 0015). O da 0017 só devolve a definição anterior da view do painel e não toca em dados.
+
 Papel de banco do serviço de IA (menor privilégio: só enxerga `leadership_lab_ia`). Rodar uma vez por ambiente, com usuário administrador, depois da migração. O script explica como criar o usuário de login, com a senha vinda do Secret Manager:
 
 ```bash
@@ -69,6 +71,7 @@ O usuário precisa poder criar bancos e papéis (superusuário, no banco embutid
 | `agilidadeDoTurno`         | `max(0; 1 − tempo ÷ limite) × 100`; tempo esgotado conta 0                                           |
 | `nivelDaMedia`             | 90+ = 5, 70–89 = 4, 50–69 = 3, 25–49 = 2, abaixo de 25 = 1                                           |
 | `classificarFlexibilidade` | alta a partir de 80%, média a partir de 40%, baixa abaixo disso                                      |
+| `analisarEstilos`          | Estilo predominante e flexibilidade de um conjunto de escolhas (de um teste, ou de vários juntos)    |
 | `deveGerarAlertaAmarelo`   | Mesma skill com média abaixo de 50 nos dois últimos testes                                           |
 | `podeExibirTendencia`      | Tendência e tipo de perfil só depois de 3 testes                                                     |
 
@@ -80,7 +83,7 @@ Cada leitura abaixo está marcada com `INTERPRETAÇÃO` no código. São decisõ
 
 1. **Faixas de nível.** "70 a 89" é lido como o intervalo contínuo [70, 90), porque a média não é inteira (89,5 é nível 4).
 2. **"Escolhas que envolveram a equipe"** = situações respondidas em que `estilo` não é nulo. Tempo esgotado é omissão, não decisão, e fica fora de estilo e flexibilidade.
-3. **Empate no estilo mais frequente.** Não se escolhe um em silêncio: `estiloPredominante` fica nulo e os empatados vão em `estilosEmpatados`. Com 5 situações o empate é comum; falta definir o desempate.
+3. **Empate no estilo mais frequente.** Não se escolhe um em silêncio: `estiloPredominante` fica nulo e os empatados vão em `estilosEmpatados`. Com 5 situações o empate é comum; falta definir o desempate. A mesma regra vale para o perfil do painel, que junta as escolhas de vários testes (`analisarEstilos`).
 4. **"Dois testes seguidos" (alerta amarelo).** A série da skill deve ter só os testes em que ela teve evidência, e a função olha os dois últimos. Quem consulta o histórico decide também se resultados ainda não validados entram. Como `média < 50` equivale a `nível ≤ 2`, a consulta pode usar `perfil_skill.nivel`.
 5. **Skills de uma situação com tempo esgotado**, se houver, contam com aderência 0.
 6. **Limite de tempo.** Chegar exatamente no limite ainda vale; a tolerância de rede é descontada uma vez.
@@ -190,6 +193,9 @@ A proposta, para alinhar na Etapa 2 com o `agent.py` real:
 | `responder(ator, id, entrada)`      | Registra a resposta; devolve consequência e próxima situação, ou o resultado           |
 | `tempoEsgotado(ator, id, {numero})` | O cliente avisa que o relógio zerou; o servidor confere                                |
 | `obterResultado(ator, id)`          | Resultado de um teste concluído (do participante, ou de quem está na turma do curador) |
+| `painel(ator)`                      | O painel do participante (seção "Painel do participante"): só testes concluídos        |
+
+As pré-condições de início ficam num só lugar, `avaliarInicio` (`precondicoes.ts`): `iniciar`, `listarMoldes` e o botão do painel decidem "pode iniciar agora? se não, por quê?" pela mesma função, na mesma ordem (termo, teste em andamento, cargo, mapeamento do cargo, molde pronto, limite diário). Assim a tela não promete o que `POST /sessoes` recusaria.
 
 ### Garantias (todas com teste de integração contra PostgreSQL real)
 
@@ -253,11 +259,12 @@ Ligado e mal configurado, o servidor **não sobe** e diz o que falta, em vez de 
 | `POST /sessoes/:id/respostas`      | `{ numero, escolha: "A"\|"B"\|"C", textoLivre? }` |
 | `POST /sessoes/:id/tempo-esgotado` | `{ numero }`                                      |
 | `GET /sessoes/:id/resultado`       | O resultado de um teste concluído                 |
+| `GET /painel`                      | O painel do participante                          |
 
 - Corpos com campo desconhecido (como `aderencia`) são recusados com 400; o corpo de cada POST tem teto de 16 KB.
 - Sessão inexistente, mal formada ou de outra pessoa respondem o mesmo 404.
 - Repetir uma requisição de resposta devolve **exatamente o mesmo corpo**.
-- Ainda não há `GET /painel` nem as rotas do curador, do administrador e da gestão.
+- Ainda não há a contestação do participante nem as rotas do curador, do administrador e da gestão.
 
 ### Cliente HTTP da IA
 
@@ -276,11 +283,56 @@ Se o serviço estiver no Cloud Run sem acesso público, o gancho `autorizacao` f
 7. **A resposta durante o teste inclui `tempoRestanteMs`**, além do que a documentação lista, para o relógio sobreviver a um recarregamento.
 8. **A versão do termo (`2026-1`) é um marcador**: o texto do termo ainda não existe.
 9. **Migração 0016** (`ux_sessao_em_andamento_por_participante` e `turno.processando_ate`), com `down.sql`.
+10. **Migração 0017** (a view do painel só conta alertas de testes concluídos), com `down.sql`. Veja "Painel do participante".
+
+## Painel do participante
+
+`GET /painel`, em `apps/api/src/modules/leadership-lab/painel/`: `tipos.ts` (o que sai), `montagem.ts` (as regras, puras, sem banco) e `consulta.ts` (a leitura). Só o participante (perfil COMUM) o acessa, e só vê o próprio painel (`painel:ler`). Sem o termo aceito o painel responde normalmente e o botão vem `indisponivel` (motivo `termo-pendente`), para a tela poder mostrar o termo.
+
+**Regra central: o painel só enxerga testes concluídos.** A aderência é escondida durante o teste e o alerta vermelho nasce na hora (para o curador ser avisado); mostrá-lo no painel antes do fim revelaria a avaliação no meio do teste. O teste em andamento aparece só como a ação `continuar` (id, número da situação em que o participante parou e total), sem nenhum dado de avaliação.
+
+| Bloco          | O que traz                                                                         | Regra                                                                                  |
+| -------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `termo`        | `{ versaoAtual, aceito, aceitoEm }`                                                | Para a tela mostrar o termo no primeiro acesso                                         |
+| `acao`         | O botão: `iniciar`, `continuar` ou `indisponivel` (com o motivo)                   | O mesmo estado que `POST /sessoes` usa para decidir                                    |
+| `indicadores`  | Testes feitos e validados, aderência e agilidade médias, data do último teste      | Médias de todos os testes concluídos, validados ou não; 2 casas                        |
+| `evolucao`     | Um ponto por teste concluído, do mais antigo ao mais novo, e `tendenciaDisponivel` | Tendência só depois de 3 testes. No máximo os 100 testes mais recentes                 |
+| `skills`       | As 8 skills do piloto, em ordem fixa (4 hard e 4 soft)                             | Nível mais recente de cada uma, o validado pelo curador se houver. Sem evidência: nulo |
+| `tipoDePerfil` | Estilo predominante, distribuição dos 4 estilos, flexibilidade                     | Só depois de 3 testes; antes disso nenhum dado de estilo sai do banco                  |
+| `alertas`      | Alertas abertos de testes concluídos                                               | Vermelhos primeiro, depois os mais recentes; no máximo 100                             |
+| `sugestoes`    | Até 3, as do debriefing do teste mais recente                                      | Com a origem: qual teste, e se já foi validado                                         |
+
+Motivos de `indisponivel`: `termo-pendente`, `cargo-nao-informado`, `molde-nao-mapeado`, `molde-inativo` e `limite-diario` (este com `limiteDiario`). São os mesmos erros que `POST /sessoes` devolveria.
+
+### Como a leitura é feita
+
+- **Uma transação `REPEATABLE READ`.** Todos os blocos vêm do mesmo instante do banco. Sem isso, um teste que concluísse no meio da leitura deixaria o cartão dizendo "3 testes" e o gráfico com 4 pontos. Um teste de integração conclui um teste no meio da leitura e confere que o painel continua coerente.
+- **Os indicadores vêm da view `vw_painel_participante`**, que a modelagem reservou para isso. A **migração 0017** a corrigiu: `alertas_abertos` contava alertas de testes em andamento, o que revelaria no meio do teste que a última escolha teve aderência 10. Agora conta só os de testes concluídos (mesmas colunas, `CREATE OR REPLACE VIEW`; o `down.sql` devolve a definição da 0015).
+- **Toda leitura exige `sessao.status = 'concluida'`**: evolução, skills, escolhas de estilo, alertas e sugestões. Os alertas vêm de uma só consulta SQL com junções: pedir ao Prisma três relações irmãs dentro de uma transação faz ele carregá-las em paralelo na mesma conexão, e o driver `pg` avisa que vai deixar de aceitar isso.
+- **O tipo de perfil só é lido quando pode ser exibido.** Antes de 3 testes, as escolhas de estilo nem saem do banco.
+- **Cada bloco é montado campo a campo** (`montagem.ts`), então coluna nova não vaza sozinha.
+
+### Duas definições únicas
+
+- `avaliarInicio` decide "pode iniciar agora? se não, por quê?" para `POST /sessoes`, `GET /moldes` e o botão do painel. A tela nunca promete o que o servidor recusaria.
+- `analisarEstilos` (em `packages/shared`) define estilo predominante e flexibilidade, tanto no resultado de um teste quanto no perfil do painel. Se o perfil usasse outra regra, mostraria um estilo diferente do que o resultado do teste mostra.
+
+### Decisões do painel que o negócio pode rever
+
+1. **Radar = o nível mais recente de cada skill**, não uma média ao longo do tempo. Mostra o validado pelo curador quando existe; senão o calculado, com `validado: false` (selo "aguardando validação"). O nível calculado e o resultado de origem vão junto, para o participante poder contestar.
+2. **Tipo de perfil = as escolhas de todos os testes concluídos, juntas**, e não a média dos estilos de cada teste. Empate: `estiloPredominante` nulo e os empatados em `estilosEmpatados` (o item 3 de "Onde a documentação deixa lacunas").
+3. **Tendência: o servidor entrega a série e a regra de liberação (3 testes), não uma direção calculada.** A documentação não diz como a tendência se calcula (último contra o anterior? contra a média dos anteriores? regressão?).
+4. **A média da turma não entra.** É um agregado: depende de definir a turma e o mínimo de pessoas por recorte (veja Pendências). Quando decidido, entra como um bloco novo.
+5. **O próximo teste é sempre o do cargo do participante.** O painel não oferece escolha de molde (o `moldeId` de `POST /sessoes` só confirma o do cargo, e outro dá 422).
+6. **Teste em andamento não conta em nada** (indicadores, radar, perfil, alertas, sugestões): só aparece como "continuar".
+7. **Sem texto de orientação nos alertas.** O painel traz a cor, a skill ou a situação e o teste de origem; o "o que fazer" de cada alerta é decisão de negócio em aberto.
+8. **100 pontos de evolução e 100 alertas** são proteção contra resposta gigante, não regra de negócio.
 
 ## Pendências
 
 - ID token do Cloud Run para o `ClienteIaHttp` (gancho `autorizacao`): depende de onde o RH roda.
-- `GET /painel`, contestação do participante (`POST /resultados/:id/contestacoes`) e as rotas do curador, do administrador e da gestão.
+- Contestação do participante (`POST /resultados/:id/contestacoes`) e as rotas do curador, do administrador e da gestão.
+- Painel: média anônima da turma, cálculo da tendência e texto de orientação de cada alerta. Decisões de negócio em aberto (veja "Decisões do painel que o negócio pode rever").
 - Alinhar o contrato com o serviço Python (Etapa 2): itens marcados como proposta acima. Dependem do `agent.py` e do prompt de desenvolvimento.
 - Limite de testes por dia: decisão de negócio em aberto. Por ora é a variável `LAB_LIMITE_TESTES_DIA` do backend; se virar configuração editável, entra uma tabela.
 - Desistir ou cancelar um teste em andamento: o status `cancelada` existe e é respeitado, mas nenhum fluxo o aciona ainda. Enquanto isso, um teste abandonado fica aberto e é retomado na volta do participante.

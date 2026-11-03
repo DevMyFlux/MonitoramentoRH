@@ -18,7 +18,7 @@ import {
   prepararBanco
 } from "./motor/cenario-de-teste.js";
 import { ClienteIaHttp } from "./motor/cliente-ia-http.js";
-import { CANARIO_JUSTIFICATIVA, IaFalsa } from "./motor/ia-falsa.js";
+import { CANARIO_JUSTIFICATIVA, IaFalsa, roteiroPadrao } from "./motor/ia-falsa.js";
 import { type ServicoIaFalso, subirServicoIaFalso } from "./motor/servico-ia-falso.js";
 
 type Papel = "COMUM" | "RH" | "ADMIN" | "DEV";
@@ -139,6 +139,7 @@ describe.skipIf(!integrationEnabled)("rotas do Leadership Lab", () => {
   // -------------------------------------------------------------------------
   describe("autenticação", () => {
     const rotas: Array<["GET" | "POST", string]> = [
+      ["GET", "/painel"],
       ["GET", "/termo"],
       ["POST", "/termo"],
       ["GET", "/moldes"],
@@ -329,6 +330,132 @@ describe.skipIf(!integrationEnabled)("rotas do Leadership Lab", () => {
   });
 
   // -------------------------------------------------------------------------
+  describe("GET /painel", () => {
+    it("participante novo: 200 no formato { data }, tudo vazio e o botão de iniciar", async () => {
+      const u = await participante();
+      await http(u.token, "POST", "/termo");
+      const r = await http(u.token, "GET", "/painel");
+
+      expect(r.statusCode).toBe(200);
+      expect(r.headers["cache-control"]).toBe("no-store");
+      const { data } = r.json();
+      expect(Object.keys(data).sort()).toEqual([
+        "acao",
+        "alertas",
+        "evolucao",
+        "indicadores",
+        "skills",
+        "sugestoes",
+        "termo",
+        "tipoDePerfil"
+      ]);
+      expect(data.termo).toMatchObject({ versaoAtual: "2026-1", aceito: true });
+      expect(data.acao).toMatchObject({ tipo: "iniciar", molde: { nivel: "supervisor" } });
+      expect(data.indicadores).toMatchObject({ testesFeitos: 0, aderenciaMedia: null });
+      expect(data.skills).toHaveLength(8);
+      expect(data.tipoDePerfil).toEqual({
+        disponivel: false,
+        testesFeitos: 0,
+        testesNecessarios: 3
+      });
+    });
+
+    it("sem aceitar o termo, o painel responde e avisa (não é erro)", async () => {
+      const u = await participante();
+      const r = await http(u.token, "GET", "/painel");
+      expect(r.statusCode).toBe(200);
+      expect(r.json().data).toMatchObject({
+        termo: { aceito: false, aceitoEm: null },
+        acao: { tipo: "indisponivel", motivo: "termo-pendente" }
+      });
+    });
+
+    it("depois de um teste: os números, as datas em ISO e nada da avaliação por situação", async () => {
+      const u = await participante();
+      const { sessaoId } = await iniciar(u);
+      for (const [i, escolha] of ["A", "B", "C", "B", "A"].entries()) {
+        aguardar(10_000);
+        await http(u.token, "POST", `/sessoes/${sessaoId}/respostas`, { numero: i + 1, escolha });
+      }
+      const r = await http(u.token, "GET", "/painel");
+      const { data } = r.json();
+
+      expect(data.indicadores).toMatchObject({
+        testesFeitos: 1,
+        aderenciaMedia: 76,
+        agilidadeMedia: 88.33
+      });
+      expect(new Date(data.indicadores.ultimoTesteEm).toISOString()).toBe(
+        data.indicadores.ultimoTesteEm
+      );
+      expect(data.evolucao.pontos).toHaveLength(1);
+      expect(data.evolucao.pontos[0]).toMatchObject({
+        sessaoId,
+        aderenciaGeral: 76,
+        nSituacoes: 5
+      });
+      expect(data.skills.find((s: { skillId: string }) => s.skillId === "gestao-os")).toMatchObject(
+        { nivel: 5, nEvidencias: 1 }
+      );
+      expect(data.sugestoes.itens).toHaveLength(1);
+      // As justificativas só existem no resultado, nunca no painel.
+      expect(r.body).not.toContain(CANARIO_JUSTIFICATIVA);
+      expect(r.body).not.toContain('"justificativa"');
+    });
+
+    it("com um teste em andamento e linha vermelha já gravada, a resposta da rede não revela nada", async () => {
+      const u = await participante();
+      const { sessaoId } = await iniciar(u);
+      const anterior = ia.roteiro;
+      ia.roteiro = {
+        ...roteiroPadrao,
+        aderencia: (n, e) => (n === 1 && e === "C" ? 10 : roteiroPadrao.aderencia(n, e))
+      };
+      try {
+        aguardar(10_000);
+        await http(u.token, "POST", `/sessoes/${sessaoId}/respostas`, { numero: 1, escolha: "C" });
+      } finally {
+        ia.roteiro = anterior;
+      }
+      // O alerta existe no banco (o curador já pode ser avisado)...
+      const alertas = await consulta(
+        `SELECT cor, status FROM leadership_lab.alerta WHERE sessao_id = $1`,
+        [sessaoId]
+      );
+      expect(alertas).toEqual([{ cor: "vermelho", status: "aberto" }]);
+
+      // ...mas o painel do participante não o mostra: só diz que o teste está em andamento.
+      const r = await http(u.token, "GET", "/painel");
+      const { data } = r.json();
+      expect(data.acao).toMatchObject({ tipo: "continuar", sessaoId, situacaoAtual: 2 });
+      expect(data.alertas).toEqual([]);
+      expect(data.indicadores.testesFeitos).toBe(0);
+      expect(r.body).not.toContain("vermelho");
+      expect(r.body).not.toContain(CANARIO_JUSTIFICATIVA);
+    });
+
+    it("o painel é só do próprio participante: dois usuários, dois painéis", async () => {
+      const ana = await participante();
+      const bia = await participante();
+      const { sessaoId } = await iniciar(ana);
+      for (const n of [1, 2, 3, 4, 5]) {
+        aguardar(10_000);
+        await http(ana.token, "POST", `/sessoes/${sessaoId}/respostas`, {
+          numero: n,
+          escolha: "A"
+        });
+      }
+      await http(bia.token, "POST", "/termo");
+      expect((await http(ana.token, "GET", "/painel")).json().data.indicadores.testesFeitos).toBe(
+        1
+      );
+      const deBia = (await http(bia.token, "GET", "/painel")).json().data;
+      expect(deBia.indicadores.testesFeitos).toBe(0);
+      expect(deBia.evolucao.pontos).toEqual([]);
+    });
+  });
+
+  // -------------------------------------------------------------------------
   describe("erros no formato padrão", () => {
     it.each([
       ["campo a mais, como a aderência", { numero: 1, escolha: "A", aderencia: 100 }],
@@ -443,6 +570,7 @@ describe.skipIf(!integrationEnabled)("rotas do Leadership Lab", () => {
   // -------------------------------------------------------------------------
   describe("permissões", () => {
     const rotasDoParticipante: Array<["GET" | "POST", string, unknown?]> = [
+      ["GET", "/painel"],
       ["GET", "/termo"],
       ["POST", "/termo"],
       ["GET", "/moldes"],

@@ -149,6 +149,81 @@ export function agilidadeDoTurno(
 }
 
 // ---------------------------------------------------------------------------
+// Estilo predominante e flexibilidade
+// ---------------------------------------------------------------------------
+
+/** Uma escolha em que o participante agiu sobre a equipe: o estilo que usou e o que a situação pedia. */
+export type DecisaoDeEstilo = { estilo: LabEstilo; estiloAdequado: LabEstilo };
+
+export type AnaliseDeEstilos = {
+  /** Quantas escolhas de cada um dos quatro estilos (zero incluído). */
+  distribuicao: Record<LabEstilo, number>;
+  /** Quantas escolhas sustentam a análise. */
+  nEscolhas: number;
+  /** Nulo se não há escolhas, ou se houve empate (veja estilosEmpatados). */
+  estiloPredominante: LabEstilo | null;
+  /** Estilos empatados no topo, na ordem canônica. Vazio quando não há empate. */
+  estilosEmpatados: LabEstilo[];
+  /** Parcela das escolhas em que o estilo usado foi o adequado (2 casas). Nulo sem escolhas. */
+  flexibilidadePct: number | null;
+  flexibilidade: LabFlexibilidade | null;
+};
+
+/**
+ * Estilo predominante e flexibilidade de um conjunto de escolhas. É a única definição das duas:
+ * vale para um teste (calcularResultado) e para o perfil de vários testes (painel).
+ *
+ * - Estilo predominante: o mais frequente. Em empate NÃO se escolhe um (INTERPRETAÇÃO: o
+ *   desempate é decisão do negócio): fica nulo e os empatados vão em `estilosEmpatados`.
+ * - Flexibilidade: parcela das escolhas em que o estilo usado foi o adequado à situação; alta a
+ *   partir de 80%, média a partir de 40%, baixa abaixo disso. A classe usa o percentual sem
+ *   arredondar.
+ *
+ * Quem chama passa só as escolhas que envolveram a equipe e que foram decisões: omissão (tempo
+ * esgotado) não é decisão e não entra.
+ */
+export function analisarEstilos(decisoes: readonly DecisaoDeEstilo[]): AnaliseDeEstilos {
+  const distribuicao: Record<LabEstilo, number> = {
+    direcao: 0,
+    orientacao: 0,
+    apoio: 0,
+    delegacao: 0
+  };
+  for (const { estilo, estiloAdequado } of decisoes) {
+    if (!labEstilos.includes(estilo) || !labEstilos.includes(estiloAdequado)) {
+      throw new LabCalculoError(`Estilo desconhecido: "${estilo}" / "${estiloAdequado}".`);
+    }
+    distribuicao[estilo] += 1;
+  }
+
+  const nEscolhas = decisoes.length;
+  if (nEscolhas === 0) {
+    return {
+      distribuicao,
+      nEscolhas,
+      estiloPredominante: null,
+      estilosEmpatados: [],
+      flexibilidadePct: null,
+      flexibilidade: null
+    };
+  }
+
+  const maior = Math.max(...Object.values(distribuicao));
+  const lideres = labEstilos.filter((estilo) => distribuicao[estilo] === maior);
+  const adequadas = decisoes.filter((d) => d.estilo === d.estiloAdequado).length;
+  const pct = (adequadas / nEscolhas) * 100;
+
+  return {
+    distribuicao,
+    nEscolhas,
+    estiloPredominante: lideres.length === 1 ? (lideres[0] ?? null) : null,
+    estilosEmpatados: lideres.length > 1 ? [...lideres] : [],
+    flexibilidadePct: arredondar(pct),
+    flexibilidade: classificarFlexibilidade(pct)
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Resultado de um teste
 // ---------------------------------------------------------------------------
 
@@ -269,32 +344,20 @@ export function calcularResultado(
     };
   }
 
-  const decisoes = turnos.filter((t) => !t.tempoEsgotado && t.estilo !== null);
-  const contagem = new Map<LabEstilo, number>();
-  for (const turno of decisoes) {
-    const estilo = turno.estilo as LabEstilo;
-    contagem.set(estilo, (contagem.get(estilo) ?? 0) + 1);
-  }
-  const maior = decisoes.length > 0 ? Math.max(...contagem.values()) : 0;
-  const lideres = decisoes.length > 0 ? labEstilos.filter((e) => contagem.get(e) === maior) : [];
-
-  let flexibilidadePct: number | null = null;
-  let flexibilidade: LabFlexibilidade | null = null;
-  if (decisoes.length > 0) {
-    const adequadas = decisoes.filter((t) => t.estilo === t.estiloAdequado).length;
-    const pct = (adequadas / decisoes.length) * 100;
-    flexibilidadePct = arredondar(pct);
-    flexibilidade = classificarFlexibilidade(pct);
-  }
+  const analiseDeEstilos = analisarEstilos(
+    turnos
+      .filter((t) => !t.tempoEsgotado && t.estilo !== null)
+      .map((t) => ({ estilo: t.estilo as LabEstilo, estiloAdequado: t.estiloAdequado }))
+  );
 
   return {
     aderenciaGeral: arredondar(aderenciaGeral),
     agilidade: arredondar(agilidade),
     niveisPorSkill,
-    estiloPredominante: lideres.length === 1 ? (lideres[0] ?? null) : null,
-    estilosEmpatados: lideres.length > 1 ? [...lideres] : [],
-    flexibilidadePct,
-    flexibilidade,
+    estiloPredominante: analiseDeEstilos.estiloPredominante,
+    estilosEmpatados: analiseDeEstilos.estilosEmpatados,
+    flexibilidadePct: analiseDeEstilos.flexibilidadePct,
+    flexibilidade: analiseDeEstilos.flexibilidade,
     turnosComAlertaVermelho: turnos
       .filter((t) => t.aderencia === 10)
       .map((t) => t.numero)

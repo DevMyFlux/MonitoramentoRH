@@ -33,6 +33,8 @@ import {
 import { z } from "zod";
 import { assertAcesso } from "../lab-access.js";
 import { carregarParticipantesDasTurmas } from "../lab-actor.js";
+import { consultarPainel } from "../painel/consulta.js";
+import type { PainelDoParticipante } from "../painel/tipos.js";
 import {
   type RespostaTurnoIa,
   aplicarGuarda,
@@ -51,7 +53,13 @@ import {
 } from "./entradas.js";
 import { erros } from "./erros.js";
 import { fecharTeste } from "./fechamento.js";
-import { inicioDoDia } from "./tempo-do-dia.js";
+import {
+  type SessaoComMolde,
+  avaliarInicio,
+  buscarSessaoAtiva,
+  moldePronto,
+  resolverMoldeDoParticipante
+} from "./precondicoes.js";
 import {
   type RespostaDeResultado,
   type RespostaDeSituacao,
@@ -88,8 +96,6 @@ export type DependenciasDoMotor = {
 
 type Intencao =
   { tipo: "resposta"; escolha: LabEscolha; textoLivre: string | null } | { tipo: "omissao" };
-
-type SessaoComMolde = LabSessao & { molde: LabMolde };
 
 /** Margem somada ao timeout da IA para dimensionar a reserva do turno. */
 const MARGEM_DA_RESERVA_MS = 5_000;
@@ -158,7 +164,7 @@ export class MotorDoTeste {
     const participanteId = this.participanteDe(ator);
     const [moldes, resolvido] = await Promise.all([
       this.db.labMolde.findMany(),
-      this.resolverMolde(participanteId)
+      resolverMoldeDoParticipante(this.db, participanteId)
     ]);
     const meuMoldeId = "molde" in resolvido ? resolvido.molde.id : null;
     // Ordem fixa dos níveis: os três moldes nascem na mesma instrução e empatam em qualquer data.
@@ -170,21 +176,38 @@ export class MotorDoTeste {
     return {
       meuMoldeId,
       moldes: moldes.map((molde) => {
+        const pronto = moldePronto(molde);
         const temas = z.array(z.string()).safeParse(molde.temas);
-        const disponivel =
-          molde.ativo && molde.tempoLimiteS !== null && temas.success && temas.data.length > 0;
         return {
           id: molde.id,
           nivel: molde.nivel as MoldeVisivel["nivel"],
           nome: molde.nome,
           temas: temas.success ? temas.data : [],
           numeroSituacoes: molde.numeroSituacoes,
-          tempoLimiteS: disponivel ? molde.tempoLimiteS : null,
-          disponivel,
+          tempoLimiteS: pronto?.tempoLimiteS ?? null,
+          disponivel: pronto !== null,
           doMeuCargo: molde.id === meuMoldeId
         };
       })
     };
+  }
+
+  // =========================================================================
+  // Painel
+  // =========================================================================
+
+  /**
+   * O painel do participante, a tela inicial do módulo. Só do próprio participante, e só de testes
+   * CONCLUÍDOS: o teste em andamento aparece apenas como a ação "continuar", sem nenhum dado de
+   * avaliação (a aderência fica escondida até o fim).
+   */
+  async painel(ator: LabAtor): Promise<PainelDoParticipante> {
+    assertAcesso(ator, "painel:ler");
+    return consultarPainel(this.db, {
+      participanteId: this.participanteDe(ator),
+      config: this.config,
+      agora: this.relogio()
+    });
   }
 
   // =========================================================================
@@ -201,33 +224,35 @@ export class MotorDoTeste {
     const entrada = iniciarEntradaSchema.parse(entradaBruta ?? {});
     const participanteId = this.participanteDe(ator);
 
-    const termo = await this.db.labTermoAceite.findUnique({
-      where: {
-        participanteId_versaoTermo: { participanteId, versaoTermo: this.config.versaoTermo }
-      }
+    const estado = await avaliarInicio(this.db, {
+      participanteId,
+      config: this.config,
+      agora: this.relogio()
     });
-    if (!termo) throw erros.termoPendente();
 
-    const ativa = await this.sessaoAtiva(participanteId);
-    if (ativa) return this.retomar(ativa);
-
-    const molde = await this.moldeDoParticipante(participanteId);
-    if (entrada.moldeId !== undefined && entrada.moldeId !== molde.id)
+    // O participante só confirma o molde do PRÓPRIO cargo. Isto vem antes de "molde inativo" e de
+    // "limite do dia" (e depois de cargo/mapeamento) para manter quem recebe qual erro.
+    if ("molde" in estado && entrada.moldeId !== undefined && entrada.moldeId !== estado.molde.id) {
       throw erros.moldeDivergente();
-    const temas = this.exigirMoldePronto(molde).temas;
-
-    if (this.config.limiteTestesDia !== null) {
-      const desde = inicioDoDia(this.relogio(), this.config.fusoHorario);
-      const hoje = await this.db.labSessao.count({
-        where: {
-          participanteId,
-          iniciadaEm: { gte: desde },
-          status: { in: ["em_andamento", "concluida"] }
-        }
-      });
-      if (hoje >= this.config.limiteTestesDia)
-        throw erros.limiteDiario(this.config.limiteTestesDia);
     }
+
+    switch (estado.tipo) {
+      case "termo-pendente":
+        throw erros.termoPendente();
+      case "continuar":
+        return this.retomar(estado.sessao);
+      case "cargo-nao-informado":
+        throw erros.cargoNaoInformado();
+      case "molde-nao-mapeado":
+        throw erros.moldeNaoMapeado();
+      case "molde-inativo":
+        throw erros.moldeInativo();
+      case "limite-diario":
+        throw erros.limiteDiario(estado.limite);
+      case "iniciar":
+        break;
+    }
+    const { molde, temas } = estado;
 
     // O corpo sai do schema estrito: só molde, temas e quantidade de situações.
     const corpo = iniciarSessaoIaRequestSchema.parse({
@@ -691,42 +716,7 @@ export class MotorDoTeste {
   }
 
   private async sessaoAtiva(participanteId: string): Promise<SessaoComMolde | null> {
-    return this.db.labSessao.findFirst({
-      where: { participanteId, status: "em_andamento" },
-      include: { molde: true }
-    });
-  }
-
-  /** O molde do cargo do participante, ou o que falta no cadastro para haver um. */
-  private async resolverMolde(
-    participanteId: string
-  ): Promise<{ molde: LabMolde } | { falta: "cargo" | "mapeamento" }> {
-    const participante = await this.db.labParticipante.findUniqueOrThrow({
-      where: { id: participanteId },
-      select: { employee: { select: { functionId: true } } }
-    });
-    const funcao = participante.employee.functionId;
-    if (funcao === null) return { falta: "cargo" };
-    const mapeado = await this.db.labMoldeCargo.findUnique({
-      where: { jobFunctionId: funcao },
-      include: { molde: true }
-    });
-    return mapeado ? { molde: mapeado.molde } : { falta: "mapeamento" };
-  }
-
-  private async moldeDoParticipante(participanteId: string): Promise<LabMolde> {
-    const resolvido = await this.resolverMolde(participanteId);
-    if ("molde" in resolvido) return resolvido.molde;
-    throw resolvido.falta === "cargo" ? erros.cargoNaoInformado() : erros.moldeNaoMapeado();
-  }
-
-  /** Molde utilizável: ativo, com tempo e com temas. */
-  private exigirMoldePronto(molde: LabMolde): { temas: string[]; tempoLimiteS: number } {
-    const temas = z.array(z.string().trim().min(1)).safeParse(molde.temas);
-    if (!molde.ativo || molde.tempoLimiteS === null || !temas.success || temas.data.length === 0) {
-      throw erros.moldeInativo();
-    }
-    return { temas: temas.data, tempoLimiteS: molde.tempoLimiteS };
+    return buscarSessaoAtiva(this.db, participanteId);
   }
 
   private tempoLimiteDe(molde: LabMolde): number {

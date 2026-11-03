@@ -4,6 +4,7 @@
 // o banco sabe dele no Lab e entregar ao motor, que aplica a matriz de permissões, as regras e
 // a IA. Nenhuma regra de negócio mora aqui. Registradas com o prefixo /api/v1/leadership-lab.
 //
+//   GET  /painel                        a tela inicial: indicadores, evolução, skills, perfil...
 //   GET  /termo                         situação do termo de ciência
 //   POST /termo                         aceita a versão atual do termo
 //   GET  /moldes                        moldes, com o do cargo do usuário marcado
@@ -44,6 +45,10 @@ export async function registrarRotasDoLab(
 
   const atorDe = async (request: FastifyRequest) =>
     carregarAtorLab(db, await authenticateRequest(request, users));
+
+  app.get("/painel", async (request) => ({
+    data: await motor.painel(await atorDe(request))
+  }));
 
   app.get("/termo", async (request) => ({
     data: await motor.situacaoDoTermo(await atorDe(request))

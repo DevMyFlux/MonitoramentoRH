@@ -3,6 +3,7 @@ import { labEstilos, type LabEstilo } from "./leadership-lab.js";
 import {
   LabCalculoError,
   agilidadeDoTurno,
+  analisarEstilos,
   arredondar,
   calcularResultado,
   classificarFlexibilidade,
@@ -513,5 +514,106 @@ describe("podeExibirTendencia", () => {
     [2.5, false]
   ])("%s testes -> %s", (n, esperado) => {
     expect(podeExibirTendencia(n)).toBe(esperado);
+  });
+});
+
+describe("analisarEstilos (estilo predominante e flexibilidade)", () => {
+  const d = (estilo: LabEstilo, estiloAdequado: LabEstilo = estilo) => ({ estilo, estiloAdequado });
+
+  it("sem escolhas: nada a dizer, com a distribuição zerada", () => {
+    expect(analisarEstilos([])).toEqual({
+      distribuicao: { direcao: 0, orientacao: 0, apoio: 0, delegacao: 0 },
+      nEscolhas: 0,
+      estiloPredominante: null,
+      estilosEmpatados: [],
+      flexibilidadePct: null,
+      flexibilidade: null
+    });
+  });
+
+  it("o estilo mais frequente vence, e a distribuição conta os quatro", () => {
+    const r = analisarEstilos([d("apoio"), d("apoio"), d("direcao"), d("apoio")]);
+    expect(r).toMatchObject({
+      distribuicao: { direcao: 1, orientacao: 0, apoio: 3, delegacao: 0 },
+      nEscolhas: 4,
+      estiloPredominante: "apoio",
+      estilosEmpatados: []
+    });
+  });
+
+  it("empate: não escolhe um e devolve os empatados na ordem canônica, qualquer que seja a ordem de entrada", () => {
+    for (const entrada of [
+      [d("apoio"), d("orientacao"), d("apoio"), d("orientacao")],
+      [d("orientacao"), d("orientacao"), d("apoio"), d("apoio")]
+    ]) {
+      const r = analisarEstilos(entrada);
+      expect(r.estiloPredominante).toBeNull();
+      expect(r.estilosEmpatados).toEqual(["orientacao", "apoio"]);
+    }
+    expect(analisarEstilos([d("delegacao"), d("direcao"), d("apoio")]).estilosEmpatados).toEqual([
+      "direcao",
+      "apoio",
+      "delegacao"
+    ]);
+  });
+
+  it("flexibilidade: parcela das escolhas com o estilo adequado, classificada sem arredondar", () => {
+    // 2 de 3 = 66,666...% -> "media", mostrado como 66,67.
+    const r = analisarEstilos([d("apoio", "apoio"), d("apoio", "apoio"), d("direcao", "apoio")]);
+    expect(r).toMatchObject({ flexibilidadePct: 66.67, flexibilidade: "media" });
+    expect(analisarEstilos([d("apoio", "apoio")])).toMatchObject({
+      flexibilidadePct: 100,
+      flexibilidade: "alta"
+    });
+    expect(analisarEstilos([d("direcao", "apoio")])).toMatchObject({
+      flexibilidadePct: 0,
+      flexibilidade: "baixa"
+    });
+  });
+
+  it.each([
+    [4, 5, "alta"],
+    [3, 5, "media"],
+    [2, 5, "media"],
+    [1, 5, "baixa"]
+  ] as const)("%s de %s escolhas adequadas -> %s", (adequadas, total, classe) => {
+    const decisoes = Array.from({ length: total }, (_, i) =>
+      d("apoio", i < adequadas ? "apoio" : "direcao")
+    );
+    expect(analisarEstilos(decisoes).flexibilidade).toBe(classe);
+  });
+
+  it("recusa estilo desconhecido", () => {
+    expect(() => analisarEstilos([d("autocratico" as unknown as LabEstilo)])).toThrow(
+      LabCalculoError
+    );
+    expect(() => analisarEstilos([d("apoio", "x" as unknown as LabEstilo)])).toThrow(
+      LabCalculoError
+    );
+  });
+
+  it("agrega: a distribuição de vários testes juntos é a soma das distribuições (é o que o perfil usa)", () => {
+    const rnd = mulberry32(99);
+    const sorteio = () =>
+      Array.from({ length: 1 + Math.floor(rnd() * 9) }, () =>
+        d(
+          labEstilos[Math.floor(rnd() * 4)] as LabEstilo,
+          labEstilos[Math.floor(rnd() * 4)] as LabEstilo
+        )
+      );
+    for (let i = 0; i < 200; i++) {
+      const a = sorteio();
+      const b = sorteio();
+      const juntos = analisarEstilos([...a, ...b]);
+      const separados = [analisarEstilos(a), analisarEstilos(b)];
+      for (const estilo of labEstilos) {
+        expect(juntos.distribuicao[estilo]).toBe(
+          separados[0]!.distribuicao[estilo] + separados[1]!.distribuicao[estilo]
+        );
+      }
+      expect(juntos.nEscolhas).toBe(a.length + b.length);
+      // A ordem em que os testes entram não muda nada.
+      expect(analisarEstilos([...b, ...a])).toEqual(juntos);
+    }
   });
 });
