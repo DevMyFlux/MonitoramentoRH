@@ -150,6 +150,8 @@ export const labAlertaDoPainelSchema = z.object({
 export type LabAlertaDoPainel = z.infer<typeof labAlertaDoPainelSchema>;
 
 export const labPainelSchema = z.object({
+  /** Modo demonstração: a IA e o conteúdo são de exemplo. Servidor antigo (sem o campo) = falso. */
+  demonstracao: z.boolean().default(false),
   termo: z.object({ versaoAtual: z.string(), aceito: z.boolean(), aceitoEm: dataIso.nullable() }),
   acao: labAcaoDoPainelSchema,
   indicadores: z.object({

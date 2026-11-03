@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { labApi } from "../../features/leadership-lab/api";
 import { ApiError } from "../../features/my-flux/client";
 import { AGORA, moldeDeExemplo, painel, skillsSemEvidencia } from "../../test/dados-do-lab";
@@ -40,6 +40,9 @@ const erroDaApi = (status: number, code?: string, message = "Mensagem.") =>
 
 beforeEach(() => {
   vi.resetAllMocks();
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe("painel do participante", () => {
@@ -107,6 +110,52 @@ describe("painel do participante", () => {
       api.painel.mockRejectedValue(new RespostaInesperadaError("/painel", ["acao: obrigatório"]));
       abrir();
       await screen.findByText("Recebemos uma resposta inesperada");
+    });
+  });
+
+  describe("modo demonstração (o servidor usa a IA de exemplo)", () => {
+    it("avisa na tela que as situações e a avaliação são de exemplo", async () => {
+      api.painel.mockResolvedValue(painel({ demonstracao: true }));
+      abrir();
+      const faixa = await screen.findByRole("note");
+      expect(faixa.textContent).toContain("Modo demonstração");
+      expect(faixa.textContent).toContain("são de exemplo");
+    });
+
+    it("fora do modo demonstração a faixa não aparece", async () => {
+      api.painel.mockResolvedValue(painel({ demonstracao: false }));
+      abrir();
+      await screen.findByText("Pronto para o próximo teste");
+      expect(screen.queryByText(/Modo demonstração/)).toBeNull();
+    });
+  });
+
+  describe("quem não é participante, no modo de teste", () => {
+    it("recebe a dica de como entrar como participante, com o caminho para o login", async () => {
+      vi.stubEnv("VITE_MODO_TESTE_SEM_LOGIN", "true");
+      api.painel.mockRejectedValue(erroDaApi(403, "LAB_FORBIDDEN"));
+      abrir();
+      await screen.findByText("O Leadership Lab não é para o seu perfil");
+      expect(screen.getByText("comum@myflux.local")).toBeTruthy();
+      expect(screen.getByRole("link", { name: /Ir para o login/ }).getAttribute("href")).toBe(
+        "/login"
+      );
+    });
+
+    it("com login obrigatório (modo de teste desligado) a dica de conta não aparece", async () => {
+      vi.stubEnv("VITE_MODO_TESTE_SEM_LOGIN", "false");
+      api.painel.mockRejectedValue(erroDaApi(403, "LAB_FORBIDDEN"));
+      abrir();
+      await screen.findByText("O Leadership Lab não é para o seu perfil");
+      expect(screen.queryByText("comum@myflux.local")).toBeNull();
+    });
+
+    it("a dica só vale para quem não é participante: o módulo desligado não ganha dica", async () => {
+      vi.stubEnv("VITE_MODO_TESTE_SEM_LOGIN", "true");
+      api.painel.mockRejectedValue(erroDaApi(404));
+      abrir();
+      await screen.findByText("O Leadership Lab ainda não está ativo");
+      expect(screen.queryByText("comum@myflux.local")).toBeNull();
     });
   });
 

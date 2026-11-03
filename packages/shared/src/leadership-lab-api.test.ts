@@ -66,6 +66,7 @@ const resultado = {
 };
 
 const painel = {
+  demonstracao: false,
   termo: { versaoAtual: "2026-1", aceito: true, aceitoEm: AGORA },
   acao: { tipo: "iniciar", molde: { id: "m1", nivel: "supervisor", nome: "Supervisor" } },
   indicadores: {

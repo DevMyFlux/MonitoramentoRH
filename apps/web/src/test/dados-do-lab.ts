@@ -28,6 +28,7 @@ export const skillsSemEvidencia: LabPainel["skills"] = labSkillsPiloto.map((s) =
 
 export function painel(extra: Partial<LabPainel> = {}): LabPainel {
   return {
+    demonstracao: false,
     termo: { versaoAtual: "2026-1", aceito: true, aceitoEm: AGORA },
     acao: { tipo: "iniciar", molde: moldeDeExemplo },
     indicadores: {

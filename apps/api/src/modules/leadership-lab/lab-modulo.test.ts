@@ -1,6 +1,13 @@
 import type { PrismaClient } from "@prisma/client";
 import { describe, expect, it } from "vitest";
-import { criarMotorDoLab, lerConfigDaIa } from "./lab-modulo.js";
+import { IaDemonstracao } from "./demonstracao/ia-demonstracao.js";
+import {
+  criarMotorDoLab,
+  lerConfigDaIa,
+  modoDemonstracaoPedido,
+  usaModoDemonstracao
+} from "./lab-modulo.js";
+import { ClienteIaHttp } from "./motor/cliente-ia-http.js";
 import { ConfigDoLabInvalida } from "./motor/config.js";
 import { configDeTeste } from "./motor/cenario-de-teste.js";
 import { IaFalsa } from "./motor/ia-falsa.js";
@@ -75,5 +82,90 @@ describe("criarMotorDoLab", () => {
       injecao: { ia: new IaFalsa(), config: configDeTeste() }
     });
     expect(motor).toBeInstanceOf(MotorDoTeste);
+  });
+});
+
+describe("modo demonstração (LAB_MODO_DEMO)", () => {
+  // Só para olhar o que o motor recebeu: o campo é privado e não há outro jeito de saber.
+  const internos = (motor: MotorDoTeste | null) =>
+    motor as unknown as {
+      ia: unknown;
+      config: { demonstracao?: boolean; toleranciaTempoS: number };
+    };
+  const avisos: Array<{ dados: object; mensagem: string }> = [];
+  const registro = { warn: (dados: object, mensagem: string) => avisos.push({ dados, mensagem }) };
+
+  it.each(["true", "TRUE", " true "])("%j pede o modo demonstração", (valor) => {
+    expect(modoDemonstracaoPedido({ LAB_MODO_DEMO: valor })).toBe(true);
+  });
+
+  it.each(["", "false", "FALSE", "1", "yes", "sim", "on", "verdadeiro"])(
+    "%j NÃO pede (só o texto true liga)",
+    (valor) => {
+      expect(modoDemonstracaoPedido({ LAB_MODO_DEMO: valor })).toBe(false);
+    }
+  );
+
+  it("desligado por padrão: sem a variável, o módulo continua desligado e nada muda", () => {
+    expect(modoDemonstracaoPedido({})).toBe(false);
+    expect(usaModoDemonstracao({})).toBe(false);
+    expect(criarMotorDoLab({ db, env: {}, logger })).toBeNull();
+    expect(criarMotorDoLab({ db, env: { LAB_MODO_DEMO: "false" }, logger })).toBeNull();
+  });
+
+  it("sem IA real, LAB_MODO_DEMO=true liga o módulo com a IA de demonstração (sem token nem tolerância)", () => {
+    const env = { LAB_MODO_DEMO: "true" };
+    const motor = criarMotorDoLab({ db, env, logger });
+    expect(motor).toBeInstanceOf(MotorDoTeste);
+    expect(internos(motor).ia).toBeInstanceOf(IaDemonstracao);
+    expect(internos(motor).config.demonstracao).toBe(true);
+    expect(internos(motor).config.toleranciaTempoS).toBe(3);
+    expect(usaModoDemonstracao(env)).toBe(true);
+  });
+
+  it("a tolerância definida no ambiente vale na demonstração, e um valor inválido falha como sempre", () => {
+    const motor = criarMotorDoLab({
+      db,
+      env: { LAB_MODO_DEMO: "true", LAB_TOLERANCIA_TEMPO_S: "7" },
+      logger
+    });
+    expect(internos(motor).config.toleranciaTempoS).toBe(7);
+    expect(() =>
+      criarMotorDoLab({ db, env: { LAB_MODO_DEMO: "true", LAB_TOLERANCIA_TEMPO_S: "-1" }, logger })
+    ).toThrow(ConfigDoLabInvalida);
+  });
+
+  it("com LAB_IA_URL definida, a IA REAL sempre vence: a demonstração é ignorada, com aviso", () => {
+    avisos.length = 0;
+    const env = { ...ligado, LAB_MODO_DEMO: "true" };
+    const motor = criarMotorDoLab({ db, env, logger: registro });
+    expect(internos(motor).ia).toBeInstanceOf(ClienteIaHttp);
+    expect(internos(motor).config.demonstracao).toBeUndefined();
+    expect(usaModoDemonstracao(env)).toBe(false);
+    expect(avisos.map((a) => a.mensagem)).toEqual([
+      "LAB_MODO_DEMO ignorada: LAB_IA_URL está definida, então vale a IA real."
+    ]);
+  });
+
+  it("a IA real configurada sem a variável não avisa nada", () => {
+    avisos.length = 0;
+    criarMotorDoLab({ db, env: ligado, logger: registro });
+    expect(avisos).toEqual([]);
+  });
+
+  it("LAB_IA_URL só com espaços não conta como IA real", () => {
+    expect(usaModoDemonstracao({ LAB_MODO_DEMO: "true", LAB_IA_URL: "   " })).toBe(true);
+  });
+
+  it("a injeção (testes) continua mandando, mesmo com a demonstração pedida", () => {
+    const ia = new IaFalsa();
+    const motor = criarMotorDoLab({
+      db,
+      env: { LAB_MODO_DEMO: "true" },
+      logger,
+      injecao: { ia, config: configDeTeste() }
+    });
+    expect(internos(motor).ia).toBe(ia);
+    expect(internos(motor).config.demonstracao).toBeUndefined();
   });
 });

@@ -8,8 +8,25 @@
 import type { PrismaClient } from "@prisma/client";
 import type { ClienteIa } from "./motor/cliente-ia.js";
 import { ClienteIaHttp } from "./motor/cliente-ia-http.js";
+import { IaDemonstracao } from "./demonstracao/ia-demonstracao.js";
 import { ConfigDoLabInvalida, type ConfigDoMotor, lerConfigDoLab } from "./motor/config.js";
 import { type LoggerDoMotor, MotorDoTeste } from "./motor/motor.js";
+
+/** Tolerância de rede do modo demonstração, quando LAB_TOLERANCIA_TEMPO_S não é definida. */
+const TOLERANCIA_DA_DEMONSTRACAO_S = "3";
+
+/** LAB_MODO_DEMO=true pede o modo demonstração. Qualquer outro valor (ou nenhum) deixa desligado. */
+export function modoDemonstracaoPedido(env: Record<string, string | undefined>): boolean {
+  return env.LAB_MODO_DEMO?.trim().toLowerCase() === "true";
+}
+
+/**
+ * O modo demonstração só vale SEM serviço de IA real: com LAB_IA_URL definida, a IA real sempre
+ * vence e a variável é ignorada (produção nunca troca a IA de verdade por uma de exemplo).
+ */
+export function usaModoDemonstracao(env: Record<string, string | undefined>): boolean {
+  return modoDemonstracaoPedido(env) && !env.LAB_IA_URL?.trim();
+}
 
 export type ConfigDaIa = { url: string; token: string };
 
@@ -66,7 +83,21 @@ export function criarMotorDoLab(args: {
   }
 
   const ia = lerConfigDaIa(env);
-  if (!ia) return null;
+  if (!ia) {
+    if (!modoDemonstracaoPedido(env)) return null;
+    // Sem IA real, mas com a demonstração pedida: a IA de exemplo, com a tolerância de rede padrão
+    // da demonstração (a variável LAB_TOLERANCIA_TEMPO_S, se definida, vale).
+    const config = lerConfigDoLab({ LAB_TOLERANCIA_TEMPO_S: TOLERANCIA_DA_DEMONSTRACAO_S, ...env });
+    return new MotorDoTeste({
+      db,
+      ia: new IaDemonstracao(),
+      config: { ...config, demonstracao: true },
+      logger
+    });
+  }
+  if (modoDemonstracaoPedido(env)) {
+    logger.warn({}, "LAB_MODO_DEMO ignorada: LAB_IA_URL está definida, então vale a IA real.");
+  }
 
   const config = lerConfigDoLab(env);
   return new MotorDoTeste({

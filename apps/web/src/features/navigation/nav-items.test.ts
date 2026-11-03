@@ -43,4 +43,21 @@ describe("navigation groups", () => {
       expect(itemVisivelPara(colaboradores!, perfil)).toBe(true);
     }
   });
+
+  describe("modo de teste (todo visitante entra como DEV)", () => {
+    const itens = navigationGroups.flatMap((g) => g.items);
+    const lab = itens.find((i) => i.label === "Leadership Lab")!;
+
+    it("mostra o item restrito a qualquer perfil, e até sem saber quem está logado", () => {
+      for (const perfil of ["DEV", "ADMIN", "RH", "COMUM", undefined] as const) {
+        expect(itemVisivelPara(lab, perfil, true)).toBe(true);
+      }
+    });
+
+    it("sem o modo de teste (o padrão da função), a restrição por perfil vale", () => {
+      expect(itemVisivelPara(lab, "RH")).toBe(false);
+      expect(itemVisivelPara(lab, "RH", false)).toBe(false);
+      expect(itemVisivelPara(lab, "COMUM", false)).toBe(true);
+    });
+  });
 });

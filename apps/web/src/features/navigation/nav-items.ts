@@ -105,8 +105,17 @@ export const navigationGroups: NavigationGroup[] = [
   }
 ];
 
-/** O item aparece para este perfil? Sem `roles`, aparece para todos. Sem perfil conhecido, só os livres. */
-export function itemVisivelPara(item: NavigationItem, perfil: Role | undefined): boolean {
+/**
+ * O item aparece para este perfil? Sem `roles`, aparece para todos. Sem perfil conhecido, só os
+ * livres. No modo de teste (todo visitante entra como DEV) o menu mostra tudo a todos, para o
+ * Leadership Lab poder ser encontrado; a página dele explica o que cada perfil pode fazer.
+ */
+export function itemVisivelPara(
+  item: NavigationItem,
+  perfil: Role | undefined,
+  modoDeTeste = false
+): boolean {
+  if (modoDeTeste) return true;
   if (item.roles === undefined) return true;
   return perfil !== undefined && item.roles.includes(perfil);
 }

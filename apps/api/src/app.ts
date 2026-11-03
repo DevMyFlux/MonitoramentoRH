@@ -37,7 +37,12 @@ import { ScheduleRepository } from "./modules/scheduling/schedule-repository.js"
 import { registerScheduleRoutes } from "./modules/scheduling/schedule-routes.js";
 import { registerEmployeeScheduleRoutes } from "./modules/scheduling/employee-schedule-routes.js";
 import { UserRepository } from "./modules/users/user-repository.js";
-import { criarMotorDoLab, type InjecaoDoLab } from "./modules/leadership-lab/lab-modulo.js";
+import { prepararDemonstracao } from "./modules/leadership-lab/demonstracao/preparar.js";
+import {
+  criarMotorDoLab,
+  type InjecaoDoLab,
+  usaModoDemonstracao
+} from "./modules/leadership-lab/lab-modulo.js";
 import { registrarRotasDoLab } from "./modules/leadership-lab/lab-routes.js";
 
 const version = "0.0.0";
@@ -248,6 +253,21 @@ export async function buildApp(opcoes: { lab?: InjecaoDoLab } = {}): Promise<Fas
         registrarRotasDoLab(versionedApp, userRepository, { db: prisma, motor: motorDoLab }),
       { prefix: `${apiPrefix}/leadership-lab` }
     );
+    // Modo demonstração (LAB_MODO_DEMO, sem IA real): deixa o participante de demonstração pronto.
+    // Nunca derruba a subida do servidor.
+    if (!opcoes.lab && usaModoDemonstracao(process.env)) {
+      app.log.warn(
+        "Leadership Lab em MODO DEMONSTRAÇÃO: IA de exemplo, sem serviço de IA real (LAB_MODO_DEMO)."
+      );
+      try {
+        await prepararDemonstracao(prisma, {
+          info: (mensagem) => app.log.info(mensagem),
+          warn: (mensagem) => app.log.warn(mensagem)
+        });
+      } catch (erro) {
+        app.log.error({ erro }, "Leadership Lab (demonstração): falha ao preparar o participante.");
+      }
+    }
   } else {
     app.log.info("Leadership Lab desativado: LAB_IA_URL não definida.");
   }
