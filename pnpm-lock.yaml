@@ -160,7 +160,11 @@ importers:
 
   packages/config: {}
 
-  packages/shared: {}
+  packages/shared:
+    dependencies:
+      zod:
+        specifier: ^4.2.1
+        version: 4.5.4
 
   packages/types: {}
 

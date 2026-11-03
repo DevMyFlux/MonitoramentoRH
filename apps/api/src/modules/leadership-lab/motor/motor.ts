@@ -61,6 +61,7 @@ import {
   resolverMoldeDoParticipante
 } from "./precondicoes.js";
 import {
+  type EstadoDoTeste,
   type RespostaDeResultado,
   type RespostaDeSituacao,
   type RespostaDoTeste,
@@ -305,6 +306,41 @@ export class MotorDoTeste {
       }
       throw erro;
     }
+  }
+
+  // =========================================================================
+  // Ler o teste em andamento
+  // =========================================================================
+
+  /**
+   * O teste em andamento do participante, SÓ para ler. Ao contrário de `iniciar`, nunca começa um
+   * teste e nunca chama a IA: a tela do teste usa isto ao abrir ou recarregar, e abrir o endereço
+   * por engano não pode disparar o relógio da situação 1.
+   *
+   * Devolve a situação em que o participante parou (com o tempo que resta, calculado aqui) ou,
+   * se a resposta já foi dada mas a IA ainda não a avaliou, "em-processamento". Sem teste em
+   * andamento, 404.
+   */
+  async estadoDoTeste(ator: LabAtor): Promise<EstadoDoTeste> {
+    assertAcesso(ator, "sessao:ler-atual");
+    const sessao = await this.sessaoAtiva(this.participanteDe(ator));
+    if (!sessao) throw erros.semTesteEmAndamento();
+
+    const atual = await this.db.labTurno.findFirst({
+      where: { sessaoId: sessao.id },
+      orderBy: { numero: "desc" }
+    });
+    if (!atual) throw new Error(`Sessão ${sessao.id} sem nenhuma situação.`);
+
+    if (atual.respondidaEm !== null && atual.justificativa === null) {
+      return {
+        tipo: "em-processamento",
+        sessaoId: sessao.id,
+        numero: atual.numero,
+        totalSituacoes: sessao.molde.numeroSituacoes
+      };
+    }
+    return this.situacaoAtual(sessao, atual);
   }
 
   // =========================================================================
