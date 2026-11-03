@@ -49,6 +49,7 @@ const matriz = {
   "termo:aceitar": { participante: "proprios" },
   "moldes:listar": { participante: "proprios" },
   "sessao:iniciar": { participante: "proprios" },
+  "sessao:ler-atual": { participante: "proprios" },
   "sessao:responder": { participante: "proprios" },
   "sessao:tempo-esgotado": { participante: "proprios" },
   "contestacao:criar": { participante: "proprios" },

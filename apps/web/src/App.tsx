@@ -3,13 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AppShell } from "./components/layout";
 import { clearSession, request, saveSession, session } from "./features/my-flux/client";
 
-// Temporary, explicitly requested: skip the /login screen as the app's entry
-// gate and sign straight in as the seeded DEV user (apps/api/prisma/seed.ts)
-// instead of redirecting to it. /login itself is untouched (still reachable
-// directly, e.g. after clicking "Sair") — this only short-circuits the
-// "no session yet"/"session expired" branches below. To restore the normal
-// login gate, set this back to false.
-const DEV_AUTO_LOGIN = true;
+// Convenience for LOCAL development only: skip the /login screen and sign straight in as the
+// seeded DEV user (apps/api/prisma/seed.ts). It used to be a constant set to `true`, which shipped
+// the demo credentials below in the production bundle and signed EVERY visitor in as DEV. Now it
+// needs `VITE_DEV_AUTO_LOGIN=true` (e.g. in apps/web/.env.local) AND the Vite dev server
+// (`import.meta.env.DEV`), so a production build can never turn it on, whatever the environment
+// says, and the bundler drops the credentials from it altogether.
+const DEV_AUTO_LOGIN = import.meta.env.DEV && import.meta.env.VITE_DEV_AUTO_LOGIN === "true";
 
 async function autoLoginAsDev(): Promise<void> {
   const payload = await request<{ accessToken: string; refreshToken: string }>(

@@ -60,6 +60,16 @@ LAB_TEST_DATABASE_URL=postgresql://my_flux:my_flux_local@127.0.0.1:55432/postgre
 
 O usuário precisa poder criar bancos e papéis (superusuário, no banco embutido).
 
+### Teste de ponta a ponta no navegador
+
+`apps/api/src/modules/leadership-lab/e2e/`. Sobe a API de verdade, o PostgreSQL, o front compilado (servido pela mesma origem, como em produção) e o serviço de IA falso por HTTP, e dirige o Chromium com o Playwright: um participante entra, aceita o termo, faz um teste inteiro pelo teclado, vê o resultado e o painel atualizado; recarregar no meio do teste volta à mesma situação, sem começar outro; um usuário RH não vê o Lab; no celular não há rolagem horizontal. Precisa do Chromium (`pnpm --filter @my-flux/api exec playwright install chromium`) e leva uns 20 segundos. Não roda no `pnpm test` comum:
+
+```bash
+LAB_TEST_DATABASE_URL=postgresql://my_flux:my_flux_local@127.0.0.1:55432/postgres pnpm --filter @my-flux/api test:e2e
+```
+
+Com `LAB_E2E_SHOTS=<pasta>`, salva uma captura de tela de cada etapa.
+
 ## Cálculos
 
 `packages/shared/src/leadership-lab-calculos.ts`. Funções puras, sem banco nem relógio: a IA propõe a aderência de cada escolha e **todos os indicadores são calculados aqui**. Valores gravados e exibidos saem com 2 casas; o nível usa a média sem arredondar.
@@ -190,6 +200,7 @@ A proposta, para alinhar na Etapa 2 com o `agent.py` real:
 | `aceitarTermo(ator)`                | Registra o aceite da versão atual do termo (idempotente)                               |
 | `listarMoldes(ator)`                | Os moldes, com o do cargo do participante marcado                                      |
 | `iniciar(ator, {moldeId?})`         | Inicia um teste, ou retoma o que está em andamento                                     |
+| `estadoDoTeste(ator)`               | Só LÊ o teste em andamento (nunca inicia um, nunca chama a IA, nunca grava)            |
 | `responder(ator, id, entrada)`      | Registra a resposta; devolve consequência e próxima situação, ou o resultado           |
 | `tempoEsgotado(ator, id, {numero})` | O cliente avisa que o relógio zerou; o servidor confere                                |
 | `obterResultado(ator, id)`          | Resultado de um teste concluído (do participante, ou de quem está na turma do curador) |
@@ -225,6 +236,7 @@ As pré-condições de início ficam num só lugar, `avaliarInicio` (`precondico
 | `LAB_SEM_VINCULO`                                                            | 403  | Usuário COMUM ainda não ligado a um colaborador                                     |
 | `LAB_TERMO_PENDENTE`                                                         | 403  | Termo de ciência da versão atual não aceito                                         |
 | `LAB_NOT_FOUND`                                                              | 404  | Sessão inexistente, mal formada, de outra pessoa ou de fora das turmas              |
+| `LAB_SEM_TESTE_EM_ANDAMENTO`                                                 | 404  | `GET /sessoes/atual` sem nenhum teste em andamento                                  |
 | `LAB_CARGO_NAO_INFORMADO`, `LAB_MOLDE_NAO_MAPEADO`, `LAB_MOLDE_INATIVO`      | 409  | O cargo não leva a um molde ativo, com tempo e temas                                |
 | `LAB_MOLDE_DIVERGENTE`                                                       | 422  | O molde confirmado não é o do cargo                                                 |
 | `LAB_LIMITE_DIARIO`                                                          | 429  | Limite de testes por dia atingido                                                   |
@@ -256,6 +268,7 @@ Ligado e mal configurado, o servidor **não sobe** e diz o que falta, em vez de 
 | `POST /termo`                      | Aceita a versão atual                             |
 | `GET /moldes`                      | `{ moldes: [...], meuMoldeId }`                   |
 | `POST /sessoes`                    | Inicia, ou retoma; corpo opcional `{ moldeId? }`  |
+| `GET /sessoes/atual`               | Lê o teste em andamento; nunca inicia um          |
 | `POST /sessoes/:id/respostas`      | `{ numero, escolha: "A"\|"B"\|"C", textoLivre? }` |
 | `POST /sessoes/:id/tempo-esgotado` | `{ numero }`                                      |
 | `GET /sessoes/:id/resultado`       | O resultado de um teste concluído                 |
@@ -264,6 +277,7 @@ Ligado e mal configurado, o servidor **não sobe** e diz o que falta, em vez de 
 - Corpos com campo desconhecido (como `aderencia`) são recusados com 400; o corpo de cada POST tem teto de 16 KB.
 - Sessão inexistente, mal formada ou de outra pessoa respondem o mesmo 404.
 - Repetir uma requisição de resposta devolve **exatamente o mesmo corpo**.
+- `GET /sessoes/atual` devolve a situação em que o participante parou (com o tempo que resta, calculado no servidor) ou, se a resposta já foi dada mas a IA ainda não a avaliou, `{ tipo: "em-processamento" }`. Existe porque `POST /sessoes` também retoma, mas **começaria** um teste (e o relógio da situação 1) se não houvesse nenhum em andamento, por exemplo numa aba esquecida.
 - Ainda não há a contestação do participante nem as rotas do curador, do administrador e da gestão.
 
 ### Cliente HTTP da IA
@@ -284,6 +298,7 @@ Se o serviço estiver no Cloud Run sem acesso público, o gancho `autorizacao` f
 8. **A versão do termo (`2026-1`) é um marcador**: o texto do termo ainda não existe.
 9. **Migração 0016** (`ux_sessao_em_andamento_por_participante` e `turno.processando_ate`), com `down.sql`.
 10. **Migração 0017** (a view do painel só conta alertas de testes concluídos), com `down.sql`. Veja "Painel do participante".
+11. **`GET /sessoes/atual` não exige o termo aceito**: ler o próprio teste em andamento não revela nada novo, e quem decide se pode iniciar é `POST /sessoes`.
 
 ## Painel do participante
 
@@ -328,10 +343,61 @@ Motivos de `indisponivel`: `termo-pendente`, `cargo-nao-informado`, `molde-nao-m
 7. **Sem texto de orientação nos alertas.** O painel traz a cor, a skill ou a situação e o teste de origem; o "o que fazer" de cada alerta é decisão de negócio em aberto.
 8. **100 pontos de evolução e 100 alertas** são proteção contra resposta gigante, não regra de negócio.
 
+## Front do participante (Etapa 4)
+
+`apps/web/src/features/leadership-lab/` (cliente, regras da tela, componentes) e `apps/web/src/pages/lab/` (as três páginas). Só o perfil COMUM vê o item **Leadership Lab** no menu e cai em `/lab` ao entrar; os demais perfis seguem para Colaboradores, como antes. O servidor é quem barra os outros perfis (403): esconder o item é só arrumação do menu.
+
+| Rota                       | Tela                                                                                                                    |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `/lab`                     | Painel: termo de ciência (se pendente), botão do teste, indicadores, evolução, radar de skills, estilo, alertas e dicas |
+| `/lab/teste`               | O teste: mapa do caminho, cronômetro, situação, opções 1, 2 e 3 e campo livre                                           |
+| `/lab/resultado/:sessaoId` | Resultado de um teste concluído                                                                                         |
+
+### Como a tela do teste se comporta
+
+- **Abrir ou recarregar só lê** (`GET /sessoes/atual`). Quem começa um teste é o clique em "Iniciar teste" (`POST /sessoes`): abrir o endereço, voltar no histórico ou recarregar nunca inicia um teste nem o relógio da situação 1.
+- **Escolher não envia.** As teclas 1, 2 e 3 (ou o clique) marcam A, B ou C, e a resposta só vai em "Confirmar resposta" (ou Enter), porque ela não pode ser trocada depois. Dentro do campo livre, os números são texto.
+- **O cronômetro só mostra.** Conta a partir de quando a situação chegou ao navegador, com o tempo que o servidor informou, então recarregar não devolve tempo. Ao zerar, avisa o servidor, que confere com o relógio dele; se o do navegador estiver adiantado, a tela volta a contar pelo do servidor. O leitor de tela é avisado em 30 s, em 10 s e no fim, não a cada segundo.
+- **Uma chamada de cada vez.** Enquanto uma resposta ou o aviso de tempo esgotado está a caminho, a tela fica travada e uma segunda chamada não sai (as duas juntas dariam "resposta divergente").
+- **Falha da IA não perde nada.** A tela mostra o motivo e "Tentar de novo" reenvia a mesma resposta, que o servidor reconhece. Se a página for recarregada nesse estado, a leitura devolve `em-processamento` e a tela oferece "Continuar teste", que retoma com a resposta já gravada.
+- **A aderência nunca aparece durante o teste.** A tela só recebe número, marco, texto, opções, consequência e tempo. A consequência da escolha anterior vem junto da situação nova, na mesma tela, porque o relógio da nova já está correndo.
+
+### O contrato com a API
+
+Os formatos das respostas são schemas Zod em `packages/shared/src/leadership-lab-api.ts`, usados nas duas pontas. O front valida cada resposta e descarta o que não é do contrato, então um campo de avaliação que vazasse da API nunca chegaria a uma tela. A API prova, nos testes de integração, que uma partida inteira obedece aos schemas, e um teste confere que os códigos de erro do servidor são exatamente os que a tela sabe tratar.
+
+### Peso do bundle
+
+As três páginas e a biblioteca de gráficos (Recharts, só linha e radar) são carregadas sob demanda: o restante do sistema não paga por elas. `"sideEffects": false` em `packages/shared` impede que o Zod dos schemas entre no pacote principal.
+
+### Login automático de desenvolvimento
+
+Era uma constante `true` em `App.tsx`: todo visitante entrava como o usuário DEV do seed, e a senha de demonstração ia no bundle de produção. Agora só existe com `VITE_DEV_AUTO_LOGIN=true` **e** no servidor de desenvolvimento do Vite. Um build de produção nunca o liga e o e-mail do usuário DEV nem entra no pacote (conferido, mesmo construindo com a variável definida). **Ao publicar esta versão, o endereço passa a pedir login.**
+
+### Para ver o Lab funcionando num ambiente
+
+Ainda não há tela do RH para isto (é a Etapa 5), então o cadastro é feito no banco:
+
+1. Um usuário de perfil COMUM (tela de Usuários).
+2. Ligar o usuário ao colaborador: `INSERT INTO leadership_lab.participante (user_id, employee_id) VALUES ('<id do usuário>', '<id do colaborador>');`
+3. O colaborador precisa ter cargo (`JobFunction`), e o cargo, um molde: `INSERT INTO leadership_lab.molde_cargo (job_function_id, molde_id) SELECT '<id do cargo>', id FROM leadership_lab.molde WHERE nivel = 'supervisor';`
+4. Liberar o molde: `UPDATE leadership_lab.molde SET ativo = true, tempo_limite_s = <SEGUNDOS> WHERE nivel = 'supervisor';`. O tempo por situação é decisão do negócio, e o banco recusa ativar sem tempo.
+5. As variáveis `LAB_IA_URL`, `LAB_IA_TOKEN` e `LAB_TOLERANCIA_TEMPO_S` e, claro, o serviço de IA (Etapa 2).
+
+### Decisões do front que o negócio pode rever
+
+1. **Termo de ciência com texto provisório.** O texto completo não existe (é do RH e do jurídico). A tela mostra só o que o sistema faz, que já está decidido (as escolhas e o tempo ficam registrados, a IA não recebe dado pessoal, o resultado só vira histórico oficial depois da validação do RH), e avisa que o termo completo ainda será definido. Quando existir, substitui o resumo e a versão (`labTermoVersaoAtual`) muda, o que pede novo aceite.
+2. **Quadrante dos estilos** no arranjo clássico da Liderança Situacional: direção no eixo vertical, apoio no horizontal.
+3. **Escolher e confirmar são dois passos**, para uma tecla ou um toque errados não enviarem uma resposta que não pode ser trocada.
+4. **A tela não mostra "o que fazer" nos alertas** (decisão em aberto, veja o painel) nem a média da turma.
+
 ## Pendências
 
 - ID token do Cloud Run para o `ClienteIaHttp` (gancho `autorizacao`): depende de onde o RH roda.
-- Contestação do participante (`POST /resultados/:id/contestacoes`) e as rotas do curador, do administrador e da gestão.
+- Contestação do participante (`POST /resultados/:id/contestacoes`, e o botão na tela de resultado) e as rotas do curador, do administrador e da gestão.
+- Texto do termo de ciência, do RH e do jurídico (a tela mostra um resumo provisório).
+- Cadastro de participantes, vínculo cargo → molde e liberação dos moldes: hoje só pelo banco (veja "Para ver o Lab funcionando num ambiente"); a tela do RH é a Etapa 5.
+- Antes de publicar: o endereço passa a pedir login. Confirmar que existe um usuário real e que o usuário `dev@myflux.local`, com a senha de demonstração do seed, não existe em produção (decisão E).
 - Painel: média anônima da turma, cálculo da tendência e texto de orientação de cada alerta. Decisões de negócio em aberto (veja "Decisões do painel que o negócio pode rever").
 - Alinhar o contrato com o serviço Python (Etapa 2): itens marcados como proposta acima. Dependem do `agent.py` e do prompt de desenvolvimento.
 - Limite de testes por dia: decisão de negócio em aberto. Por ora é a variável `LAB_LIMITE_TESTES_DIA` do backend; se virar configuração editável, entra uma tabela.

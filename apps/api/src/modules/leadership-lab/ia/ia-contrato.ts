@@ -23,6 +23,7 @@ import {
   labEscolhas,
   labEstilos,
   labMoldeNiveis,
+  labSituacaoDoMarco,
   labSkillsPiloto
 } from "@my-flux/shared";
 import { z } from "zod";
@@ -126,7 +127,7 @@ export const situacaoIaSchema = z
   })
   .superRefine((s, ctx) => {
     // A terceira situação é o marco, e só ela.
-    if (s.marco !== (s.numero === 3)) {
+    if (s.marco !== (s.numero === labSituacaoDoMarco)) {
       ctx.addIssue({
         code: "custom",
         path: ["marco"],

@@ -46,6 +46,10 @@ export const erros = {
 
   sessaoEncerrada: () => new HttpError(409, "LAB_SESSAO_ENCERRADA", "Este teste foi encerrado."),
 
+  /** Quem lê o teste em andamento quando não há nenhum. É dado do próprio participante: sem segredo. */
+  semTesteEmAndamento: () =>
+    new HttpError(404, "LAB_SEM_TESTE_EM_ANDAMENTO", "Você não tem um teste em andamento."),
+
   turnoForaDeOrdem: (esperado: number) =>
     new HttpError(409, "LAB_TURNO_FORA_DE_ORDEM", "Esta não é a situação em andamento.", {
       situacaoEmAndamento: esperado

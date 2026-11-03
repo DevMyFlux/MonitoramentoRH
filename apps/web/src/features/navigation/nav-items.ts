@@ -1,6 +1,8 @@
+import type { Role } from "@my-flux/types";
 import {
   Activity,
   CalendarDays,
+  Compass,
   FileCheck2,
   FileCog,
   FileWarning,
@@ -21,6 +23,11 @@ export type NavigationItem = {
   icon: LucideIcon;
   /** Temporarily hidden from the sidebar without removing the route/page/API behind it. */
   hidden?: boolean;
+  /**
+   * Only these profiles see the item. Omitted = everyone, as before. This only tidies the menu:
+   * the API still decides who may do what.
+   */
+  roles?: readonly Role[];
 };
 
 export type NavigationGroup = {
@@ -54,6 +61,11 @@ export const navigationGroups: NavigationGroup[] = [
       { label: "Colaboradores", href: "/colaboradores", icon: Users },
       { label: "Escalas", href: "/escalas", icon: CalendarDays }
     ]
+  },
+  {
+    label: "Desenvolvimento",
+    // O participante do Leadership Lab é o perfil COMUM (a matriz de permissões do módulo).
+    items: [{ label: "Leadership Lab", href: "/lab", icon: Compass, roles: ["COMUM"] }]
   },
   {
     label: "Estrutura e contratos",
@@ -92,3 +104,9 @@ export const navigationGroups: NavigationGroup[] = [
     ]
   }
 ];
+
+/** O item aparece para este perfil? Sem `roles`, aparece para todos. Sem perfil conhecido, só os livres. */
+export function itemVisivelPara(item: NavigationItem, perfil: Role | undefined): boolean {
+  if (item.roles === undefined) return true;
+  return perfil !== undefined && item.roles.includes(perfil);
+}

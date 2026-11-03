@@ -58,6 +58,7 @@ const podem: Record<LabAcao, NomeDoAtor[]> = {
   "termo:aceitar": participantes,
   "moldes:listar": participantes,
   "sessao:iniciar": participantes,
+  "sessao:ler-atual": participantes,
   "sessao:responder": participantes,
   "sessao:tempo-esgotado": participantes,
   "contestacao:criar": participantes,

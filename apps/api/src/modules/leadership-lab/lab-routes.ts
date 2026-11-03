@@ -9,6 +9,7 @@
 //   POST /termo                         aceita a versão atual do termo
 //   GET  /moldes                        moldes, com o do cargo do usuário marcado
 //   POST /sessoes                       inicia um teste, ou retoma o que está em andamento
+//   GET  /sessoes/atual                 lê o teste em andamento (nunca inicia um)
 //   POST /sessoes/:id/respostas         envia A, B ou C (e o campo livre)
 //   POST /sessoes/:id/tempo-esgotado    avisa que o relógio zerou (o servidor confere)
 //   GET  /sessoes/:id/resultado         resultado de um teste concluído
@@ -64,6 +65,10 @@ export async function registrarRotasDoLab(
 
   app.post("/sessoes", { bodyLimit: LIMITE_DO_CORPO_BYTES }, async (request) => ({
     data: await motor.iniciar(await atorDe(request), request.body)
+  }));
+
+  app.get("/sessoes/atual", async (request) => ({
+    data: await motor.estadoDoTeste(await atorDe(request))
   }));
 
   app.post<ComId>(

@@ -1,6 +1,14 @@
 // Rotas HTTP do Leadership Lab, de ponta a ponta: buildApp() real, JWT real, PostgreSQL real e a
 // IA falsa. Exige LAB_TEST_DATABASE_URL; sem ela, é ignorado. Veja db/test-database.ts.
 import type { FastifyInstance } from "fastify";
+import {
+  labAceiteDoTermoSchema,
+  labEstadoDoTesteSchema,
+  labPainelSchema,
+  labRespostaDoTesteSchema,
+  labResultadoSchema,
+  labTermoSchema
+} from "@my-flux/shared";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createAccessToken } from "../auth/token-service.js";
 import { integrationEnabled } from "./db/test-database.js";
@@ -144,6 +152,7 @@ describe.skipIf(!integrationEnabled)("rotas do Leadership Lab", () => {
       ["POST", "/termo"],
       ["GET", "/moldes"],
       ["POST", "/sessoes"],
+      ["GET", "/sessoes/atual"],
       ["POST", `/sessoes/${crypto.randomUUID()}/respostas`],
       ["POST", `/sessoes/${crypto.randomUUID()}/tempo-esgotado`],
       ["GET", `/sessoes/${crypto.randomUUID()}/resultado`]
@@ -456,6 +465,154 @@ describe.skipIf(!integrationEnabled)("rotas do Leadership Lab", () => {
   });
 
   // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // O front valida cada resposta com estes mesmos schemas (packages/shared). Aqui a API prova que
+  // o que ela realmente envia, numa partida inteira, obedece a eles.
+  describe("contrato com o front", () => {
+    it("toda resposta de uma partida inteira obedece aos schemas compartilhados", async () => {
+      const u = await participante();
+      const ler = <T>(schema: { parse(dado: unknown): T }, r: { json(): { data: unknown } }) =>
+        schema.parse(r.json().data);
+
+      // Antes do termo: o painel responde e o botão fica indisponível.
+      const antes = ler(labPainelSchema, await http(u.token, "GET", "/painel"));
+      expect(antes.acao).toMatchObject({ tipo: "indisponivel", motivo: "termo-pendente" });
+      expect(ler(labTermoSchema, await http(u.token, "GET", "/termo")).aceito).toBe(false);
+
+      ler(labAceiteDoTermoSchema, await http(u.token, "POST", "/termo"));
+      expect(ler(labTermoSchema, await http(u.token, "GET", "/termo")).aceito).toBe(true);
+      expect(ler(labPainelSchema, await http(u.token, "GET", "/painel")).acao.tipo).toBe("iniciar");
+
+      // Em andamento: o painel diz "continuar" e a leitura do teste devolve a situação.
+      const aberto = ler(labRespostaDoTesteSchema, await http(u.token, "POST", "/sessoes"));
+      if (aberto.tipo !== "situacao") throw new Error("esperava a situação 1");
+      expect(ler(labPainelSchema, await http(u.token, "GET", "/painel")).acao).toMatchObject({
+        tipo: "continuar",
+        sessaoId: aberto.sessaoId,
+        situacaoAtual: 1
+      });
+      expect(ler(labEstadoDoTesteSchema, await http(u.token, "GET", "/sessoes/atual"))).toEqual(
+        aberto
+      );
+
+      // Cinco respostas, a última devolve o resultado.
+      let atual = aberto;
+      for (const [i, escolha] of ["A", "B", "C", "B", "A"].entries()) {
+        aguardar(10_000);
+        const r = ler(
+          labRespostaDoTesteSchema,
+          await http(u.token, "POST", `/sessoes/${aberto.sessaoId}/respostas`, {
+            numero: i + 1,
+            escolha
+          })
+        );
+        if (i < 4) {
+          if (r.tipo !== "situacao") throw new Error(`esperava a situação ${i + 2}`);
+          atual = r;
+        } else {
+          expect(r.tipo).toBe("resultado");
+        }
+      }
+      expect(atual.situacao.numero).toBe(5);
+
+      const resultado = ler(
+        labResultadoSchema,
+        await http(u.token, "GET", `/sessoes/${aberto.sessaoId}/resultado`)
+      );
+      expect(resultado.situacoes).toHaveLength(5);
+
+      // Depois do teste: o painel já mostra o teste concluído.
+      const depois = ler(labPainelSchema, await http(u.token, "GET", "/painel"));
+      expect(depois.indicadores.testesFeitos).toBe(1);
+      expect(depois.evolucao.pontos).toHaveLength(1);
+      expect(depois.acao.tipo).toBe("iniciar");
+    });
+
+    it("o tempo esgotado também devolve uma resposta do contrato", async () => {
+      const u = await participante();
+      const { sessaoId, situacao } = await iniciar(u);
+      aguardar(61_000);
+
+      const r = await http(u.token, "POST", `/sessoes/${sessaoId}/tempo-esgotado`, {
+        numero: situacao.numero
+      });
+
+      expect(r.statusCode).toBe(200);
+      const lida = labRespostaDoTesteSchema.parse(r.json().data);
+      expect(lida).toMatchObject({ tipo: "situacao", tempoEsgotadoNaAnterior: true });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  describe("GET /sessoes/atual", () => {
+    it("sem teste em andamento: 404 no formato de erro padrão, e nenhum teste é começado", async () => {
+      const u = await participante();
+      await http(u.token, "POST", "/termo");
+
+      const r = await http(u.token, "GET", "/sessoes/atual");
+
+      expect(r.statusCode).toBe(404);
+      expect(r.headers["cache-control"]).toBe("no-store");
+      expect(r.json()).toEqual({
+        code: "LAB_SEM_TESTE_EM_ANDAMENTO",
+        message: "Você não tem um teste em andamento.",
+        details: {}
+      });
+      const sessoes = await consulta(
+        `SELECT 1 FROM leadership_lab.sessao WHERE participante_id = $1`,
+        [u.participanteId]
+      );
+      expect(sessoes).toHaveLength(0);
+    });
+
+    it("com teste em andamento: devolve o mesmo corpo que POST /sessoes e ler não muda nada", async () => {
+      const u = await participante();
+      await http(u.token, "POST", "/termo");
+      const aberto = await http(u.token, "POST", "/sessoes");
+
+      const primeira = await http(u.token, "GET", "/sessoes/atual");
+      const segunda = await http(u.token, "GET", "/sessoes/atual");
+
+      expect(primeira.statusCode).toBe(200);
+      expect(primeira.headers["cache-control"]).toBe("no-store");
+      expect(primeira.json()).toEqual(aberto.json());
+      expect(segunda.json()).toEqual(primeira.json());
+      const sessoes = await consulta(
+        `SELECT 1 FROM leadership_lab.sessao WHERE participante_id = $1`,
+        [u.participanteId]
+      );
+      expect(sessoes).toHaveLength(1);
+    });
+
+    it("depois de uma resposta: a próxima situação, com a consequência, e nada da avaliação", async () => {
+      const u = await participante();
+      const { sessaoId } = await iniciar(u);
+      aguardar(10_000);
+      const resposta = await http(u.token, "POST", `/sessoes/${sessaoId}/respostas`, {
+        numero: 1,
+        escolha: "A"
+      });
+
+      const r = await http(u.token, "GET", "/sessoes/atual");
+
+      expect(r.json()).toEqual(resposta.json());
+      expect(r.json().data).toMatchObject({ tipo: "situacao", situacao: { numero: 2 } });
+      expect(r.body).not.toContain(CANARIO_JUSTIFICATIVA);
+      expect(r.body).not.toContain("aderencia");
+    });
+
+    it("cada participante lê só o próprio teste", async () => {
+      const ana = await participante();
+      const bia = await participante();
+      await iniciar(ana);
+      await http(bia.token, "POST", "/termo");
+
+      expect((await http(ana.token, "GET", "/sessoes/atual")).statusCode).toBe(200);
+      expect((await http(bia.token, "GET", "/sessoes/atual")).statusCode).toBe(404);
+    });
+  });
+
+  // -------------------------------------------------------------------------
   describe("erros no formato padrão", () => {
     it.each([
       ["campo a mais, como a aderência", { numero: 1, escolha: "A", aderencia: 100 }],
@@ -575,6 +732,7 @@ describe.skipIf(!integrationEnabled)("rotas do Leadership Lab", () => {
       ["POST", "/termo"],
       ["GET", "/moldes"],
       ["POST", "/sessoes"],
+      ["GET", "/sessoes/atual"],
       ["POST", `/sessoes/${crypto.randomUUID()}/respostas`, { numero: 1, escolha: "A" }],
       ["POST", `/sessoes/${crypto.randomUUID()}/tempo-esgotado`, { numero: 1 }]
     ];

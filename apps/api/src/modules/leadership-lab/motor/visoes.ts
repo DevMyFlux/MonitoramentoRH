@@ -56,6 +56,21 @@ export type RespostaDeResultado = {
 
 export type RespostaDoTeste = RespostaDeSituacao | RespostaDeResultado;
 
+/**
+ * O participante já respondeu a situação `numero`, mas a avaliação ainda não foi aplicada (a IA
+ * falhou, ou ainda está em curso). Não há situação nova para mostrar: a tela oferece "tentar de
+ * novo", que retoma o teste com a resposta que já está gravada. Sem nenhum dado de avaliação.
+ */
+export type RespostaEmProcessamento = {
+  tipo: "em-processamento";
+  sessaoId: string;
+  numero: number;
+  totalSituacoes: number;
+};
+
+/** O que a tela do teste recebe ao abrir ou recarregar. */
+export type EstadoDoTeste = RespostaDeSituacao | RespostaEmProcessamento;
+
 const opcoesDoBanco = z.array(z.object({ id: z.enum(labEscolhas), texto: z.string() })).length(3);
 
 export function visaoDaSituacao(args: {
