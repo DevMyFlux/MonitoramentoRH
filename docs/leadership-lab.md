@@ -128,8 +128,58 @@ Listagens (`revisao:listar`, `alerta:listar`...) não têm alvo: a matriz só co
 2. **DEV não é exceção.** Ao contrário do restante do sistema, DEV não vê dados de perfil nem faz as ações de curador. Para investigar problemas, usa a configuração e os logs técnicos.
 3. **`lab_gestao` e `lab_especialista` valem para qualquer perfil**, concedidas explicitamente; nenhum perfil as recebe por padrão.
 
+## Contrato com o serviço de IA
+
+`apps/api/src/modules/leadership-lab/ia/ia-contrato.ts`. **A IA propõe; o backend valida, calcula e decide.** Tudo o que volta do serviço passa por aqui antes de tocar o banco, o cálculo ou o participante, e tudo o que vai para ele sai de um schema estrito: o schema é a lista fechada de campos que podem chegar à IA, então nome, matrícula, e-mail, unidade ou ids do RH não passam sem mudar o arquivo (e o teste que fixa a lista).
+
+Os schemas são estritos de propósito: campo desconhecido ou ausente é violação do contrato. Se o serviço real divergir, a divergência aparece no primeiro teste de contrato.
+
+### O que é da documentação e o que é proposta
+
+| Peça                                                                                  | Origem                                                                                                    |
+| ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| JSON do turno (`tipo`, `avaliacao_anterior`, `consequencia`, `situacao`, `resultado`) | **Documentação** (`turnoIaSchema`)                                                                        |
+| Regras do jogo: 3 opções, aderência na escala, alerta vermelho só com aderência 10    | **Documentação**                                                                                          |
+| Resultado sem números (os números vêm do backend)                                     | **Documentação**                                                                                          |
+| Bloco `uso` em cada resposta                                                          | **Documentação** diz que existe; os campos e o nível no envelope são **proposta**                         |
+| Resposta da Guarda, corpos das requisições, `contribuicoes` do resultado              | **Proposta**: a documentação só diz "seguir, mascarar ou bloquear" e "cargo, temas, situações e escolhas" |
+
+A proposta, para alinhar na Etapa 2 com o `agent.py` real:
+
+- `POST /teste/sessoes` recebe `{ molde, temas, numero_situacoes }` e devolve `{ sessao_id, ...turno da situação 1, uso }`. O `sessao_id` é opaco e fica em `sessao.ia_sessao_id`. O backend não envia id de usuário.
+- `POST /teste/turnos` recebe `{ sessao_id, numero, escolha, tempo_esgotado, texto_livre }` e devolve `{ ...turno, uso }`.
+- `POST /agentes/guarda` recebe `{ texto }` e devolve `{ decisao, texto, uso }`: `texto` é nulo em `seguir` (o backend usa o que enviou) e em `bloquear`, e é o texto mascarado em `mascarar`.
+- `uso` = `{ agente, modelo, versao_instrucao, tokens_entrada, tokens_saida }`.
+
+### Regras que o contrato impõe
+
+- **Turno.** `avaliacao_anterior` só é nula na situação 1. A situação 1 não tem consequência; da segunda em diante, tem. A avaliação é da situação imediatamente anterior. O marco é a situação 3, e só ela. Sempre 3 opções, A, B e C, nessa ordem.
+- **Aderência.** Só a escala 100, 70, 40, 10 e 0. O 0 existe apenas sem escolha (tempo esgotado), e sem escolha só vale 0. Alerta vermelho se, e somente se, a aderência é 10. O alerta amarelo não vem da IA: é do backend.
+- **Skills** devem ser as do piloto, sem repetição.
+- **Contra o que o backend esperava** (`validarTurnoIa`): a IA não pode avaliar outra situação nem outra letra que a enviada (nem tratar omissão como resposta), pular ou repetir situações, encerrar o teste antes da última nem prolongá-lo.
+- **Resultado.** `resumo`, `ponto_forte`, `ponto_desenvolvimento`, `sugestoes` e `contribuicoes`. Qualquer campo numérico (aderência geral, níveis...) é rejeitado.
+- **Avisos** não rejeitam a resposta, só são devolvidos para monitorar a IA. Hoje há um: situação com mais de 60 palavras.
+
+### Guarda: falha fechada
+
+`aplicarGuarda` nunca lança e nunca devolve texto que não passou pela Guarda. Erro, tempo esgotado, JSON estranho, decisão desconhecida, `seguir` com texto trocado pela IA, `bloquear` devolvendo texto: tudo vira `bloquear`. A saída combina com a restrição do banco: só há texto quando a decisão é `seguir` ou `mascarar`.
+
+### Do contrato para o banco (Etapa 3)
+
+| No contrato                                         | Vai para                                                                                                |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `sessao_id` (abertura)                              | `sessao.ia_sessao_id`                                                                                   |
+| `situacao`                                          | `turno` (numero, marco, texto, opcoes, estilo_adequado)                                                 |
+| `avaliacao_anterior`                                | `turno` da situação respondida (aderencia, estilo, alerta, justificativa); skills em `turno_skill`      |
+| `consequencia`                                      | `turno.consequencia` da situação respondida                                                             |
+| `avaliacao_anterior.contribuicao`                   | `contribuicao` (uma por turno)                                                                          |
+| `resultado`                                         | `resultado` (resumo, ponto_forte, ponto_desenvolvimento, sugestoes); resposta completa em `resposta_ia` |
+| `uso` e a duração da chamada                        | `log_ia`                                                                                                |
+| aderência, agilidade, níveis, estilo, flexibilidade | **calculados pelo backend** (`calcularResultado`), nunca vêm da IA                                      |
+
 ## Pendências
 
+- Alinhar o contrato com o serviço Python (Etapa 2): itens marcados como proposta acima. Dependem do `agent.py` e do prompt de desenvolvimento.
 - Limite de testes por dia: decisão de negócio em aberto. Por ora é a variável `LAB_LIMITE_TESTES_DIA` do backend; se virar configuração editável, entra uma tabela na Etapa 3.
 - Política de falha da IA no meio de um teste (retomar, cancelar): Etapa 3. O status `cancelada` já existe.
 - Tempo limite por situação de cada molde: decisão de negócio em aberto.
