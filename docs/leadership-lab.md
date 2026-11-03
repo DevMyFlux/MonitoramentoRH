@@ -370,9 +370,11 @@ Os formatos das respostas são schemas Zod em `packages/shared/src/leadership-la
 
 As três páginas e a biblioteca de gráficos (Recharts, só linha e radar) são carregadas sob demanda: o restante do sistema não paga por elas. `"sideEffects": false` em `packages/shared` impede que o Zod dos schemas entre no pacote principal.
 
-### Login automático de desenvolvimento
+### Modo de teste: sem login (temporário)
 
-Era uma constante `true` em `App.tsx`: todo visitante entrava como o usuário DEV do seed, e a senha de demonstração ia no bundle de produção. Agora só existe com `VITE_DEV_AUTO_LOGIN=true` **e** no servidor de desenvolvimento do Vite. Um build de produção nunca o liga e o e-mail do usuário DEV nem entra no pacote (conferido, mesmo construindo com a variável definida). **Ao publicar esta versão, o endereço passa a pedir login.**
+Por decisão do dono do sistema, **para o primeiro momento de teste o front não pede login**: todo visitante entra como o usuário DEV do seed (`dev@myflux.local`), como era antes da Etapa 4. Isto vale em produção, e a senha de demonstração vai no pacote. Quem abre o endereço tem acesso de DEV (escopo global: dados de todos os colaboradores e gestão de usuários). Como o perfil DEV não faz testes do Lab, **o item "Leadership Lab" não aparece nesse modo**; para ver as telas é preciso entrar como um usuário COMUM ligado a um colaborador.
+
+Para voltar a exigir login, construa o front com `VITE_MODO_TESTE_SEM_LOGIN=false` (ou mude o padrão em `App.tsx`): a tela de login volta e o e-mail do usuário DEV sai do pacote (conferido). O teste de ponta a ponta já constrói o front assim, porque exercita o login de verdade.
 
 ### Para ver o Lab funcionando num ambiente
 
@@ -397,7 +399,7 @@ Ainda não há tela do RH para isto (é a Etapa 5), então o cadastro é feito n
 - Contestação do participante (`POST /resultados/:id/contestacoes`, e o botão na tela de resultado) e as rotas do curador, do administrador e da gestão.
 - Texto do termo de ciência, do RH e do jurídico (a tela mostra um resumo provisório).
 - Cadastro de participantes, vínculo cargo → molde e liberação dos moldes: hoje só pelo banco (veja "Para ver o Lab funcionando num ambiente"); a tela do RH é a Etapa 5.
-- Antes de publicar: o endereço passa a pedir login. Confirmar que existe um usuário real e que o usuário `dev@myflux.local`, com a senha de demonstração do seed, não existe em produção (decisão E).
+- **Encerrar o modo de teste sem login** antes de pôr dados reais de colaboradores no ambiente: construir o front com `VITE_MODO_TESTE_SEM_LOGIN=false`, e trocar ou desativar as contas de demonstração do seed (a senha está no repositório, que é público) (decisão E).
 - Painel: média anônima da turma, cálculo da tendência e texto de orientação de cada alerta. Decisões de negócio em aberto (veja "Decisões do painel que o negócio pode rever").
 - Alinhar o contrato com o serviço Python (Etapa 2): itens marcados como proposta acima. Dependem do `agent.py` e do prompt de desenvolvimento.
 - Limite de testes por dia: decisão de negócio em aberto. Por ora é a variável `LAB_LIMITE_TESTES_DIA` do backend; se virar configuração editável, entra uma tabela.
