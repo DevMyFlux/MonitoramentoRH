@@ -75,32 +75,64 @@ export async function criarBase(client: pg.Client): Promise<Base> {
   return { roleId, operationId, moldeId: rows[0]!.id };
 }
 
-export async function criarUsuario(client: pg.Client, base: Base): Promise<string> {
+export async function criarUsuario(
+  client: pg.Client,
+  base: Base,
+  extra: Colunas = {}
+): Promise<string> {
   return inserir(client, '"User"', {
     id: crypto.randomUUID(),
     email: `pessoa${proximo()}@teste.local`,
     name: "Pessoa",
     passwordHash: "x",
     roleId: base.roleId,
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    ...extra
   });
 }
 
-export async function criarColaborador(client: pg.Client, base: Base): Promise<string> {
+export async function criarColaborador(
+  client: pg.Client,
+  base: Base,
+  extra: Colunas = {}
+): Promise<string> {
   return inserir(client, '"Employee"', {
     id: crypto.randomUUID(),
     operationId: base.operationId,
     name: "Colaborador",
     identifier: `MAT${proximo()}`,
+    updatedAt: new Date().toISOString(),
+    ...extra
+  });
+}
+
+/** Cria um cargo do RH (JobFunction) e o liga ao molde do nível dado. Devolve o id do cargo. */
+export async function criarCargoComMolde(
+  client: pg.Client,
+  nivel: "encarregado" | "supervisor" | "coordenador"
+): Promise<string> {
+  const funcao = await inserir(client, '"JobFunction"', {
+    id: crypto.randomUUID(),
+    name: `Cargo ${nivel} ${proximo()}`,
     updatedAt: new Date().toISOString()
   });
+  await client.query(
+    `INSERT INTO leadership_lab.molde_cargo (job_function_id, molde_id)
+     SELECT $1, id FROM leadership_lab.molde WHERE nivel = $2`,
+    [funcao, nivel]
+  );
+  return funcao;
 }
 
 export type Contexto = { base: Base; participanteId: string; userId: string; employeeId: string };
 
-export async function criarParticipante(client: pg.Client, base: Base): Promise<Contexto> {
-  const userId = await criarUsuario(client, base);
-  const employeeId = await criarColaborador(client, base);
+export async function criarParticipante(
+  client: pg.Client,
+  base: Base,
+  extra: { usuario?: Colunas; colaborador?: Colunas } = {}
+): Promise<Contexto> {
+  const userId = await criarUsuario(client, base, extra.usuario);
+  const employeeId = await criarColaborador(client, base, extra.colaborador);
   const participanteId = await inserir(client, "leadership_lab.participante", {
     user_id: userId,
     employee_id: employeeId

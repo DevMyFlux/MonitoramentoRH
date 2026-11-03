@@ -1321,6 +1321,9 @@ model LabTurno {
   /// Texto já tratado pela Guarda. Texto bloqueado nunca é gravado.
   textoLivre      String?   @map("texto_livre")
   decisaoGuarda   String?   @map("decisao_guarda")
+  /// Reserva enquanto a IA é consultada para este turno. Nulo = ninguém processando;
+  /// vencida = quem reservou morreu e outra requisição pode assumir.
+  processandoAte  DateTime? @map("processando_ate") @db.Timestamptz(3)
   skills          LabTurnoSkill[]
   alertas         LabAlerta[]
   contribuicao    LabContribuicao?

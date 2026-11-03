@@ -52,6 +52,7 @@ import {
 } from "./test-fixtures.js";
 
 const LAB_MIGRATION = "0015_leadership_lab";
+const ENGINE_MIGRATION = "0016_leadership_lab_engine";
 const PRE_LAB_MIGRATION = "0014_employee_termination_date";
 const rolesScript = readFileSync(
   fileURLToPath(new URL("../../../../prisma/ops/leadership-lab-roles.sql", import.meta.url)),
@@ -108,9 +109,9 @@ suite("migração 0015_leadership_lab: subir, descer e subir de novo", () => {
     await db?.drop();
   });
 
-  it("tem down.sql, e só ela (as anteriores seguem sem descida)", () => {
+  it("tem down.sql nas migrações do Lab, e só nelas (as anteriores seguem sem descida)", () => {
     const comDescida = readMigrations().filter((m) => m.down !== null);
-    expect(comDescida.map((m) => m.name)).toEqual([LAB_MIGRATION]);
+    expect(comDescida.map((m) => m.name)).toEqual([LAB_MIGRATION, ENGINE_MIGRATION]);
   });
 
   it("sobe sobre a cadeia atual, desce sem tocar no schema public e sobe de novo", async () => {
@@ -156,6 +157,30 @@ suite("migração 0015_leadership_lab: subir, descer e subir de novo", () => {
       "leadership_lab_ia.sessions"
     ]);
     await db.client.query(`DROP TABLE leadership_lab_ia.sessions`);
+  }, 60_000);
+
+  it("0016: sobe, desce sem apagar dados do Lab e sobe de novo", async () => {
+    const motor = readMigrations().find((m) => m.name === ENGINE_MIGRATION)!;
+    const colunaDoLease = `SELECT count(*)::int AS n FROM information_schema.columns
+       WHERE table_schema = 'leadership_lab' AND table_name = 'turno' AND column_name = 'processando_ate'`;
+    const indiceDaSessaoAtiva = `SELECT count(*)::int AS n FROM pg_indexes
+       WHERE schemaname = 'leadership_lab' AND indexname = 'ux_sessao_em_andamento_por_participante'`;
+
+    await db.client.query(motor.up);
+    expect((await db.client.query(colunaDoLease)).rows[0].n).toBe(1);
+    expect((await db.client.query(indiceDaSessaoAtiva)).rows[0].n).toBe(1);
+
+    await db.client.query(motor.down!);
+    expect((await db.client.query(colunaDoLease)).rows[0].n).toBe(0);
+    expect((await db.client.query(indiceDaSessaoAtiva)).rows[0].n).toBe(0);
+    // A descida da 0016 não toca nos dados nem nas tabelas do Lab.
+    expect(await listRelations(db.client, "leadership_lab")).toHaveLength(18);
+    expect(
+      (await db.client.query(`SELECT count(*)::int AS n FROM leadership_lab.skill`)).rows[0].n
+    ).toBe(8);
+
+    await db.client.query(motor.up);
+    expect((await db.client.query(colunaDoLease)).rows[0].n).toBe(1);
   }, 60_000);
 });
 
@@ -522,6 +547,52 @@ suite("schema leadership_lab", () => {
           status: "abandonada"
         })
       ).toMatchObject({ constraint: "ck_sessao_status" });
+    });
+
+    it("só há uma sessão em andamento por participante; concluir ou cancelar libera a vaga", async () => {
+      const ctx = await criarParticipante(client, base);
+      const aberta = await criarSessao(client, ctx);
+      expect(
+        await tentarInserir(client, "leadership_lab.sessao", {
+          participante_id: ctx.participanteId,
+          molde_id: base.moldeId
+        })
+      ).toMatchObject({
+        code: sqlState.uniqueViolation,
+        constraint: "ux_sessao_em_andamento_por_participante"
+      });
+
+      // Outro participante não é afetado.
+      await criarSessao(client, await criarParticipante(client, base));
+
+      // Encerrada (cancelada ou concluída), a vaga volta.
+      await client.query(`UPDATE leadership_lab.sessao SET status = 'cancelada' WHERE id = $1`, [
+        aberta
+      ]);
+      const segunda = await criarSessao(client, ctx);
+      await client.query(
+        `UPDATE leadership_lab.sessao SET status = 'concluida', concluida_em = now() + interval '1 minute' WHERE id = $1`,
+        [segunda]
+      );
+      await criarSessao(client, ctx);
+
+      // E várias encerradas convivem.
+      const { rows } = await client.query(
+        `SELECT count(*)::int AS n FROM leadership_lab.sessao WHERE participante_id = $1`,
+        [ctx.participanteId]
+      );
+      expect(rows[0].n).toBe(3);
+    });
+
+    it("o turno nasce sem reserva de processamento", async () => {
+      const ctx = await criarParticipante(client, base);
+      const sessao = await criarSessao(client, ctx);
+      const turno = await inserir(client, "leadership_lab.turno", colunasTurno(sessao, 1));
+      const { rows } = await client.query(
+        `SELECT processando_ate FROM leadership_lab.turno WHERE id = $1`,
+        [turno]
+      );
+      expect(rows[0].processando_ate).toBeNull();
     });
 
     it("o identificador da conversa na IA é único", async () => {

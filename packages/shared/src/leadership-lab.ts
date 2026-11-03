@@ -102,3 +102,9 @@ export type LabPermissao = (typeof labPermissoes)[number];
 
 export const labAgentesIa = ["agente_lab", "guarda", "autor", "analista", "agente_forms"] as const;
 export type LabAgenteIa = (typeof labAgentesIa)[number];
+
+/**
+ * Versão do termo de ciência exibido no primeiro acesso. O texto do termo ainda não foi
+ * definido; este valor é um marcador. Trocá-lo exige novo aceite de todos os participantes.
+ */
+export const labTermoVersaoAtual = "2026-1";

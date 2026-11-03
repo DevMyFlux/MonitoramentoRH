@@ -177,11 +177,77 @@ A proposta, para alinhar na Etapa 2 com o `agent.py` real:
 | `uso` e a duração da chamada                        | `log_ia`                                                                                                |
 | aderência, agilidade, níveis, estilo, flexibilidade | **calculados pelo backend** (`calcularResultado`), nunca vêm da IA                                      |
 
+## Motor do teste
+
+`apps/api/src/modules/leadership-lab/motor/`. Conduz um teste de ponta a ponta. Ainda **não há rotas HTTP nem cliente HTTP real da IA**: o motor recebe o ator (`LabAtor`) e um `ClienteIa` (interface em `cliente-ia.ts`), e os testes usam a `IaFalsa`, que obedece ao contrato e valida o que recebe. Quando as rotas existirem, são finas: autenticar, `carregarAtorLab`, chamar o motor.
+
+| Método                              | Rota prevista                      | Faz                                                                                    |
+| ----------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------- |
+| `aceitarTermo(ator)`                | `POST /termo`                      | Registra o aceite da versão atual do termo (idempotente)                               |
+| `iniciar(ator, {moldeId?})`         | `POST /sessoes`                    | Inicia um teste, ou retoma o que está em andamento                                     |
+| `responder(ator, id, entrada)`      | `POST /sessoes/:id/respostas`      | Registra a resposta; devolve consequência e próxima situação, ou o resultado           |
+| `tempoEsgotado(ator, id, {numero})` | `POST /sessoes/:id/tempo-esgotado` | O cliente avisa que o relógio zerou; o servidor confere                                |
+| `obterResultado(ator, id)`          | `GET /sessoes/:id/resultado`       | Resultado de um teste concluído (do participante, ou de quem está na turma do curador) |
+
+### Garantias (todas com teste de integração contra PostgreSQL real)
+
+- **Permissão em todo método**, antes de ler ou gravar. Sessão inexistente, mal formada e alheia respondem o mesmo 404.
+- **Aderência escondida.** Durante o teste a resposta tem só: número, marco, texto, opções, consequência, tempo limite e tempo restante. As visões (`visoes.ts`) são montadas campo a campo, nunca espalhando a linha do banco, então coluna nova não vaza sozinha. Só depois do último turno o participante vê aderência por situação, agilidade, níveis e justificativas.
+- **Tempo medido no servidor.** Resposta fora do prazo (mais a tolerância) vale como omissão: a letra e o campo livre são descartados e a IA nem os vê. O aviso de "tempo esgotado" do cliente só vale se o relógio do servidor concorda. Recarregar a página não zera o relógio.
+- **Idempotência.** Reenviar a mesma resposta devolve o mesmo resultado sem nova chamada à IA; outra resposta para a mesma situação é recusada (409).
+- **Uma chamada à IA por turno, mesmo com requisições simultâneas.** Quem reserva o turno (`processando_ate`) segue; a outra recebe 409 "em processamento". A reserva expira sozinha se o processo morrer.
+- **Falha da IA não perde a resposta.** A resposta e o tempo ficam gravados; o participante repete (ou reabre o teste) e o motor conclui com o que já estava gravado.
+- **Resposta da IA fora do contrato não grava nada** (nenhuma avaliação, skill, alerta ou situação), e vai para o `log_ia` como `CONTRATO`.
+- **Dado pessoal não chega à IA.** Uma auditoria de uma partida inteira confere que nome, matrícula, e-mail, ids do RH e o id do banco não aparecem em nenhuma requisição, e que cada chamada só carrega os campos do contrato.
+- **Alerta vermelho nasce na hora**, no turno com aderência 10, não no fim do teste. O amarelo é calculado ao fechar.
+
+### Estados de uma situação
+
+| Estado                    | No banco                                        | O que acontece                                                     |
+| ------------------------- | ----------------------------------------------- | ------------------------------------------------------------------ |
+| Pendente                  | sem `respondida_em`                             | Espera a resposta; o relógio corre desde `apresentada_em`          |
+| Respondida, sem avaliação | `respondida_em` preenchido, sem `justificativa` | A IA ainda não aplicou (falhou, ou está em curso). Repetir conclui |
+| Avaliada                  | `justificativa` preenchida                      | Repetir devolve o que está gravado                                 |
+
+### Erros
+
+| Código                                                                       | HTTP | Quando                                                                              |
+| ---------------------------------------------------------------------------- | ---- | ----------------------------------------------------------------------------------- |
+| `LAB_FORBIDDEN`                                                              | 403  | Perfil sem permissão (inclui DEV e ADMIN)                                           |
+| `LAB_SEM_VINCULO`                                                            | 403  | Usuário COMUM ainda não ligado a um colaborador                                     |
+| `LAB_TERMO_PENDENTE`                                                         | 403  | Termo de ciência da versão atual não aceito                                         |
+| `LAB_NOT_FOUND`                                                              | 404  | Sessão inexistente, mal formada, de outra pessoa ou de fora das turmas              |
+| `LAB_CARGO_NAO_INFORMADO`, `LAB_MOLDE_NAO_MAPEADO`, `LAB_MOLDE_INATIVO`      | 409  | O cargo não leva a um molde ativo, com tempo e temas                                |
+| `LAB_MOLDE_DIVERGENTE`                                                       | 422  | O molde confirmado não é o do cargo                                                 |
+| `LAB_LIMITE_DIARIO`                                                          | 429  | Limite de testes por dia atingido                                                   |
+| `LAB_TURNO_FORA_DE_ORDEM`, `LAB_RESPOSTA_DIVERGENTE`, `LAB_SESSAO_ENCERRADA` | 409  | Situação que não é a atual; resposta já dada de outra forma; teste cancelado        |
+| `LAB_EM_PROCESSAMENTO`                                                       | 409  | Outra requisição está processando este turno. Tentar de novo em instantes           |
+| `LAB_TEMPO_NAO_ESGOTADO`                                                     | 409  | O cliente avisou antes do prazo (traz `tempoRestanteMs`)                            |
+| `LAB_TESTE_EM_ANDAMENTO`                                                     | 409  | Resultado pedido antes do fim                                                       |
+| `LAB_IA_INDISPONIVEL`, `LAB_IA_RESPOSTA_INVALIDA`                            | 502  | A IA não respondeu / respondeu fora do contrato. O participante pode tentar de novo |
+
+### Variáveis de ambiente
+
+`lerConfigDoLab(process.env)` lê: `LAB_TOLERANCIA_TEMPO_S` (**obrigatória, sem valor padrão**), `LAB_LIMITE_TESTES_DIA` (opcional, sem limite se ausente) e `LAB_IA_TIMEOUT_MS` (padrão 25 000; fica abaixo dos 30 s do cliente web). `LAB_IA_URL` e `LAB_IA_TOKEN` pertencem ao cliente HTTP, ainda por fazer.
+
+### Decisões que tomei e o negócio pode rever
+
+1. **Um teste em andamento por participante** (índice no banco). Iniciar de novo retoma o mesmo, sem nova chamada à IA e sem zerar o relógio.
+2. **Sem valor padrão para a tolerância de rede.** O valor muda a nota de quem responde no limite e a documentação não o define; o motor se recusa a subir sem ele.
+3. **"Hoje", para o limite diário, é o dia em `America/Sao_Paulo`.** Teste cancelado não conta. O limite em si segue em aberto (sem limite se a variável não existir).
+4. **O alerta amarelo não deduplica entre testes**: dispara em cada teste que cumpre a regra, mesmo que o anterior ainda esteja aberto.
+5. **O aviso de tempo esgotado é aceito quando o relógio bruto do servidor passa do limite**, sem descontar a tolerância (a tolerância só vale para respostas, a favor do participante).
+6. **O campo livre tem teto de 1000 caracteres**: proteção contra abuso (o texto vai para a Guarda e para a IA, que cobram por token), não regra pedagógica.
+7. **A resposta durante o teste inclui `tempoRestanteMs`**, além do que a documentação lista, para o relógio sobreviver a um recarregamento.
+8. **A versão do termo (`2026-1`) é um marcador**: o texto do termo ainda não existe.
+9. **Migração 0016** (`ux_sessao_em_andamento_por_participante` e `turno.processando_ate`), com `down.sql`.
+
 ## Pendências
 
+- Rotas HTTP do módulo e cliente HTTP real da IA (token de serviço, ID token do Cloud Run, timeout): dependem do alinhamento com o serviço Python.
 - Alinhar o contrato com o serviço Python (Etapa 2): itens marcados como proposta acima. Dependem do `agent.py` e do prompt de desenvolvimento.
-- Limite de testes por dia: decisão de negócio em aberto. Por ora é a variável `LAB_LIMITE_TESTES_DIA` do backend; se virar configuração editável, entra uma tabela na Etapa 3.
-- Política de falha da IA no meio de um teste (retomar, cancelar): Etapa 3. O status `cancelada` já existe.
+- Limite de testes por dia: decisão de negócio em aberto. Por ora é a variável `LAB_LIMITE_TESTES_DIA` do backend; se virar configuração editável, entra uma tabela.
+- Desistir ou cancelar um teste em andamento: o status `cancelada` existe e é respeitado, mas nenhum fluxo o aciona ainda. Enquanto isso, um teste abandonado fica aberto e é retomado na volta do participante.
 - Tempo limite por situação de cada molde: decisão de negócio em aberto.
 - Curador e escopo do RH (`UserScope`): ao montar turmas (Etapa 5), decidir se o RH só pode incluir colaboradores das operações do seu escopo. A matriz hoje não olha o escopo.
 - Agregados com mínimo de 5 pessoas por recorte: a matriz já limita `lab_gestao` a agregados; o cálculo do recorte entra com o painel da gestão (versão 2).
