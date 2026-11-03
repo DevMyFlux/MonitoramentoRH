@@ -37,6 +37,8 @@ import { ScheduleRepository } from "./modules/scheduling/schedule-repository.js"
 import { registerScheduleRoutes } from "./modules/scheduling/schedule-routes.js";
 import { registerEmployeeScheduleRoutes } from "./modules/scheduling/employee-schedule-routes.js";
 import { UserRepository } from "./modules/users/user-repository.js";
+import { criarMotorDoLab, type InjecaoDoLab } from "./modules/leadership-lab/lab-modulo.js";
+import { registrarRotasDoLab } from "./modules/leadership-lab/lab-routes.js";
 
 const version = "0.0.0";
 
@@ -60,7 +62,9 @@ function getErrorMessage(error: unknown): string {
   return "Requisicao invalida.";
 }
 
-export async function buildApp(): Promise<FastifyInstance> {
+// `lab` só existe para testes: injeta a IA e a configuração do Leadership Lab no lugar da leitura
+// do ambiente. Em produção, buildApp() é chamado sem argumentos.
+export async function buildApp(opcoes: { lab?: InjecaoDoLab } = {}): Promise<FastifyInstance> {
   const app = Fastify({
     logger: { redact: ["req.headers.authorization", "req.headers.cookie"] }
   });
@@ -229,6 +233,24 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(async a => registerRecruitmentRoutes(a, userRepository, prisma), { prefix: apiPrefix });
   await app.register(async a => registerWorkspaceRoutes(a, userRepository, prisma), { prefix: apiPrefix });
   await app.register(async a => registerEmployeeScheduleRoutes(a, userRepository, prisma), { prefix: apiPrefix });
+
+  // Leadership Lab: só liga com LAB_IA_URL definida; ligado e mal configurado, a subida falha com a
+  // mensagem do que falta. Desligado, as rotas simplesmente não existem.
+  const motorDoLab = criarMotorDoLab({
+    db: prisma,
+    env: process.env,
+    logger: app.log,
+    ...(opcoes.lab ? { injecao: opcoes.lab } : {})
+  });
+  if (motorDoLab) {
+    await app.register(
+      async (versionedApp) =>
+        registrarRotasDoLab(versionedApp, userRepository, { db: prisma, motor: motorDoLab }),
+      { prefix: `${apiPrefix}/leadership-lab` }
+    );
+  } else {
+    app.log.info("Leadership Lab desativado: LAB_IA_URL não definida.");
+  }
 
   // Production deploy serves the built web app (apps/web/dist, copied to
   // dist/public alongside this bundled server — see scripts/bundle.mjs) from
