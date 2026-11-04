@@ -71,7 +71,7 @@ export function ContestarResultado({ resultado }: { resultado: LabResultado }) {
           <label htmlFor="ponto-da-contestacao">O que você contesta</label>
           <select
             id="ponto-da-contestacao"
-            className="h-12 rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal text-slate-950 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
+            className="h-12 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm font-normal text-slate-950 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
             value={ponto}
             onChange={(e) => setPonto(e.target.value)}
           >

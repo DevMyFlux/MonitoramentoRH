@@ -1,6 +1,6 @@
 import type { LabPainel, LabSkillDoPainel } from "@my-flux/shared";
 import { lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Badge, LoadingState, Skeleton } from "../../components/ui";
 import { cn } from "../../lib/cn";
 import { AcaoDoPainel } from "../../features/leadership-lab/componentes/acao-do-painel";
@@ -18,6 +18,7 @@ import { descreverErro } from "../../features/leadership-lab/erros";
 import { useAceitarTermo, useIniciarTeste, usePainel } from "../../features/leadership-lab/hooks";
 import {
   formatarDataCurta,
+  formatarDataEHora,
   formatarNumero,
   nomeDoAlerta,
   nomeDoTipoDeSkill
@@ -195,6 +196,43 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
             A tendência da sua evolução aparece depois de 3 testes concluídos (você fez{" "}
             {indicadores.testesFeitos}).
           </p>
+        )}
+      </Cartao>
+
+      <Cartao
+        titulo="Seus testes"
+        descricao="Abra um resultado para rever as suas escolhas, o nível validado pelo RH e, se discordar de algum ponto, contestar."
+      >
+        {evolucao.pontos.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            Quando você concluir um teste, ele aparece aqui, com o link para o resultado.
+          </p>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {[...evolucao.pontos].reverse().map((ponto) => (
+              <li
+                key={ponto.resultadoId}
+                className="flex flex-wrap items-center justify-between gap-2 py-2.5"
+              >
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <span className="font-medium text-slate-900">
+                    {formatarDataEHora(ponto.concluidaEm)}
+                  </span>
+                  <span className="text-slate-600">
+                    Aderência {formatarNumero(ponto.aderenciaGeral)}%
+                  </span>
+                  <SeloDeValidacao status={ponto.statusValidacao} />
+                </div>
+                <Link
+                  to={`/lab/resultado/${ponto.sessaoId}`}
+                  aria-label={`Ver o resultado do teste de ${formatarDataEHora(ponto.concluidaEm)}`}
+                  className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+                >
+                  Ver resultado
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
       </Cartao>
 
