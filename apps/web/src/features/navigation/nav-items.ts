@@ -3,6 +3,8 @@ import {
   Activity,
   CalendarDays,
   Compass,
+  ClipboardList,
+  SlidersHorizontal,
   FileCheck2,
   FileCog,
   FileWarning,
@@ -64,8 +66,23 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     label: "Desenvolvimento",
-    // O participante do Leadership Lab é o perfil COMUM (a matriz de permissões do módulo).
-    items: [{ label: "Leadership Lab", href: "/lab", icon: Compass, roles: ["COMUM"] }]
+    // Cada perfil vê a sua parte do Leadership Lab (a matriz de permissões do módulo): o participante
+    // é o COMUM, quem acompanha é o RH e quem configura os moldes é ADMIN ou DEV.
+    items: [
+      { label: "Leadership Lab", href: "/lab", icon: Compass, roles: ["COMUM"] },
+      {
+        label: "Acompanhamento do Lab",
+        href: "/lab/rh",
+        icon: ClipboardList,
+        roles: ["RH"]
+      },
+      {
+        label: "Configuração do Lab",
+        href: "/lab/config",
+        icon: SlidersHorizontal,
+        roles: ["ADMIN", "DEV"]
+      }
+    ]
   },
   {
     label: "Estrutura e contratos",

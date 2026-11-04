@@ -2,6 +2,7 @@ export * from "./holidays.js";
 export * from "./leadership-lab.js";
 export * from "./leadership-lab-acesso.js";
 export * from "./leadership-lab-api.js";
+export * from "./leadership-lab-cadastro-api.js";
 export * from "./leadership-lab-calculos.js";
 export * from "./parity-rotation.js";
 export * from "./schedule-codes.js";

@@ -39,6 +39,7 @@ export function assertAcesso(ator: LabAtor, acao: LabAcao, alvo: AlvoLab = {}): 
       );
     case "alheio":
     case "fora-da-turma":
+    case "fora-do-escopo":
       throw new HttpError(404, LAB_NAO_ENCONTRADO.code, LAB_NAO_ENCONTRADO.message);
     default: {
       // Se o tipo MotivoNegacao ganhar um valor novo, isto deixa de compilar.

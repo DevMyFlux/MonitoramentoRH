@@ -73,6 +73,10 @@ const podem: Record<LabAcao, NomeDoAtor[]> = {
   "contestacao:decidir": curadores,
   "turma:listar": curadores,
   "turma:criar": curadores,
+  "turma:atualizar": curadores,
+  "participante:listar": curadores,
+  "participante:cadastrar": curadores,
+  "participante:atualizar": curadores,
   "agregados:ler": gestores,
   "config-moldes:ler": administradores,
   "config-moldes:atualizar": administradores
@@ -141,12 +145,23 @@ describe("estrutura da matriz (vale para qualquer ação que se acrescente)", ()
     }
   });
 
-  it("participante alcança só dados próprios; curador, só os da turma", () => {
+  it("participante alcança só dados próprios; curador, só os da turma e o cadastro do seu escopo", () => {
     for (const c of celulas.filter((x) => x.papel === "participante")) {
       expect(c.escopo, c.acao).toBe("proprios");
     }
     for (const c of celulas.filter((x) => x.papel === "curador")) {
-      expect(c.escopo, c.acao).toBe("turma");
+      expect(["turma", "escopo-do-rh"], c.acao).toContain(c.escopo);
+    }
+  });
+
+  it("o cadastro dos participantes é do curador, nunca da gestão nem do administrador", () => {
+    for (const acao of [
+      "participante:listar",
+      "participante:cadastrar",
+      "participante:atualizar"
+    ] as const) {
+      expect(Object.keys(labMatrizAcesso[acao]), acao).toEqual(["curador"]);
+      expect(labMatrizAcesso[acao].curador, acao).toBe("escopo-do-rh");
     }
   });
 
@@ -160,7 +175,9 @@ describe("estrutura da matriz (vale para qualquer ação que se acrescente)", ()
   });
 
   it("nenhum dado individual chega a gestão, administrador ou especialista", () => {
-    const comDadoDePessoa = celulas.filter((c) => c.escopo === "proprios" || c.escopo === "turma");
+    const comDadoDePessoa = celulas.filter(
+      (c) => c.escopo === "proprios" || c.escopo === "turma" || c.escopo === "escopo-do-rh"
+    );
     for (const c of comDadoDePessoa) {
       expect(["participante", "curador"], `${c.acao} -> ${c.papel}`).toContain(c.papel);
     }
@@ -218,7 +235,7 @@ describe("escopo dos dados: o participante só alcança o que é seu", () => {
 
 describe("escopo dos dados: o curador só alcança as turmas que acompanha", () => {
   const turma = new Set(["participante-1", "participante-3"]);
-  const acoesDoCurador = labAcoes.filter((a) => "curador" in labMatrizAcesso[a]);
+  const acoesDoCurador = labAcoes.filter((a) => labMatrizAcesso[a].curador === "turma");
 
   it.each(acoesDoCurador)("%s: participante da turma -> permitido", (acao) => {
     expect(
@@ -313,5 +330,66 @@ describe("resultado:ler atende participante e curador", () => {
         participantesDasTurmas: turma
       })
     ).toBe(false);
+  });
+});
+
+describe("escopo dos dados: o curador só cadastra colaboradores das operações do seu escopo", () => {
+  const acoesDeCadastro = labAcoes.filter((a) => labMatrizAcesso[a].curador === "escopo-do-rh");
+
+  it("são as três ações de participante", () => {
+    expect([...acoesDeCadastro].sort()).toEqual([
+      "participante:atualizar",
+      "participante:cadastrar",
+      "participante:listar"
+    ]);
+  });
+
+  it.each(acoesDeCadastro)("%s: colaborador dentro do escopo -> permitido", (acao) => {
+    expect(avaliarAcesso(atores.rh, acao, { dentroDoEscopoDoRh: true })).toEqual({
+      permitido: true
+    });
+  });
+
+  it.each(acoesDeCadastro)("%s: colaborador fora do escopo -> fora-do-escopo", (acao) => {
+    expect(avaliarAcesso(atores.rh, acao, { dentroDoEscopoDoRh: false })).toEqual({
+      permitido: false,
+      motivo: "fora-do-escopo"
+    });
+  });
+
+  it.each(acoesDeCadastro)("%s: sem alvo (listar, buscar) passa: a consulta filtra", (acao) => {
+    expect(podeExecutar(atores.rh, acao)).toBe(true);
+  });
+
+  it.each(acoesDeCadastro)(
+    "%s: quem não é curador é negado por perfil, mesmo dentro do escopo",
+    (acao) => {
+      for (const nome of [
+        "comum",
+        "comumSemVinculo",
+        "admin",
+        "dev",
+        "adminGestao",
+        "comumGestao"
+      ] as const) {
+        expect(
+          avaliarAcesso(atores[nome], acao, { dentroDoEscopoDoRh: true }),
+          `${nome} ${acao}`
+        ).toEqual({
+          permitido: false,
+          motivo: "perfil"
+        });
+      }
+    }
+  );
+
+  it("estar dentro do escopo não dá acesso a resultado nem a turma alheia", () => {
+    // O escopo do RH é só de cadastro: não entra no cálculo do escopo da turma.
+    expect(
+      avaliarAcesso(atores.rh, "resultado:ler", {
+        participanteId: "participante-9",
+        dentroDoEscopoDoRh: true
+      })
+    ).toEqual({ permitido: false, motivo: "fora-da-turma" });
   });
 });
