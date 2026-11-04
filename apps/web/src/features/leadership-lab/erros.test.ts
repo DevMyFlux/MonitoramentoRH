@@ -1,4 +1,8 @@
-import { labCodigosDeErro, labCodigosDeErroDoCadastro } from "@my-flux/shared";
+import {
+  labCodigosDeErro,
+  labCodigosDeErroDaCuradoria,
+  labCodigosDeErroDoCadastro
+} from "@my-flux/shared";
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../my-flux/client";
 import { RespostaInesperadaError } from "./api";
@@ -17,8 +21,18 @@ describe("descreverErro", () => {
     }
   });
 
-  it("todo código dos cadastros do RH também tem texto, e é a mensagem clara da API", () => {
-    for (const codigo of labCodigosDeErroDoCadastro) {
+  it("um código do módulo que a tela ainda não conhece vira a mensagem da API, não uma tela quebrada nem 'módulo desligado'", () => {
+    const erro = descreverErro(apiErro(404, "LAB_CODIGO_NOVO", "Algo novo aconteceu."));
+    expect(erro).toMatchObject({
+      tipo: "geral",
+      descricao: "Algo novo aconteceu.",
+      podeTentarDeNovo: false
+    });
+    expect(erro.titulo).not.toBe("");
+  });
+
+  it("todo código dos cadastros do RH e da curadoria também tem texto, e é a mensagem clara da API", () => {
+    for (const codigo of [...labCodigosDeErroDoCadastro, ...labCodigosDeErroDaCuradoria]) {
       const erro = descreverErro(apiErro(409, codigo, "Mensagem clara da API."));
       expect(erro.titulo, codigo).not.toBe("");
       expect(erro.descricao, codigo).toBe("Mensagem clara da API.");

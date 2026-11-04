@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { Badge, Button, LoadingState } from "../../components/ui";
 import { cn } from "../../lib/cn";
 import { Cartao, Estatistica } from "../../features/leadership-lab/componentes/cartao";
+import { ContestarResultado } from "../../features/leadership-lab/componentes/contestar-resultado";
 import { ErroDaTelaDoLab } from "../../features/leadership-lab/componentes/erro-da-tela";
 import { SeloDeValidacao } from "../../features/leadership-lab/componentes/selo-de-validacao";
 import { descreverErro } from "../../features/leadership-lab/erros";
@@ -108,40 +109,50 @@ function ResultadoCompleto({ resultado }: { resultado: LabResultado }) {
       {resultado.niveisPorSkill.length > 0 ? (
         <Cartao titulo="Nível por skill" descricao="De 1 a 5, nas skills que este teste avaliou.">
           <ul className="divide-y divide-slate-100">
-            {resultado.niveisPorSkill.map((skill) => (
-              <li
-                key={skill.skillId}
-                className="flex flex-wrap items-center justify-between gap-2 py-2.5"
-              >
-                <div>
-                  <p className="text-sm font-medium text-slate-900">{skill.nome}</p>
-                  <p className="text-xs text-slate-500">
-                    {skill.tipo ? `${nomeDoTipoDeSkill[skill.tipo]} · ` : ""}
-                    {skill.nEvidencias} {skill.nEvidencias === 1 ? "escolha" : "escolhas"}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="sr-only">Nível {skill.nivel} de 5</span>
-                  <span aria-hidden="true" className="flex gap-0.5">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <span
-                        key={n}
-                        className={cn(
-                          "h-2 w-4 rounded-sm",
-                          n <= skill.nivel ? "bg-emerald-600" : "bg-slate-200"
-                        )}
-                      />
-                    ))}
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className="w-8 text-right text-sm font-semibold text-slate-900"
-                  >
-                    {skill.nivel}/5
-                  </span>
-                </div>
-              </li>
-            ))}
+            {resultado.niveisPorSkill.map((skill) => {
+              // O que vale é o nível que o RH validou; antes da validação, o calculado.
+              const nivel = skill.nivelValidado ?? skill.nivel;
+              const ajustado = skill.nivelValidado !== null && skill.nivelValidado !== skill.nivel;
+              return (
+                <li
+                  key={skill.skillId}
+                  className="flex flex-wrap items-center justify-between gap-2 py-2.5"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">{skill.nome}</p>
+                    <p className="text-xs text-slate-500">
+                      {skill.tipo ? `${nomeDoTipoDeSkill[skill.tipo]} · ` : ""}
+                      {skill.nEvidencias} {skill.nEvidencias === 1 ? "escolha" : "escolhas"}
+                    </p>
+                    {ajustado ? (
+                      <p className="text-xs text-amber-800">
+                        Calculado: {skill.nivel}/5 · ajustado pelo RH na validação
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="sr-only">Nível {nivel} de 5</span>
+                    <span aria-hidden="true" className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <span
+                          key={n}
+                          className={cn(
+                            "h-2 w-4 rounded-sm",
+                            n <= nivel ? "bg-emerald-600" : "bg-slate-200"
+                          )}
+                        />
+                      ))}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="w-8 text-right text-sm font-semibold text-slate-900"
+                    >
+                      {nivel}/5
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </Cartao>
       ) : null}
@@ -153,6 +164,8 @@ function ResultadoCompleto({ resultado }: { resultado: LabResultado }) {
           ))}
         </ol>
       </Cartao>
+
+      <ContestarResultado resultado={resultado} />
 
       {resultado.sugestoes.length > 0 ? (
         <Cartao titulo="Sugestões para você">

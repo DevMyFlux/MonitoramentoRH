@@ -23,7 +23,17 @@ vi.mock("../../features/leadership-lab/api", async (importOriginal) => {
   };
 });
 
+// A contestação tem a sua própria bateria de testes (contestar-resultado.test.tsx); aqui ela só
+// precisa existir, sem contestações anteriores.
+vi.mock("../../features/leadership-lab/curadoria-api", () => ({
+  labCuradoriaApi: { minhasContestacoes: vi.fn().mockResolvedValue([]), contestar: vi.fn() }
+}));
+
 const api = vi.mocked(labApi);
+
+/** O item da situação na lista de escolhas (o seletor da contestação também diz "Situação N"). */
+const itemDaSituacao = async (numero: number) =>
+  (await screen.findAllByText(`Situação ${numero}`)).map((e) => e.closest("li")).find((li) => li)!;
 const abrir = () =>
   renderizar(<LabResultadoPage />, {
     rota: "/lab/resultado/sessao-1",
@@ -100,16 +110,14 @@ describe("tela de resultado", () => {
   it("cada situação: o texto, a opção escolhida, a aderência, a justificativa e a consequência", async () => {
     api.resultado.mockResolvedValue(resultado());
     abrir();
-    const situacao1 = (await screen.findByText("Situação 1")).closest("li")!;
+    const situacao1 = await itemDaSituacao(1);
     expect(within(situacao1).getByText("Aderência 100%")).toBeTruthy();
     expect(within(situacao1).getByText("Opção A da situação 1.")).toBeTruthy();
     expect(within(situacao1).getByText("Justificativa 1.")).toBeTruthy();
     expect(within(situacao1).getByText("Consequência 1.")).toBeTruthy();
     expect(within(situacao1).getByText("respondeu em 8 s")).toBeTruthy();
     // O marco é a situação 3.
-    expect(
-      within((await screen.findByText("Situação 3")).closest("li")!).getByText("Marco")
-    ).toBeTruthy();
+    expect(within(await itemDaSituacao(3)).getByText("Marco")).toBeTruthy();
     expect(within(situacao1).queryByText("Marco")).toBeNull();
   });
 
@@ -125,7 +133,7 @@ describe("tela de resultado", () => {
       })
     );
     abrir();
-    const situacao2 = (await screen.findByText("Situação 2")).closest("li")!;
+    const situacao2 = await itemDaSituacao(2);
     expect(within(situacao2).getByText("Sem resposta: o tempo acabou.")).toBeTruthy();
     expect(within(situacao2).getByText("Aderência 0%")).toBeTruthy();
     expect(within(situacao2).queryByText(/respondeu em/)).toBeNull();
@@ -158,5 +166,48 @@ describe("tela de resultado", () => {
     abrir();
     await screen.findByText("Sem conexão com o servidor");
     expect(screen.getByRole("button", { name: "Tentar novamente" })).toBeTruthy();
+  });
+  describe("o nível validado pelo RH", () => {
+    const comNivel = (nivel: number, nivelValidado: number | null) =>
+      resultado({
+        statusValidacao: nivelValidado === null ? "aguardando_validacao" : "ajustado",
+        niveisPorSkill: [
+          {
+            skillId: "gestao-os",
+            nome: "Gestão de OS e prioridades",
+            tipo: "hard",
+            nivel,
+            media: 85,
+            nEvidencias: 2,
+            nivelValidado
+          }
+        ]
+      });
+
+    it("antes da validação, vale o nível calculado, sem nota de ajuste", async () => {
+      api.resultado.mockResolvedValue(comNivel(4, null));
+      abrir();
+      await screen.findByText("Gestão de OS e prioridades");
+      expect(screen.getByText("Nível 4 de 5")).toBeTruthy();
+      expect(screen.getByText("4/5")).toBeTruthy();
+      expect(screen.queryByText(/ajustado pelo RH/)).toBeNull();
+    });
+
+    it("validado sem mudar o nível: o mesmo nível, sem nota de ajuste", async () => {
+      api.resultado.mockResolvedValue(comNivel(4, 4));
+      abrir();
+      await screen.findByText("Gestão de OS e prioridades");
+      expect(screen.getByText("Nível 4 de 5")).toBeTruthy();
+      expect(screen.queryByText(/ajustado pelo RH/)).toBeNull();
+    });
+
+    it("ajustado: vale o nível do RH, e diz qual era o calculado", async () => {
+      api.resultado.mockResolvedValue(comNivel(4, 3));
+      abrir();
+      await screen.findByText("Gestão de OS e prioridades");
+      expect(screen.getByText("Nível 3 de 5")).toBeTruthy();
+      expect(screen.getByText("3/5")).toBeTruthy();
+      expect(screen.getByText("Calculado: 4/5 · ajustado pelo RH na validação")).toBeTruthy();
+    });
   });
 });
