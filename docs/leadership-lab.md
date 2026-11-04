@@ -279,7 +279,7 @@ Ligado e mal configurado, o servidor **não sobe** e diz o que falta, em vez de 
 - Sessão inexistente, mal formada ou de outra pessoa respondem o mesmo 404.
 - Repetir uma requisição de resposta devolve **exatamente o mesmo corpo**.
 - `GET /sessoes/atual` devolve a situação em que o participante parou (com o tempo que resta, calculado no servidor) ou, se a resposta já foi dada mas a IA ainda não a avaliou, `{ tipo: "em-processamento" }`. Existe porque `POST /sessoes` também retoma, mas **começaria** um teste (e o relógio da situação 1) se não houvesse nenhum em andamento, por exemplo numa aba esquecida.
-- As rotas dos cadastros do RH (participantes e turmas) e da configuração dos moldes estão em "Cadastros do RH e configuração dos moldes (Etapa 5A)", mais abaixo. Ainda não há a contestação do participante, a curadoria (fila, validação, alertas, contestações e contribuições) e a gestão: são a Etapa 5B.
+- As rotas dos cadastros do RH (participantes e turmas) e da configuração dos moldes estão em "Cadastros do RH e configuração dos moldes (Etapa 5A)", mais abaixo. A curadoria e a contestação estão em "Curadoria do RH e contestação do participante (Etapa 5B)". Ainda não há a gestão (agregados).
 
 ### Cliente HTTP da IA
 
@@ -455,6 +455,53 @@ Cada perfil vê só a sua entrada no menu (no modo de teste sem login, todas, pa
 5. **Dois administradores salvando o mesmo molde ao mesmo tempo:** vale o último (é o estado desejado, inteiro). Para o piloto isso basta.
 6. **Os temas e o número de situações do molde não se editam por aqui:** vêm do conteúdo do teste.
 
+## Curadoria do RH e contestação do participante (Etapa 5B)
+
+O RH da turma revisa os resultados, valida (com ajuste de nível, se for o caso), acompanha os alertas e decide contestações e contribuições. O participante contesta um ponto do próprio resultado e lê a resposta. Tudo restrito às **turmas ativas** do curador (as da 5A).
+
+| Quem                 | Faz                                                                                 | Onde                                                                             |
+| -------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| RH (curador)         | Revisa e valida resultados; encerra alertas; decide contestações e contribuições    | Menu "Acompanhamento do Lab": abas Revisão, Alertas, Contestações, Contribuições |
+| Participante (COMUM) | Rever os próprios testes, ver o nível validado, contestar um ponto e ler a resposta | Painel ("Seus testes") e tela do resultado                                       |
+
+**Rotas** (em `lab-curadoria-routes.ts`; mesmo prefixo, mesmo `Cache-Control: no-store`; entradas estritas, com os schemas de `packages/shared/src/leadership-lab-curadoria-api.ts`):
+
+| Rota                                | Faz                                                                                 |
+| ----------------------------------- | ----------------------------------------------------------------------------------- |
+| `GET /pendencias`                   | Quanto espera uma decisão (os números das abas)                                     |
+| `GET /revisao?status=`              | A fila: resultados de testes **concluídos** dos participantes das turmas do curador |
+| `GET /revisao/:resultadoId`         | A ficha: avaliação por situação, skills, alertas, contribuições e contestações      |
+| `POST /resultados/:id/validacao`    | `{ ajustes?: [{ skillId, nivel }], justificativa? }`                                |
+| `GET /alertas?status=`              | Alertas (inclusive de teste em andamento)                                           |
+| `POST /alertas/:id/tratamento`      | `{ nota }`: encerra, com a nota da conversa de desenvolvimento                      |
+| `GET /contribuicoes?status=`        | Ideias dos participantes                                                            |
+| `POST /contribuicoes/:id/decisao`   | `{ decisao: "aprovada" \| "rejeitada" }`                                            |
+| `GET /contestacoes?status=`         | Contestações dos participantes                                                      |
+| `POST /contestacoes/:id/decisao`    | `{ decisao: "aceita" \| "rejeitada", nota }`                                        |
+| `POST /resultados/:id/contestacoes` | Participante: `{ ponto, motivo }`, só do próprio resultado                          |
+| `GET /resultados/:id/contestacoes`  | Participante: as próprias contestações, com a decisão e a nota (nunca quem decidiu) |
+
+**Regras e garantias** (todas com teste de integração contra PostgreSQL real e verificação por mutação):
+
+1. **Escopo = turmas ativas do curador** (a matriz `turma`). Fila, alertas, contribuições, contestações e pendências filtram por esse conjunto, e cada ação sobre um item confere o dono dele. Fora da turma, inexistente ou com id torto: o **mesmo 404**. Turma encerrada tira tudo da vista do curador.
+2. **A ficha só existe com o teste concluído.** Alertas e contribuições nascem durante o teste (o alerta vermelho, "para o curador ser avisado na hora", como diz a migração 0017) e por isso aparecem na lista com a marca "em andamento", mas sem a avaliação. A ficha nunca traz o que o serviço de IA devolveu (`respostaIa`, modelo, tokens, id da sessão da IA): um teste confere as chaves exatas da resposta.
+3. **Validar é definitivo e disputado com trava de linha** (`SELECT ... FOR UPDATE` no resultado): de dois curadores simultâneos, um valida e o outro recebe 409. Sem ajuste, o resultado vira "validado" e cada skill fica validada com o nível calculado; com ajuste, vira "ajustado": o nível novo vale, os demais ficam como calculados, e a justificativa é obrigatória (422 sem ela; ajuste igual ao calculado, de skill que não é do resultado ou repetido também é 422). Nada muda se algo falha.
+4. **Encerrar alerta, decidir contribuição e decidir contestação** usam atualização condicional (`updateMany ... WHERE status = ...`): um só vence, o outro recebe 409, e não se desfaz. Encerrar alerta e decidir contestação **exigem a nota** (o banco também exige, no alerta).
+5. **Auditoria** (`AuditLog`, na mesma transação): validação (`APPROVE`, com a justificativa no campo próprio e os ajustes de/para), alerta (`UPDATE`), contribuição e contestação (`APPROVE`/`REJECT`) e a criação da contestação (`CREATE`, com o perfil COMUM). O texto livre do participante e as notas **não são duplicados** na auditoria.
+6. **O participante só contesta e lê o que é dele.** Resultado alheio, inexistente ou com id torto: o mesmo 404. A resposta dele traz decisão, data e nota, **nunca o nome de quem decidiu**. A justificativa do ajuste fica com o RH.
+7. **O nível validado chega ao participante**: o resultado dele traz `nivelValidado` por skill (a tela mostra o nível do RH e diz qual era o calculado), e o painel já usava o validado. A tela "Seus testes", no painel, é o caminho de volta a cada resultado (antes só se via o resultado logo depois do teste).
+
+### Decisões que tomei e o negócio pode rever
+
+1. **Decidir uma contestação não altera o resultado sozinho.** "Aceita" registra a decisão e a nota. O ajuste de nível é feito na validação, e só enquanto o resultado aguarda validação. Com o resultado já validado, a decisão fica registrada e o resultado não muda (a tela do curador diz isso). Alternativa a decidir: permitir um segundo ajuste, com justificativa, quando a contestação for aceita.
+2. **Uma validação não se refaz.** Corrigir um erro do curador hoje exige intervenção no banco.
+3. **A nota da decisão de uma contestação é obrigatória**, aceita ou rejeitada, para o participante entender o que foi decidido.
+4. **O participante não vê a justificativa do ajuste**, só o nível validado e que houve ajuste.
+5. **O curador vê alertas e contribuições de teste em andamento** (é a intenção original do alerta vermelho), mas só abre a avaliação depois que o teste termina.
+6. **Os limites de texto** (nota e justificativa: 1000; ponto contestado: 200; motivo: 1000) são travas técnicas, não regra de negócio.
+7. **Sem texto de orientação por alerta**: a tela diz só que alerta é pedagógico, não disciplinar (decisão em aberto, como no painel).
+8. **Sem limite de contestações por resultado.** O participante pode abrir várias; a lista do curador tem teto de 200 itens.
+
 ### Para ver o Lab funcionando num ambiente
 
 Sem SQL. Em ordem:
@@ -462,9 +509,10 @@ Sem SQL. Em ordem:
 1. **Usuário:** criar o usuário de perfil COMUM (tela de Usuários).
 2. **Molde:** entrar como ADMIN ou DEV, abrir "Configuração do Lab", definir o tempo por situação do molde (decisão do negócio), marcar "Teste liberado" e marcar os cargos que o usam. Salvar.
 3. **Participante:** entrar como RH (com escopo sobre a operação do colaborador), abrir "Acompanhamento do Lab", "Cadastrar participante", buscar o colaborador e o usuário e confirmar.
-4. **Turma:** na aba "Turmas", criar a turma e incluir o participante (é ela que dá ao RH a visão dos resultados, na Etapa 5B).
+4. **Turma:** na aba "Turmas", criar a turma e incluir o participante (é ela que dá ao RH a visão dos resultados).
 5. **Teste:** o participante entra, aceita o termo e inicia.
-6. As variáveis `LAB_IA_URL`, `LAB_IA_TOKEN` e `LAB_TOLERANCIA_TEMPO_S` e, claro, o serviço de IA (Etapa 2), ou o modo demonstração (`LAB_MODO_DEMO`).
+6. **Curadoria:** o RH abre "Acompanhamento do Lab" (abre na aba Revisão), revisa a ficha, valida (ajustando níveis, se for o caso), encerra os alertas e decide as contribuições. O participante abre o resultado pelo painel ("Seus testes"), vê o nível validado e, se quiser, contesta; o RH responde na aba Contestações.
+7. As variáveis `LAB_IA_URL`, `LAB_IA_TOKEN` e `LAB_TOLERANCIA_TEMPO_S` e, claro, o serviço de IA (Etapa 2), ou o modo demonstração (`LAB_MODO_DEMO`).
 
 ### Decisões do front que o negócio pode rever
 
@@ -476,7 +524,7 @@ Sem SQL. Em ordem:
 ## Pendências
 
 - ID token do Cloud Run para o `ClienteIaHttp` (gancho `autorizacao`): depende de onde o RH roda.
-- Contestação do participante (`POST /resultados/:id/contestacoes`, e o botão na tela de resultado) e as rotas da curadoria e da gestão. (As do administrador, de configuração dos moldes, e as de cadastro do RH já existem: Etapa 5A.)
+- Rotas e tela da gestão (agregados, mínimo de 5 pessoas por recorte). As do administrador (configuração dos moldes), as do RH (cadastros, curadoria) e a contestação do participante já existem (Etapas 5A e 5B).
 - Texto do termo de ciência, do RH e do jurídico (a tela mostra um resumo provisório).
 - **Encerrar o modo demonstração** quando o serviço de IA real existir: remover `LAB_MODO_DEMO`, definir `LAB_IA_URL`, `LAB_IA_TOKEN` e `LAB_TOLERANCIA_TEMPO_S`, e escrever o script que limpa os testes da conta de demonstração (veja "Modo demonstração").
 - **Encerrar o modo de teste sem login** antes de pôr dados reais de colaboradores no ambiente: construir o front com `VITE_MODO_TESTE_SEM_LOGIN=false`, e trocar ou desativar as contas de demonstração do seed (a senha está no repositório, que é público) (decisão E).
@@ -485,6 +533,6 @@ Sem SQL. Em ordem:
 - Limite de testes por dia: decisão de negócio em aberto. Por ora é a variável `LAB_LIMITE_TESTES_DIA` do backend; se virar configuração editável, entra uma tabela.
 - Desistir ou cancelar um teste em andamento: o status `cancelada` existe e é respeitado, mas nenhum fluxo o aciona ainda. Enquanto isso, um teste abandonado fica aberto e é retomado na volta do participante.
 - Tempo limite por situação de cada molde: decisão de negócio em aberto. A tela "Configuração do Lab" já permite defini-lo, mas não sugere nenhum valor.
-- Curadoria (Etapa 5B): fila de revisão, validar e ajustar resultados, tratar alertas, decidir contestações e contribuições, e a contestação do participante. As turmas (feitas na 5A) já definem o que cada curador pode ler.
+- Curadoria: o que uma contestação aceita deve mudar no resultado, e se uma validação pode ser refeita (veja "Decisões que tomei e o negócio pode rever" na curadoria).
 - Se o RH também deve ligar cargos a moldes (hoje é do administrador), e se uma pessoa pode ser participante e curadora: veja "Decisões que tomei e o negócio pode rever" nos cadastros.
 - Agregados com mínimo de 5 pessoas por recorte: a matriz já limita `lab_gestao` a agregados; o cálculo do recorte entra com o painel da gestão (versão 2).

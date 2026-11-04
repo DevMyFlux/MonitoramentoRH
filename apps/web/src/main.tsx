@@ -36,6 +36,21 @@ const LabTurmasPage = lazy(() =>
 const LabTurmaPage = lazy(() =>
   import("./pages/lab/rh/lab-turma-page").then((m) => ({ default: m.LabTurmaPage }))
 );
+const LabRevisaoPage = lazy(() =>
+  import("./pages/lab/rh/lab-revisao-page").then((m) => ({ default: m.LabRevisaoPage }))
+);
+const LabFichaPage = lazy(() =>
+  import("./pages/lab/rh/lab-ficha-page").then((m) => ({ default: m.LabFichaPage }))
+);
+const LabAlertasPage = lazy(() =>
+  import("./pages/lab/rh/lab-alertas-page").then((m) => ({ default: m.LabAlertasPage }))
+);
+const LabContestacoesPage = lazy(() =>
+  import("./pages/lab/rh/lab-contestacoes-page").then((m) => ({ default: m.LabContestacoesPage }))
+);
+const LabContribuicoesPage = lazy(() =>
+  import("./pages/lab/rh/lab-contribuicoes-page").then((m) => ({ default: m.LabContribuicoesPage }))
+);
 const LabConfigPage = lazy(() =>
   import("./pages/lab/lab-config-page").then((m) => ({ default: m.LabConfigPage }))
 );
@@ -102,7 +117,47 @@ const router = createBrowserRouter([
       </PaginaDoLab>
     )
   },
-  { path: "/lab/rh", element: <Navigate to="/lab/rh/participantes" replace /> },
+  { path: "/lab/rh", element: <Navigate to="/lab/rh/revisao" replace /> },
+  {
+    path: "/lab/rh/revisao",
+    element: (
+      <PaginaDoLab breadcrumbs={["Acompanhamento", "Revisão"]}>
+        <LabRevisaoPage />
+      </PaginaDoLab>
+    )
+  },
+  {
+    path: "/lab/rh/revisao/:resultadoId",
+    element: (
+      <PaginaDoLab breadcrumbs={["Acompanhamento", "Revisão", "Resultado"]}>
+        <LabFichaPage />
+      </PaginaDoLab>
+    )
+  },
+  {
+    path: "/lab/rh/alertas",
+    element: (
+      <PaginaDoLab breadcrumbs={["Acompanhamento", "Alertas"]}>
+        <LabAlertasPage />
+      </PaginaDoLab>
+    )
+  },
+  {
+    path: "/lab/rh/contestacoes",
+    element: (
+      <PaginaDoLab breadcrumbs={["Acompanhamento", "Contestações"]}>
+        <LabContestacoesPage />
+      </PaginaDoLab>
+    )
+  },
+  {
+    path: "/lab/rh/contribuicoes",
+    element: (
+      <PaginaDoLab breadcrumbs={["Acompanhamento", "Contribuições"]}>
+        <LabContribuicoesPage />
+      </PaginaDoLab>
+    )
+  },
   {
     path: "/lab/rh/participantes",
     element: (

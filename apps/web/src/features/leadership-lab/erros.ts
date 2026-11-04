@@ -3,7 +3,14 @@
 // Função pura: recebe o erro e devolve o texto e o tipo, para a tela decidir o que mostrar (um
 // aviso, um botão de tentar de novo, um redirecionamento). Cada código estável da API tem a sua
 // frase aqui; um teste confere que nenhum código novo fica sem tratamento.
-import type { LabCodigoDeErro, LabCodigoDeErroDoCadastro } from "@my-flux/shared";
+import {
+  type LabCodigoDeErro,
+  type LabCodigoDeErroDaCuradoria,
+  type LabCodigoDeErroDoCadastro,
+  labCodigosDeErro,
+  labCodigosDeErroDaCuradoria,
+  labCodigosDeErroDoCadastro
+} from "@my-flux/shared";
 import { ApiError } from "../my-flux/client";
 import { RespostaInesperadaError } from "./api";
 
@@ -46,10 +53,9 @@ const semNovaTentativa = (tipo: TipoDeErro, titulo: string, descricao: string): 
 });
 
 /** O erro de um código estável do módulo. Os que trazem texto próprio e claro usam o da API. */
-function erroDoCodigo(
-  codigo: LabCodigoDeErro | LabCodigoDeErroDoCadastro,
-  mensagemDaApi: string
-): ErroDaTela {
+type CodigoConhecido = LabCodigoDeErro | LabCodigoDeErroDoCadastro | LabCodigoDeErroDaCuradoria;
+
+function erroDoCodigo(codigo: CodigoConhecido, mensagemDaApi: string): ErroDaTela {
   switch (codigo) {
     case "LAB_FORBIDDEN":
       return semNovaTentativa(
@@ -119,7 +125,8 @@ function erroDoCodigo(
         "O serviço de IA não respondeu",
         "Foi uma falha passageira. Tente de novo em instantes."
       );
-    // Cadastros do RH e configuração dos moldes: a mensagem da API já diz o que houve e o que fazer.
+    // Cadastros do RH, configuração dos moldes e curadoria (já validado, falta justificativa...): a
+    // mensagem da API já diz o que houve e o que fazer.
     case "LAB_PARTICIPANTE_JA_CADASTRADO":
     case "LAB_USUARIO_NAO_ELEGIVEL":
     case "LAB_COLABORADOR_NAO_ELEGIVEL":
@@ -130,19 +137,34 @@ function erroDoCodigo(
     case "LAB_MOLDE_SEM_TEMPO":
     case "LAB_CARGO_EM_OUTRO_MOLDE":
     case "LAB_CARGO_INEXISTENTE":
+    case "LAB_RESULTADO_JA_VALIDADO":
+    case "LAB_JUSTIFICATIVA_OBRIGATORIA":
+    case "LAB_AJUSTE_INVALIDO":
+    case "LAB_ALERTA_JA_TRATADO":
+    case "LAB_JA_DECIDIDO":
       return semNovaTentativa("geral", "Não foi possível concluir", mensagemDaApi);
   }
 }
 
-function ehCodigoDoLab(
-  codigo: string | undefined
-): codigo is LabCodigoDeErro | LabCodigoDeErroDoCadastro {
-  return codigo !== undefined && codigo.startsWith("LAB_");
+const codigosConhecidos: ReadonlySet<string> = new Set([
+  ...labCodigosDeErro,
+  ...labCodigosDeErroDoCadastro,
+  ...labCodigosDeErroDaCuradoria
+]);
+
+/** Um código que esta tela sabe tratar. Um código novo do servidor, que ainda não está aqui, não é. */
+function ehCodigoConhecido(codigo: string | undefined): codigo is CodigoConhecido {
+  return codigo !== undefined && codigosConhecidos.has(codigo);
 }
 
 export function descreverErro(erro: unknown): ErroDaTela {
   if (erro instanceof ApiError) {
-    if (ehCodigoDoLab(erro.code)) return erroDoCodigo(erro.code, erro.message);
+    if (ehCodigoConhecido(erro.code)) return erroDoCodigo(erro.code, erro.message);
+    // Um código do módulo que esta versão da tela ainda não conhece: a mensagem da API diz o que
+    // houve. Nunca vira "módulo desligado" nem uma tela quebrada.
+    if (erro.code?.startsWith("LAB_")) {
+      return semNovaTentativa("geral", "Não foi possível concluir", erro.message);
+    }
 
     // Qualquer 404 sem código do módulo é a rota que não existe: o módulo não está ligado.
     if (erro.status === 404) {

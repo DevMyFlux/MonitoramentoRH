@@ -831,11 +831,19 @@ export class MotorDoTeste {
   }
 
   private async montarVisaoDoResultado(sessao: LabSessao): Promise<VisaoDoResultado> {
-    const [resultado, turnos] = await Promise.all([
+    const [resultado, turnos, perfil] = await Promise.all([
       this.db.labResultado.findUniqueOrThrow({ where: { sessaoId: sessao.id } }),
-      this.db.labTurno.findMany({ where: { sessaoId: sessao.id }, orderBy: { numero: "asc" } })
+      this.db.labTurno.findMany({ where: { sessaoId: sessao.id }, orderBy: { numero: "asc" } }),
+      this.db.labPerfilSkill.findMany({
+        where: { sessaoId: sessao.id, nivelValidado: { not: null } },
+        select: { skillId: true, nivelValidado: true }
+      })
     ]);
-    return visaoDoResultado({ sessao, resultado, turnos });
+    const niveisValidados = new Map<string, number>();
+    for (const p of perfil) {
+      if (p.nivelValidado !== null) niveisValidados.set(p.skillId, p.nivelValidado);
+    }
+    return visaoDoResultado({ sessao, resultado, turnos, niveisValidados });
   }
 
   // =========================================================================

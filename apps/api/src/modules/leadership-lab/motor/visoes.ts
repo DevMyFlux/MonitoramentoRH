@@ -118,6 +118,8 @@ export type NivelDeSkillVisivel = {
   media: number;
   /** Quantas escolhas sustentam o nível. */
   nEvidencias: number;
+  /** O nível que o curador definiu ao validar; nulo enquanto o resultado aguarda validação. */
+  nivelValidado: number | null;
 };
 
 export type VisaoDoResultado = {
@@ -171,8 +173,10 @@ export function visaoDoResultado(args: {
       | "consequencia"
     >
   >;
+  /** O nível validado de cada skill (perfil_skill.nivel_validado), quando o curador já validou. */
+  niveisValidados?: ReadonlyMap<string, number>;
 }): VisaoDoResultado {
-  const { sessao, resultado, turnos } = args;
+  const { sessao, resultado, turnos, niveisValidados } = args;
   const niveis = niveisDoBanco.parse(resultado.niveisPorSkill);
   const ordem = new Map<string, number>(labSkillsPiloto.map((s, i) => [s.id, i]));
 
@@ -192,7 +196,8 @@ export function visaoDoResultado(args: {
           tipo: conhecida?.tipo ?? null,
           nivel: n.nivel,
           media: n.media,
-          nEvidencias: n.nEvidencias
+          nEvidencias: n.nEvidencias,
+          nivelValidado: niveisValidados?.get(skillId) ?? null
         };
       })
       .sort((a, b) => (ordem.get(a.skillId) ?? 99) - (ordem.get(b.skillId) ?? 99)),

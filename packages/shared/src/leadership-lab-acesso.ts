@@ -55,6 +55,7 @@ const matriz = {
   "sessao:responder": { participante: "proprios" },
   "sessao:tempo-esgotado": { participante: "proprios" },
   "contestacao:criar": { participante: "proprios" },
+  "contestacao:ler-proprias": { participante: "proprios" },
 
   // --- Participante e curador (GET /sessoes/:id/resultado)
   "resultado:ler": { participante: "proprios", curador: "turma" },

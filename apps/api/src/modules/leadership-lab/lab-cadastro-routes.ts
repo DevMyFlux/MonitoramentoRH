@@ -34,27 +34,18 @@ import {
   labCriarTurmaEntradaSchema,
   labIncluirNaTurmaEntradaSchema
 } from "@my-flux/shared";
-import { z } from "zod";
 import { authenticateRequest } from "../auth/auth-routes.js";
 import type { UserRepository } from "../users/user-repository.js";
-import { errosDoCadastro } from "./cadastro/erros.js";
 import { ConfigDosMoldes } from "./cadastro/moldes.js";
 import { ParticipantesDoLab } from "./cadastro/participantes.js";
 import { TurmasDoLab } from "./cadastro/turmas.js";
 import { carregarAtorLab } from "./lab-actor.js";
+import { idValido } from "./ids.js";
 
 /** Os corpos do cadastro são pequenos. */
 const LIMITE_DO_CORPO_BYTES = 16 * 1024;
 /** A lista de cargos de um molde pode chegar a 500 ids. */
 const LIMITE_DO_CORPO_DOS_MOLDES_BYTES = 64 * 1024;
-
-const uuid = z.uuid();
-
-/** Um id que nem é UUID não pode existir: responde o mesmo "não encontrado" de qualquer outro. */
-function idValido(valor: string): string {
-  if (!uuid.safeParse(valor).success) throw errosDoCadastro.naoEncontrado();
-  return valor;
-}
 
 type ComId = { Params: { id: string } };
 

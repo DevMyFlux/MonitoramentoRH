@@ -123,6 +123,12 @@ describe.skipIf(!ligado)("cadastros do Leadership Lab no navegador", () => {
     await entrar(page, rh);
     await page.waitForURL("**/colaboradores");
     await page.getByRole("link", { name: "Acompanhamento do Lab" }).click();
+    // O Acompanhamento abre no que pede decisão (a revisão); o cadastro é a aba Participantes.
+    await page.waitForURL("**/lab/rh/revisao");
+    await page
+      .getByRole("navigation", { name: "Áreas do acompanhamento" })
+      .getByRole("link", { name: "Participantes" })
+      .click();
     await page.waitForURL("**/lab/rh/participantes");
     // O cenário já tem um participante (o das outras telas); a Marina ainda não está na lista.
     await page

@@ -42,7 +42,7 @@ export type AmbienteE2e = {
   /** Um participante (COMUM) ligado a um colaborador de cargo de supervisor, com o termo por aceitar. */
   participante: PessoaDoE2e;
   /** Cria outro participante (COMUM) com o seu cargo, para testes independentes. */
-  novoParticipante(): Promise<PessoaDoE2e>;
+  novoParticipante(opcoes?: { nomeDoColaborador?: string }): Promise<PessoaDoE2e>;
   /** Um usuário RH, que não participa dos testes. */
   curador: PessoaDoE2e;
   /** Cria um usuário de qualquer perfil. `escopoGlobal` dá ao RH acesso a todas as operações. */
@@ -114,13 +114,16 @@ export async function subirAmbienteE2e(): Promise<AmbienteE2e> {
 
   const passwordHash = hashPassword(SENHA);
   let contador = 0;
-  const novoParticipante = async (): Promise<PessoaDoE2e> => {
+  const novoParticipante: AmbienteE2e["novoParticipante"] = async (opcoes = {}) => {
     contador += 1;
     const email = `participante${contador}@e2e.local`;
     const funcao = await criarCargoComMolde(banco.db.client, "supervisor");
     await criarParticipante(banco.db.client, banco.base, {
       usuario: { email, name: `Participante ${contador}`, passwordHash },
-      colaborador: { functionId: funcao }
+      colaborador: {
+        functionId: funcao,
+        ...(opcoes.nomeDoColaborador ? { name: opcoes.nomeDoColaborador } : {})
+      }
     });
     return { email, senha: SENHA };
   };

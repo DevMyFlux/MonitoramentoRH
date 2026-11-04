@@ -568,4 +568,62 @@ describe("painel do participante", () => {
       expect(screen.getAllByText("Aguardando validação").length).toBeGreaterThan(0);
     });
   });
+  describe("seus testes (o caminho de volta a cada resultado)", () => {
+    const ponto = (
+      n: number,
+      status: "aguardando_validacao" | "validado" | "ajustado" = "validado"
+    ) => ({
+      resultadoId: `r${n}`,
+      sessaoId: `s${n}`,
+      concluidaEm: `2026-03-0${n}T13:00:00.000Z`,
+      aderenciaGeral: 70 + n,
+      agilidade: 80,
+      statusValidacao: status,
+      nSituacoes: 5
+    });
+
+    it("sem testes, diz que o primeiro aparece ali", async () => {
+      api.painel.mockResolvedValue(painel());
+      abrir();
+      await screen.findByText("Seus testes");
+      expect(
+        screen.getByText(
+          "Quando você concluir um teste, ele aparece aqui, com o link para o resultado."
+        )
+      ).toBeTruthy();
+    });
+
+    it("lista cada teste, o mais recente primeiro, com o selo e o link para o resultado dele", async () => {
+      api.painel.mockResolvedValue(
+        painel({
+          indicadores: {
+            testesFeitos: 3,
+            testesValidados: 2,
+            aderenciaMedia: 72,
+            agilidadeMedia: 80,
+            ultimoTesteEm: AGORA
+          },
+          evolucao: {
+            pontos: [ponto(1), ponto(2, "ajustado"), ponto(3, "aguardando_validacao")],
+            tendenciaDisponivel: true
+          }
+        })
+      );
+      abrir();
+      const cartao = (await screen.findByText("Seus testes")).closest("section")!;
+      const itens = within(cartao).getAllByRole("listitem");
+      expect(itens).toHaveLength(3);
+      // O mais recente (03/03) primeiro.
+      expect(itens[0]!.textContent).toContain("Aderência 73%");
+      expect(within(itens[0]!).getByText("Aguardando validação")).toBeTruthy();
+      expect(within(itens[1]!).getByText("Validado com ajuste")).toBeTruthy();
+      expect(within(itens[2]!).getByText("Validado")).toBeTruthy();
+      const links = within(cartao).getAllByRole("link", { name: /Ver o resultado do teste de/ });
+      expect(links.map((l) => l.getAttribute("href"))).toEqual([
+        "/lab/resultado/s3",
+        "/lab/resultado/s2",
+        "/lab/resultado/s1"
+      ]);
+    });
+  });
 });

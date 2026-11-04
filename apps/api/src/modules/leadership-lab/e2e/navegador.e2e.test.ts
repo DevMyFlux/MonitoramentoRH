@@ -98,7 +98,13 @@ describe.skipIf(!ligado)("Leadership Lab no navegador", () => {
     await page.getByRole("heading", { level: 1, name: "Resultado do teste" }).waitFor();
     await page.getByText("Aguardando validação").first().waitFor();
     await page.getByText("Suas escolhas, situação por situação").waitFor();
-    expect(await page.getByText(/^Situação \d$/).count()).toBe(5);
+    // O seletor da contestação também lista "Situação N": a contagem é só da lista de escolhas.
+    expect(
+      await page
+        .locator("li")
+        .getByText(/^Situação \d$/)
+        .count()
+    ).toBe(5);
     await capturar(page, "05-resultado");
 
     // De volta ao painel: o teste já está nos números.

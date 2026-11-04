@@ -221,9 +221,12 @@ export const labNivelDeSkillSchema = z.object({
   skillId: z.string(),
   nome: z.string(),
   tipo: z.enum(labSkillTipos).nullable(),
+  /** O nível que o sistema calculou. */
   nivel: inteiro,
   media: z.number(),
-  nEvidencias: inteiro
+  nEvidencias: inteiro,
+  /** O nível que o curador definiu ao validar; nulo enquanto o resultado aguarda validação. */
+  nivelValidado: z.int().min(1).max(5).nullable().default(null)
 });
 export type LabNivelDeSkill = z.infer<typeof labNivelDeSkillSchema>;
 
