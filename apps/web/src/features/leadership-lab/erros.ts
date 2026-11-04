@@ -125,7 +125,8 @@ function erroDoCodigo(codigo: CodigoConhecido, mensagemDaApi: string): ErroDaTel
         "O serviço de IA não respondeu",
         "Foi uma falha passageira. Tente de novo em instantes."
       );
-    // Cadastros do RH e configuração dos moldes: a mensagem da API já diz o que houve e o que fazer.
+    // Cadastros do RH, configuração dos moldes e curadoria (já validado, falta justificativa...): a
+    // mensagem da API já diz o que houve e o que fazer.
     case "LAB_PARTICIPANTE_JA_CADASTRADO":
     case "LAB_USUARIO_NAO_ELEGIVEL":
     case "LAB_COLABORADOR_NAO_ELEGIVEL":
@@ -136,7 +137,6 @@ function erroDoCodigo(codigo: CodigoConhecido, mensagemDaApi: string): ErroDaTel
     case "LAB_MOLDE_SEM_TEMPO":
     case "LAB_CARGO_EM_OUTRO_MOLDE":
     case "LAB_CARGO_INEXISTENTE":
-    // Curadoria: a mensagem da API também diz o que houve (já validado, falta justificativa...).
     case "LAB_RESULTADO_JA_VALIDADO":
     case "LAB_JUSTIFICATIVA_OBRIGATORIA":
     case "LAB_AJUSTE_INVALIDO":
