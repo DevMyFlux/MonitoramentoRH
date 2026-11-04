@@ -13,6 +13,8 @@ export type RegistroDeAuditoria = {
   operacao?: { id: string; companyId: string; unitId: string } | undefined;
   antes?: unknown;
   depois?: unknown;
+  /** A justificativa dada por quem decidiu, quando a decisão exige uma (AuditLog.justification). */
+  justificativa?: string | undefined;
 };
 
 function json(valor: unknown): Prisma.InputJsonValue {
@@ -40,6 +42,7 @@ export async function registrarAuditoria(
         : {}),
       ...(registro.antes !== undefined ? { before: json(registro.antes) } : {}),
       ...(registro.depois !== undefined ? { after: json(registro.depois) } : {}),
+      ...(registro.justificativa !== undefined ? { justification: registro.justificativa } : {}),
       origin: "api"
     }
   });

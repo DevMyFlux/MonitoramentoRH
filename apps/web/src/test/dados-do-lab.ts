@@ -94,7 +94,8 @@ export function resultado(extra: Partial<LabResultado> = {}): LabResultado {
         tipo: "hard",
         nivel: 4,
         media: 85,
-        nEvidencias: 2
+        nEvidencias: 2,
+        nivelValidado: null
       }
     ],
     resumo: "Você conduziu o turno com atenção.",

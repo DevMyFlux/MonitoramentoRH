@@ -42,7 +42,8 @@ const resultado = {
       tipo: "hard",
       nivel: 4,
       media: 85,
-      nEvidencias: 2
+      nEvidencias: 2,
+      nivelValidado: null
     }
   ],
   resumo: "Bom desempenho.",
