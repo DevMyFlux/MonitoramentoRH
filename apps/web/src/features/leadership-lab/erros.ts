@@ -3,7 +3,7 @@
 // Função pura: recebe o erro e devolve o texto e o tipo, para a tela decidir o que mostrar (um
 // aviso, um botão de tentar de novo, um redirecionamento). Cada código estável da API tem a sua
 // frase aqui; um teste confere que nenhum código novo fica sem tratamento.
-import type { LabCodigoDeErro } from "@my-flux/shared";
+import type { LabCodigoDeErro, LabCodigoDeErroDoCadastro } from "@my-flux/shared";
 import { ApiError } from "../my-flux/client";
 import { RespostaInesperadaError } from "./api";
 
@@ -46,7 +46,10 @@ const semNovaTentativa = (tipo: TipoDeErro, titulo: string, descricao: string): 
 });
 
 /** O erro de um código estável do módulo. Os que trazem texto próprio e claro usam o da API. */
-function erroDoCodigo(codigo: LabCodigoDeErro, mensagemDaApi: string): ErroDaTela {
+function erroDoCodigo(
+  codigo: LabCodigoDeErro | LabCodigoDeErroDoCadastro,
+  mensagemDaApi: string
+): ErroDaTela {
   switch (codigo) {
     case "LAB_FORBIDDEN":
       return semNovaTentativa(
@@ -116,10 +119,24 @@ function erroDoCodigo(codigo: LabCodigoDeErro, mensagemDaApi: string): ErroDaTel
         "O serviço de IA não respondeu",
         "Foi uma falha passageira. Tente de novo em instantes."
       );
+    // Cadastros do RH e configuração dos moldes: a mensagem da API já diz o que houve e o que fazer.
+    case "LAB_PARTICIPANTE_JA_CADASTRADO":
+    case "LAB_USUARIO_NAO_ELEGIVEL":
+    case "LAB_COLABORADOR_NAO_ELEGIVEL":
+    case "LAB_TURMA_INATIVA":
+    case "LAB_PARTICIPANTE_INATIVO":
+    case "LAB_PARTICIPANTE_JA_NA_TURMA":
+    case "LAB_MOLDE_COM_TESTES_EM_ANDAMENTO":
+    case "LAB_MOLDE_SEM_TEMPO":
+    case "LAB_CARGO_EM_OUTRO_MOLDE":
+    case "LAB_CARGO_INEXISTENTE":
+      return semNovaTentativa("geral", "Não foi possível concluir", mensagemDaApi);
   }
 }
 
-function ehCodigoDoLab(codigo: string | undefined): codigo is LabCodigoDeErro {
+function ehCodigoDoLab(
+  codigo: string | undefined
+): codigo is LabCodigoDeErro | LabCodigoDeErroDoCadastro {
   return codigo !== undefined && codigo.startsWith("LAB_");
 }
 
@@ -157,4 +174,37 @@ export function descreverErro(erro: unknown): ErroDaTela {
 
   // fetch rejeitado (sem rede, servidor fora do ar) e tempo esgotado da requisição.
   return tentarDeNovo("Sem conexão com o servidor", "Verifique sua internet e tente de novo.");
+}
+
+/** Qual área do RH ou da administração mostra o erro: muda o que o 403 e o 404 significam. */
+export type AreaDoCadastro = "acompanhamento" | "configuracao";
+
+const QUEM_USA: Record<AreaDoCadastro, string> = {
+  acompanhamento: "do RH, que acompanha os participantes do Leadership Lab",
+  configuracao: "da administração do sistema"
+};
+
+/**
+ * Como `descreverErro`, para as telas do RH e da configuração. Muda só o que nelas tem outro
+ * sentido: o 403 ("esta área não é para o seu perfil", não "o Lab não é para o seu perfil") e o
+ * "não encontrado" (um cadastro que sumiu, ou que está fora do escopo do RH, e não um teste).
+ */
+export function descreverErroDoCadastro(erro: unknown, area: AreaDoCadastro): ErroDaTela {
+  if (erro instanceof ApiError) {
+    if (erro.code === "LAB_FORBIDDEN") {
+      return semNovaTentativa(
+        "sem-acesso",
+        "Esta área não é para o seu perfil",
+        `Ela é ${QUEM_USA[area]}. Se você precisa dela, fale com o responsável pelo sistema.`
+      );
+    }
+    if (erro.code === "LAB_NOT_FOUND") {
+      return semNovaTentativa(
+        "geral",
+        "Registro não encontrado",
+        "Ele não existe mais, ou está fora do que o seu acesso alcança. Atualize a página."
+      );
+    }
+  }
+  return descreverErro(erro);
 }

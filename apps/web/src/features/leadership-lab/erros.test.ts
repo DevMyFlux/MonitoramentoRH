@@ -1,8 +1,8 @@
-import { labCodigosDeErro } from "@my-flux/shared";
+import { labCodigosDeErro, labCodigosDeErroDoCadastro } from "@my-flux/shared";
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../my-flux/client";
 import { RespostaInesperadaError } from "./api";
-import { descreverErro } from "./erros";
+import { descreverErro, descreverErroDoCadastro } from "./erros";
 
 const apiErro = (status: number, code?: string, message = "Mensagem da API.") =>
   new ApiError(message, status, code);
@@ -14,6 +14,15 @@ describe("descreverErro", () => {
       expect(erro.titulo, codigo).not.toBe("");
       expect(erro.descricao, codigo).not.toBe("");
       expect(erro.tipo, codigo).toBeDefined();
+    }
+  });
+
+  it("todo código dos cadastros do RH também tem texto, e é a mensagem clara da API", () => {
+    for (const codigo of labCodigosDeErroDoCadastro) {
+      const erro = descreverErro(apiErro(409, codigo, "Mensagem clara da API."));
+      expect(erro.titulo, codigo).not.toBe("");
+      expect(erro.descricao, codigo).toBe("Mensagem clara da API.");
+      expect(erro.podeTentarDeNovo, codigo).toBe(false);
     }
   });
 
@@ -88,5 +97,39 @@ describe("descreverErro", () => {
     expect(JSON.stringify(descreverErro(apiErro(409, "LAB_EM_PROCESSAMENTO")))).not.toContain(
       "LAB_"
     );
+  });
+});
+
+describe("descreverErroDoCadastro", () => {
+  it("o 403 diz que a ÁREA não é para o perfil, e para quem ela é", () => {
+    const rh = descreverErroDoCadastro(apiErro(403, "LAB_FORBIDDEN"), "acompanhamento");
+    expect(rh).toMatchObject({
+      tipo: "sem-acesso",
+      titulo: "Esta área não é para o seu perfil",
+      podeTentarDeNovo: false
+    });
+    expect(rh.descricao).toContain("do RH");
+    const config = descreverErroDoCadastro(apiErro(403, "LAB_FORBIDDEN"), "configuracao");
+    expect(config.descricao).toContain("da administração do sistema");
+    // E não repete o texto do participante ("os testes são feitos pelos gestores").
+    expect(JSON.stringify([rh, config])).not.toContain("gestores participantes");
+  });
+
+  it("'não encontrado' é um cadastro que sumiu ou está fora do alcance, não um teste", () => {
+    const erro = descreverErroDoCadastro(apiErro(404, "LAB_NOT_FOUND"), "acompanhamento");
+    expect(erro).toMatchObject({ tipo: "geral", titulo: "Registro não encontrado" });
+    expect(erro.descricao).toMatch(/fora do que o seu acesso alcança/);
+  });
+
+  it("o resto segue o que descreverErro diz", () => {
+    for (const erro of [
+      apiErro(404),
+      apiErro(401, "INVALID_ACCESS_TOKEN"),
+      apiErro(500),
+      apiErro(409, "LAB_TURMA_INATIVA", "A turma está encerrada."),
+      new TypeError("Failed to fetch")
+    ]) {
+      expect(descreverErroDoCadastro(erro, "acompanhamento")).toEqual(descreverErro(erro));
+    }
   });
 });

@@ -45,6 +45,17 @@ export type AmbienteE2e = {
   novoParticipante(): Promise<PessoaDoE2e>;
   /** Um usuário RH, que não participa dos testes. */
   curador: PessoaDoE2e;
+  /** Cria um usuário de qualquer perfil. `escopoGlobal` dá ao RH acesso a todas as operações. */
+  criarPessoa(
+    papel: "RH" | "ADMIN" | "COMUM",
+    opcoes?: { nome?: string; email?: string; escopoGlobal?: boolean }
+  ): Promise<PessoaDoE2e>;
+  /** Um colaborador que ainda não é participante, em um cargo novo que ainda não está em molde algum. */
+  criarColaboradorComCargo(dados: {
+    nome: string;
+    matricula: string;
+    cargo: string;
+  }): Promise<{ colaboradorId: string; cargoId: string }>;
   fechar(): Promise<void>;
 };
 
@@ -131,6 +142,50 @@ export async function subirAmbienteE2e(): Promise<AmbienteE2e> {
   // O curador não precisa de colaborador, mas o fixture é reaproveitado por quem quiser um.
   void criarColaborador;
 
+  const roles: Record<string, string> = { RH: roleRh, COMUM: banco.base.roleId };
+  const criarPessoa: AmbienteE2e["criarPessoa"] = async (papel, opcoes = {}) => {
+    contador += 1;
+    if (!roles[papel]) {
+      roles[papel] = await inserir(banco.db.client, '"Role"', {
+        id: crypto.randomUUID(),
+        name: papel,
+        level: papel === "ADMIN" ? 3 : 1,
+        description: papel,
+        updatedAt: new Date().toISOString()
+      });
+    }
+    const email = opcoes.email ?? `${papel.toLowerCase()}${contador}@e2e.local`;
+    const id = await criarUsuario(banco.db.client, banco.base, {
+      email,
+      name: opcoes.nome ?? `${papel} ${contador}`,
+      passwordHash,
+      roleId: roles[papel]
+    });
+    if (opcoes.escopoGlobal) {
+      await inserir(banco.db.client, '"UserScope"', {
+        id: crypto.randomUUID(),
+        userId: id,
+        isGlobal: true,
+        updatedAt: new Date().toISOString()
+      });
+    }
+    return { email, senha: SENHA };
+  };
+
+  const criarColaboradorComCargo: AmbienteE2e["criarColaboradorComCargo"] = async (dados) => {
+    const cargoId = await inserir(banco.db.client, '"JobFunction"', {
+      id: crypto.randomUUID(),
+      name: dados.cargo,
+      updatedAt: new Date().toISOString()
+    });
+    const colaboradorId = await criarColaborador(banco.db.client, banco.base, {
+      name: dados.nome,
+      identifier: dados.matricula,
+      functionId: cargoId
+    });
+    return { colaboradorId, cargoId };
+  };
+
   return {
     url,
     ia,
@@ -138,6 +193,8 @@ export async function subirAmbienteE2e(): Promise<AmbienteE2e> {
     participante: await novoParticipante(),
     novoParticipante,
     curador: { email: emailDoCurador, senha: SENHA },
+    criarPessoa,
+    criarColaboradorComCargo,
     fechar: async () => {
       await app.close();
       await servico.fechar();

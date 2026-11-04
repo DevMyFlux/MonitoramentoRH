@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -29,6 +29,8 @@ function montar(perfil: string | null) {
   );
 }
 const lab = () => screen.queryByRole("link", { name: "Leadership Lab" });
+const acompanhamento = () => screen.queryByRole("link", { name: "Acompanhamento do Lab" });
+const configuracao = () => screen.queryByRole("link", { name: "Configuração do Lab" });
 
 describe("menu lateral", () => {
   // Estes testes são do comportamento COM login (o de produção quando o modo de teste é desligado).
@@ -55,6 +57,24 @@ describe("menu lateral", () => {
       expect(screen.getByRole("link", { name: "Escalas" })).toBeTruthy();
     }
   );
+
+  it("cada perfil vê a sua parte do Lab: RH acompanha, ADMIN e DEV configuram, COMUM participa", () => {
+    montar("RH");
+    expect(acompanhamento()?.getAttribute("href")).toBe("/lab/rh");
+    expect(configuracao()).toBeNull();
+    cleanup();
+
+    for (const perfil of ["ADMIN", "DEV"]) {
+      montar(perfil);
+      expect(configuracao()?.getAttribute("href")).toBe("/lab/config");
+      expect(acompanhamento()).toBeNull();
+      cleanup();
+    }
+
+    montar("COMUM");
+    expect(acompanhamento()).toBeNull();
+    expect(configuracao()).toBeNull();
+  });
 
   it("enquanto não se sabe quem está logado, o item restrito não aparece (e o resto sim)", () => {
     montar(null);
@@ -85,6 +105,15 @@ describe("menu lateral no modo de teste (todo visitante entra como DEV)", () => 
     (perfil) => {
       montar(perfil);
       expect(lab()?.getAttribute("href")).toBe("/lab");
+    }
+  );
+
+  it.each(["DEV", "ADMIN", "RH", "COMUM"])(
+    "%s encontra também as áreas do RH e da configuração",
+    (perfil) => {
+      montar(perfil);
+      expect(acompanhamento()?.getAttribute("href")).toBe("/lab/rh");
+      expect(configuracao()?.getAttribute("href")).toBe("/lab/config");
     }
   );
 

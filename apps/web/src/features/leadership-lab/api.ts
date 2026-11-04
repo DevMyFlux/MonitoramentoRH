@@ -27,9 +27,12 @@ export class RespostaInesperadaError extends Error {
   }
 }
 
-async function chamar<T>(
+export type MetodoHttp = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+
+/** Chama a API do módulo e confere a resposta com o schema compartilhado. */
+export async function chamar<T>(
   schema: ZodType<T>,
-  metodo: "GET" | "POST",
+  metodo: MetodoHttp,
   caminho: string,
   corpo?: unknown
 ): Promise<T> {

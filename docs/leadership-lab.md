@@ -112,7 +112,7 @@ A matriz fica em `packages/shared/src/leadership-lab-acesso.ts` (pura, o front p
 | `gestao`        | permissão `lab_gestao` (qualquer perfil)       | Só agregados                                                           |
 | `especialista`  | permissão `lab_especialista` (qualquer perfil) | Nada no piloto (versão 1: testes, nunca perfis)                        |
 
-Cada ação da matriz diz quais papéis a executam e **que dados cada um alcança** (`proprios`, `turma`, `agregados`, `configuracao`). Testes verificam a estrutura: nenhuma ação dá dado de pessoa a gestão, administrador ou especialista, e a tabela de resultados esperados cobre todas as ações.
+Cada ação da matriz diz quais papéis a executam e **que dados cada um alcança** (`proprios`, `turma`, `escopo-do-rh`, `agregados`, `configuracao`). Testes verificam a estrutura: nenhuma ação dá dado de pessoa a gestão, administrador ou especialista, e a tabela de resultados esperados cobre todas as ações.
 
 Respostas HTTP:
 
@@ -279,7 +279,7 @@ Ligado e mal configurado, o servidor **não sobe** e diz o que falta, em vez de 
 - Sessão inexistente, mal formada ou de outra pessoa respondem o mesmo 404.
 - Repetir uma requisição de resposta devolve **exatamente o mesmo corpo**.
 - `GET /sessoes/atual` devolve a situação em que o participante parou (com o tempo que resta, calculado no servidor) ou, se a resposta já foi dada mas a IA ainda não a avaliou, `{ tipo: "em-processamento" }`. Existe porque `POST /sessoes` também retoma, mas **começaria** um teste (e o relógio da situação 1) se não houvesse nenhum em andamento, por exemplo numa aba esquecida.
-- Ainda não há a contestação do participante nem as rotas do curador, do administrador e da gestão.
+- As rotas dos cadastros do RH (participantes e turmas) e da configuração dos moldes estão em "Cadastros do RH e configuração dos moldes (Etapa 5A)", mais abaixo. Ainda não há a contestação do participante, a curadoria (fila, validação, alertas, contestações e contribuições) e a gestão: são a Etapa 5B.
 
 ### Cliente HTTP da IA
 
@@ -405,15 +405,66 @@ Nada disso acontece se a conta não existir ou não for do perfil COMUM, e uma c
 
 **Para encerrar:** remova `LAB_MODO_DEMO` e publique de novo; o módulo desliga. Os registros ficam no banco e são fáceis de reconhecer: a operação "Demonstração do Leadership Lab" (com a empresa, o cliente e a unidade de mesmo tom), o colaborador `DEMO-LAB`, o cargo "Supervisor (demonstração)" e as sessões cujo `ia_sessao_id` começa com `demo.`. Esses testes são registros de verdade, em "aguardando validação"; vão aparecer na fila do curador quando a Etapa 5 existir. Como as chaves estrangeiras não têm cascata, apagar os testes exige remover as tabelas dependentes antes: o script de limpeza fica para quando o modo for encerrado.
 
+## Cadastros do RH e configuração dos moldes (Etapa 5A)
+
+O que antes só se fazia no banco (ligar o login ao colaborador, ligar o cargo ao molde, liberar o molde com o tempo) agora tem tela e API. A curadoria em si (fila de validação, alertas, contestações) é a Etapa 5B.
+
+**Quem faz o quê** (a matriz em `packages/shared/src/leadership-lab-acesso.ts`, com testes):
+
+| Quem                 | Faz                                                                          | Onde                                       |
+| -------------------- | ---------------------------------------------------------------------------- | ------------------------------------------ |
+| RH (curador)         | Cadastra, desativa e reativa participantes; cria e mantém as próprias turmas | Menu "Acompanhamento do Lab" (`/lab/rh`)   |
+| ADMIN e DEV          | Define o tempo por situação, libera o molde e liga os cargos do RH a ele     | Menu "Configuração do Lab" (`/lab/config`) |
+| Participante (COMUM) | Nada disto. Faz o teste                                                      | Menu "Leadership Lab" (`/lab`)             |
+
+Cada perfil vê só a sua entrada no menu (no modo de teste sem login, todas, para o Lab ser encontrado).
+
+**Rotas** (em `lab-cadastro-routes.ts`; mesmo prefixo, mesmo `Cache-Control: no-store`; corpos estritos, com os schemas de `packages/shared/src/leadership-lab-cadastro-api.ts`):
+
+| Rota                                               | Faz                                                                      |
+| -------------------------------------------------- | ------------------------------------------------------------------------ |
+| `GET /participantes`                               | Os participantes (ativos e desativados) das operações do escopo do RH    |
+| `POST /participantes`                              | `{ userId, employeeId }`: liga um usuário comum a um colaborador         |
+| `PATCH /participantes/:id`                         | `{ ativo }`: desativa ou reativa                                         |
+| `GET /colaboradores-elegiveis?busca=`              | Quem ainda pode virar participante (no máximo 20)                        |
+| `GET /usuarios-elegiveis?busca=`                   | Logins comuns ainda sem vínculo (no máximo 20)                           |
+| `GET /turmas`, `POST /turmas`                      | As turmas do próprio curador; cria                                       |
+| `GET /turmas/:id`, `PATCH /turmas/:id`             | O detalhe com os participantes; renomeia, encerra ou reabre              |
+| `POST /turmas/:id/participantes`                   | `{ participanteId }`: inclui                                             |
+| `DELETE /turmas/:id/participantes/:participanteId` | Tira da turma                                                            |
+| `GET /config/moldes`                               | Os 3 moldes, os cargos ativos do RH e os testes em andamento             |
+| `PUT /config/moldes/:nivel`                        | `{ tempoLimiteS, ativo, cargoIds }`: o estado desejado do molde, inteiro |
+
+**Regras e garantias** (todas com teste de integração contra PostgreSQL real e verificação por mutação):
+
+1. **Escopo do RH = o `UserScope` do sistema.** O RH só enxerga e cadastra colaboradores das operações do seu escopo (global, empresa, operação ou unidade), com as mesmas funções que o restante do sistema usa (`operationWhere` e `canAccessScope`). RH sem escopo nenhum não enxerga ninguém (falha fechado). A matriz ganhou o escopo `escopo-do-rh` para isto, e um teste obriga a listagem e a ação sobre um alvo a concordarem em todas as formas de escopo. Fora do escopo responde 404, igual a "não existe".
+2. **Quem pode ser participante:** usuário ativo de perfil COMUM, sem vínculo; colaborador ativo (ativo, de licença ou de férias), de operação ativa, sem vínculo. Usuário que não existe, está inativo ou não é comum recebe a mesma recusa (a resposta não confirma que a conta existe). As buscas exigem 2 letras e devolvem no máximo 20: a lista inteira nunca sai.
+3. **Nada é apagado.** Desativar o participante tira o acesso (o vínculo desativado vale como ausência de vínculo) e guarda o histórico; reativar devolve. Tirar da turma ou encerrar a turma tira do curador a visão dos resultados daquela pessoa, sem apagar nada.
+4. **Cada curador só vê as próprias turmas.** A de outro curador, mesmo para o RH global, responde 404.
+5. **O tempo por situação não muda com teste em andamento no molde** (o motor lê o tempo do molde a cada resposta). A troca e o início de um teste se serializam pela linha do molde (`SELECT ... FOR UPDATE`; o teste cobre a corrida com uma segunda conexão). Liberação e cargos podem mudar com teste em andamento: o teste em curso termina com o tempo que tinha.
+6. **Liberar exige tempo** (o banco também recusa). Um cargo não pode estar em dois moldes: tentar pôr um cargo que já é de outro molde dá 409 com o nome dele, e nada muda.
+7. **Toda mudança grava `AuditLog`** (entidades `LabParticipante`, `LabTurma`, `LabMolde`, com antes e depois) na mesma transação. Pedir o valor que já está não muda nada e não gera registro.
+8. **A tela não sugere tempo algum.** O molde nasce sem tempo e desligado; o campo vem vazio e diz que a decisão é do negócio. O limite de 1 a 3600 s é só trava contra erro de digitação.
+
+### Decisões que tomei e o negócio pode rever
+
+1. **Quem cadastra participantes é o RH**, no escopo dele (a documentação diz que o vínculo é "cadastrado pelo RH"). O administrador não vê pessoas.
+2. **Quem configura moldes, tempos e cargos é o administrador** (ADMIN e DEV): é "configuração de moldes e tempos" na matriz. Se o RH também deve ligar cargos a moldes, é uma ação a mais na matriz.
+3. **Colaborador de licença ou de férias pode ser participante**; desligado, inativo ou com admissão agendada, não.
+4. **O RH global (escopo global) enxerga todas as operações**, como no restante do sistema.
+5. **Dois administradores salvando o mesmo molde ao mesmo tempo:** vale o último (é o estado desejado, inteiro). Para o piloto isso basta.
+6. **Os temas e o número de situações do molde não se editam por aqui:** vêm do conteúdo do teste.
+
 ### Para ver o Lab funcionando num ambiente
 
-Ainda não há tela do RH para isto (é a Etapa 5), então o cadastro é feito no banco:
+Sem SQL. Em ordem:
 
-1. Um usuário de perfil COMUM (tela de Usuários).
-2. Ligar o usuário ao colaborador: `INSERT INTO leadership_lab.participante (user_id, employee_id) VALUES ('<id do usuário>', '<id do colaborador>');`
-3. O colaborador precisa ter cargo (`JobFunction`), e o cargo, um molde: `INSERT INTO leadership_lab.molde_cargo (job_function_id, molde_id) SELECT '<id do cargo>', id FROM leadership_lab.molde WHERE nivel = 'supervisor';`
-4. Liberar o molde: `UPDATE leadership_lab.molde SET ativo = true, tempo_limite_s = <SEGUNDOS> WHERE nivel = 'supervisor';`. O tempo por situação é decisão do negócio, e o banco recusa ativar sem tempo.
-5. As variáveis `LAB_IA_URL`, `LAB_IA_TOKEN` e `LAB_TOLERANCIA_TEMPO_S` e, claro, o serviço de IA (Etapa 2).
+1. **Usuário:** criar o usuário de perfil COMUM (tela de Usuários).
+2. **Molde:** entrar como ADMIN ou DEV, abrir "Configuração do Lab", definir o tempo por situação do molde (decisão do negócio), marcar "Teste liberado" e marcar os cargos que o usam. Salvar.
+3. **Participante:** entrar como RH (com escopo sobre a operação do colaborador), abrir "Acompanhamento do Lab", "Cadastrar participante", buscar o colaborador e o usuário e confirmar.
+4. **Turma:** na aba "Turmas", criar a turma e incluir o participante (é ela que dá ao RH a visão dos resultados, na Etapa 5B).
+5. **Teste:** o participante entra, aceita o termo e inicia.
+6. As variáveis `LAB_IA_URL`, `LAB_IA_TOKEN` e `LAB_TOLERANCIA_TEMPO_S` e, claro, o serviço de IA (Etapa 2), ou o modo demonstração (`LAB_MODO_DEMO`).
 
 ### Decisões do front que o negócio pode rever
 
@@ -425,15 +476,15 @@ Ainda não há tela do RH para isto (é a Etapa 5), então o cadastro é feito n
 ## Pendências
 
 - ID token do Cloud Run para o `ClienteIaHttp` (gancho `autorizacao`): depende de onde o RH roda.
-- Contestação do participante (`POST /resultados/:id/contestacoes`, e o botão na tela de resultado) e as rotas do curador, do administrador e da gestão.
+- Contestação do participante (`POST /resultados/:id/contestacoes`, e o botão na tela de resultado) e as rotas da curadoria e da gestão. (As do administrador, de configuração dos moldes, e as de cadastro do RH já existem: Etapa 5A.)
 - Texto do termo de ciência, do RH e do jurídico (a tela mostra um resumo provisório).
-- Cadastro de participantes, vínculo cargo → molde e liberação dos moldes: hoje só pelo banco (veja "Para ver o Lab funcionando num ambiente"); a tela do RH é a Etapa 5.
 - **Encerrar o modo demonstração** quando o serviço de IA real existir: remover `LAB_MODO_DEMO`, definir `LAB_IA_URL`, `LAB_IA_TOKEN` e `LAB_TOLERANCIA_TEMPO_S`, e escrever o script que limpa os testes da conta de demonstração (veja "Modo demonstração").
 - **Encerrar o modo de teste sem login** antes de pôr dados reais de colaboradores no ambiente: construir o front com `VITE_MODO_TESTE_SEM_LOGIN=false`, e trocar ou desativar as contas de demonstração do seed (a senha está no repositório, que é público) (decisão E).
 - Painel: média anônima da turma, cálculo da tendência e texto de orientação de cada alerta. Decisões de negócio em aberto (veja "Decisões do painel que o negócio pode rever").
 - Alinhar o contrato com o serviço Python (Etapa 2): itens marcados como proposta acima. Dependem do `agent.py` e do prompt de desenvolvimento.
 - Limite de testes por dia: decisão de negócio em aberto. Por ora é a variável `LAB_LIMITE_TESTES_DIA` do backend; se virar configuração editável, entra uma tabela.
 - Desistir ou cancelar um teste em andamento: o status `cancelada` existe e é respeitado, mas nenhum fluxo o aciona ainda. Enquanto isso, um teste abandonado fica aberto e é retomado na volta do participante.
-- Tempo limite por situação de cada molde: decisão de negócio em aberto.
-- Curador e escopo do RH (`UserScope`): ao montar turmas (Etapa 5), decidir se o RH só pode incluir colaboradores das operações do seu escopo. A matriz hoje não olha o escopo.
+- Tempo limite por situação de cada molde: decisão de negócio em aberto. A tela "Configuração do Lab" já permite defini-lo, mas não sugere nenhum valor.
+- Curadoria (Etapa 5B): fila de revisão, validar e ajustar resultados, tratar alertas, decidir contestações e contribuições, e a contestação do participante. As turmas (feitas na 5A) já definem o que cada curador pode ler.
+- Se o RH também deve ligar cargos a moldes (hoje é do administrador), e se uma pessoa pode ser participante e curadora: veja "Decisões que tomei e o negócio pode rever" nos cadastros.
 - Agregados com mínimo de 5 pessoas por recorte: a matriz já limita `lab_gestao` a agregados; o cálculo do recorte entra com o painel da gestão (versão 2).

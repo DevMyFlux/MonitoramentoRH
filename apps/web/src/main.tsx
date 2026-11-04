@@ -2,7 +2,7 @@
 import React, { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserRouter, RouterProvider, Link } from "react-router-dom";
+import { createBrowserRouter, Navigate, RouterProvider, Link } from "react-router-dom";
 import { App } from "./App";
 import { LoginPage } from "./pages/login-page";
 import { DashboardPage } from "./pages/dashboard-page";
@@ -26,6 +26,18 @@ const LabTestePage = lazy(() =>
 );
 const LabResultadoPage = lazy(() =>
   import("./pages/lab/lab-resultado-page").then((m) => ({ default: m.LabResultadoPage }))
+);
+const LabParticipantesPage = lazy(() =>
+  import("./pages/lab/rh/lab-participantes-page").then((m) => ({ default: m.LabParticipantesPage }))
+);
+const LabTurmasPage = lazy(() =>
+  import("./pages/lab/rh/lab-turmas-page").then((m) => ({ default: m.LabTurmasPage }))
+);
+const LabTurmaPage = lazy(() =>
+  import("./pages/lab/rh/lab-turma-page").then((m) => ({ default: m.LabTurmaPage }))
+);
+const LabConfigPage = lazy(() =>
+  import("./pages/lab/lab-config-page").then((m) => ({ default: m.LabConfigPage }))
 );
 function PaginaDoLab({
   breadcrumbs,
@@ -87,6 +99,39 @@ const router = createBrowserRouter([
     element: (
       <PaginaDoLab breadcrumbs={["Resultado"]}>
         <LabResultadoPage />
+      </PaginaDoLab>
+    )
+  },
+  { path: "/lab/rh", element: <Navigate to="/lab/rh/participantes" replace /> },
+  {
+    path: "/lab/rh/participantes",
+    element: (
+      <PaginaDoLab breadcrumbs={["Acompanhamento", "Participantes"]}>
+        <LabParticipantesPage />
+      </PaginaDoLab>
+    )
+  },
+  {
+    path: "/lab/rh/turmas",
+    element: (
+      <PaginaDoLab breadcrumbs={["Acompanhamento", "Turmas"]}>
+        <LabTurmasPage />
+      </PaginaDoLab>
+    )
+  },
+  {
+    path: "/lab/rh/turmas/:id",
+    element: (
+      <PaginaDoLab breadcrumbs={["Acompanhamento", "Turmas", "Turma"]}>
+        <LabTurmaPage />
+      </PaginaDoLab>
+    )
+  },
+  {
+    path: "/lab/config",
+    element: (
+      <PaginaDoLab breadcrumbs={["Configuração"]}>
+        <LabConfigPage />
       </PaginaDoLab>
     )
   },
