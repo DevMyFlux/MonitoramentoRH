@@ -88,6 +88,7 @@ export type LinhaDoUltimoResultado = {
 };
 
 export type DadosDoPainel = {
+  demonstracao: boolean;
   termo: { versaoAtual: string; aceitoEm: Date | null };
   inicio: { estado: EstadoDoInicio; situacaoAtual: number | null };
   indicadores: {
@@ -275,6 +276,7 @@ export function montarPainel(dados: DadosDoPainel): PainelDoParticipante {
   const media = (valor: number | null) => (valor === null ? null : arredondar(valor, 2));
 
   return {
+    demonstracao: dados.demonstracao,
     termo: {
       versaoAtual: termo.versaoAtual,
       aceito: termo.aceitoEm !== null,

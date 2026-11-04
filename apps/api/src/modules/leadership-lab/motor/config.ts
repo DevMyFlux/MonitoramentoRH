@@ -20,6 +20,11 @@ export type ConfigDoMotor = {
    * antes de o navegador desistir.
    */
   iaTimeoutMs: number;
+  /**
+   * Modo demonstração (LAB_MODO_DEMO, sem serviço de IA real): o motor usa a IA de demonstração e o
+   * painel avisa a tela. Ausente ou falso em produção normal.
+   */
+  demonstracao?: boolean;
 };
 
 export const IA_TIMEOUT_PADRAO_MS = 25_000;

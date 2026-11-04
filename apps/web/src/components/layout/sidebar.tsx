@@ -4,12 +4,14 @@ import { Link, NavLink } from "react-router-dom";
 import { useUsuarioAtual } from "../../features/auth/use-usuario-atual";
 import { itemVisivelPara, navigationGroups } from "../../features/navigation/nav-items";
 import { cn } from "../../lib/cn";
+import { modoDeTesteSemLogin } from "../../modo-de-teste";
 import { Brand } from "../brand";
 
 type SidebarProps = { isOpen?: boolean; onNavigate?: () => void };
 export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
   const [query, setQuery] = useState("");
   const perfil = useUsuarioAtual().data?.role;
+  const modoDeTeste = modoDeTesteSemLogin();
   const normalize = (value: string) =>
     value
       .normalize("NFD")
@@ -22,7 +24,7 @@ export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
       items: group.items.filter(
         (item) =>
           !item.hidden &&
-          itemVisivelPara(item, perfil) &&
+          itemVisivelPara(item, perfil, modoDeTeste) &&
           normalize(item.label).includes(normalize(query))
       )
     }))

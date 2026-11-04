@@ -50,6 +50,7 @@ function sessao(): SessaoComMolde {
 
 function dados(extra: Partial<DadosDoPainel> = {}): DadosDoPainel {
   return {
+    demonstracao: false,
     termo: { versaoAtual: "2026-1", aceitoEm: t("2026-03-01T09:00:00Z") },
     inicio: {
       estado: { tipo: "iniciar", molde: molde(), temas: ["Prioridade de OS"] },
@@ -619,6 +620,7 @@ describe("nada além do que o painel declara sai da montagem", () => {
     expect(Object.keys(p).sort()).toEqual([
       "acao",
       "alertas",
+      "demonstracao",
       "evolucao",
       "indicadores",
       "skills",
@@ -656,5 +658,13 @@ describe("nada além do que o painel declara sai da montagem", () => {
       "testesAguardandoValidacao",
       "testesConsiderados"
     ]);
+  });
+
+  it("o modo demonstração é só um sinal: liga e desliga sem mudar mais nada no painel", () => {
+    const normal = montarPainel(dados({ demonstracao: false }));
+    const demonstracao = montarPainel(dados({ demonstracao: true }));
+    expect(normal.demonstracao).toBe(false);
+    expect(demonstracao.demonstracao).toBe(true);
+    expect({ ...demonstracao, demonstracao: false }).toEqual(normal);
   });
 });

@@ -56,7 +56,7 @@ type LinhaDeAlertaBruta = {
 
 export type ArgumentosDoPainel = {
   participanteId: string;
-  config: Pick<ConfigDoMotor, "versaoTermo" | "limiteTestesDia" | "fusoHorario">;
+  config: Pick<ConfigDoMotor, "versaoTermo" | "limiteTestesDia" | "fusoHorario" | "demonstracao">;
   agora: Date;
 };
 
@@ -218,6 +218,7 @@ async function lerDadosDoPainel(tx: Tx, args: ArgumentosDoPainel): Promise<Dados
       : null;
 
   return {
+    demonstracao: config.demonstracao === true,
     termo: { versaoAtual: config.versaoTermo, aceitoEm: aceite?.aceitoEm ?? null },
     inicio: { estado, situacaoAtual: atual?.numero ?? null },
     indicadores,

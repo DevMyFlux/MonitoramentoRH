@@ -574,4 +574,18 @@ describe.skipIf(!integrationEnabled)("painel do participante", () => {
       expect(depois.evolucao.pontos).toHaveLength(2);
     });
   });
+
+  describe("modo demonstração", () => {
+    it("o painel só diz que é demonstração quando a configuração do motor diz", async () => {
+      const c = await novoCenario(banco);
+      expect((await c.motor.painel(c.ator)).demonstracao).toBe(false);
+
+      const emDemonstracao = await consultarPainel(banco.prisma, {
+        participanteId: c.ctx.participanteId,
+        config: { ...c.config, demonstracao: true },
+        agora: c.relogio.agora()
+      });
+      expect(emDemonstracao.demonstracao).toBe(true);
+    });
+  });
 });

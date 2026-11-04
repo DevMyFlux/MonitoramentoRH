@@ -172,6 +172,8 @@ export type SugestoesDoPainel = {
 // ---------------------------------------------------------------------------
 
 export type PainelDoParticipante = {
+  /** Modo demonstração: a IA e o conteúdo são de exemplo. A tela avisa. */
+  demonstracao: boolean;
   termo: { versaoAtual: string; aceito: boolean; aceitoEm: Date | null };
   acao: AcaoDoPainel;
   indicadores: IndicadoresDoPainel;

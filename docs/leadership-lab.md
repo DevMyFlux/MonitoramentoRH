@@ -255,6 +255,7 @@ As pré-condições de início ficam num só lugar, `avaliarInicio` (`precondico
 | `LAB_TOLERANCIA_TEMPO_S` | sim, se `LAB_IA_URL` existe   | **Sem valor padrão.** Segundos de latência de rede descontados do tempo de resposta (0 = nada) |
 | `LAB_LIMITE_TESTES_DIA`  | não                           | Testes por participante por dia. Sem ela, sem limite                                           |
 | `LAB_IA_TIMEOUT_MS`      | não                           | Tempo máximo de cada chamada à IA. Padrão 25 000; fica abaixo dos 30 s do cliente web          |
+| `LAB_MODO_DEMO`          | não                           | `true` liga o **modo demonstração** (veja a seção própria). Só vale sem `LAB_IA_URL`           |
 
 Ligado e mal configurado, o servidor **não sobe** e diz o que falta, em vez de começar a falhar na frente do participante. Desligado, o resto do sistema sobe exatamente como antes.
 
@@ -372,9 +373,37 @@ As três páginas e a biblioteca de gráficos (Recharts, só linha e radar) são
 
 ### Modo de teste: sem login (temporário)
 
-Por decisão do dono do sistema, **para o primeiro momento de teste o front não pede login**: todo visitante entra como o usuário DEV do seed (`dev@myflux.local`), como era antes da Etapa 4. Isto vale em produção, e a senha de demonstração vai no pacote. Quem abre o endereço tem acesso de DEV (escopo global: dados de todos os colaboradores e gestão de usuários). Como o perfil DEV não faz testes do Lab, **o item "Leadership Lab" não aparece nesse modo**; para ver as telas é preciso entrar como um usuário COMUM ligado a um colaborador.
+Por decisão do dono do sistema, **para o primeiro momento de teste o front não pede login**: todo visitante entra como o usuário DEV do seed (`dev@myflux.local`), como era antes da Etapa 4. Isto vale em produção, e a senha de demonstração vai no pacote. Quem abre o endereço tem acesso de DEV (escopo global: dados de todos os colaboradores e gestão de usuários).
 
-Para voltar a exigir login, construa o front com `VITE_MODO_TESTE_SEM_LOGIN=false` (ou mude o padrão em `App.tsx`): a tela de login volta e o e-mail do usuário DEV sai do pacote (conferido). O teste de ponta a ponta já constrói o front assim, porque exercita o login de verdade.
+Nesse modo o item **Leadership Lab** aparece no menu para qualquer perfil, para ser encontrado. Como o DEV não faz testes, a página dele diz isso e traz a dica de entrar como `comum@myflux.local` (botão "Ir para o login"). Com o modo de teste desligado, o item volta a aparecer só para o perfil COMUM.
+
+Para voltar a exigir login, construa o front com `VITE_MODO_TESTE_SEM_LOGIN=false` (ou mude o padrão em `App.tsx`): a tela de login volta e o e-mail do usuário DEV sai do pacote (conferido). O teste de ponta a ponta comum já constrói o front assim, porque exercita o login de verdade.
+
+## Modo demonstração
+
+Enquanto o serviço de IA real não existe, o servidor pode rodar o Lab com uma **IA de exemplo**, para mostrar as telas funcionando de ponta a ponta. É **desligado por padrão**: sem a variável, nada muda.
+
+**Como ligar:** defina `LAB_MODO_DEMO=true` nas variáveis do serviço (Cloud Run) e publique de novo. Só o texto `true` liga.
+
+**Regras de segurança:**
+
+- Só vale **sem** `LAB_IA_URL`. Com a IA real configurada, ela sempre vence e a variável é ignorada, com um aviso no log. Produção nunca troca a IA de verdade por uma de exemplo.
+- Não precisa de `LAB_IA_TOKEN`. A tolerância de rede é 3 s, a menos que `LAB_TOLERANCIA_TEMPO_S` esteja definida.
+
+**O que a IA de exemplo faz:** cinco situações escritas à mão (`demonstracao/conteudo.ts`), de um supervisor numa operação de manutenção. Toda situação aparece com o prefixo "(Demonstração)", o painel mostra uma faixa de aviso, e o texto do resumo do resultado diz que é de demonstração. As notas, os níveis, os alertas e os indicadores são **calculados de verdade** pelo backend a partir das escolhas; só o conteúdo e a avaliação de cada escolha são de exemplo. Uma opção (situação 4, opção C) vale 10 e abre o alerta vermelho, para mostrar como ele aparece. O texto livre é ignorado e não vira contribuição. A IA não guarda estado na memória (o total de situações vai no identificador da sessão), então um teste continua certo se o Cloud Run reiniciar a instância.
+
+**O que o servidor prepara ao subir** (`demonstracao/preparar.ts`, repetível e seguro entre instâncias, com um lock do PostgreSQL):
+
+1. libera o molde "supervisor", se ainda não estava liberado (um tempo já definido pelo negócio é respeitado; senão, 90 s por situação);
+2. cria uma **operação fictícia só da demonstração** ("Demonstração do Leadership Lab", com empresa, cliente e unidade de nome parecido). O colaborador fictício precisa de uma operação, e colocá-lo numa operação real o poria nas listas e nas escalas de gente de verdade. Nenhuma operação existente é usada nem alterada. (O seed do repositório não cria operação nenhuma, e em produção elas existem de verdade.);
+3. cria o cargo fictício "Supervisor (demonstração)", ligado a esse molde, e o colaborador fictício `DEMO-LAB` ("Participante de demonstração") nesse cargo e nessa operação, com a observação de que é fictício;
+4. liga a conta `comum@myflux.local` a esse colaborador, tornando-a participante.
+
+Nada disso acontece se a conta não existir ou não for do perfil COMUM, e uma conta que já está ligada a um colaborador é respeitada. O preparo nunca derruba o servidor.
+
+**Como ver:** abra o endereço, clique em **Leadership Lab** no menu, siga a dica ("Ir para o login") e entre com `comum@myflux.local`. Aceite o termo e faça o teste.
+
+**Para encerrar:** remova `LAB_MODO_DEMO` e publique de novo; o módulo desliga. Os registros ficam no banco e são fáceis de reconhecer: a operação "Demonstração do Leadership Lab" (com a empresa, o cliente e a unidade de mesmo tom), o colaborador `DEMO-LAB`, o cargo "Supervisor (demonstração)" e as sessões cujo `ia_sessao_id` começa com `demo.`. Esses testes são registros de verdade, em "aguardando validação"; vão aparecer na fila do curador quando a Etapa 5 existir. Como as chaves estrangeiras não têm cascata, apagar os testes exige remover as tabelas dependentes antes: o script de limpeza fica para quando o modo for encerrado.
 
 ### Para ver o Lab funcionando num ambiente
 
@@ -399,6 +428,7 @@ Ainda não há tela do RH para isto (é a Etapa 5), então o cadastro é feito n
 - Contestação do participante (`POST /resultados/:id/contestacoes`, e o botão na tela de resultado) e as rotas do curador, do administrador e da gestão.
 - Texto do termo de ciência, do RH e do jurídico (a tela mostra um resumo provisório).
 - Cadastro de participantes, vínculo cargo → molde e liberação dos moldes: hoje só pelo banco (veja "Para ver o Lab funcionando num ambiente"); a tela do RH é a Etapa 5.
+- **Encerrar o modo demonstração** quando o serviço de IA real existir: remover `LAB_MODO_DEMO`, definir `LAB_IA_URL`, `LAB_IA_TOKEN` e `LAB_TOLERANCIA_TEMPO_S`, e escrever o script que limpa os testes da conta de demonstração (veja "Modo demonstração").
 - **Encerrar o modo de teste sem login** antes de pôr dados reais de colaboradores no ambiente: construir o front com `VITE_MODO_TESTE_SEM_LOGIN=false`, e trocar ou desativar as contas de demonstração do seed (a senha está no repositório, que é público) (decisão E).
 - Painel: média anônima da turma, cálculo da tendência e texto de orientação de cada alerta. Decisões de negócio em aberto (veja "Decisões do painel que o negócio pode rever").
 - Alinhar o contrato com o serviço Python (Etapa 2): itens marcados como proposta acima. Dependem do `agent.py` e do prompt de desenvolvimento.

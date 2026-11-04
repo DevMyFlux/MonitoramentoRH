@@ -4,6 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { Badge, LoadingState, Skeleton } from "../../components/ui";
 import { cn } from "../../lib/cn";
 import { AcaoDoPainel } from "../../features/leadership-lab/componentes/acao-do-painel";
+import {
+  DicaDaContaDeParticipante,
+  FaixaDeDemonstracao
+} from "../../features/leadership-lab/componentes/avisos-de-demonstracao";
 import { Cartao, Estatistica } from "../../features/leadership-lab/componentes/cartao";
 import { ErroDaTelaDoLab } from "../../features/leadership-lab/componentes/erro-da-tela";
 import { QuadranteDeEstilos } from "../../features/leadership-lab/componentes/quadrante-de-estilos";
@@ -18,6 +22,7 @@ import {
   nomeDoAlerta,
   nomeDoTipoDeSkill
 } from "../../features/leadership-lab/rotulos";
+import { modoDeTesteSemLogin } from "../../modo-de-teste";
 
 const RadarDeSkills = lazy(() =>
   import("../../features/leadership-lab/componentes/graficos").then((m) => ({
@@ -39,11 +44,15 @@ export function LabPainelPage() {
 
   if (painel.isPending) return <LoadingState />;
   if (painel.isError) {
+    const erro = descreverErro(painel.error);
     return (
       <Pagina>
         <ErroDaTelaDoLab
-          erro={descreverErro(painel.error)}
+          erro={erro}
           aoTentarDeNovo={() => void painel.refetch()}
+          {...(erro.tipo === "sem-acesso" && modoDeTesteSemLogin()
+            ? { acao: <DicaDaContaDeParticipante /> }
+            : {})}
         />
       </Pagina>
     );
@@ -80,6 +89,7 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
 
   return (
     <>
+      {painel.demonstracao ? <FaixaDeDemonstracao /> : null}
       {painel.termo.aceito ? null : (
         <TermoDeCiencia
           versao={painel.termo.versaoAtual}

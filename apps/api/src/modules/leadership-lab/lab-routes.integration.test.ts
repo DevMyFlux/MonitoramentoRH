@@ -351,6 +351,7 @@ describe.skipIf(!integrationEnabled)("rotas do Leadership Lab", () => {
       expect(Object.keys(data).sort()).toEqual([
         "acao",
         "alertas",
+        "demonstracao",
         "evolucao",
         "indicadores",
         "skills",
