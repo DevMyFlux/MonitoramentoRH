@@ -14,11 +14,14 @@
 //   POST /sessoes/:id/tempo-esgotado    avisa que o relógio zerou (o servidor confere)
 //   GET  /sessoes/:id/resultado         resultado de um teste concluído
 //
+// Os cadastros do RH e a configuração dos moldes ficam em lab-cadastro-routes.ts (mesmo prefixo).
+//
 // Respostas de sucesso: { data }. Erros: { code, message, details }, pelo tratador global.
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { PrismaClient } from "@prisma/client";
 import { authenticateRequest } from "../auth/auth-routes.js";
 import type { UserRepository } from "../users/user-repository.js";
+import { registrarRotasDoCadastro } from "./lab-cadastro-routes.js";
 import { carregarAtorLab } from "./lab-actor.js";
 import type { MotorDoTeste } from "./motor/motor.js";
 
@@ -90,4 +93,6 @@ export async function registrarRotasDoLab(
   app.get<ComId>("/sessoes/:id/resultado", async (request) => ({
     data: await motor.obterResultado(await atorDe(request), request.params.id)
   }));
+
+  await registrarRotasDoCadastro(app, users, db);
 }

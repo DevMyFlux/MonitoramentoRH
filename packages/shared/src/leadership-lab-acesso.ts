@@ -35,10 +35,12 @@ export type PapelLab = "participante" | "curador" | "administrador" | "gestao" |
  * Que dados o papel alcança numa ação:
  * - proprios: só os do próprio participante.
  * - turma: individuais, só de participantes das turmas que o curador acompanha.
+ * - escopo-do-rh: só o CADASTRO (nome, matrícula, cargo) de colaboradores das operações do escopo
+ *   (UserScope) do RH, para escolher quem será participante. Nenhum resultado de teste.
  * - agregados: somente números agrupados, nunca uma pessoa.
  * - configuracao: parâmetros do módulo (moldes, tempos). Sem dado de pessoa.
  */
-export type EscopoDados = "proprios" | "turma" | "agregados" | "configuracao";
+export type EscopoDados = "proprios" | "turma" | "escopo-do-rh" | "agregados" | "configuracao";
 
 export type LinhaDaMatriz = Readonly<Partial<Record<PapelLab, EscopoDados>>>;
 
@@ -68,6 +70,13 @@ const matriz = {
   "contestacao:decidir": { curador: "turma" },
   "turma:listar": { curador: "turma" },
   "turma:criar": { curador: "turma" },
+  "turma:atualizar": { curador: "turma" },
+
+  // --- Curador, cadastro (/participantes, /colaboradores-elegiveis, /usuarios-elegiveis): quem será
+  // participante. O alvo é o colaborador, e ele tem de estar nas operações do escopo do RH.
+  "participante:listar": { curador: "escopo-do-rh" },
+  "participante:cadastrar": { curador: "escopo-do-rh" },
+  "participante:atualizar": { curador: "escopo-do-rh" },
 
   // --- Gestão (GET /agregados): só agregados, com mínimo de 5 pessoas por recorte
   "agregados:ler": { gestao: "agregados" },
@@ -98,13 +107,21 @@ export type AlvoLab = {
   participanteId?: string | undefined;
   /** Participantes das turmas que o curador acompanha. Sem isto, o escopo "turma" nega. */
   participantesDasTurmas?: ReadonlySet<string> | undefined;
+  /**
+   * O colaborador alvo está numa operação do escopo (UserScope) do usuário? Quem decide é o backend,
+   * com a política de escopo do sistema (a matriz não conhece operações). Omitido, o escopo
+   * "escopo-do-rh" permite (listagens: é a consulta que filtra); informado como `false`, nega.
+   */
+  dentroDoEscopoDoRh?: boolean | undefined;
 };
 
 /**
  * Por que o acesso foi negado. O backend responde 403 a "perfil" e "sem-vinculo" e 404 a
- * "alheio" e "fora-da-turma", para não revelar que o recurso de outra pessoa existe.
+ * "alheio", "fora-da-turma" e "fora-do-escopo", para não revelar que o recurso de outra pessoa
+ * existe.
  */
-export type MotivoNegacao = "perfil" | "sem-vinculo" | "alheio" | "fora-da-turma";
+export type MotivoNegacao =
+  "perfil" | "sem-vinculo" | "alheio" | "fora-da-turma" | "fora-do-escopo";
 
 export type DecisaoDeAcesso = { permitido: true } | { permitido: false; motivo: MotivoNegacao };
 
@@ -137,6 +154,11 @@ function avaliarEscopo(
       return alvo.participantesDasTurmas?.has(alvo.participanteId) === true
         ? true
         : "fora-da-turma";
+    case "escopo-do-rh":
+      // Sem alvo (listar, buscar): a consulta filtra pelo escopo. Com alvo, só `true` passa:
+      // falha fechado, como a turma.
+      if (alvo.dentroDoEscopoDoRh === undefined) return true;
+      return alvo.dentroDoEscopoDoRh ? true : "fora-do-escopo";
     case "agregados":
     case "configuracao":
       return true;
