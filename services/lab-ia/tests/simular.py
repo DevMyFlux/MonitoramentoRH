@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 contador = itertools.count(1)
 ruim_uma_vez = {"feito": False}
 
-def falso(instrucao, esquema, pedido, uso, temperatura=0.7):
+def falso(instrucao, esquema, pedido, uso, temperatura=0.7, raciocinio=None):
     uso.chamadas += 1; uso.tokens_entrada += 100; uso.tokens_saida += 50
     n = next(contador)
     if esquema is agente.ESQUEMA_GUARDA:
@@ -24,7 +24,7 @@ def falso(instrucao, esquema, pedido, uso, temperatura=0.7):
     mesma = not ruim_uma_vez["feito"] and n == 3
     if mesma: ruim_uma_vez["feito"] = True
     notas = [70, 70, 70] if mesma else [[100, 40, 10], [40, 100, 70], [10, 70, 100]][n % 3]
-    opcoes = [{"id": l, "texto": f"Resposta {l}", "aderencia": a, "estilo": "orientacao" if l != "C" else None,
+    opcoes = [{"id": l, "texto": f"Resposta {l}", "aderencia": str(a), "estilo": "orientacao" if l != "C" else None,
                "skills": ["gestao-os", "gestao-os", "inexistente"], "justificativa": f"Porque {l}."} for l, a in zip("CBA", reversed(notas))]
     return {"consequencia": "Efeito da escolha.", "contribuicao": "Sugere checklist de passagem de turno.",
             "situacao": {"rota": "B", "texto": "Uma OS urgente chegou junto com a preventiva. O que você faz?",

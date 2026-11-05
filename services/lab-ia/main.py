@@ -92,6 +92,9 @@ def _com_retentativa(gerar, pedido: str, uso: Uso):
         except (ViolacaoDoContrato, ValueError, KeyError, TypeError) as erro:
             problemas = [str(erro)]
             log.warning("tentativa %s recusada: %s", tentativa, erro)
+        except Exception as erro:  # falha do Vertex AI (cota, rede, modelo): não adianta repetir já
+            log.error("falha ao chamar o modelo: %s", erro)
+            raise HTTPException(status_code=502, detail="falha ao chamar o modelo de IA") from erro
     raise HTTPException(status_code=502, detail=f"a IA não produziu um turno válido: {problemas[0]}")
 
 
@@ -202,7 +205,9 @@ def guarda(corpo: Guarda, x_servico_token: str | None = Header(default=None)) ->
     exigir_token(x_servico_token)
     uso = Uso()
     try:
-        bruto = agente.gerar_json(agente.INSTRUCAO_GUARDA, agente.ESQUEMA_GUARDA, corpo.texto, uso, temperatura=0.0)
+        bruto = agente.gerar_json(
+            agente.INSTRUCAO_GUARDA, agente.ESQUEMA_GUARDA, corpo.texto, uso, temperatura=0.0, raciocinio="MINIMAL"
+        )
         decisao, texto = normalizar_guarda(bruto, corpo.texto)
     except Exception as erro:  # o backend trata qualquer falha como bloqueio
         log.warning("guarda falhou: %s", erro)
