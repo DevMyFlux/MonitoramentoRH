@@ -1,0 +1,9 @@
+# Buildpacks do Cloud Build (gatilho do rh-monitoramento: pack build --path=.).
+# O site é Node (pnpm). Sem isto, os arquivos .py de services/lab-ia fazem o detector
+# escolher Python e o container sobe sem Node nem Prisma.
+[_]
+schema-version = "0.2"
+
+[[io.buildpacks.build.env]]
+name = "GOOGLE_RUNTIME"
+value = "nodejs"
