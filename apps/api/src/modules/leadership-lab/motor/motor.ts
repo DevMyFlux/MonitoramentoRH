@@ -421,7 +421,9 @@ export class MotorDoTeste {
       throw erros.naoEncontrado();
     }
     const participantesDasTurmas =
-      ator.role === "RH" ? await carregarParticipantesDasTurmas(this.db, ator.userId) : undefined;
+      ator.role === "RH" || ator.role === "DEV"
+        ? await carregarParticipantesDasTurmas(this.db, ator.userId, ator.role)
+        : undefined;
     assertAcesso(ator, "resultado:ler", {
       participanteId: sessao.participanteId,
       participantesDasTurmas

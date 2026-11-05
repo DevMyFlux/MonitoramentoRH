@@ -205,7 +205,7 @@ describe.skipIf(!integrationEnabled)("ler o teste em andamento", () => {
       expect(await a.motor.estadoDoTeste(a.ator)).toEqual(abertoDeA);
     });
 
-    it.each(["RH", "ADMIN", "DEV"] as const)("o perfil %s não lê: 403", async (role) => {
+    it.each(["RH", "ADMIN"] as const)("o perfil %s não lê: 403", async (role) => {
       const c = await novoCenario(banco);
       await c.motor.iniciar(c.ator);
       await expect(c.motor.estadoDoTeste({ ...c.ator, role })).rejects.toMatchObject({

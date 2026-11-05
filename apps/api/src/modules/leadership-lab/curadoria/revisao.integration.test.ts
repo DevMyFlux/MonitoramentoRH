@@ -66,25 +66,22 @@ describe.skipIf(!integrationEnabled)("revisão dos resultados", () => {
       }
     });
 
-    it.each(["COMUM", "ADMIN", "DEV"] as const)(
-      "o perfil %s não revisa resultados",
-      async (papel) => {
-        const pessoa = await amb.cad.pessoa(papel, [{ isGlobal: true }]);
-        const p = await daTurma();
-        for (const [metodo, caminho, corpo] of [
-          ["GET", "/pendencias"],
-          ["GET", "/revisao"],
-          ["GET", `/revisao/${resultadoDe(p)}`],
-          ["GET", `/revisao/${INEXISTENTE}`],
-          ["POST", `/resultados/${resultadoDe(p)}/validacao`, {}],
-          ["POST", `/resultados/${INEXISTENTE}/validacao`, {}]
-        ] as const) {
-          const r = await amb.http(pessoa, metodo, caminho, corpo);
-          expect(r.status, `${metodo} ${caminho}`).toBe(403);
-          expect(r.corpo.code).toBe("LAB_FORBIDDEN");
-        }
+    it.each(["COMUM", "ADMIN"] as const)("o perfil %s não revisa resultados", async (papel) => {
+      const pessoa = await amb.cad.pessoa(papel, [{ isGlobal: true }]);
+      const p = await daTurma();
+      for (const [metodo, caminho, corpo] of [
+        ["GET", "/pendencias"],
+        ["GET", "/revisao"],
+        ["GET", `/revisao/${resultadoDe(p)}`],
+        ["GET", `/revisao/${INEXISTENTE}`],
+        ["POST", `/resultados/${resultadoDe(p)}/validacao`, {}],
+        ["POST", `/resultados/${INEXISTENTE}/validacao`, {}]
+      ] as const) {
+        const r = await amb.http(pessoa, metodo, caminho, corpo);
+        expect(r.status, `${metodo} ${caminho}`).toBe(403);
+        expect(r.corpo.code).toBe("LAB_FORBIDDEN");
       }
-    );
+    });
 
     it("o participante não valida o próprio resultado", async () => {
       const p = await daTurma();

@@ -58,7 +58,7 @@ describe.skipIf(!integrationEnabled)("alertas e contribuições do curador", () 
         ["POST", `/contribuicoes/${INEXISTENTE}/decisao`]
       ] as const) {
         expect((await amb.http(null, metodo, caminho, {})).status, caminho).toBe(401);
-        for (const papel of ["COMUM", "ADMIN", "DEV"] as const) {
+        for (const papel of ["COMUM", "ADMIN"] as const) {
           const pessoa = await amb.cad.pessoa(papel, [{ isGlobal: true }]);
           const r = await amb.http(pessoa, metodo, caminho, { nota: "x", decisao: "aprovada" });
           expect(r.status, `${papel} ${metodo} ${caminho}`).toBe(403);

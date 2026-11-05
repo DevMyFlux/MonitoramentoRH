@@ -99,12 +99,24 @@ describe.skipIf(!integrationEnabled)("ator do Leadership Lab", () => {
       const ctx = await criarParticipante(db.client, base);
       const ator = await carregarAtorLab(prisma, usuario(ctx.userId, "DEV"));
       expect(ator.role).toBe("DEV");
-      // Mesmo vinculado, DEV não faz testes.
-      expect(() => assertAcesso(ator, "sessao:iniciar")).toThrow(HttpError);
+      // O DEV é a exceção deliberada: vinculado, faz testes. ADMIN, mesmo vinculado, não.
+      expect(() => assertAcesso(ator, "sessao:iniciar")).not.toThrow();
+      const admin = await carregarAtorLab(prisma, usuario(ctx.userId, "ADMIN"));
+      expect(() => assertAcesso(admin, "sessao:iniciar")).toThrow(HttpError);
     });
   });
 
   describe("carregarParticipantesDasTurmas", () => {
+    it("o perfil DEV vê todos os participantes, mesmo sem turma; o RH, só os das turmas dele", async () => {
+      const a = await criarParticipante(db.client, base);
+      const b = await criarParticipante(db.client, base);
+      const dev = await carregarParticipantesDasTurmas(prisma, a.userId, "DEV");
+      expect(dev.has(a.participanteId)).toBe(true);
+      expect(dev.has(b.participanteId)).toBe(true);
+      const rh = await carregarParticipantesDasTurmas(prisma, a.userId, "RH");
+      expect(rh.size).toBe(0);
+    });
+
     async function novaTurma(curadorId: string, ativa: boolean, participantes: string[]) {
       const turmaId = await inserir(db.client, "leadership_lab.turma", {
         nome: "Turma",

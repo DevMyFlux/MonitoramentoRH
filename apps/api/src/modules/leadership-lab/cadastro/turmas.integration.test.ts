@@ -55,7 +55,7 @@ describe.skipIf(!integrationEnabled)("turmas do curador", () => {
       expect((await amb.http(null, metodo, caminho, corpo)).status).toBe(401);
     });
 
-    it.each(["COMUM", "ADMIN", "DEV"] as const)("o perfil %s não mexe em turmas", async (papel) => {
+    it.each(["COMUM", "ADMIN"] as const)("o perfil %s não mexe em turmas", async (papel) => {
       const pessoa = await amb.pessoa(papel, [{ isGlobal: true }]);
       for (const [metodo, caminho, corpo] of rotas) {
         const r = await amb.http(pessoa, metodo, caminho, corpo);

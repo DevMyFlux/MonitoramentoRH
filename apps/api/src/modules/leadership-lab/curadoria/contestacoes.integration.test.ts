@@ -68,7 +68,7 @@ describe.skipIf(!integrationEnabled)("contestações", () => {
 
     it("só o participante contesta; só o curador decide", async () => {
       const p = await daTurma();
-      for (const papel of ["RH", "ADMIN", "DEV"] as const) {
+      for (const papel of ["RH", "ADMIN"] as const) {
         const pessoa = papel === "RH" ? rh : await amb.cad.pessoa(papel, [{ isGlobal: true }]);
         for (const r of [
           await contestar(pessoa, p.resultadoId!, { ponto: "x", motivo: "y" }),
@@ -78,7 +78,7 @@ describe.skipIf(!integrationEnabled)("contestações", () => {
           expect(r.corpo.code).toBe("LAB_FORBIDDEN");
         }
       }
-      for (const papel of ["COMUM", "ADMIN", "DEV"] as const) {
+      for (const papel of ["COMUM", "ADMIN"] as const) {
         const pessoa =
           papel === "COMUM" ? p.pessoa : await amb.cad.pessoa(papel, [{ isGlobal: true }]);
         for (const r of [

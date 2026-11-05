@@ -27,7 +27,7 @@ export class ContribuicoesDoLab {
     status: "pendente" | "aprovada" | "rejeitada" | "todas"
   ): Promise<LabContribuicaoDoCurador[]> {
     assertAcesso(ator, "contribuicao:listar");
-    const participantes = [...(await carregarParticipantesDasTurmas(this.db, user.id))];
+    const participantes = [...(await carregarParticipantesDasTurmas(this.db, user.id, user.role))];
     const linhas = await this.db.labContribuicao.findMany({
       where: {
         ...(status === "todas" ? {} : { status }),
@@ -57,7 +57,11 @@ export class ContribuicoesDoLab {
       select: selecaoDaContribuicao
     });
     if (!contribuicao) recursoInexistente(ator, "contribuicao:decidir");
-    const participantesDasTurmas = await carregarParticipantesDasTurmas(this.db, user.id);
+    const participantesDasTurmas = await carregarParticipantesDasTurmas(
+      this.db,
+      user.id,
+      user.role
+    );
     assertAcesso(ator, "contribuicao:decidir", {
       participanteId: contribuicao.sessao.participante.id,
       participantesDasTurmas

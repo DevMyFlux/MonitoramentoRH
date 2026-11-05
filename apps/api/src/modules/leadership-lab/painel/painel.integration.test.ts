@@ -487,12 +487,7 @@ describe.skipIf(!integrationEnabled)("painel do participante", () => {
         participanteId,
         permissoes: []
       });
-      for (const intruso of [
-        ator("RH"),
-        ator("ADMIN"),
-        ator("DEV"),
-        ator("RH", c.ctx.participanteId)
-      ]) {
+      for (const intruso of [ator("RH"), ator("ADMIN"), ator("RH", c.ctx.participanteId)]) {
         await expect(c.motor.painel(intruso), intruso.role).rejects.toMatchObject({
           statusCode: 403,
           code: "LAB_FORBIDDEN"

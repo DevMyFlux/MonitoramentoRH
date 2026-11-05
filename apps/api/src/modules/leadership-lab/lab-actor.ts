@@ -47,8 +47,14 @@ export async function carregarAtorLab(db: Db, user: AuthenticatedUser): Promise<
  */
 export async function carregarParticipantesDasTurmas(
   db: Db,
-  curadorUserId: string
+  curadorUserId: string,
+  role?: string
 ): Promise<ReadonlySet<string>> {
+  // O perfil DEV vê todos os participantes, tenham turma ou não.
+  if (role === "DEV") {
+    const todos = await db.labParticipante.findMany({ select: { id: true } });
+    return new Set(todos.map((p) => p.id));
+  }
   const linhas = await db.labTurmaParticipante.findMany({
     where: { turma: { curadorId: curadorUserId, ativa: true } },
     select: { participanteId: true }

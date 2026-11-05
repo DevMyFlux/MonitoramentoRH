@@ -54,7 +54,7 @@ describe.skipIf(!integrationEnabled)("cadastro dos participantes", () => {
       expect((await amb.http(null, metodo, caminho, corpo)).status).toBe(401);
     });
 
-    it.each(["COMUM", "ADMIN", "DEV"] as const)(
+    it.each(["COMUM", "ADMIN"] as const)(
       "o perfil %s não cadastra participantes",
       async (papel) => {
         const pessoa = await amb.pessoa(papel, [{ isGlobal: true }]);
@@ -184,7 +184,6 @@ describe.skipIf(!integrationEnabled)("cadastro dos participantes", () => {
       const candidatos = [
         await amb.pessoa("RH"),
         await amb.pessoa("ADMIN"),
-        await amb.pessoa("DEV"),
         await amb.usuarioComum({ isActive: false }),
         await amb.usuarioComum({ status: "ARCHIVED" }),
         { id: INEXISTENTE, token: "" }

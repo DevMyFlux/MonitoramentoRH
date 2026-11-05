@@ -16,7 +16,7 @@ function ator(role: LabAtor["role"], extra: Partial<LabAtor> = {}): LabAtor {
   return {
     userId: `user-${role}`,
     role,
-    participanteId: role === "COMUM" ? "participante-1" : null,
+    participanteId: role === "COMUM" || role === "DEV" ? "participante-1" : null,
     permissoes: [],
     ...extra
   };
@@ -39,10 +39,10 @@ const atores = {
 } as const;
 type NomeDoAtor = keyof typeof atores;
 
-const participantes: NomeDoAtor[] = ["comum", "comumGestao", "comumEspecialista"];
-const curadores: NomeDoAtor[] = ["rh", "rhGestao"];
+const participantes: NomeDoAtor[] = ["comum", "comumGestao", "comumEspecialista", "dev"];
+const curadores: NomeDoAtor[] = ["rh", "rhGestao", "dev"];
 const administradores: NomeDoAtor[] = ["admin", "adminGestao", "dev"];
-const gestores: NomeDoAtor[] = ["comumGestao", "rhGestao", "adminGestao"];
+const gestores: NomeDoAtor[] = ["comumGestao", "rhGestao", "adminGestao", "dev"];
 
 /**
  * Tabela de verdade escrita a partir da documentação (seções "Usuários e permissões" e
@@ -116,18 +116,23 @@ describe("papéis", () => {
     expect(papeis(atores.comum)).toEqual(["participante"]);
     expect(papeis(atores.rh)).toEqual(["curador"]);
     expect(papeis(atores.admin)).toEqual(["administrador"]);
-    expect(papeis(atores.dev)).toEqual(["administrador"]);
+    // O perfil DEV é a exceção deliberada: acumula todos os papéis.
+    expect(papeis(atores.dev)).toEqual([
+      "administrador",
+      "curador",
+      "especialista",
+      "gestao",
+      "participante"
+    ]);
     expect(papeis(atores.comumGestao)).toEqual(["gestao", "participante"]);
     expect(papeis(atores.rhGestao)).toEqual(["curador", "gestao"]);
     expect(papeis(atores.comumEspecialista)).toEqual(["especialista", "participante"]);
   });
 
-  it("não há herança de hierarquia: ADMIN e DEV não são curadores nem participantes", () => {
-    for (const nome of ["admin", "dev"] as const) {
-      const papeis = papeisLab(atores[nome]);
-      expect(papeis.has("curador")).toBe(false);
-      expect(papeis.has("participante")).toBe(false);
-    }
+  it("não há herança de hierarquia: ADMIN não é curador nem participante (só o DEV, por exceção)", () => {
+    const papeis = papeisLab(atores.admin);
+    expect(papeis.has("curador")).toBe(false);
+    expect(papeis.has("participante")).toBe(false);
     expect(papeisLab(atores.rh).has("participante")).toBe(false);
   });
 });
@@ -227,11 +232,14 @@ describe("escopo dos dados: o participante só alcança o que é seu", () => {
     });
   });
 
-  it("ADMIN e DEV não fazem testes mesmo vinculados", () => {
-    for (const role of ["ADMIN", "DEV"] as const) {
-      const vinculado = ator(role, { participanteId: "participante-1" });
-      expect(podeExecutar(vinculado, "sessao:iniciar")).toBe(false);
-    }
+  it("ADMIN não faz testes mesmo vinculado; o DEV faz, mas só com vínculo", () => {
+    const admin = ator("ADMIN", { participanteId: "participante-1" });
+    expect(podeExecutar(admin, "sessao:iniciar")).toBe(false);
+    expect(podeExecutar(ator("DEV"), "sessao:iniciar")).toBe(true);
+    expect(avaliarAcesso(ator("DEV", { participanteId: null }), "sessao:iniciar")).toEqual({
+      permitido: false,
+      motivo: "sem-vinculo"
+    });
   });
 });
 
@@ -278,8 +286,8 @@ describe("escopo dos dados: o curador só alcança as turmas que acompanha", () 
     expect(podeExecutar(atores.rh, "turma:criar")).toBe(true);
   });
 
-  it("ADMIN e DEV não leem dados de ninguém, nem dos que estão numa turma", () => {
-    for (const nome of ["admin", "dev", "adminGestao"] as const) {
+  it("ADMIN não lê dados de ninguém, nem dos que estão numa turma", () => {
+    for (const nome of ["admin", "adminGestao"] as const) {
       for (const acao of ["resultado:ler", "resultado:validar", "alerta:listar"] as const) {
         expect(
           avaliarAcesso(atores[nome], acao, {
@@ -370,7 +378,6 @@ describe("escopo dos dados: o curador só cadastra colaboradores das operações
         "comum",
         "comumSemVinculo",
         "admin",
-        "dev",
         "adminGestao",
         "comumGestao"
       ] as const) {

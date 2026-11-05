@@ -13,6 +13,7 @@ import {
 } from "../motor/cenario-de-teste.js";
 import type { LabEscolha } from "@my-flux/shared";
 import {
+  EMAIL_DO_ADMIN_DE_DEMONSTRACAO,
   EMAIL_DO_PARTICIPANTE_DE_DEMONSTRACAO,
   IDENTIFICADOR_DO_COLABORADOR_DE_DEMONSTRACAO,
   NOME_DA_OPERACAO_DE_DEMONSTRACAO,
@@ -468,5 +469,40 @@ describe.skipIf(!integrationEnabled)("modo demonstração", () => {
         await encerrarBanco(novo);
       }
     });
+  });
+
+  it("dá lab_gestao e lab_especialista à conta de administração, uma vez, sem mexer nas outras", async () => {
+    const id = await inserir(banco.db.client, '"User"', {
+      id: crypto.randomUUID(),
+      email: EMAIL_DO_ADMIN_DE_DEMONSTRACAO,
+      name: "Admin",
+      passwordHash: "x",
+      roleId: banco.base.roleId,
+      updatedAt: new Date().toISOString()
+    });
+    const outro = await criarUsuario(banco.db.client, banco.base, {});
+    // O vínculo do DEV usa o cargo fictício criado junto com o participante de demonstração.
+    await inserir(banco.db.client, '"User"', {
+      id: crypto.randomUUID(),
+      email: EMAIL_DO_PARTICIPANTE_DE_DEMONSTRACAO,
+      name: "Participante",
+      passwordHash: "x",
+      roleId: banco.base.roleId,
+      updatedAt: new Date().toISOString()
+    }).catch(() => undefined);
+    await prepararDemonstracao(banco.prisma);
+    await prepararDemonstracao(banco.prisma);
+    const q = (u: string) =>
+      consulta(
+        "SELECT permissao FROM leadership_lab.permissao_usuario WHERE user_id = $1 ORDER BY 1",
+        [u]
+      );
+    expect(await q(id)).toEqual([{ permissao: "lab_especialista" }, { permissao: "lab_gestao" }]);
+    expect(await q(outro)).toEqual([]);
+    // O perfil DEV também faz o teste: a conta de administração fica ligada a um colaborador fictício.
+    const vinculo = await consulta("SELECT 1 FROM leadership_lab.participante WHERE user_id = $1", [
+      id
+    ]);
+    expect(vinculo).toHaveLength(1);
   });
 });

@@ -30,7 +30,7 @@ export class AlertasDoLab {
     status: "aberto" | "encerrado" | "todos"
   ): Promise<LabAlertaDoCurador[]> {
     assertAcesso(ator, "alerta:listar");
-    const participantes = [...(await carregarParticipantesDasTurmas(this.db, user.id))];
+    const participantes = [...(await carregarParticipantesDasTurmas(this.db, user.id, user.role))];
     const linhas = await this.db.labAlerta.findMany({
       where: {
         ...(status === "todos" ? {} : { status }),
@@ -63,7 +63,11 @@ export class AlertasDoLab {
       select: selecaoDoAlerta
     });
     if (!alerta) recursoInexistente(ator, "alerta:tratar");
-    const participantesDasTurmas = await carregarParticipantesDasTurmas(this.db, user.id);
+    const participantesDasTurmas = await carregarParticipantesDasTurmas(
+      this.db,
+      user.id,
+      user.role
+    );
     assertAcesso(ator, "alerta:tratar", {
       participanteId: alerta.sessao.participante.id,
       participantesDasTurmas

@@ -738,7 +738,7 @@ describe.skipIf(!integrationEnabled)("rotas do Leadership Lab", () => {
       ["POST", `/sessoes/${crypto.randomUUID()}/tempo-esgotado`, { numero: 1 }]
     ];
 
-    it.each(["RH", "ADMIN", "DEV"] as const)(
+    it.each(["RH", "ADMIN"] as const)(
       "%s não usa nenhuma rota do participante: 403",
       async (papel) => {
         const u = await semVinculo(papel);
