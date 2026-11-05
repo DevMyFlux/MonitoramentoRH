@@ -1,9 +1,11 @@
 import { type LabEscolha, type LabSituacao, labLimiteCaracteresCampoLivre } from "@my-flux/shared";
-import { Flag } from "lucide-react";
+import { Check, Flag, Loader2 } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { Badge, Button } from "../../../components/ui";
 import { cn } from "../../../lib/cn";
 import { escolhaDaTecla, teclaDaOpcao } from "../rotulos";
+import type { EstadoDoAvatar } from "./avatar-facilitador";
+import { CenaDaSituacao } from "./cena-da-situacao";
 
 /** Onde digitar um número é digitar, não escolher uma opção. Radio e checkbox não contam. */
 function ehCampoDeTexto(alvo: EventTarget | null): boolean {
@@ -18,6 +20,8 @@ type SituacaoDoTesteProps = {
   situacao: LabSituacao;
   /** Enquanto uma resposta é enviada, ou depois que o tempo acabou: nada pode ser alterado. */
   desabilitado: boolean;
+  /** Uma resposta está indo para o servidor: a opção escolhida mostra o carregamento. */
+  enviando?: boolean;
   aoConfirmar: (escolha: LabEscolha, textoLivre: string) => void;
 };
 
@@ -27,9 +31,30 @@ type SituacaoDoTesteProps = {
  * ou tecla errados não a enviam. Mostra só o que o servidor mandou durante o teste.
  * O pai usa `key={situacao.numero}`, e a escolha e o texto recomeçam a cada situação.
  */
-export function SituacaoDoTeste({ situacao, desabilitado, aoConfirmar }: SituacaoDoTesteProps) {
+export function SituacaoDoTeste({
+  situacao,
+  desabilitado,
+  enviando = false,
+  aoConfirmar
+}: SituacaoDoTesteProps) {
   const [escolha, setEscolha] = useState<LabEscolha | null>(null);
   const [texto, setTexto] = useState("");
+  // Logo que a situação chega com uma consequência, o facilitador "mostra o que aconteceu".
+  const [feedbackAtivo, setFeedbackAtivo] = useState(situacao.consequencia !== null);
+
+  useEffect(() => {
+    if (!feedbackAtivo) return;
+    const id = setTimeout(() => setFeedbackAtivo(false), 4000);
+    return () => clearTimeout(id);
+  }, [feedbackAtivo]);
+
+  const estadoDoAvatar: EstadoDoAvatar = desabilitado
+    ? "refletindo"
+    : escolha !== null
+      ? "ouvindo"
+      : feedbackAtivo
+        ? "feedback"
+        : "falando";
 
   useEffect(() => {
     if (desabilitado) return;
@@ -50,6 +75,7 @@ export function SituacaoDoTeste({ situacao, desabilitado, aoConfirmar }: Situaca
 
   return (
     <form onSubmit={enviar} className="space-y-6">
+      <CenaDaSituacao cena={situacao.cena ?? null} estado={estadoDoAvatar} />
       <div className="space-y-3">
         {situacao.marco ? (
           <Badge tone="warning" className="gap-1">
@@ -66,37 +92,60 @@ export function SituacaoDoTeste({ situacao, desabilitado, aoConfirmar }: Situaca
             Escolha com o mouse ou tecle 1, 2 ou 3.
           </span>
         </legend>
-        {situacao.opcoes.map((opcao) => (
-          <label
-            key={opcao.id}
-            className={cn(
-              "flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition",
-              escolha === opcao.id
-                ? "border-emerald-600 bg-emerald-50 ring-2 ring-emerald-100"
-                : "border-slate-200 bg-white hover:border-slate-300",
-              desabilitado && "cursor-not-allowed opacity-60"
-            )}
-          >
-            <input
-              type="radio"
-              name="escolha"
-              value={opcao.id}
-              checked={escolha === opcao.id}
-              onChange={() => setEscolha(opcao.id)}
-              className="mt-1 h-4 w-4 shrink-0 accent-emerald-700"
-            />
-            <span className="flex-1 text-sm leading-6 text-slate-800">
-              <span className="mr-2 font-semibold text-slate-950">{opcao.id}.</span>
-              {opcao.texto}
-            </span>
-            <kbd
-              aria-hidden="true"
-              className="hidden h-6 min-w-6 items-center justify-center rounded border border-slate-300 bg-slate-50 px-1.5 text-xs font-medium text-slate-600 sm:inline-flex"
+        {situacao.opcoes.map((opcao) => {
+          const selecionada = escolha === opcao.id;
+          return (
+            <label
+              key={opcao.id}
+              className={cn(
+                "relative flex cursor-pointer items-start gap-4 rounded-2xl border-2 p-4 transition duration-200 has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-emerald-200 motion-reduce:transition-none",
+                selecionada
+                  ? "border-emerald-600 bg-emerald-50 shadow-md"
+                  : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md motion-reduce:hover:translate-y-0",
+                desabilitado &&
+                  "cursor-not-allowed opacity-70 hover:translate-y-0 hover:shadow-none"
+              )}
             >
-              {teclaDaOpcao[opcao.id]}
-            </kbd>
-          </label>
-        ))}
+              <input
+                type="radio"
+                name="escolha"
+                value={opcao.id}
+                checked={selecionada}
+                onChange={() => setEscolha(opcao.id)}
+                className="sr-only"
+              />
+              <span
+                className={cn(
+                  "grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-semibold transition-colors",
+                  selecionada ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-700"
+                )}
+              >
+                {opcao.id}
+                <span className="sr-only">.</span>
+              </span>
+              <span className="flex-1 text-sm leading-6 text-slate-800">{opcao.texto}</span>
+              {selecionada && enviando ? (
+                <span className="flex items-center gap-1 text-xs font-medium text-emerald-800">
+                  <Loader2
+                    size={16}
+                    className="animate-spin motion-reduce:animate-none"
+                    aria-hidden="true"
+                  />
+                  Enviando...
+                </span>
+              ) : selecionada ? (
+                <Check size={18} className="mt-1 text-emerald-700" aria-hidden="true" />
+              ) : (
+                <kbd
+                  aria-hidden="true"
+                  className="hidden h-6 min-w-6 items-center justify-center rounded border border-slate-300 bg-slate-50 px-1.5 text-xs font-medium text-slate-600 sm:inline-flex"
+                >
+                  {teclaDaOpcao[opcao.id]}
+                </kbd>
+              )}
+            </label>
+          );
+        })}
       </fieldset>
 
       <div>

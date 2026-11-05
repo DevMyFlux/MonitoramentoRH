@@ -16,6 +16,8 @@ vi.mock("../../features/leadership-lab/api", async (importOriginal) => {
       painel: vi.fn(),
       aceitarTermo: vi.fn(),
       iniciarTeste: vi.fn(),
+      temasSimulados: vi.fn(),
+      classificarProblema: vi.fn(),
       testeEmAndamento: vi.fn(),
       responder: vi.fn(),
       tempoEsgotado: vi.fn(),
@@ -252,6 +254,7 @@ describe("painel do participante", () => {
             { id: "C", texto: "c" }
           ],
           consequencia: null,
+          cena: null,
           tempoLimiteS: 60,
           tempoRestanteMs: 60_000
         }

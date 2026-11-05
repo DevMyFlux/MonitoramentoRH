@@ -1,6 +1,7 @@
 // Leadership Lab — os textos de tela para os valores fechados do módulo.
 import type {
   LabAlertaCor,
+  LabPersonagem,
   LabEscolha,
   LabEstilo,
   LabFlexibilidade,
@@ -100,3 +101,25 @@ export function formatarRelogio(ms: number): string {
   const segundos = total % 60;
   return `${minutos}:${String(segundos).padStart(2, "0")}`;
 }
+
+/** Quem aparece na cena da simulação local. É um papel, nunca uma pessoa real. */
+export const nomeDoPersonagem: Record<LabPersonagem, string> = {
+  tecnico: "Técnico de manutenção",
+  supervisor: "Supervisor",
+  "responsavel-assistencial": "Responsável assistencial",
+  "coordenador-contrato": "Coordenação do contrato",
+  "engenharia-clinica": "Engenharia clínica",
+  enfermagem: "Enfermagem",
+  fornecedor: "Fornecedor",
+  diretoria: "Diretoria",
+  "seguranca-trabalho": "Segurança do trabalho",
+  "controle-infeccao": "Controle de infecção"
+};
+
+export const descricaoDoEstado: Record<"falando" | "ouvindo" | "refletindo" | "feedback", string> =
+  {
+    falando: "apresentando a situação",
+    ouvindo: "ouvindo a sua escolha",
+    refletindo: "refletindo sobre a sua resposta",
+    feedback: "mostrando o que aconteceu depois da sua escolha"
+  };

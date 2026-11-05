@@ -104,8 +104,9 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
         acao={painel.acao}
         iniciando={iniciar.isPending}
         erroAoIniciar={iniciar.error ? descreverErro(iniciar.error) : null}
-        aoIniciar={() =>
-          iniciar.mutate(undefined, {
+        demonstracao={painel.demonstracao}
+        aoIniciar={(categoriaId) =>
+          iniciar.mutate(categoriaId, {
             onSuccess: (resposta) =>
               navigate(
                 resposta.tipo === "situacao" ? "/lab/teste" : `/lab/resultado/${resposta.sessaoId}`

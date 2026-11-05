@@ -60,6 +60,7 @@ export function situacao(numero = 1, extra: Partial<LabSituacao> = {}): LabSitua
     consequencia: numero === 1 ? null : `Consequência da escolha anterior (${numero - 1}).`,
     tempoLimiteS: 60,
     tempoRestanteMs: 60_000,
+    cena: null,
     ...extra
   };
 }
@@ -81,6 +82,7 @@ export function respostaDeSituacao(
 
 export function resultado(extra: Partial<LabResultado> = {}): LabResultado {
   return {
+    simulacao: null,
     resultadoId: "resultado-1",
     sessaoId: "sessao-1",
     concluidaEm: AGORA,

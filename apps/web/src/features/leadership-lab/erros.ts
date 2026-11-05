@@ -7,9 +7,11 @@ import {
   type LabCodigoDeErro,
   type LabCodigoDeErroDaCuradoria,
   type LabCodigoDeErroDoCadastro,
+  type LabCodigoDeErroDoSimulador,
   labCodigosDeErro,
   labCodigosDeErroDaCuradoria,
-  labCodigosDeErroDoCadastro
+  labCodigosDeErroDoCadastro,
+  labCodigosDeErroDoSimulador
 } from "@my-flux/shared";
 import { ApiError } from "../my-flux/client";
 import { RespostaInesperadaError } from "./api";
@@ -53,7 +55,11 @@ const semNovaTentativa = (tipo: TipoDeErro, titulo: string, descricao: string): 
 });
 
 /** O erro de um código estável do módulo. Os que trazem texto próprio e claro usam o da API. */
-type CodigoConhecido = LabCodigoDeErro | LabCodigoDeErroDoCadastro | LabCodigoDeErroDaCuradoria;
+type CodigoConhecido =
+  | LabCodigoDeErro
+  | LabCodigoDeErroDoCadastro
+  | LabCodigoDeErroDaCuradoria
+  | LabCodigoDeErroDoSimulador;
 
 function erroDoCodigo(codigo: CodigoConhecido, mensagemDaApi: string): ErroDaTela {
   switch (codigo) {
@@ -97,6 +103,7 @@ function erroDoCodigo(codigo: CodigoConhecido, mensagemDaApi: string): ErroDaTel
     case "LAB_MOLDE_NAO_MAPEADO":
     case "LAB_MOLDE_INATIVO":
     case "LAB_MOLDE_DIVERGENTE":
+    case "LAB_TEMA_INVALIDO":
     case "LAB_LIMITE_DIARIO":
       return semNovaTentativa("geral", "Não foi possível iniciar o teste", mensagemDaApi);
     case "LAB_TURNO_FORA_DE_ORDEM":
@@ -149,7 +156,8 @@ function erroDoCodigo(codigo: CodigoConhecido, mensagemDaApi: string): ErroDaTel
 const codigosConhecidos: ReadonlySet<string> = new Set([
   ...labCodigosDeErro,
   ...labCodigosDeErroDoCadastro,
-  ...labCodigosDeErroDaCuradoria
+  ...labCodigosDeErroDaCuradoria,
+  ...labCodigosDeErroDoSimulador
 ]);
 
 /** Um código que esta tela sabe tratar. Um código novo do servidor, que ainda não está aqui, não é. */
