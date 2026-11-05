@@ -15,6 +15,9 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 
 export const EMAIL_DO_PARTICIPANTE_DE_DEMONSTRACAO = "comum@myflux.local";
+/** A conta de administração que, no modo demonstração, também enxerga os agregados e a área de especialista. */
+export const EMAIL_DO_ADMIN_DE_DEMONSTRACAO = "dev@myflux.local";
+export const PERMISSOES_DO_ADMIN_DE_DEMONSTRACAO = ["lab_gestao", "lab_especialista"] as const;
 export const IDENTIFICADOR_DO_COLABORADOR_DE_DEMONSTRACAO = "DEMO-LAB";
 export const NOME_DO_COLABORADOR_DE_DEMONSTRACAO = "Participante de demonstração";
 export const NOME_DO_CARGO_DE_DEMONSTRACAO = "Supervisor (demonstração)";
@@ -46,6 +49,7 @@ export async function prepararDemonstracao(
   const resultado = await db.$transaction(
     async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${CHAVE_DO_LOCK_DA_DEMONSTRACAO}::bigint)`;
+      await concederPermissoesAoAdmin(tx);
       return preparar(tx);
     },
     { timeout: 30_000 }
@@ -56,6 +60,23 @@ export async function prepararDemonstracao(
     logger?.warn(`Leadership Lab (demonstração): nada preparado. ${resultado.motivo}`);
   }
   return resultado;
+}
+
+/**
+ * Dá à conta de administração as permissões do módulo (lab_gestao e lab_especialista). Só essas duas
+ * permissões, só a essa conta, e só se ela existir: a matriz de papéis não muda (o perfil DEV
+ * continua administrador e não vira participante nem curador). Repetir não faz nada.
+ */
+async function concederPermissoesAoAdmin(db: Prisma.TransactionClient): Promise<void> {
+  const admin = await db.user.findUnique({ where: { email: EMAIL_DO_ADMIN_DE_DEMONSTRACAO } });
+  if (!admin) return;
+  for (const permissao of PERMISSOES_DO_ADMIN_DE_DEMONSTRACAO) {
+    await db.labPermissaoUsuario.upsert({
+      where: { userId_permissao: { userId: admin.id, permissao } },
+      update: {},
+      create: { userId: admin.id, permissao }
+    });
+  }
 }
 
 async function preparar(db: Prisma.TransactionClient): Promise<ResultadoDaPreparacao> {
