@@ -389,7 +389,7 @@ describe("painel do participante", () => {
     it("sem testes concluídos não há gráfico, e a tendência diz que falta", async () => {
       api.painel.mockResolvedValue(painel());
       abrir();
-      await screen.findByText("Seus testes concluídos aparecem aqui.");
+      await screen.findByText(/Sua evolução aparece aqui depois do primeiro teste concluído/);
       expect(screen.queryByTestId("evolucao")).toBeNull();
       expect(
         screen.getByText(
