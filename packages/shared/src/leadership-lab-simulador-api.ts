@@ -37,6 +37,21 @@ export const labPersonagens = [
 ] as const;
 export type LabPersonagem = (typeof labPersonagens)[number];
 
+/**
+ * A cena de uma situação da simulação local: só o que a tela precisa para escolher a ilustração e
+ * mostrar o título. Nada de avaliação. Nula fora da simulação local.
+ */
+export const labCenaSchema = z.object({
+  personagem: z.enum(labPersonagens),
+  temaNome: z.string(),
+  titulo: z.string()
+});
+export type LabCena = z.infer<typeof labCenaSchema>;
+
+/** Do resultado: de que simulação o teste foi. Nula fora da simulação local. */
+export const labSimulacaoSchema = z.object({ temaNome: z.string(), titulo: z.string() });
+export type LabSimulacao = z.infer<typeof labSimulacaoSchema>;
+
 export const labTemaSimuladoSchema = z.object({
   id: labTemaIdSchema,
   nome: z.string(),

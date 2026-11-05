@@ -24,8 +24,9 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { PrismaClient } from "@prisma/client";
 import { authenticateRequest } from "../auth/auth-routes.js";
 import type { UserRepository } from "../users/user-repository.js";
-import { labClassificarEntradaSchema } from "@my-flux/shared";
+import { type LabCena, labClassificarEntradaSchema } from "@my-flux/shared";
 import { assertAcesso } from "./lab-access.js";
+import { cenaDaSituacao, simulacaoDaSessao } from "./simulador/cena.js";
 import { descreverClassificacao, temasDaBiblioteca } from "./simulador/rotas.js";
 import { registrarRotasDoCadastro } from "./lab-cadastro-routes.js";
 import { registrarRotasDaCuradoria } from "./lab-curadoria-routes.js";
@@ -57,6 +58,20 @@ export async function registrarRotasDoLab(
   const atorDe = async (request: FastifyRequest) =>
     carregarAtorLab(db, await authenticateRequest(request, users));
 
+  // Na simulação local, acrescenta à situação quem aparece na cena e ao resultado de que simulação
+  // foi. Só apresentação: nada da avaliação. Fora da simulação, não mexe em nada.
+  async function comCena<T extends { tipo: string; sessaoId: string }>(resposta: T): Promise<T> {
+    if (!motor.temSimulador) return resposta;
+    if (resposta.tipo === "situacao") {
+      const r = resposta as unknown as { situacao: { numero: number; cena?: LabCena | null } };
+      r.situacao.cena = await cenaDaSituacao(db, resposta.sessaoId, r.situacao.numero);
+    } else if (resposta.tipo === "resultado") {
+      const r = resposta as unknown as { resultado: { simulacao?: unknown } };
+      r.resultado.simulacao = await simulacaoDaSessao(db, resposta.sessaoId);
+    }
+    return resposta;
+  }
+
   app.get("/painel", async (request) => ({
     data: await motor.painel(await atorDe(request))
   }));
@@ -74,18 +89,20 @@ export async function registrarRotasDoLab(
   }));
 
   app.post("/sessoes", { bodyLimit: LIMITE_DO_CORPO_BYTES }, async (request) => ({
-    data: await motor.iniciar(await atorDe(request), request.body)
+    data: await comCena(await motor.iniciar(await atorDe(request), request.body))
   }));
 
   app.get("/sessoes/atual", async (request) => ({
-    data: await motor.estadoDoTeste(await atorDe(request))
+    data: await comCena(await motor.estadoDoTeste(await atorDe(request)))
   }));
 
   app.post<ComId>(
     "/sessoes/:id/respostas",
     { bodyLimit: LIMITE_DO_CORPO_BYTES },
     async (request) => ({
-      data: await motor.responder(await atorDe(request), request.params.id, request.body)
+      data: await comCena(
+        await motor.responder(await atorDe(request), request.params.id, request.body)
+      )
     })
   );
 
@@ -93,13 +110,18 @@ export async function registrarRotasDoLab(
     "/sessoes/:id/tempo-esgotado",
     { bodyLimit: LIMITE_DO_CORPO_BYTES },
     async (request) => ({
-      data: await motor.tempoEsgotado(await atorDe(request), request.params.id, request.body)
+      data: await comCena(
+        await motor.tempoEsgotado(await atorDe(request), request.params.id, request.body)
+      )
     })
   );
 
-  app.get<ComId>("/sessoes/:id/resultado", async (request) => ({
-    data: await motor.obterResultado(await atorDe(request), request.params.id)
-  }));
+  app.get<ComId>("/sessoes/:id/resultado", async (request) => {
+    const resultado = await motor.obterResultado(await atorDe(request), request.params.id);
+    if (!motor.temSimulador) return { data: resultado };
+    const simulacao = await simulacaoDaSessao(db, resultado.sessaoId);
+    return { data: { ...resultado, simulacao } };
+  });
 
   if (motor.temSimulador) {
     app.get("/simulador/temas", async (request) => {

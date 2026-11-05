@@ -11,6 +11,7 @@
 //
 // Datas viajam como texto ISO 8601 (é o que o JSON faz com um Date).
 import { z } from "zod";
+import { labCenaSchema, labSimulacaoSchema } from "./leadership-lab-simulador-api.js";
 import {
   labAlertaCores,
   labEscolhas,
@@ -199,7 +200,9 @@ export const labSituacaoSchema = z.object({
   consequencia: z.string().nullable(),
   tempoLimiteS: inteiro,
   /** Quanto falta, medido no servidor: recarregar a página não zera o relógio. */
-  tempoRestanteMs: inteiroNaoNegativo
+  tempoRestanteMs: inteiroNaoNegativo,
+  /** Quem aparece na cena (simulação local). Nula nos demais testes. Nunca traz avaliação. */
+  cena: labCenaSchema.nullable().default(null)
 });
 export type LabSituacao = z.infer<typeof labSituacaoSchema>;
 
@@ -243,7 +246,9 @@ export const labResultadoSchema = z.object({
   pontoForte: z.string().nullable(),
   pontoDesenvolvimento: z.string().nullable(),
   sugestoes: z.array(z.string()),
-  situacoes: z.array(labSituacaoDoResultadoSchema)
+  situacoes: z.array(labSituacaoDoResultadoSchema),
+  /** De que simulação local foi o teste. Nula nos demais testes. */
+  simulacao: labSimulacaoSchema.nullable().default(null)
 });
 export type LabResultado = z.infer<typeof labResultadoSchema>;
 

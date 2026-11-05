@@ -37,6 +37,8 @@ export type InjecaoDoLab = {
   ia: ClienteIa;
   config: ConfigDoMotor;
   agora?: () => Date;
+  /** Liga a simulação local (rotas /simulador e categoriaId). Só para testes de integração. */
+  temasDeSimulacao?: ReadonlySet<string>;
 };
 
 /** Lê LAB_IA_URL e LAB_IA_TOKEN. Nulo quando o módulo está desligado (sem LAB_IA_URL). */
@@ -80,7 +82,8 @@ export function criarMotorDoLab(args: {
       ia: injecao.ia,
       config: injecao.config,
       logger,
-      ...(injecao.agora ? { agora: injecao.agora } : {})
+      ...(injecao.agora ? { agora: injecao.agora } : {}),
+      ...(injecao.temasDeSimulacao ? { temasDeSimulacao: injecao.temasDeSimulacao } : {})
     });
   }
 
