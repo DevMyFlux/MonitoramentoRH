@@ -66,7 +66,7 @@ describe.skipIf(!ligado)("Leadership Lab no navegador", () => {
     await capturar(page, "02-painel-pronto-para-iniciar");
 
     // Antes do primeiro teste: nada de gráfico, perfil nem tendência.
-    await page.getByText("Seus testes concluídos aparecem aqui.").waitFor();
+    await page.getByText(/Sua evolução aparece aqui depois do primeiro teste/).waitFor();
     await page.getByText("Seu perfil aparece depois de 3 testes concluídos.").waitFor();
 
     await page.getByRole("button", { name: "Iniciar teste" }).click();

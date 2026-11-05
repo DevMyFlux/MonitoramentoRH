@@ -121,5 +121,5 @@ export const descricaoDoEstado: Record<"falando" | "ouvindo" | "refletindo" | "f
     falando: "apresentando a situação",
     ouvindo: "ouvindo a sua escolha",
     refletindo: "refletindo sobre a sua resposta",
-    feedback: "mostrando o que aconteceu depois da sua escolha"
+    feedback: "mostrando o efeito da sua decisão"
   };

@@ -6,93 +6,158 @@ export type EstadoDoAvatar = "falando" | "ouvindo" | "refletindo" | "feedback";
 
 type AvatarFacilitadorProps = { estado: EstadoDoAvatar; tamanho?: number; className?: string };
 
-// O SVG gira e estica em torno do próprio centro, não do canto da tela.
 const centro = { transformBox: "fill-box", transformOrigin: "center" } as const;
+const PRETO = "#111827";
 
 /**
- * O facilitador da simulação: uma ilustração vetorial (sem vídeo, sem voz, sem IA) que muda de
- * expressão conforme o momento. As animações são em CSS e somem com prefers-reduced-motion; o estado
- * também é dito em texto, então ninguém depende do movimento para entender a cena.
+ * O facilitador da simulação: o mascote (gota preta, boné e camiseta com o Ø) em ilustração
+ * vetorial, sem vídeo, voz nem IA. O estado muda o rosto e o braço: falando (aponta para a
+ * situação), ouvindo, refletindo e feedback (joinha). As animações são em CSS e somem com
+ * prefers-reduced-motion; o estado também é dito em texto.
  */
 export function AvatarFacilitador({ estado, tamanho = 96, className }: AvatarFacilitadorProps) {
+  const apontando = estado === "falando";
   return (
     <svg
       role="img"
       aria-label={`Facilitador, ${descricaoDoEstado[estado]}`}
       data-estado={estado}
-      viewBox="0 0 120 120"
+      viewBox="0 0 130 170"
       width={tamanho}
-      height={tamanho}
+      height={(tamanho * 170) / 130}
       className={cn(
         "shrink-0",
         estado === "refletindo" && "animate-lab-flutua motion-reduce:animate-none",
         className
       )}
     >
-      <circle cx="60" cy="60" r="58" fill="#d1fae5" />
-      {/* ombros e pescoço */}
-      <path d="M16 120c2-25 20-37 44-37s42 12 44 37z" fill="#065f46" />
-      <path d="M48 84l12 12 12-12" fill="#ecfdf5" />
-      <rect x="52" y="68" width="16" height="18" rx="6" fill="#d9a77f" />
-      {/* cabeça e cabelo */}
-      <ellipse cx="60" cy="52" rx="25" ry="28" fill="#eab994" />
-      <path d="M34 50c0-19 11-29 26-29s26 10 26 29c-5-9-13-13-26-13S39 41 34 50z" fill="#334155" />
-      {/* fone com microfone */}
-      <path d="M34 52a26 26 0 0 1 52 0" fill="none" stroke="#0f172a" strokeWidth="4" />
-      <rect x="29" y="49" width="8" height="17" rx="4" fill="#0f172a" />
-      <rect x="83" y="49" width="8" height="17" rx="4" fill="#0f172a" />
-      <path d="M87 64q3 11-15 14" fill="none" stroke="#0f172a" strokeWidth="2.5" />
-      <circle cx="71" cy="78" r="3" fill="#0f172a" />
-      {/* sobrancelhas */}
-      {estado === "refletindo" ? (
-        <>
-          <path d="M44 41l10-3" stroke="#334155" strokeWidth="2.5" strokeLinecap="round" />
-          <path d="M66 38l10 3" stroke="#334155" strokeWidth="2.5" strokeLinecap="round" />
-        </>
+      {/* pernas e tênis */}
+      <rect x="44" y="132" width="14" height="22" rx="6" fill={PRETO} />
+      <rect x="68" y="132" width="14" height="22" rx="6" fill={PRETO} />
+      <path d="M38 156q0-6 10-6h12v10H40q-2 0-2-4z" fill="#1f2937" />
+      <path d="M38 158h22v4H40z" fill="#f8fafc" />
+      <path d="M66 150h12q10 0 10 6 0 4-2 4H66z" fill="#1f2937" />
+      <path d="M66 158h22v4H66z" fill="#f8fafc" />
+      {/* braço de trás */}
+      <path
+        d="M40 108q-8 10-8 22"
+        fill="none"
+        stroke={PRETO}
+        strokeWidth="9"
+        strokeLinecap="round"
+      />
+      <circle cx="32" cy="133" r="6" fill={PRETO} />
+      {/* camiseta e shorts */}
+      <path
+        d="M38 104h54l6 12-8 4v12H40v-12l-8-4z"
+        fill="#1f2937"
+        stroke={PRETO}
+        strokeWidth="1.5"
+      />
+      <path d="M40 130h50l2 10H38z" fill="#111827" />
+      <circle cx="65" cy="118" r="5.5" fill="none" stroke="#f8fafc" strokeWidth="2" />
+      <path d="M61 123l8-10" stroke="#f8fafc" strokeWidth="2" strokeLinecap="round" />
+      {/* braço da frente */}
+      {apontando ? (
+        <g>
+          <path
+            d="M92 108q14-4 26-18"
+            fill="none"
+            stroke={PRETO}
+            strokeWidth="9"
+            strokeLinecap="round"
+          />
+          <path d="M116 92l10-12" stroke={PRETO} strokeWidth="6" strokeLinecap="round" />
+          <circle cx="116" cy="94" r="6" fill={PRETO} />
+        </g>
+      ) : estado === "feedback" ? (
+        <g>
+          <path
+            d="M92 108q12 0 18-14"
+            fill="none"
+            stroke={PRETO}
+            strokeWidth="9"
+            strokeLinecap="round"
+          />
+          <rect x="106" y="80" width="12" height="16" rx="5" fill={PRETO} />
+          <rect x="110" y="68" width="5" height="16" rx="2.5" fill={PRETO} />
+        </g>
+      ) : estado === "refletindo" ? (
+        <g>
+          <path
+            d="M92 108q8 4 0-12 -6-8-12-8"
+            fill="none"
+            stroke={PRETO}
+            strokeWidth="9"
+            strokeLinecap="round"
+          />
+          <circle cx="76" cy="88" r="6" fill={PRETO} />
+        </g>
       ) : (
-        <>
+        <g>
           <path
-            d="M44 40q5-3 10 0"
+            d="M92 108q8 10 8 22"
             fill="none"
-            stroke="#334155"
-            strokeWidth="2.5"
+            stroke={PRETO}
+            strokeWidth="9"
             strokeLinecap="round"
           />
-          <path
-            d="M66 40q5-3 10 0"
-            fill="none"
-            stroke="#334155"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-        </>
+          <circle cx="100" cy="133" r="6" fill={PRETO} />
+        </g>
       )}
+      {/* cabeça em gota */}
+      <path
+        d="M40 4C50 20 90 30 98 62c4 24-14 42-38 42S18 86 22 62C28 36 40 24 40 4z"
+        fill={PRETO}
+      />
+      <path
+        d="M34 40q4-18 6-30"
+        fill="none"
+        stroke="#374151"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      {/* rosto, barba e cabelo grisalho */}
+      <ellipse cx="60" cy="68" rx="24" ry="22" fill="#eab994" />
+      <path d="M34 62q-4 14 6 24 6-4 4-14z M86 62q4 14-6 24-6-4-4-14z" fill="#e5e7eb" />
+      <path d="M38 74q6 28 22 28t22-28q-6 8-22 8T38 74z" fill="#f3f4f6" />
+      {/* boné com Ø */}
+      <path
+        d="M32 52q2-24 30-26 26 0 30 26-30-8-60 0z"
+        fill="#1f2937"
+        stroke={PRETO}
+        strokeWidth="1.5"
+      />
+      <path d="M62 52q26-2 40 6-6 4-40-2z" fill="#111827" />
+      <circle cx="62" cy="38" r="5.5" fill="none" stroke="#f8fafc" strokeWidth="2" />
+      <path d="M58 43l8-10" stroke="#f8fafc" strokeWidth="2" strokeLinecap="round" />
+      {/* sobrancelhas */}
+      <path
+        d={estado === "refletindo" ? "M42 60l12-4M66 56l12 4" : "M42 58q6-4 12 0M66 58q6-4 12 0"}
+        fill="none"
+        stroke="#1f2937"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
       {/* olhos */}
       <g
         style={centro}
         className={cn(estado !== "feedback" && "animate-lab-pisca motion-reduce:animate-none")}
       >
         {estado === "feedback" ? (
-          <>
-            <path
-              d="M44 51q5-6 10 0"
-              fill="none"
-              stroke="#0f172a"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-            <path
-              d="M66 51q5-6 10 0"
-              fill="none"
-              stroke="#0f172a"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-          </>
+          <path
+            d="M42 68q6-7 12 0M66 68q6-7 12 0"
+            fill="none"
+            stroke={PRETO}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
         ) : (
           <>
-            <circle cx={estado === "refletindo" ? 50 : 49} cy="50" r="3.2" fill="#0f172a" />
-            <circle cx={estado === "refletindo" ? 72 : 71} cy="50" r="3.2" fill="#0f172a" />
+            <circle cx="49" cy="67" r="6" fill="#fff" />
+            <circle cx="71" cy="67" r="6" fill="#fff" />
+            <circle cx={estado === "refletindo" ? 52 : 50} cy="67" r="3.2" fill="#4b2e1a" />
+            <circle cx={estado === "refletindo" ? 74 : 72} cy="67" r="3.2" fill="#4b2e1a" />
           </>
         )}
       </g>
@@ -100,66 +165,31 @@ export function AvatarFacilitador({ estado, tamanho = 96, className }: AvatarFac
       {estado === "falando" ? (
         <ellipse
           cx="60"
-          cy="64"
+          cy="86"
           rx="6"
-          ry="4.5"
+          ry="4"
           fill="#7f1d1d"
           style={centro}
           className="animate-lab-fala motion-reduce:animate-none"
         />
       ) : estado === "feedback" ? (
-        <path d="M51 61q9 11 18 0z" fill="#7f1d1d" />
+        <path d="M51 82q9 12 18 0z" fill="#fff" stroke="#7f1d1d" strokeWidth="1.5" />
       ) : estado === "ouvindo" ? (
         <path
-          d="M53 63q7 5 14 0"
+          d="M52 84q8 6 16 0"
           fill="none"
           stroke="#7f1d1d"
           strokeWidth="2.5"
           strokeLinecap="round"
         />
       ) : (
-        <path d="M54 64h12" stroke="#7f1d1d" strokeWidth="2.5" strokeLinecap="round" />
+        <path d="M54 86h12" stroke="#7f1d1d" strokeWidth="2.5" strokeLinecap="round" />
       )}
-      {/* sinal do momento */}
-      {estado === "falando" ? (
-        <g fill="#047857">
-          {[0, 1, 2].map((i) => (
-            <circle
-              key={i}
-              cx={96 + i * 7}
-              cy={30 - i * 3}
-              r="2.4"
-              className="animate-lab-pontos motion-reduce:animate-none"
-              style={{ animationDelay: `${i * 0.2}s` }}
-            />
-          ))}
-        </g>
-      ) : null}
-      {estado === "ouvindo" ? (
-        <g fill="none" stroke="#047857" strokeWidth="2.5" strokeLinecap="round">
-          <path d="M96 38q6 5 0 12" />
-          <path d="M101 34q10 9 0 20" />
-        </g>
-      ) : null}
       {estado === "refletindo" ? (
         <g fill="#047857">
-          <circle cx="92" cy="30" r="2" />
-          <circle cx="99" cy="23" r="3" />
-          <circle cx="108" cy="14" r="4.5" />
-        </g>
-      ) : null}
-      {estado === "feedback" ? (
-        <g
-          style={centro}
-          className="animate-lab-brilho motion-reduce:animate-none"
-          fill="none"
-          stroke="#047857"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="98" cy="26" r="11" fill="#ecfdf5" />
-          <path d="M92 26l4 4 8-9" />
+          <circle cx="100" cy="30" r="2" />
+          <circle cx="107" cy="22" r="3" />
+          <circle cx="116" cy="12" r="4.5" />
         </g>
       ) : null}
     </svg>
