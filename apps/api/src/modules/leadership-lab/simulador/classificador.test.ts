@@ -95,3 +95,46 @@ describe("classificar", () => {
     }
   });
 });
+
+describe("classificar com a biblioteca real", () => {
+  const quem = (texto: string) => {
+    const r = classificar(texto, categoriasDaBiblioteca);
+    return r.resultado === "encontrado"
+      ? r.categoriaId
+      : r.resultado === "ambiguo"
+        ? r.categoriaIds
+        : null;
+  };
+
+  it("o exemplo do pedido cai em climatização", () => {
+    expect(quem("Estou com problema para realizar a manutenção do ar-condicionado")).toBe(
+      "climatizacao-ventilacao"
+    );
+  });
+
+  it.each([
+    ["A autoclave da CME parou e há cirurgias agendadas", "autoclaves-cme"],
+    ["Problema na esterilização do instrumental", "autoclaves-cme"],
+    ["O alarme do oxigênio da UTI disparou", "gases-medicinais-alarmes"],
+    ["Suspeita de vazamento de gás medicinal no bloco", "gases-medicinais-alarmes"],
+    ["A bomba de vácuo clínico está sem reserva", "compressores-vacuo"],
+    ["O fancoil da sala cirúrgica não gela", "climatizacao-ventilacao"],
+    ["O disjuntor do quadro elétrico desarmou", "quadros-eletricos"],
+    ["O gerador não assumiu depois da queda de energia", "geradores-transferencia"],
+    ["O detector de fumaça do corredor dispara sem motivo", "incendio-alarme"],
+    ["A caixa d'água do prédio está quase vazia", "reservatorios-agua"],
+    ["O elevador de macas parou", "elevadores"],
+    ["A geladeira de vacinas passou do ponto", "refrigeracao-cadeia-frio"],
+    ["A osmose reversa da hemodiálise alarmou", "hemodialise-agua"],
+    ["A bomba de infusão da UTI está falhando", "equipamentos-medicos"]
+  ])("%s -> %s", (texto, esperado) => {
+    const r = quem(texto);
+    const ids = Array.isArray(r) ? r : r === null ? [] : [r];
+    expect(ids).toContain(esperado);
+  });
+
+  it("assunto fora da biblioteca não vira tema", () => {
+    expect(quem("Preciso trocar a lâmpada do corredor e pintar a recepção")).toBeNull();
+    expect(quem("O refeitório está sem café")).toBeNull();
+  });
+});

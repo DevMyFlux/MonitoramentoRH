@@ -14,9 +14,11 @@ import {
 
 export const LIMITES_DE_PALAVRAS = {
   situacao: 55,
-  marco: 35,
+  marco: 30,
   opcao: 30,
-  resumo: 12,
+  /** O resumo das camadas 1 e 2 entra no marco ("Até aqui, você ..."), então é curto. */
+  resumoInicial: 10,
+  resumo: 14,
   consequencia: 35,
   justificativa: 45
 } as const;
@@ -127,7 +129,12 @@ export function validarCenario(cenario: CenarioDaBiblioteca): string[] {
       if (!o) continue;
       const donde = `${onde} opção ${e}`;
       texto(p, `${donde} texto`, o.texto, LIMITES_DE_PALAVRAS.opcao);
-      texto(p, `${donde} resumo`, o.resumo, LIMITES_DE_PALAVRAS.resumo);
+      texto(
+        p,
+        `${donde} resumo`,
+        o.resumo,
+        no.camada <= 2 ? LIMITES_DE_PALAVRAS.resumoInicial : LIMITES_DE_PALAVRAS.resumo
+      );
       texto(p, `${donde} consequência`, o.consequencia, LIMITES_DE_PALAVRAS.consequencia);
       texto(p, `${donde} justificativa`, o.justificativa, LIMITES_DE_PALAVRAS.justificativa);
       if (o.skills.length === 0) p.push(`${donde}: sem skills`);

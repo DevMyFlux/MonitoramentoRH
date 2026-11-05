@@ -32,6 +32,36 @@ describe("a biblioteca de simulações", () => {
     }
   });
 
+  it("há pelo menos 12 temas, cada um com 9 situações e fontes de referência temática", () => {
+    expect(pacotesDaBiblioteca.length).toBeGreaterThanOrEqual(12);
+    for (const { cenario } of pacotesDaBiblioteca) {
+      expect(cenario.nos, cenario.id).toHaveLength(9);
+      expect(cenario.fontes.length, cenario.id).toBeGreaterThanOrEqual(2);
+      expect(cenario.versao, cenario.id).toMatch(/demonstrativo/);
+      expect([...cenario.niveis].sort(), cenario.id).toEqual([...labMoldeNiveis].sort());
+    }
+  });
+
+  it("os temas pedidos existem", () => {
+    const ids = categoriasDaBiblioteca.map((c) => c.id);
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        "climatizacao-ventilacao",
+        "gases-medicinais-alarmes",
+        "compressores-vacuo",
+        "quadros-eletricos",
+        "geradores-transferencia",
+        "autoclaves-cme",
+        "incendio-alarme",
+        "reservatorios-agua",
+        "elevadores",
+        "refrigeracao-cadeia-frio",
+        "hemodialise-agua",
+        "equipamentos-medicos"
+      ])
+    );
+  });
+
   it("os ids de tema são únicos e cada tema tem um cenário", () => {
     const ids = categoriasDaBiblioteca.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
