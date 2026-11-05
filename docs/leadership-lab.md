@@ -532,6 +532,8 @@ Sem SQL. Em ordem:
 
 **Regras do contrato em código** (`contrato.py`): escala 100/70/40/10, as três opções com notas diferentes, alerta vermelho só com 10, omissão com aderência 0, marco na situação 3, A/B/C em ordem, skills só do piloto e sem repetição, resultado sem números. O que dá para corrigir sem mudar o sentido é corrigido; o resto refaz a chamada (`LAB_IA_TENTATIVAS`, padrão 2) e, se não der, responde 502.
 
+**Modelo.** `gemini-3.5-flash` (`LAB_IA_MODELO`) pelo endpoint `global` da Vertex AI (`GOOGLE_CLOUD_LOCATION=global`). Em novembro de 2026 nenhum modelo Gemini respondia em `southamerica-east1` para o projeto, e os 2.5 já não estavam disponíveis: o processamento pode ocorrer fora do Brasil (decisão do jurídico; a IA não recebe dado pessoal e a Guarda mascara o campo livre). Raciocínio `LOW` nas situações (`LAB_IA_RACIOCINIO`) e `MINIMAL` na Guarda: no teste real, abertura em ~8 s e cada turno entre 3 e 6 s, dentro dos 25 s do backend.
+
 **Estado.** Firestore, banco `lab-ia` (`LAB_IA_FIRESTORE`), coleção `lab_ia_sessoes`: situações, gabaritos, escolhas e a resposta já dada de cada turno. O reenvio do mesmo turno devolve a mesma resposta. Nada identifica o participante.
 
 **Teste local** (modelo falso; valida a mecânica, não o conteúdo): `python services/lab-ia/tests/simular.py saida.json`.

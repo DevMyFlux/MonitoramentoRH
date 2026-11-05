@@ -18,7 +18,7 @@ from google.genai import types
 
 from contrato import ESTILOS, SKILLS
 
-MODELO = os.environ.get("LAB_IA_MODELO", "gemini-2.5-flash")
+MODELO = os.environ.get("LAB_IA_MODELO", "gemini-3.5-flash")
 VERSAO_INSTRUCAO = "lab-ia-diagnostico-2026-11-05.1"
 
 _cliente: genai.Client | None = None
@@ -145,7 +145,8 @@ _OPCAO = {
     "properties": {
         "id": {"type": "STRING", "enum": ["A", "B", "C"]},
         "texto": _TXT,
-        "aderencia": {"type": "INTEGER", "enum": [100, 70, 40, 10]},
+        # O Gemini só aceita enum de texto; contrato.py converte para número.
+        "aderencia": {"type": "STRING", "enum": ["100", "70", "40", "10"]},
         "estilo": {"type": "STRING", "enum": list(ESTILOS), "nullable": True},
         "skills": {"type": "ARRAY", "items": {"type": "STRING", "enum": list(SKILLS)}},
         "justificativa": _TXT,
@@ -201,24 +202,40 @@ ESQUEMA_GUARDA = {
 }
 
 
-def _config(instrucao: str, esquema: dict[str, Any], temperatura: float) -> types.GenerateContentConfig:
+RACIOCINIO = os.environ.get("LAB_IA_RACIOCINIO", "LOW").upper()
+
+
+def _config(
+    instrucao: str, esquema: dict[str, Any], temperatura: float, raciocinio: str = RACIOCINIO
+) -> types.GenerateContentConfig:
     extra: dict[str, Any] = {}
-    if "flash" in MODELO and "2.5" in MODELO:
+    if MODELO.startswith("gemini-2.5"):
         # sem "pensamento": resposta rápida, dentro do tempo que o backend espera
         extra["thinking_config"] = types.ThinkingConfig(thinking_budget=0)
+    elif MODELO.startswith("gemini-3"):
+        # Gemini 3.x sempre raciocina; o nível baixo mantém o turno dentro do tempo do backend
+        extra["thinking_config"] = types.ThinkingConfig(thinking_level=raciocinio)
     return types.GenerateContentConfig(
         system_instruction=instrucao,
         response_mime_type="application/json",
         response_schema=esquema,
         temperature=temperatura,
-        max_output_tokens=2048,
+        # o raciocínio também conta aqui: folga para o JSON nunca sair cortado
+        max_output_tokens=8192,
         **extra,
     )
 
 
-def gerar_json(instrucao: str, esquema: dict[str, Any], pedido: str, uso: Uso, temperatura: float = 0.7) -> dict[str, Any]:
+def gerar_json(
+    instrucao: str,
+    esquema: dict[str, Any],
+    pedido: str,
+    uso: Uso,
+    temperatura: float = 0.7,
+    raciocinio: str = RACIOCINIO,
+) -> dict[str, Any]:
     resposta = cliente().models.generate_content(
-        model=MODELO, contents=pedido, config=_config(instrucao, esquema, temperatura)
+        model=MODELO, contents=pedido, config=_config(instrucao, esquema, temperatura, raciocinio)
     )
     uso.somar(resposta)
     texto = resposta.text or ""

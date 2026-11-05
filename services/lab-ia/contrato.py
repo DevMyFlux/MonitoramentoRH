@@ -77,6 +77,8 @@ def normalizar_situacao(bruta: dict[str, Any], numero: int) -> dict[str, Any]:
     for letra in ESCOLHAS:
         o = por_letra[letra]
         aderencia = o.get("aderencia")
+        if isinstance(aderencia, str) and aderencia.strip().isdigit():
+            aderencia = int(aderencia.strip())  # o esquema do Gemini manda a nota como texto
         if aderencia not in ADERENCIAS_DE_ESCOLHA:
             raise ViolacaoDoContrato(f"opção {letra}: aderência {aderencia!r} fora da escala 100/70/40/10")
         estilo = o.get("estilo")
