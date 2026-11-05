@@ -2,6 +2,7 @@ import { labSituacaoDoMarco } from "@my-flux/shared";
 import { Link, useNavigate } from "react-router-dom";
 import { Button, LoadingState } from "../../components/ui";
 import { Cartao } from "../../features/leadership-lab/componentes/cartao";
+import { ConsequenciaDaEscolha } from "../../features/leadership-lab/componentes/consequencia-da-escolha";
 import { Cronometro } from "../../features/leadership-lab/componentes/cronometro";
 import { ErroDaTelaDoLab } from "../../features/leadership-lab/componentes/erro-da-tela";
 import { MapaDoCaminho } from "../../features/leadership-lab/componentes/mapa-do-caminho";
@@ -102,9 +103,7 @@ export function LabTestePage() {
       ) : null}
 
       {situacao.consequencia ? (
-        <Cartao titulo="O que aconteceu depois da sua escolha">
-          <p className="text-sm leading-6 text-slate-700">{situacao.consequencia}</p>
-        </Cartao>
+        <ConsequenciaDaEscolha key={situacao.numero} texto={situacao.consequencia} />
       ) : null}
 
       <Cartao>
@@ -112,6 +111,7 @@ export function LabTestePage() {
           key={situacao.numero}
           situacao={situacao}
           desabilitado={bloqueado}
+          enviando={teste.enviando}
           aoConfirmar={(escolha, texto) => void teste.responder(escolha, texto)}
         />
         {teste.tempoAcabou && teste.enviando ? (

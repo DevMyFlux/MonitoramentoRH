@@ -10,6 +10,8 @@ import type { ClienteIa } from "./motor/cliente-ia.js";
 import { ClienteIaHttp } from "./motor/cliente-ia-http.js";
 import { criarIdTokenDoCloudRun } from "./motor/id-token-cloud-run.js";
 import { IaDemonstracao } from "./demonstracao/ia-demonstracao.js";
+import { leitorDoPercurso } from "./demonstracao/leitor.js";
+import { idsDasCategorias } from "./simulador/catalogo.js";
 import { ConfigDoLabInvalida, type ConfigDoMotor, lerConfigDoLab } from "./motor/config.js";
 import { type LoggerDoMotor, MotorDoTeste } from "./motor/motor.js";
 
@@ -36,6 +38,8 @@ export type InjecaoDoLab = {
   ia: ClienteIa;
   config: ConfigDoMotor;
   agora?: () => Date;
+  /** Liga a simulação local (rotas /simulador e categoriaId). Só para testes de integração. */
+  temasDeSimulacao?: ReadonlySet<string>;
 };
 
 /** Lê LAB_IA_URL e LAB_IA_TOKEN. Nulo quando o módulo está desligado (sem LAB_IA_URL). */
@@ -91,7 +95,8 @@ export function criarMotorDoLab(args: {
       ia: injecao.ia,
       config: injecao.config,
       logger,
-      ...(injecao.agora ? { agora: injecao.agora } : {})
+      ...(injecao.agora ? { agora: injecao.agora } : {}),
+      ...(injecao.temasDeSimulacao ? { temasDeSimulacao: injecao.temasDeSimulacao } : {})
     });
   }
 
@@ -103,9 +108,10 @@ export function criarMotorDoLab(args: {
     const config = lerConfigDoLab({ LAB_TOLERANCIA_TEMPO_S: TOLERANCIA_DA_DEMONSTRACAO_S, ...env });
     return new MotorDoTeste({
       db,
-      ia: new IaDemonstracao(),
+      ia: new IaDemonstracao(leitorDoPercurso(db)),
       config: { ...config, demonstracao: true },
-      logger
+      logger,
+      temasDeSimulacao: idsDasCategorias
     });
   }
   if (modoDemonstracaoPedido(env)) {

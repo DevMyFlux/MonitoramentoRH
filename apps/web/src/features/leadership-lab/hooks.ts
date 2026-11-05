@@ -3,7 +3,7 @@
 // O teste em andamento tem UM dono: o cache de `chaves.testeAtual`. A tela do teste só o lê; as
 // ações (iniciar, responder, tempo esgotado) o atualizam com a resposta do servidor. Assim o que
 // está na tela é sempre o que o servidor mandou por último.
-import type { LabEstadoDoTeste } from "@my-flux/shared";
+import type { LabClassificarEntrada, LabEstadoDoTeste } from "@my-flux/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../my-flux/client";
 import { labApi } from "./api";
@@ -50,7 +50,7 @@ export function useAceitarTermo() {
 export function useIniciarTeste() {
   const cliente = useQueryClient();
   return useMutation({
-    mutationFn: labApi.iniciarTeste,
+    mutationFn: (categoriaId?: string) => labApi.iniciarTeste(categoriaId),
     onSuccess: (resposta) => {
       if (resposta.tipo === "situacao") {
         const recebido: TesteRecebido = { resposta, recebidaEm: performance.now() };
@@ -66,5 +66,24 @@ export function useResultado(sessaoId: string) {
     queryKey: chaves.resultado(sessaoId),
     queryFn: () => labApi.resultado(sessaoId),
     retry: repetirSoSeFalhaPassageira
+  });
+}
+
+/** Os temas da simulação local. Só se pede quando o painel diz que é modo demonstração. */
+export function useTemasSimulados(habilitado: boolean) {
+  return useQuery({
+    queryKey: ["lab", "temas-simulados"] as const,
+    queryFn: labApi.temasSimulados,
+    enabled: habilitado,
+    staleTime: 5 * 60_000,
+    retry: repetirSoSeFalhaPassageira
+  });
+}
+
+/** Classifica o texto do participante em um tema. Não entra no cache: o texto não deve ficar por aí. */
+export function useClassificarProblema() {
+  return useMutation({
+    mutationFn: (entrada: LabClassificarEntrada) => labApi.classificarProblema(entrada),
+    gcTime: 0
   });
 }

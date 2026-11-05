@@ -93,6 +93,11 @@ export type DependenciasDoMotor = {
   /** Relógio injetável. Todo cálculo de tempo do teste usa este, nunca Date.now() direto. */
   agora?: () => Date;
   logger?: LoggerDoMotor;
+  /**
+   * Temas da simulação local. Só existe no modo demonstração: sem isto, `categoriaId` é recusado.
+   * O motor não conhece a biblioteca; só confere se o tema escolhido está nesta lista.
+   */
+  temasDeSimulacao?: ReadonlySet<string>;
 };
 
 type Intencao =
@@ -111,13 +116,20 @@ export class MotorDoTeste {
   private readonly config: ConfigDoMotor;
   private readonly relogio: () => Date;
   private readonly logger: LoggerDoMotor | undefined;
+  private readonly temasDeSimulacao: ReadonlySet<string> | undefined;
 
   constructor(dependencias: DependenciasDoMotor) {
+    this.temasDeSimulacao = dependencias.temasDeSimulacao;
     this.db = dependencias.db;
     this.ia = dependencias.ia;
     this.config = dependencias.config;
     this.relogio = dependencias.agora ?? (() => new Date());
     this.logger = dependencias.logger;
+  }
+
+  /** Há simulação local (modo demonstração)? As rotas /simulador só existem se sim. */
+  get temSimulador(): boolean {
+    return this.temasDeSimulacao !== undefined;
   }
 
   // =========================================================================
@@ -254,11 +266,15 @@ export class MotorDoTeste {
         break;
     }
     const { molde, temas } = estado;
+    if (entrada.categoriaId !== undefined && !this.temasDeSimulacao?.has(entrada.categoriaId)) {
+      throw erros.temaInvalido();
+    }
 
-    // O corpo sai do schema estrito: só molde, temas e quantidade de situações.
+    // O corpo sai do schema estrito: só molde, temas e quantidade de situações. Com um tema de
+    // simulação escolhido, ele é o único tema (nunca o texto que o participante digitou).
     const corpo = iniciarSessaoIaRequestSchema.parse({
       molde: molde.nivel,
-      temas,
+      temas: entrada.categoriaId !== undefined ? [entrada.categoriaId] : temas,
       numero_situacoes: molde.numeroSituacoes
     });
     const desfecho = await chamarIa(() => this.ia.abrirSessao(corpo), validarAberturaIa);

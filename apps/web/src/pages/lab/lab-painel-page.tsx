@@ -104,8 +104,9 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
         acao={painel.acao}
         iniciando={iniciar.isPending}
         erroAoIniciar={iniciar.error ? descreverErro(iniciar.error) : null}
-        aoIniciar={() =>
-          iniciar.mutate(undefined, {
+        demonstracao={painel.demonstracao}
+        aoIniciar={(categoriaId) =>
+          iniciar.mutate(categoriaId, {
             onSuccess: (resposta) =>
               navigate(
                 resposta.tipo === "situacao" ? "/lab/teste" : `/lab/resultado/${resposta.sessaoId}`
@@ -117,6 +118,7 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
       <section aria-label="Indicadores" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Estatistica
           rotulo="Testes feitos"
+          href="#seus-testes"
           valor={indicadores.testesFeitos}
           detalhe={
             indicadores.testesFeitos === 0
@@ -126,6 +128,7 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
         />
         <Estatistica
           rotulo="Aderência média"
+          href="#evolucao"
           valor={
             indicadores.aderenciaMedia === null
               ? "—"
@@ -135,6 +138,7 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
         />
         <Estatistica
           rotulo="Agilidade média"
+          href="#evolucao"
           valor={
             indicadores.agilidadeMedia === null
               ? "—"
@@ -144,13 +148,21 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
         />
         <Estatistica
           rotulo="Último teste"
+          href="#seus-testes"
           valor={indicadores.ultimoTesteEm ? formatarDataCurta(indicadores.ultimoTesteEm) : "—"}
         />
       </section>
 
-      <Cartao titulo="Sua evolução" descricao="Aderência e agilidade de cada teste concluído.">
+      <Cartao
+        id="evolucao"
+        titulo="Sua evolução"
+        descricao="Aderência e agilidade de cada teste concluído."
+      >
         {evolucao.pontos.length === 0 ? (
-          <p className="text-sm text-slate-500">Seus testes concluídos aparecem aqui.</p>
+          <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+            Sua evolução aparece aqui depois do primeiro teste concluído. Comece pelo bloco de
+            início, no topo da página.
+          </p>
         ) : (
           <>
             <Suspense fallback={<AguardandoGrafico />}>
@@ -200,6 +212,7 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
       </Cartao>
 
       <Cartao
+        id="seus-testes"
         titulo="Seus testes"
         descricao="Abra um resultado para rever as suas escolhas, o nível validado pelo RH e, se discordar de algum ponto, contestar."
       >
@@ -237,6 +250,7 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
       </Cartao>
 
       <Cartao
+        id="skills"
         titulo="Suas skills"
         descricao="O nível mais recente de cada skill, de 1 a 5. O nível validado pelo RH, quando houver, substitui o calculado."
       >

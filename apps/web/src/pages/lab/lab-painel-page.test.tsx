@@ -16,6 +16,8 @@ vi.mock("../../features/leadership-lab/api", async (importOriginal) => {
       painel: vi.fn(),
       aceitarTermo: vi.fn(),
       iniciarTeste: vi.fn(),
+      temasSimulados: vi.fn(),
+      classificarProblema: vi.fn(),
       testeEmAndamento: vi.fn(),
       responder: vi.fn(),
       tempoEsgotado: vi.fn(),
@@ -252,6 +254,7 @@ describe("painel do participante", () => {
             { id: "C", texto: "c" }
           ],
           consequencia: null,
+          cena: null,
           tempoLimiteS: 60,
           tempoRestanteMs: 60_000
         }
@@ -386,7 +389,7 @@ describe("painel do participante", () => {
     it("sem testes concluídos não há gráfico, e a tendência diz que falta", async () => {
       api.painel.mockResolvedValue(painel());
       abrir();
-      await screen.findByText("Seus testes concluídos aparecem aqui.");
+      await screen.findByText(/Sua evolução aparece aqui depois do primeiro teste concluído/);
       expect(screen.queryByTestId("evolucao")).toBeNull();
       expect(
         screen.getByText(

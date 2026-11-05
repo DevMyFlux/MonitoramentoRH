@@ -56,6 +56,8 @@ const matriz = {
   "sessao:tempo-esgotado": { participante: "proprios" },
   "contestacao:criar": { participante: "proprios" },
   "contestacao:ler-proprias": { participante: "proprios" },
+  // Simulação local (só no modo demonstração): lista de temas e classificação do texto livre.
+  "simulador:ler": { participante: "proprios" },
 
   // --- Participante e curador (GET /sessoes/:id/resultado)
   "resultado:ler": { participante: "proprios", curador: "turma" },

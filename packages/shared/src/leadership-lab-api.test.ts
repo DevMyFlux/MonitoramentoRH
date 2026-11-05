@@ -204,7 +204,7 @@ describe("contrato das respostas do Leadership Lab", () => {
 
   describe("situação do teste", () => {
     it("aceita uma situação com 3 opções", () => {
-      expect(labSituacaoSchema.parse(situacao)).toEqual(situacao);
+      expect(labSituacaoSchema.parse(situacao)).toEqual({ ...situacao, cena: null });
     });
 
     it("recusa número de opções diferente de 3, letra desconhecida e tempo negativo", () => {
@@ -223,7 +223,7 @@ describe("contrato das respostas do Leadership Lab", () => {
     it("descarta o que não é do contrato: um campo de avaliação que vazasse não chega à tela", () => {
       const vazada = { ...situacao, aderencia: 100, estilo: "direcao", justificativa: "segredo" };
       const lida = labSituacaoSchema.parse(vazada);
-      expect(lida).toEqual(situacao);
+      expect(lida).toEqual({ ...situacao, cena: null });
       expect(JSON.stringify(lida)).not.toContain("segredo");
     });
   });
@@ -271,7 +271,7 @@ describe("contrato das respostas do Leadership Lab", () => {
 
   describe("resultado", () => {
     it("aceita o resultado completo", () => {
-      expect(labResultadoSchema.parse(resultado)).toEqual(resultado);
+      expect(labResultadoSchema.parse(resultado)).toEqual({ ...resultado, simulacao: null });
     });
 
     it("aceita a omissão (sem escolha e sem tempo de resposta)", () => {

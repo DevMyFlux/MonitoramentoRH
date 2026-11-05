@@ -5,16 +5,26 @@ import { Button } from "../../../components/ui";
 import type { ErroDaTela } from "../erros";
 import { motivoDeIndisponibilidade } from "../rotulos";
 import { Cartao } from "./cartao";
+import { EscolhaDoProblema } from "./escolha-do-problema";
 
 type AcaoDoPainelProps = {
   acao: LabAcaoDoPainel;
   iniciando: boolean;
   erroAoIniciar: ErroDaTela | null;
-  aoIniciar: () => void;
+  /** Modo demonstração: o participante descreve o problema e escolhe o tema da simulação local. */
+  demonstracao?: boolean;
+  /** `categoriaId` só vem na simulação local; sem ele, é o teste como sempre. */
+  aoIniciar: (categoriaId?: string) => void;
 };
 
 /** O botão do painel, no estado que o servidor decidiu (as mesmas regras de POST /sessoes). */
-export function AcaoDoPainel({ acao, iniciando, erroAoIniciar, aoIniciar }: AcaoDoPainelProps) {
+export function AcaoDoPainel({
+  acao,
+  iniciando,
+  erroAoIniciar,
+  demonstracao = false,
+  aoIniciar
+}: AcaoDoPainelProps) {
   if (acao.tipo === "continuar") {
     return (
       <Cartao titulo="Você tem um teste em andamento">
@@ -41,6 +51,17 @@ export function AcaoDoPainel({ acao, iniciando, erroAoIniciar, aoIniciar }: Acao
     );
   }
 
+  if (demonstracao) {
+    return (
+      <EscolhaDoProblema
+        molde={acao.molde.nome}
+        iniciando={iniciando}
+        erroAoIniciar={erroAoIniciar}
+        aoIniciar={aoIniciar}
+      />
+    );
+  }
+
   return (
     <Cartao titulo="Pronto para o próximo teste">
       <p className="text-sm leading-6 text-slate-600">
@@ -58,7 +79,7 @@ export function AcaoDoPainel({ acao, iniciando, erroAoIniciar, aoIniciar }: Acao
       <Button
         className="mt-4"
         disabled={iniciando}
-        onClick={aoIniciar}
+        onClick={() => aoIniciar()}
         icon={<Play size={16} aria-hidden="true" />}
       >
         {iniciando ? "Iniciando..." : "Iniciar teste"}

@@ -13,6 +13,8 @@
 //   POST /sessoes/:id/respostas         envia A, B ou C (e o campo livre)
 //   POST /sessoes/:id/tempo-esgotado    avisa que o relógio zerou (o servidor confere)
 //   GET  /sessoes/:id/resultado         resultado de um teste concluído
+//   GET  /simulador/temas               (só no modo demonstração) os temas da simulação local
+//   POST /simulador/classificar         (só no modo demonstração) propõe um tema a partir do texto
 //
 // Os cadastros do RH e a configuração dos moldes ficam em lab-cadastro-routes.ts, e a curadoria e a
 // contestação em lab-curadoria-routes.ts (mesmo prefixo).
@@ -22,6 +24,10 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { PrismaClient } from "@prisma/client";
 import { authenticateRequest } from "../auth/auth-routes.js";
 import type { UserRepository } from "../users/user-repository.js";
+import { type LabCena, labClassificarEntradaSchema } from "@my-flux/shared";
+import { assertAcesso } from "./lab-access.js";
+import { cenaDaSituacao, simulacaoDaSessao } from "./simulador/cena.js";
+import { descreverClassificacao, temasDaBiblioteca } from "./simulador/rotas.js";
 import { registrarRotasDoCadastro } from "./lab-cadastro-routes.js";
 import { registrarRotasDaCuradoria } from "./lab-curadoria-routes.js";
 import { carregarAtorLab } from "./lab-actor.js";
@@ -52,6 +58,20 @@ export async function registrarRotasDoLab(
   const atorDe = async (request: FastifyRequest) =>
     carregarAtorLab(db, await authenticateRequest(request, users));
 
+  // Na simulação local, acrescenta à situação quem aparece na cena e ao resultado de que simulação
+  // foi. Só apresentação: nada da avaliação. Fora da simulação, não mexe em nada.
+  async function comCena<T extends { tipo: string; sessaoId: string }>(resposta: T): Promise<T> {
+    if (!motor.temSimulador) return resposta;
+    if (resposta.tipo === "situacao") {
+      const r = resposta as unknown as { situacao: { numero: number; cena?: LabCena | null } };
+      r.situacao.cena = await cenaDaSituacao(db, resposta.sessaoId, r.situacao.numero);
+    } else if (resposta.tipo === "resultado") {
+      const r = resposta as unknown as { resultado: { simulacao?: unknown } };
+      r.resultado.simulacao = await simulacaoDaSessao(db, resposta.sessaoId);
+    }
+    return resposta;
+  }
+
   app.get("/painel", async (request) => ({
     data: await motor.painel(await atorDe(request))
   }));
@@ -69,18 +89,20 @@ export async function registrarRotasDoLab(
   }));
 
   app.post("/sessoes", { bodyLimit: LIMITE_DO_CORPO_BYTES }, async (request) => ({
-    data: await motor.iniciar(await atorDe(request), request.body)
+    data: await comCena(await motor.iniciar(await atorDe(request), request.body))
   }));
 
   app.get("/sessoes/atual", async (request) => ({
-    data: await motor.estadoDoTeste(await atorDe(request))
+    data: await comCena(await motor.estadoDoTeste(await atorDe(request)))
   }));
 
   app.post<ComId>(
     "/sessoes/:id/respostas",
     { bodyLimit: LIMITE_DO_CORPO_BYTES },
     async (request) => ({
-      data: await motor.responder(await atorDe(request), request.params.id, request.body)
+      data: await comCena(
+        await motor.responder(await atorDe(request), request.params.id, request.body)
+      )
     })
   );
 
@@ -88,13 +110,32 @@ export async function registrarRotasDoLab(
     "/sessoes/:id/tempo-esgotado",
     { bodyLimit: LIMITE_DO_CORPO_BYTES },
     async (request) => ({
-      data: await motor.tempoEsgotado(await atorDe(request), request.params.id, request.body)
+      data: await comCena(
+        await motor.tempoEsgotado(await atorDe(request), request.params.id, request.body)
+      )
     })
   );
 
-  app.get<ComId>("/sessoes/:id/resultado", async (request) => ({
-    data: await motor.obterResultado(await atorDe(request), request.params.id)
-  }));
+  app.get<ComId>("/sessoes/:id/resultado", async (request) => {
+    const resultado = await motor.obterResultado(await atorDe(request), request.params.id);
+    if (!motor.temSimulador) return { data: resultado };
+    const simulacao = await simulacaoDaSessao(db, resultado.sessaoId);
+    return { data: { ...resultado, simulacao } };
+  });
+
+  if (motor.temSimulador) {
+    app.get("/simulador/temas", async (request) => {
+      assertAcesso(await atorDe(request), "simulador:ler");
+      return { data: temasDaBiblioteca() };
+    });
+
+    // O texto digitado só escolhe um tema: não é gravado, não entra em log e não sai do servidor.
+    app.post("/simulador/classificar", { bodyLimit: LIMITE_DO_CORPO_BYTES }, async (request) => {
+      assertAcesso(await atorDe(request), "simulador:ler");
+      const { descricao } = labClassificarEntradaSchema.parse(request.body);
+      return { data: descreverClassificacao(descricao) };
+    });
+  }
 
   await registrarRotasDoCadastro(app, users, db);
   await registrarRotasDaCuradoria(app, users, db);

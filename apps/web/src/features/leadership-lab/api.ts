@@ -6,11 +6,14 @@
 // durante o teste nunca chegaria a ser exibido.
 import {
   type LabEscolha,
+  type LabClassificarEntrada,
   labAceiteDoTermoSchema,
+  labClassificacaoSchema,
   labEstadoDoTesteSchema,
   labPainelSchema,
   labRespostaDoTesteSchema,
-  labResultadoSchema
+  labResultadoSchema,
+  labTemasSimuladosSchema
 } from "@my-flux/shared";
 import type { ZodType } from "zod";
 import { request } from "../my-flux/client";
@@ -60,7 +63,18 @@ export const labApi = {
   painel: () => chamar(labPainelSchema, "GET", "/painel"),
   aceitarTermo: () => chamar(labAceiteDoTermoSchema, "POST", "/termo"),
   /** Inicia um teste, ou retoma o que está em andamento. Só deve ser chamado por um clique. */
-  iniciarTeste: () => chamar(labRespostaDoTesteSchema, "POST", "/sessoes"),
+  iniciarTeste: (categoriaId?: string) =>
+    chamar(
+      labRespostaDoTesteSchema,
+      "POST",
+      "/sessoes",
+      categoriaId === undefined ? undefined : { categoriaId }
+    ),
+  /** Simulação local (modo demonstração): os temas disponíveis. */
+  temasSimulados: () => chamar(labTemasSimuladosSchema, "GET", "/simulador/temas"),
+  /** Propõe um tema a partir do texto. O texto só viaja nesta chamada: o servidor não o guarda. */
+  classificarProblema: (entrada: LabClassificarEntrada) =>
+    chamar(labClassificacaoSchema, "POST", "/simulador/classificar", entrada),
   /** Só lê: nunca começa um teste. É o que a tela do teste usa ao abrir e ao recarregar. */
   testeEmAndamento: () => chamar(labEstadoDoTesteSchema, "GET", "/sessoes/atual"),
   responder: (sessaoId: string, entrada: EntradaDeResposta) =>

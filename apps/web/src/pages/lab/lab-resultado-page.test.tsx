@@ -7,6 +7,13 @@ import { resultado } from "../../test/dados-do-lab";
 import { renderizar } from "../../test/render";
 import { LabResultadoPage } from "./lab-resultado-page";
 
+// O React Flow precisa de layout de verdade; o mapa tem testes próprios nos dados que monta.
+vi.mock("../../features/leadership-lab/componentes/mapa-de-decisoes", () => ({
+  MapaDeDecisoes: ({ situacoes }: { situacoes: unknown[] }) => (
+    <div data-testid="mapa">{situacoes.length} situações</div>
+  )
+}));
+
 vi.mock("../../features/leadership-lab/api", async (importOriginal) => {
   const original = await importOriginal<typeof import("../../features/leadership-lab/api")>();
   return {

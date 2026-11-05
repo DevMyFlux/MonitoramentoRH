@@ -1,7 +1,8 @@
 import type { LabResultado, LabSituacaoDoResultado } from "@my-flux/shared";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FlaskConical } from "lucide-react";
+import { lazy, Suspense } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Badge, Button, LoadingState } from "../../components/ui";
+import { Badge, Button, LoadingState, Skeleton } from "../../components/ui";
 import { cn } from "../../lib/cn";
 import { Cartao, Estatistica } from "../../features/leadership-lab/componentes/cartao";
 import { ContestarResultado } from "../../features/leadership-lab/componentes/contestar-resultado";
@@ -14,6 +15,13 @@ import {
   formatarNumero,
   nomeDoTipoDeSkill
 } from "../../features/leadership-lab/rotulos";
+
+// O React Flow só carrega quando o resultado é aberto (fica fora do pacote do painel e do teste).
+const MapaDeDecisoes = lazy(() =>
+  import("../../features/leadership-lab/componentes/mapa-de-decisoes").then((m) => ({
+    default: m.MapaDeDecisoes
+  }))
+);
 
 const VoltarAoPainel = () => (
   <Link to="/lab">
@@ -49,6 +57,14 @@ function ResultadoCompleto({ resultado }: { resultado: LabResultado }) {
             Leadership Lab
           </p>
           <h1 className="mt-2 text-2xl font-semibold text-slate-950">Resultado do teste</h1>
+          {resultado.simulacao ? (
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-700">
+              <Badge tone="info" className="gap-1">
+                <FlaskConical size={12} aria-hidden="true" /> Simulação local
+              </Badge>
+              {resultado.simulacao.temaNome}: {resultado.simulacao.titulo}
+            </p>
+          ) : null}
           {resultado.concluidaEm ? (
             <p className="mt-1 text-sm text-slate-500">
               Concluído em {formatarDataEHora(resultado.concluidaEm)}
@@ -156,6 +172,15 @@ function ResultadoCompleto({ resultado }: { resultado: LabResultado }) {
           </ul>
         </Cartao>
       ) : null}
+
+      <Cartao
+        titulo="Seu mapa de decisões"
+        descricao="O caminho que você percorreu, com a consequência de cada escolha e as alternativas que ficaram de fora."
+      >
+        <Suspense fallback={<Skeleton className="h-[28rem] w-full" aria-label="Carregando mapa" />}>
+          <MapaDeDecisoes situacoes={resultado.situacoes} />
+        </Suspense>
+      </Cartao>
 
       <Cartao titulo="Suas escolhas, situação por situação">
         <ol className="space-y-4">
