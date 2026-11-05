@@ -256,6 +256,7 @@ As pré-condições de início ficam num só lugar, `avaliarInicio` (`precondico
 | `LAB_LIMITE_TESTES_DIA`  | não                           | Testes por participante por dia. Sem ela, sem limite                                           |
 | `LAB_IA_TIMEOUT_MS`      | não                           | Tempo máximo de cada chamada à IA. Padrão 25 000; fica abaixo dos 30 s do cliente web          |
 | `LAB_MODO_DEMO`          | não                           | `true` liga o **modo demonstração** (veja a seção própria). Só vale sem `LAB_IA_URL`           |
+| `LAB_IA_AUTENTICACAO`    | não                           | `cloud-run`: cada chamada leva o ID token da conta de serviço do site (serviço de IA privado)  |
 
 Ligado e mal configurado, o servidor **não sobe** e diz o que falta, em vez de começar a falhar na frente do participante. Desligado, o resto do sistema sobe exatamente como antes.
 
@@ -520,6 +521,36 @@ Sem SQL. Em ordem:
 2. **Quadrante dos estilos** no arranjo clássico da Liderança Situacional: direção no eixo vertical, apoio no horizontal.
 3. **Escolher e confirmar são dois passos**, para uma tecla ou um toque errados não enviarem uma resposta que não pode ser trocada.
 4. **A tela não mostra "o que fazer" nos alertas** (decisão em aberto, veja o painel) nem a média da turma.
+
+## Serviço de IA (Etapa 2)
+
+`services/lab-ia/`, em Python (FastAPI + Gemini pela Vertex AI). Implementa o contrato acima: `POST /teste/sessoes`, `POST /teste/turnos` e `POST /agentes/guarda`, com `X-Servico-Token` igual a `TOKEN_SERVICO`.
+
+**Como conduz o teste.** A instrução (`agente.py`, `VERSAO_INSTRUCAO`) segue o prompt do negócio: diagnóstico adaptativo, uma situação por vez, com quatro trilhas (A Pessoas e Liderança, B Processos e Produtividade, C Metas e Estratégia, D Treinamento e Competências). Se o gestor foi bem numa trilha, a próxima situação muda de trilha; se foi mal, aprofunda a mesma. O fechamento traz "Diagnóstico encontrado" no resumo e, nas sugestões, um microtreinamento de três passos e uma ferramenta.
+
+**Gabarito na criação.** Cada situação nasce com a avaliação escondida das três opções (aderência, estilo, skills e justificativa). A `avaliacao_anterior` é montada desse gabarito, nunca de uma segunda chamada ao modelo: a nota de uma escolha não muda depois de ela ser feita.
+
+**Regras do contrato em código** (`contrato.py`): escala 100/70/40/10, as três opções com notas diferentes, alerta vermelho só com 10, omissão com aderência 0, marco na situação 3, A/B/C em ordem, skills só do piloto e sem repetição, resultado sem números. O que dá para corrigir sem mudar o sentido é corrigido; o resto refaz a chamada (`LAB_IA_TENTATIVAS`, padrão 2) e, se não der, responde 502.
+
+**Estado.** Firestore, banco `lab-ia` (`LAB_IA_FIRESTORE`), coleção `lab_ia_sessoes`: situações, gabaritos, escolhas e a resposta já dada de cada turno. O reenvio do mesmo turno devolve a mesma resposta. Nada identifica o participante.
+
+**Teste local** (modelo falso; valida a mecânica, não o conteúdo): `python services/lab-ia/tests/simular.py saida.json`.
+
+**Produção** (projeto `gestao-rh-escalas`, região `southamerica-east1`):
+
+| Peça                   | Valor                                                                                  |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| Serviço do Cloud Run   | `lab-ia`, **sem acesso público**                                                       |
+| Conta de serviço       | `lab-ia@gestao-rh-escalas.iam.gserviceaccount.com` (Usuário da Vertex AI, Firestore)    |
+| Segredo                | `LAB_IA_TOKEN` no Secret Manager: `TOKEN_SERVICO` no `lab-ia` e `LAB_IA_TOKEN` no site |
+| Quem pode chamar       | a conta de serviço do site, com o papel Invocador do Cloud Run no `lab-ia`              |
+| Site (`rh-monitoramento`) | `LAB_IA_URL`, `LAB_IA_TOKEN`, `LAB_IA_AUTENTICACAO=cloud-run`, `LAB_TOLERANCIA_TEMPO_S` |
+
+Publicar uma versão nova do serviço:
+
+```
+gcloud run deploy lab-ia --source services/lab-ia --region southamerica-east1 --project gestao-rh-escalas
+```
 
 ## Pendências
 
