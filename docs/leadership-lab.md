@@ -536,3 +536,15 @@ Sem SQL. Em ordem:
 - Curadoria: o que uma contestação aceita deve mudar no resultado, e se uma validação pode ser refeita (veja "Decisões que tomei e o negócio pode rever" na curadoria).
 - Se o RH também deve ligar cargos a moldes (hoje é do administrador), e se uma pessoa pode ser participante e curadora: veja "Decisões que tomei e o negócio pode rever" nos cadastros.
 - Agregados com mínimo de 5 pessoas por recorte: a matriz já limita `lab_gestao` a agregados; o cálculo do recorte entra com o painel da gestão (versão 2).
+
+## Simulador local (modo demonstração)
+
+Com `LAB_MODO_DEMO=true` e sem `LAB_IA_URL`, o Lab roda uma **biblioteca local de simulações hospitalares**, sem IA e sem nenhum serviço externo.
+
+- **Fluxo:** o participante descreve o problema ("Qual problema você está enfrentando na operação?"), `POST /simulador/classificar` propõe um tema (classificador determinístico por palavras-chave; o texto não é gravado nem logado), ele confirma ou escolhe da lista (`GET /simulador/temas`) e `POST /sessoes` recebe `{ categoriaId }`. A descrição não consome uma das 5 situações. Sem correspondência, a lista de temas é mostrada: nunca se inventa situação fora da biblioteca.
+- **Conteúdo:** `apps/api/src/modules/leadership-lab/simulador/cenarios/` (12 temas, um cenário cada). Cada cenário é um grafo de 9 situações em 5 camadas (1 → 2 → 2 → 2 → 2); toda opção aponta para a camada seguinte, então todo caminho tem exatamente 5 decisões e os caminhos convergem. A situação 3 é o marco e recorda as duas primeiras escolhas do caminho real. A abertura muda por cargo; as demais situações são comuns aos três cargos.
+- **Avaliação:** aderência, estilo, skills, linha vermelha e justificativa moram só nos dados do cenário (servidor). O contrato da IA e o motor não mudaram: o provedor local (`IaDemonstracao`) refaz o caminho lendo as escolhas gravadas (`LeitorDoPercurso`). Um provedor Gemini futuro substitui o provedor sem mexer no motor nem na tela.
+- **Validação:** `validador.ts` roda em todos os cenários nos testes (destinos, ciclos, nós inalcançáveis, 3 opções, limites de palavras, coerência estilo × aderência, fontes conhecidas, ausência de parâmetro técnico) e os testes percorrem os 1.024 caminhos (A, B, C ou tempo esgotado) de cada tema pelo contrato da IA.
+- **Tela:** avatar facilitador em SVG (falando, ouvindo, refletindo, feedback), personagem da cena, cartões de decisão, consequência animada (tudo desligado com `prefers-reduced-motion`) e, no resultado, o mapa de decisões em React Flow. A cena (`situacao.cena`) e a simulação (`resultado.simulacao`) vêm das rotas e nunca carregam avaliação.
+
+**Limites e pendências:** o conteúdo é **demonstrativo**, de nível gerencial, sem intervalos, pressões, temperaturas nem procedimentos. As fontes (`simulador/fontes.ts`) são referências temáticas que **não puderam ser consultadas** (WHO, NHS, CDC, ANVISA, gov.br inacessíveis na sessão de desenvolvimento): a validação técnica e pedagógica é do negócio. As pontuações são atribuídas pelo autor, não derivadas. O mapa mostra as alternativas só com o texto da opção (o que elas causariam não é revelado).

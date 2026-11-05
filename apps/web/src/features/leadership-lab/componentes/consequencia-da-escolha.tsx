@@ -3,10 +3,7 @@ import { CornerDownRight } from "lucide-react";
 /** O efeito da escolha anterior, antes da próxima situação. Entra com uma animação curta. */
 export function ConsequenciaDaEscolha({ texto }: { texto: string }) {
   return (
-    <section
-      aria-label="O que aconteceu depois da sua escolha"
-      className="animate-lab-entrada rounded-2xl border border-emerald-200 bg-emerald-50 p-4 motion-reduce:animate-none"
-    >
+    <section className="animate-lab-entrada rounded-2xl border border-emerald-200 bg-emerald-50 p-4 motion-reduce:animate-none">
       <div className="flex gap-3">
         <CornerDownRight
           size={20}

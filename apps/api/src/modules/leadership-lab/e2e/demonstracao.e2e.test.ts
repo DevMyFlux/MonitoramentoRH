@@ -52,7 +52,7 @@ describe.skipIf(!ligado)("Leadership Lab em modo demonstração, no navegador", 
 
   /** Faz um teste inteiro pelo teclado, a partir do botão "Iniciar teste" do painel. */
   async function fazerUmTeste(page: Page, teclas: string[]) {
-    await page.getByRole("button", { name: "Iniciar teste" }).click();
+    await page.getByRole("button", { name: "Fazer a demonstração geral" }).click();
     await page.waitForURL("**/lab/teste");
     for (const [indice, tecla] of teclas.entries()) {
       await page.getByText(`Situação ${indice + 1} de 5`, { exact: true }).waitFor();
@@ -93,7 +93,9 @@ describe.skipIf(!ligado)("Leadership Lab em modo demonstração, no navegador", 
     await faixa.waitFor();
     await page.getByRole("checkbox", { name: "Li e estou ciente." }).check();
     await page.getByRole("button", { name: "Aceitar e continuar" }).click();
-    await page.getByRole("heading", { name: "Pronto para o próximo teste" }).waitFor();
+    await page
+      .getByRole("heading", { name: "Qual problema você está enfrentando na operação?" })
+      .waitFor();
     await capturar(page, "22-painel-demonstracao");
 
     await fazerUmTeste(page, MELHORES);
@@ -138,4 +140,38 @@ describe.skipIf(!ligado)("Leadership Lab em modo demonstração, no navegador", 
     await capturar(page, "25-alerta-vermelho");
     await page.close();
   }, 120_000);
+
+  it("descreve o problema, faz a simulação local ramificada e vê o mapa de decisões", async () => {
+    const page = await navegador.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.goto(`${ambiente.url}/login`);
+    await entrarPelaTelaDeLogin(page, ambiente.participante);
+    await page.waitForURL("**/lab");
+    const termo = page.getByRole("checkbox", { name: "Li e estou ciente." });
+    if (await termo.isVisible().catch(() => false)) {
+      await termo.check();
+      await page.getByRole("button", { name: "Aceitar e continuar" }).click();
+    }
+    await page
+      .getByLabel("Descreva o problema")
+      .fill("Estou com problema para realizar a manutenção do ar-condicionado");
+    await page.getByRole("button", { name: "Buscar simulação" }).click();
+    await page.getByRole("button", { name: /Iniciar: Climatização e ventilação/ }).click();
+    await page.waitForURL("**/lab/teste");
+
+    // A melhor trilha: A, B, A, C (n4a), B (n5a). Cada situação é da simulação local.
+    for (const [indice, tecla] of ["1", "2", "1", "3", "2"].entries()) {
+      await page.getByText(`Situação ${indice + 1} de 5`, { exact: true }).waitFor();
+      await page.getByText(/\(Simulação local\)/).waitFor();
+      await page.keyboard.press(tecla);
+      await page.getByRole("button", { name: "Confirmar resposta" }).click();
+    }
+    await page.waitForURL("**/lab/resultado/*");
+    await page.getByRole("heading", { name: "Seu mapa de decisões" }).waitFor();
+    await page.getByTestId("mapa-de-decisoes").waitFor();
+    expect(await page.locator(".react-flow__node").count()).toBeGreaterThanOrEqual(5);
+    await page
+      .getByText("Climatização e ventilação: Ar-condicionado parado em setor crítico")
+      .waitFor();
+    await capturar(page, "24-simulacao-local-mapa");
+  });
 });

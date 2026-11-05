@@ -120,8 +120,7 @@ export function SituacaoDoTeste({
                   selecionada ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-700"
                 )}
               >
-                {opcao.id}
-                <span className="sr-only">.</span>
+                {`${opcao.id}.`}
               </span>
               <span className="flex-1 text-sm leading-6 text-slate-800">{opcao.texto}</span>
               {selecionada && enviando ? (
