@@ -35,7 +35,10 @@ describe("criarIdTokenDoCloudRun", () => {
       { status: 200, corpo: jwt(exp) },
       { status: 200, corpo: jwt(exp + 3600) }
     ]);
-    const obter = criarIdTokenDoCloudRun("https://ia.exemplo.test", { fetchImpl, agora: () => agora });
+    const obter = criarIdTokenDoCloudRun("https://ia.exemplo.test", {
+      fetchImpl,
+      agora: () => agora
+    });
 
     await obter();
     agora += 50 * 60_000; // faltam 10 minutos: ainda vale
@@ -52,6 +55,8 @@ describe("criarIdTokenDoCloudRun", () => {
     await expect(criarIdTokenDoCloudRun("https://ia.exemplo.test", falha)()).rejects.toThrow(/404/);
 
     const vazio = metadadosFalsos([{ status: 200, corpo: "  " }]);
-    await expect(criarIdTokenDoCloudRun("https://ia.exemplo.test", vazio)()).rejects.toThrow(/vazio/);
+    await expect(criarIdTokenDoCloudRun("https://ia.exemplo.test", vazio)()).rejects.toThrow(
+      /vazio/
+    );
   });
 });

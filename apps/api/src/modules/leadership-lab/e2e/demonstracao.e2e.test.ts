@@ -75,16 +75,16 @@ describe.skipIf(!ligado)("Leadership Lab em modo demonstração, no navegador", 
     await itemDoMenu.waitFor();
     await capturar(page, "20-visitante-no-modo-de-teste");
 
-    // 2. O DEV não é participante: a página diz isso e como chegar ao teste.
+    // 2. O perfil DEV vê o módulo (não cai mais na tela de "sem acesso"). Para fazer o teste, a conta de
+    //    participante continua sendo o caminho mais direto.
     await itemDoMenu.click();
     await page.waitForURL("**/lab");
-    await page.getByText("O Leadership Lab não é para o seu perfil").waitFor();
-    await page.getByText("comum@myflux.local").waitFor();
-    await capturar(page, "21-dev-sem-acesso-com-dica");
+    await page.getByRole("heading", { level: 1, name: "Leadership Lab" }).waitFor();
+    expect(await page.getByText("O Leadership Lab não é para o seu perfil").count()).toBe(0);
+    await capturar(page, "21-dev-no-lab");
+    await page.goto(`${ambiente.url}/login`);
 
     // 3. Entrar com a conta de participante.
-    await page.getByRole("link", { name: /Ir para o login/ }).click();
-    await page.waitForURL("**/login");
     await entrarPelaTelaDeLogin(page, ambiente.participante);
     await page.waitForURL("**/lab");
 

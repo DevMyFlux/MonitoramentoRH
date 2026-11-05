@@ -5,6 +5,7 @@ import { LAB_NAO_ENCONTRADO, assertAcesso } from "./lab-access.js";
 
 const comum: LabAtor = { userId: "u1", role: "COMUM", participanteId: "p1", permissoes: [] };
 const rh: LabAtor = { userId: "u2", role: "RH", participanteId: null, permissoes: [] };
+const admin: LabAtor = { userId: "u4", role: "ADMIN", participanteId: null, permissoes: [] };
 const dev: LabAtor = { userId: "u3", role: "DEV", participanteId: null, permissoes: [] };
 
 function erroDe(fn: () => void): HttpError {
@@ -24,12 +25,12 @@ describe("assertAcesso", () => {
     expect(() => assertAcesso(dev, "config-moldes:atualizar")).not.toThrow();
   });
 
-  it("403 LAB_FORBIDDEN quando o perfil não pode a ação, inclusive para DEV", () => {
+  it("403 LAB_FORBIDDEN quando o perfil não pode a ação, inclusive para ADMIN", () => {
     for (const [ator, acao] of [
       [comum, "resultado:validar"],
       [rh, "sessao:iniciar"],
-      [dev, "resultado:ler"],
-      [dev, "painel:ler"]
+      [admin, "resultado:ler"],
+      [admin, "painel:ler"]
     ] as const) {
       const erro = erroDe(() => assertAcesso(ator, acao));
       expect(erro.statusCode, `${ator.role} ${acao}`).toBe(403);

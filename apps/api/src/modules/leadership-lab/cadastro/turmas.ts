@@ -48,7 +48,7 @@ export class TurmasDoLab {
   async listar(user: AuthenticatedUser, ator: LabAtor): Promise<LabTurmaResumo[]> {
     assertAcesso(ator, "turma:listar");
     const linhas = await this.db.labTurma.findMany({
-      where: { curadorId: user.id },
+      where: user.role === "DEV" ? {} : { curadorId: user.id },
       select: selecaoDaTurma,
       orderBy: [{ ativa: "desc" }, { criadoEm: "desc" }, { id: "asc" }]
     });
@@ -58,7 +58,7 @@ export class TurmasDoLab {
   async detalhar(user: AuthenticatedUser, ator: LabAtor, id: string): Promise<LabTurmaDetalhe> {
     assertAcesso(ator, "turma:listar");
     const turma = await this.db.labTurma.findFirst({
-      where: { id, curadorId: user.id },
+      where: user.role === "DEV" ? { id } : { id, curadorId: user.id },
       select: {
         ...selecaoDaTurma,
         participantes: {
@@ -199,7 +199,7 @@ export class TurmasDoLab {
 
   private async turmaDoCuradorOuFalha(user: AuthenticatedUser, id: string) {
     const turma = await this.db.labTurma.findFirst({
-      where: { id, curadorId: user.id },
+      where: user.role === "DEV" ? { id } : { id, curadorId: user.id },
       select: { id: true, nome: true, ativa: true }
     });
     if (!turma) throw errosDoCadastro.naoEncontrado();

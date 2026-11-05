@@ -22,6 +22,7 @@ export type LabPerfil = "DEV" | "ADMIN" | "RH" | "COMUM";
  * - participante: perfil COMUM.
  * - curador: perfil RH.
  * - administrador: perfis ADMIN e DEV.
+ * - o perfil DEV acumula TODOS os papéis (exceção deliberada, para teste e suporte).
  * - gestao: permissão lab_gestao (qualquer perfil).
  * - especialista: permissão lab_especialista (qualquer perfil). Versão 1: ainda sem ações.
  *
@@ -133,6 +134,14 @@ export function papeisLab(ator: LabAtor): ReadonlySet<PapelLab> {
   if (ator.role === "COMUM") papeis.add("participante");
   if (ator.role === "RH") papeis.add("curador");
   if (ator.role === "ADMIN" || ator.role === "DEV") papeis.add("administrador");
+  // O perfil DEV (conta de desenvolvimento) é a EXCEÇÃO ao princípio de papéis separados: vê o
+  // módulo inteiro, para poder testá-lo e dar suporte. ADMIN continua só administrador.
+  if (ator.role === "DEV") {
+    papeis.add("participante");
+    papeis.add("curador");
+    papeis.add("gestao");
+    papeis.add("especialista");
+  }
   if (ator.permissoes.includes("lab_gestao")) papeis.add("gestao");
   if (ator.permissoes.includes("lab_especialista")) papeis.add("especialista");
   return papeis;

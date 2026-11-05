@@ -764,12 +764,7 @@ describe.skipIf(!integrationEnabled)("motor do teste: proteções", () => {
         permissoes: []
       });
 
-      for (const intruso of [
-        ator("RH"),
-        ator("ADMIN"),
-        ator("DEV"),
-        ator("RH", c.ctx.participanteId)
-      ]) {
+      for (const intruso of [ator("RH"), ator("ADMIN"), ator("RH", c.ctx.participanteId)]) {
         await expect(c.motor.iniciar(intruso), intruso.role).rejects.toMatchObject({
           statusCode: 403,
           code: "LAB_FORBIDDEN"
@@ -867,7 +862,7 @@ describe.skipIf(!integrationEnabled)("motor do teste: proteções", () => {
           statusCode: 404
         });
 
-        for (const role of ["ADMIN", "DEV"] as const) {
+        for (const role of ["ADMIN"] as const) {
           const admin: LabAtor = { userId: curadorId, role, participanteId: null, permissoes: [] };
           await expect(c.motor.obterResultado(admin, idC)).rejects.toMatchObject({
             statusCode: 403,

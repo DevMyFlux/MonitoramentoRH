@@ -50,7 +50,9 @@ export async function prepararDemonstracao(
     async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${CHAVE_DO_LOCK_DA_DEMONSTRACAO}::bigint)`;
       await concederPermissoesAoAdmin(tx);
-      return preparar(tx);
+      const preparo = await preparar(tx);
+      if (preparo.preparado) await prepararParticipanteDoAdmin(tx);
+      return preparo;
     },
     { timeout: 30_000 }
   );
@@ -77,6 +79,38 @@ async function concederPermissoesAoAdmin(db: Prisma.TransactionClient): Promise<
       create: { userId: admin.id, permissao }
     });
   }
+}
+
+/**
+ * O perfil DEV também faz o teste: liga a conta de administração a um segundo colaborador fictício
+ * do mesmo cargo de demonstração. Nada é alterado se a conta já estiver ligada a um colaborador.
+ */
+async function prepararParticipanteDoAdmin(db: Prisma.TransactionClient): Promise<void> {
+  const admin = await db.user.findUnique({ where: { email: EMAIL_DO_ADMIN_DE_DEMONSTRACAO } });
+  if (!admin || (await db.labParticipante.findUnique({ where: { userId: admin.id } }))) return;
+  const operacao = await db.operation.findFirst({
+    where: { name: NOME_DA_OPERACAO_DE_DEMONSTRACAO }
+  });
+  const cargo = operacao
+    ? await db.jobFunction.findFirst({
+        where: { name: NOME_DO_CARGO_DE_DEMONSTRACAO, operationId: operacao.id }
+      })
+    : null;
+  if (!operacao || !cargo) return;
+  const colaborador = await db.employee.upsert({
+    where: {
+      operationId_identifier: { operationId: operacao.id, identifier: "DEMO-LAB-ADMIN" }
+    },
+    update: { functionId: cargo.id },
+    create: {
+      operationId: operacao.id,
+      functionId: cargo.id,
+      name: "Administrador de demonstração",
+      identifier: "DEMO-LAB-ADMIN",
+      notes: NOTA_DO_REGISTRO_FICTICIO
+    }
+  });
+  await db.labParticipante.create({ data: { userId: admin.id, employeeId: colaborador.id } });
 }
 
 async function preparar(db: Prisma.TransactionClient): Promise<ResultadoDaPreparacao> {

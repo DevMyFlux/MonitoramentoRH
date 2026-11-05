@@ -65,7 +65,7 @@ describe.skipIf(!integrationEnabled)("motor do teste: consultas do participante"
 
     it("só o participante consulta", async () => {
       const c = await novoCenario(banco);
-      for (const ator of [intruso("RH"), intruso("ADMIN"), intruso("DEV")]) {
+      for (const ator of [intruso("RH"), intruso("ADMIN")]) {
         await expect(c.motor.situacaoDoTermo(ator)).rejects.toMatchObject({
           statusCode: 403,
           code: "LAB_FORBIDDEN"
@@ -151,12 +151,7 @@ describe.skipIf(!integrationEnabled)("motor do teste: consultas do participante"
 
     it("só o participante consulta", async () => {
       const c = await novoCenario(banco);
-      for (const ator of [
-        intruso("RH"),
-        intruso("ADMIN"),
-        intruso("DEV"),
-        intruso("RH", c.ctx.participanteId)
-      ]) {
+      for (const ator of [intruso("RH"), intruso("ADMIN"), intruso("RH", c.ctx.participanteId)]) {
         await expect(c.motor.listarMoldes(ator)).rejects.toMatchObject({ statusCode: 403 });
       }
       await expect(c.motor.listarMoldes(intruso("COMUM"))).rejects.toMatchObject({

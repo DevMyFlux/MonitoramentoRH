@@ -481,6 +481,15 @@ describe.skipIf(!integrationEnabled)("modo demonstração", () => {
       updatedAt: new Date().toISOString()
     });
     const outro = await criarUsuario(banco.db.client, banco.base, {});
+    // O vínculo do DEV usa o cargo fictício criado junto com o participante de demonstração.
+    await inserir(banco.db.client, '"User"', {
+      id: crypto.randomUUID(),
+      email: EMAIL_DO_PARTICIPANTE_DE_DEMONSTRACAO,
+      name: "Participante",
+      passwordHash: "x",
+      roleId: banco.base.roleId,
+      updatedAt: new Date().toISOString()
+    }).catch(() => undefined);
     await prepararDemonstracao(banco.prisma);
     await prepararDemonstracao(banco.prisma);
     const q = (u: string) =>
@@ -490,5 +499,10 @@ describe.skipIf(!integrationEnabled)("modo demonstração", () => {
       );
     expect(await q(id)).toEqual([{ permissao: "lab_especialista" }, { permissao: "lab_gestao" }]);
     expect(await q(outro)).toEqual([]);
+    // O perfil DEV também faz o teste: a conta de administração fica ligada a um colaborador fictício.
+    const vinculo = await consulta("SELECT 1 FROM leadership_lab.participante WHERE user_id = $1", [
+      id
+    ]);
+    expect(vinculo).toHaveLength(1);
   });
 });

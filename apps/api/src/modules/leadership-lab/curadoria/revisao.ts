@@ -58,7 +58,7 @@ export class RevisaoDoLab {
   /** Quanto espera uma decisão do curador. Alimenta os números das abas. */
   async pendencias(user: AuthenticatedUser, ator: LabAtor): Promise<LabPendencias> {
     assertAcesso(ator, "revisao:listar");
-    const participantes = [...(await carregarParticipantesDasTurmas(this.db, user.id))];
+    const participantes = [...(await carregarParticipantesDasTurmas(this.db, user.id, user.role))];
     const doParticipante = { participanteId: { in: participantes } };
     const [resultadosAguardando, alertasAbertos, contestacoesPendentes, contribuicoesPendentes] =
       await Promise.all([
@@ -84,7 +84,7 @@ export class RevisaoDoLab {
     status: FiltroDeStatus
   ): Promise<LabItemDaRevisao[]> {
     assertAcesso(ator, "revisao:listar");
-    const participantes = [...(await carregarParticipantesDasTurmas(this.db, user.id))];
+    const participantes = [...(await carregarParticipantesDasTurmas(this.db, user.id, user.role))];
     const linhas = await this.db.labResultado.findMany({
       where: {
         ...(status === "todos" ? {} : { statusValidacao: status }),
@@ -160,7 +160,11 @@ export class RevisaoDoLab {
     assertAcesso(ator, "revisao:listar");
     const dono = await this.donoDoResultado(resultadoId);
     if (!dono) recursoInexistente(ator, "resultado:ler");
-    const participantesDasTurmas = await carregarParticipantesDasTurmas(this.db, user.id);
+    const participantesDasTurmas = await carregarParticipantesDasTurmas(
+      this.db,
+      user.id,
+      user.role
+    );
     assertAcesso(ator, "resultado:ler", {
       participanteId: dono.participanteId,
       participantesDasTurmas
@@ -182,7 +186,11 @@ export class RevisaoDoLab {
     const entrada = labValidarResultadoEntradaSchema.parse(entradaBruta);
     const dono = await this.donoDoResultado(resultadoId);
     if (!dono) recursoInexistente(ator, "resultado:validar");
-    const participantesDasTurmas = await carregarParticipantesDasTurmas(this.db, user.id);
+    const participantesDasTurmas = await carregarParticipantesDasTurmas(
+      this.db,
+      user.id,
+      user.role
+    );
     assertAcesso(ator, "resultado:validar", {
       participanteId: dono.participanteId,
       participantesDasTurmas
