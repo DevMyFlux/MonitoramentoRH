@@ -8,6 +8,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type { ClienteIa } from "./motor/cliente-ia.js";
 import { ClienteIaHttp } from "./motor/cliente-ia-http.js";
+import { criarIdTokenDoCloudRun } from "./motor/id-token-cloud-run.js";
 import { IaDemonstracao } from "./demonstracao/ia-demonstracao.js";
 import { ConfigDoLabInvalida, type ConfigDoMotor, lerConfigDoLab } from "./motor/config.js";
 import { type LoggerDoMotor, MotorDoTeste } from "./motor/motor.js";
@@ -61,6 +62,18 @@ export function lerConfigDaIa(env: Record<string, string | undefined>): ConfigDa
 }
 
 /**
+ * Lê LAB_IA_AUTENTICACAO. "cloud-run": o serviço de IA está no Cloud Run sem acesso público, e cada
+ * chamada leva o ID token da conta de serviço do site. Vazia: só o X-Servico-Token. Outro valor é
+ * erro de configuração (falha a subida, como as demais variáveis do Lab).
+ */
+export function lerAutenticacaoDaIa(env: Record<string, string | undefined>): "cloud-run" | null {
+  const valor = env.LAB_IA_AUTENTICACAO?.trim().toLowerCase();
+  if (!valor) return null;
+  if (valor === "cloud-run") return "cloud-run";
+  throw new ConfigDoLabInvalida('LAB_IA_AUTENTICACAO aceita só "cloud-run" (ou nada).');
+}
+
+/**
  * Monta o motor do teste, ou devolve nulo se o módulo estiver desligado. Lança
  * ConfigDoLabInvalida se estiver ligado mas mal configurado.
  */
@@ -100,9 +113,16 @@ export function criarMotorDoLab(args: {
   }
 
   const config = lerConfigDoLab(env);
+  const autorizacao =
+    lerAutenticacaoDaIa(env) === "cloud-run" ? criarIdTokenDoCloudRun(ia.url) : undefined;
   return new MotorDoTeste({
     db,
-    ia: new ClienteIaHttp({ baseUrl: ia.url, token: ia.token, timeoutMs: config.iaTimeoutMs }),
+    ia: new ClienteIaHttp({
+      baseUrl: ia.url,
+      token: ia.token,
+      timeoutMs: config.iaTimeoutMs,
+      ...(autorizacao ? { autorizacao } : {})
+    }),
     config,
     logger
   });

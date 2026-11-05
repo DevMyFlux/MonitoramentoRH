@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { IaDemonstracao } from "./demonstracao/ia-demonstracao.js";
 import {
   criarMotorDoLab,
+  lerAutenticacaoDaIa,
   lerConfigDaIa,
   modoDemonstracaoPedido,
   usaModoDemonstracao
@@ -48,6 +49,27 @@ describe("lerConfigDaIa", () => {
       url: "https://ia.exemplo.test/v1",
       token: "segredo"
     });
+  });
+});
+
+describe("lerAutenticacaoDaIa", () => {
+  it("vazia: só o token de serviço", () => {
+    expect(lerAutenticacaoDaIa({})).toBeNull();
+    expect(lerAutenticacaoDaIa({ LAB_IA_AUTENTICACAO: "  " })).toBeNull();
+  });
+
+  it('"cloud-run" liga o ID token, sem diferenciar maiúsculas', () => {
+    expect(lerAutenticacaoDaIa({ LAB_IA_AUTENTICACAO: " Cloud-Run " })).toBe("cloud-run");
+  });
+
+  it("outro valor é erro de configuração", () => {
+    expect(() => lerAutenticacaoDaIa({ LAB_IA_AUTENTICACAO: "iam" })).toThrow(ConfigDoLabInvalida);
+  });
+
+  it("valor inválido derruba a subida do módulo ligado", () => {
+    expect(() =>
+      criarMotorDoLab({ db, env: { ...ligado, LAB_IA_AUTENTICACAO: "sim" }, logger })
+    ).toThrow(/LAB_IA_AUTENTICACAO/);
   });
 });
 
