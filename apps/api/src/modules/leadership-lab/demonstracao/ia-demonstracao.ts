@@ -1,13 +1,17 @@
 // Leadership Lab — a IA de demonstração.
 //
-// Faz o papel do serviço de IA (as mesmas três chamadas e as mesmas respostas do contrato) com as
-// situações fixas de conteudo.ts, SEM nenhum serviço externo. Existe para mostrar as telas
-// funcionando enquanto o serviço real não existe; só entra com LAB_MODO_DEMO e sem LAB_IA_URL.
+// Faz o papel do serviço de IA (as mesmas três chamadas e as mesmas respostas do contrato), SEM
+// nenhum serviço externo. Existe para mostrar as telas funcionando enquanto o serviço real não
+// existe; só entra com LAB_MODO_DEMO e sem LAB_IA_URL. Tem dois modos de sessão:
 //
-// Não guarda estado na memória: o total de situações vai dentro do identificador da sessão, então
-// um teste continua certo se o servidor reiniciar ou se outra instância atender a próxima chamada.
-// O texto livre é ignorado (ele nem vira contribuição para o curador): o que o participante digita
-// não sai do servidor e não alimenta nada.
+//  - simulação local (tema escolhido): percorre um cenário ramificado da biblioteca
+//    (simulador/). O tema vem em `temas`; o caminho já feito vem do banco, pelo LeitorDoPercurso.
+//  - demonstração geral (sem tema): as cinco situações fixas de conteudo.ts.
+//
+// Não guarda estado na memória: o total, o cargo e o tema vão dentro do identificador da sessão, e
+// o caminho é relido do banco a cada turno, então um teste continua certo se o servidor reiniciar
+// ou se outra instância atender a próxima chamada. O texto livre é ignorado (ele nem vira
+// contribuição para o curador): o que o participante digita não sai do servidor e não alimenta nada.
 import { randomUUID } from "node:crypto";
 import type { LabEscolha } from "@my-flux/shared";
 import {
@@ -16,6 +20,18 @@ import {
   proximoTurnoIaRequestSchema
 } from "../ia/ia-contrato.js";
 import type { ClienteIa } from "../motor/cliente-ia.js";
+import { cenarioDe, idsDasCategorias } from "../simulador/catalogo.js";
+import { nosDoPercurso, type PassoDoPercurso } from "../simulador/percurso.js";
+import {
+  avaliarNoDaSimulacao,
+  criarIdDaSimulacao,
+  ehSimulacao,
+  lerIdDaSimulacao,
+  resultadoDaSimulacao,
+  SimulacaoInvalida,
+  situacaoDaSimulacao,
+  usoDoSimulador
+} from "../simulador/provedor.js";
 import {
   PREFIXO_DA_DEMONSTRACAO,
   type SituacaoDeDemonstracao,
@@ -25,6 +41,8 @@ import {
 type Json = Record<string, unknown>;
 
 const PREFIXO_DO_ID = "demo";
+
+type IniciarNivel = ReturnType<typeof iniciarSessaoIaRequestSchema.parse>["molde"];
 
 export class SessaoDeDemonstracaoInvalida extends Error {
   constructor(sessaoId: string) {
@@ -83,9 +101,21 @@ const RESULTADO_DE_DEMONSTRACAO = {
   contribuicoes: []
 };
 
+/**
+ * Lê as escolhas já gravadas de uma sessão (o que o participante respondeu em cada situação).
+ * A IA de demonstração não guarda estado: refaz o caminho do cenário a partir disto.
+ */
+export type LeitorDoPercurso = (iaSessaoId: string) => Promise<readonly PassoDoPercurso[]>;
+
 export class IaDemonstracao implements ClienteIa {
+  constructor(private readonly leitor?: LeitorDoPercurso) {}
+
   async abrirSessao(corpo: unknown): Promise<unknown> {
     const pedido = iniciarSessaoIaRequestSchema.parse(corpo);
+    const tema = pedido.temas.length === 1 ? pedido.temas[0] : undefined;
+    if (tema !== undefined && idsDasCategorias.has(tema)) {
+      return this.abrirSimulacao(pedido.molde, tema, pedido.numero_situacoes);
+    }
     return {
       sessao_id: `${PREFIXO_DO_ID}.${pedido.numero_situacoes}.${randomUUID()}`,
       tipo: "situacao",
@@ -97,8 +127,81 @@ export class IaDemonstracao implements ClienteIa {
     };
   }
 
+  private abrirSimulacao(
+    nivel: IniciarNivel,
+    categoriaId: string,
+    total: number
+  ): Record<string, unknown> {
+    const cenario = cenarioDe(categoriaId, nivel);
+    if (!cenario) throw new SimulacaoInvalida(`sem cenário "${categoriaId}" para ${nivel}`);
+    if (total !== 5) throw new SimulacaoInvalida("a simulação local tem exatamente 5 situações");
+    const nos = nosDoPercurso(cenario, [], 1);
+    return {
+      sessao_id: criarIdDaSimulacao({ total, nivel, categoriaId }),
+      tipo: "situacao",
+      avaliacao_anterior: null,
+      consequencia: null,
+      situacao: situacaoDaSimulacao({ cenario, nivel, numero: 1, nos, escolhas: [] }),
+      resultado: null,
+      uso: usoDoSimulador()
+    };
+  }
+
+  private async proximoTurnoDaSimulacao(
+    pedido: ReturnType<typeof proximoTurnoIaRequestSchema.parse>
+  ): Promise<Record<string, unknown>> {
+    if (!this.leitor) throw new SimulacaoInvalida("sem leitor do percurso");
+    const { total, nivel, categoriaId } = lerIdDaSimulacao(pedido.sessao_id);
+    const cenario = cenarioDe(categoriaId, nivel);
+    if (!cenario) throw new SimulacaoInvalida(`sem cenário "${categoriaId}" para ${nivel}`);
+    const { numero } = pedido;
+
+    const gravados = await this.leitor(pedido.sessao_id);
+    // A escolha da situação atual vem no pedido; as anteriores, do banco.
+    const passos: PassoDoPercurso[] = [
+      ...gravados.filter((p) => p.numero < numero),
+      { numero, escolha: pedido.escolha as LabEscolha | null }
+    ];
+    const nos = nosDoPercurso(cenario, passos, numero);
+    const no = nos[numero - 1];
+    if (!no) throw new SimulacaoInvalida(`sem nó para a situação ${numero}`);
+    const escolhas = passos.map((p) => p.escolha);
+
+    const { avaliacao, consequencia } = avaliarNoDaSimulacao(
+      no,
+      numero,
+      passos[numero - 1]?.escolha ?? null
+    );
+    if (numero >= total) {
+      return {
+        tipo: "resultado",
+        avaliacao_anterior: avaliacao,
+        consequencia,
+        situacao: null,
+        resultado: resultadoDaSimulacao(cenario, nos, escolhas),
+        uso: usoDoSimulador()
+      };
+    }
+    const proximos = nosDoPercurso(cenario, passos, numero + 1);
+    return {
+      tipo: "situacao",
+      avaliacao_anterior: avaliacao,
+      consequencia,
+      situacao: situacaoDaSimulacao({
+        cenario,
+        nivel,
+        numero: numero + 1,
+        nos: proximos,
+        escolhas
+      }),
+      resultado: null,
+      uso: usoDoSimulador()
+    };
+  }
+
   async proximoTurno(corpo: unknown): Promise<unknown> {
     const pedido = proximoTurnoIaRequestSchema.parse(corpo);
+    if (ehSimulacao(pedido.sessao_id)) return this.proximoTurnoDaSimulacao(pedido);
     const total = totalDaSessao(pedido.sessao_id);
     const { numero } = pedido;
     const conteudo = conteudoDa(numero);

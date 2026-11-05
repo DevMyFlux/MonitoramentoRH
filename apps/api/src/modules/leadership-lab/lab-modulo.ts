@@ -9,6 +9,8 @@ import type { PrismaClient } from "@prisma/client";
 import type { ClienteIa } from "./motor/cliente-ia.js";
 import { ClienteIaHttp } from "./motor/cliente-ia-http.js";
 import { IaDemonstracao } from "./demonstracao/ia-demonstracao.js";
+import { leitorDoPercurso } from "./demonstracao/leitor.js";
+import { idsDasCategorias } from "./simulador/catalogo.js";
 import { ConfigDoLabInvalida, type ConfigDoMotor, lerConfigDoLab } from "./motor/config.js";
 import { type LoggerDoMotor, MotorDoTeste } from "./motor/motor.js";
 
@@ -90,9 +92,10 @@ export function criarMotorDoLab(args: {
     const config = lerConfigDoLab({ LAB_TOLERANCIA_TEMPO_S: TOLERANCIA_DA_DEMONSTRACAO_S, ...env });
     return new MotorDoTeste({
       db,
-      ia: new IaDemonstracao(),
+      ia: new IaDemonstracao(leitorDoPercurso(db)),
       config: { ...config, demonstracao: true },
-      logger
+      logger,
+      temasDeSimulacao: idsDasCategorias
     });
   }
   if (modoDemonstracaoPedido(env)) {

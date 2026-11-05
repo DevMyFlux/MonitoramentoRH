@@ -13,6 +13,8 @@
 //   POST /sessoes/:id/respostas         envia A, B ou C (e o campo livre)
 //   POST /sessoes/:id/tempo-esgotado    avisa que o relógio zerou (o servidor confere)
 //   GET  /sessoes/:id/resultado         resultado de um teste concluído
+//   GET  /simulador/temas               (só no modo demonstração) os temas da simulação local
+//   POST /simulador/classificar         (só no modo demonstração) propõe um tema a partir do texto
 //
 // Os cadastros do RH e a configuração dos moldes ficam em lab-cadastro-routes.ts, e a curadoria e a
 // contestação em lab-curadoria-routes.ts (mesmo prefixo).
@@ -22,6 +24,9 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { PrismaClient } from "@prisma/client";
 import { authenticateRequest } from "../auth/auth-routes.js";
 import type { UserRepository } from "../users/user-repository.js";
+import { labClassificarEntradaSchema } from "@my-flux/shared";
+import { assertAcesso } from "./lab-access.js";
+import { descreverClassificacao, temasDaBiblioteca } from "./simulador/rotas.js";
 import { registrarRotasDoCadastro } from "./lab-cadastro-routes.js";
 import { registrarRotasDaCuradoria } from "./lab-curadoria-routes.js";
 import { carregarAtorLab } from "./lab-actor.js";
@@ -95,6 +100,20 @@ export async function registrarRotasDoLab(
   app.get<ComId>("/sessoes/:id/resultado", async (request) => ({
     data: await motor.obterResultado(await atorDe(request), request.params.id)
   }));
+
+  if (motor.temSimulador) {
+    app.get("/simulador/temas", async (request) => {
+      assertAcesso(await atorDe(request), "simulador:ler");
+      return { data: temasDaBiblioteca() };
+    });
+
+    // O texto digitado só escolhe um tema: não é gravado, não entra em log e não sai do servidor.
+    app.post("/simulador/classificar", { bodyLimit: LIMITE_DO_CORPO_BYTES }, async (request) => {
+      assertAcesso(await atorDe(request), "simulador:ler");
+      const { descricao } = labClassificarEntradaSchema.parse(request.body);
+      return { data: descreverClassificacao(descricao) };
+    });
+  }
 
   await registrarRotasDoCadastro(app, users, db);
   await registrarRotasDaCuradoria(app, users, db);

@@ -36,6 +36,13 @@ export const erros = {
   moldeDivergente: () =>
     new HttpError(422, "LAB_MOLDE_DIVERGENTE", "O teste escolhido não é o do seu cargo."),
 
+  temaInvalido: () =>
+    new HttpError(
+      422,
+      "LAB_TEMA_INVALIDO",
+      "Este tema de simulação não está disponível. Escolha um dos temas da lista."
+    ),
+
   limiteDiario: (limite: number) =>
     new HttpError(
       429,

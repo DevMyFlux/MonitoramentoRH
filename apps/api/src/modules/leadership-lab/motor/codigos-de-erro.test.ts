@@ -4,6 +4,7 @@
 import {
   labCodigosDeErro,
   labCodigosDeErroDaCuradoria,
+  labCodigosDeErroDoSimulador,
   labCodigosDeErroDoCadastro,
   type LabAtor
 } from "@my-flux/shared";
@@ -57,7 +58,8 @@ describe("códigos de erro do Leadership Lab", () => {
         ...new Set([
           ...labCodigosDeErro,
           ...labCodigosDeErroDoCadastro,
-          ...labCodigosDeErroDaCuradoria
+          ...labCodigosDeErroDaCuradoria,
+          ...labCodigosDeErroDoSimulador
         ])
       ].sort()
     );
