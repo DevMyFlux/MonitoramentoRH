@@ -7,6 +7,7 @@ import { mola } from "../ui/movimento";
 import { cn } from "../../../lib/cn";
 import { escolhaDaTecla, teclaDaOpcao } from "../rotulos";
 import type { EstadoDoAvatar } from "./avatar-facilitador";
+import { BotaoOuvir } from "./botao-ouvir";
 import { CenaDaSituacao } from "./cena-da-situacao";
 
 /** Onde digitar um número é digitar, não escolher uma opção. Radio e checkbox não contam. */
@@ -50,13 +51,19 @@ export function SituacaoDoTeste({
     return () => clearTimeout(id);
   }, [feedbackAtivo]);
 
+  // O facilitador lendo a situação em voz alta (botão "Ouvir a situação").
+  const [lendo, setLendo] = useState(false);
+  const textoParaLer = `${situacao.texto} ${situacao.opcoes.map((o) => `Opção ${o.id}. ${o.texto}`).join(" ")}`;
+
   const estadoDoAvatar: EstadoDoAvatar = desabilitado
     ? "refletindo"
     : escolha !== null
       ? "ouvindo"
-      : feedbackAtivo
-        ? "feedback"
-        : "falando";
+      : lendo
+        ? "falando"
+        : feedbackAtivo
+          ? "feedback"
+          : "falando";
 
   useEffect(() => {
     if (desabilitado) return;
@@ -87,6 +94,7 @@ export function SituacaoDoTeste({
         <p className="text-[1.25rem] font-medium leading-8 tracking-[-0.012em] text-lab-tinta">
           {situacao.texto}
         </p>
+        <BotaoOuvir texto={textoParaLer} rotulo="Ouvir a situação" aoMudar={setLendo} />
       </div>
 
       <fieldset disabled={desabilitado} className="space-y-3">

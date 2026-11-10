@@ -1,5 +1,5 @@
 import { type LabMensagemDaConversa, labConversaLimites } from "@my-flux/shared";
-import { Send } from "lucide-react";
+import { Mic, MicOff, Send, Volume2 } from "lucide-react";
 import { motion } from "motion/react";
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { cn } from "../../../lib/cn";
@@ -7,6 +7,9 @@ import { type ErroDaTela, descreverErro } from "../erros";
 import { useConversar } from "../hooks";
 import { Button, Textarea } from "../ui";
 import { mola } from "../ui/movimento";
+import { useDitado, textoDoErroDoDitado } from "../voz/ditado";
+import { chavesDeVoz, usePreferencia } from "../voz/preferencias";
+import { useFala } from "../voz/sintese";
 import { AvatarFacilitador3D } from "./avatar-facilitador-3d";
 import type { EstadoDoAvatar } from "./avatar-facilitador";
 import { Cartao } from "./cartao";
@@ -44,6 +47,21 @@ export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
   const [falando, setFalando] = useState(false);
   const [erro, setErro] = useState<{ erro: ErroDaTela; mensagem: string } | null>(null);
   const proximoId = useRef(1);
+  // Voz (tudo opcional): ler as respostas em voz alta e ditar a mensagem.
+  const fala = useFala();
+  const [lerRespostas, definirLerRespostas] = usePreferencia(chavesDeVoz.lerRespostas);
+  const [cienteDoDitado, definirCienteDoDitado] = usePreferencia(chavesDeVoz.cienteDoDitado);
+  const [avisandoDoDitado, setAvisandoDoDitado] = useState(false);
+  const baseDoDitado = useRef("");
+  const ditado = useDitado((falado) => {
+    const base = baseDoDitado.current;
+    setTexto(
+      `${base}${base !== "" && falado !== "" ? " " : ""}${falado}`.slice(
+        0,
+        labConversaLimites.mensagem
+      )
+    );
+  });
   const lista = useRef<HTMLOListElement>(null);
 
   useEffect(() => {
@@ -61,7 +79,7 @@ export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
     ? "refletindo"
     : texto.trim() !== ""
       ? "ouvindo"
-      : falando
+      : falando || fala.falando
         ? "falando"
         : "ouvindo";
 
@@ -75,6 +93,7 @@ export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
   function enviar(mensagem: string) {
     const limpo = mensagem.trim();
     if (limpo === "" || conversar.isPending) return;
+    ditado.parar();
     const historico = historicoRecente();
     const doParticipante: Mensagem = {
       id: proximoId.current++,
@@ -96,6 +115,7 @@ export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
             { id: proximoId.current++, papel: "facilitador", texto: r.resposta, bloqueada }
           ]);
           setFalando(true);
+          if (lerRespostas) fala.falar(r.resposta);
         },
         onError: (e) => {
           // A pergunta não chegou a ser respondida: sai da lista e volta para a caixa, para tentar de novo.
@@ -105,6 +125,24 @@ export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
         }
       }
     );
+  }
+
+  function alternarDitado() {
+    if (ditado.ouvindo) {
+      ditado.parar();
+      return;
+    }
+    if (!cienteDoDitado) {
+      setAvisandoDoDitado(true);
+      return;
+    }
+    comecarDitado();
+  }
+
+  function comecarDitado() {
+    fala.parar();
+    baseDoDitado.current = texto.trim();
+    ditado.iniciar();
   }
 
   function aoEnviar(evento: FormEvent) {
@@ -197,6 +235,58 @@ export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
             </div>
           ) : null}
 
+          {fala.suportada ? (
+            <label className="flex w-fit cursor-pointer items-center gap-2 text-lab-pequeno text-lab-tinta-2">
+              <input
+                type="checkbox"
+                className="h-4 w-4 cursor-pointer accent-[rgb(var(--lab-destaque))]"
+                checked={lerRespostas}
+                onChange={(e) => {
+                  definirLerRespostas(e.target.checked);
+                  if (!e.target.checked) fala.parar();
+                }}
+              />
+              <Volume2 size={15} aria-hidden="true" />
+              Ler as respostas em voz alta
+            </label>
+          ) : null}
+
+          {avisandoDoDitado ? (
+            <div
+              role="group"
+              aria-label="Aviso sobre o ditado"
+              className="space-y-3 rounded-lab-md border border-lab-aviso/20 bg-lab-aviso-suave p-4 text-lab-pequeno leading-6 text-lab-aviso-texto"
+            >
+              <p>
+                O ditado usa o reconhecimento de voz do seu navegador. Em vários navegadores, o
+                áudio é processado pelo serviço do fabricante, fora do MY FLUX. O MY FLUX não grava
+                áudio, e o texto ditado passa pelo mesmo filtro de dados pessoais das mensagens
+                digitadas. Não fale nomes, matrículas nem contatos.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    definirCienteDoDitado(true);
+                    setAvisandoDoDitado(false);
+                    comecarDitado();
+                  }}
+                >
+                  Entendi, usar o microfone
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setAvisandoDoDitado(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {ditado.erro ? (
+            <p role="alert" className="text-lab-pequeno text-lab-perigo-texto">
+              {textoDoErroDoDitado[ditado.erro]}
+            </p>
+          ) : null}
+
           <form onSubmit={aoEnviar} className="space-y-2">
             <label htmlFor="mensagem-ao-facilitador" className="sr-only">
               Sua mensagem ao facilitador
@@ -212,6 +302,23 @@ export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
                 placeholder="Pergunte algo sobre o seu resultado..."
                 className="min-h-[3.25rem] flex-1 resize-none"
               />
+              {ditado.suportado ? (
+                <Button
+                  aria-label={ditado.ouvindo ? "Parar o ditado" : "Ditar a mensagem"}
+                  aria-pressed={ditado.ouvindo}
+                  size="icon"
+                  variant={ditado.ouvindo ? "primary" : "secondary"}
+                  disabled={conversar.isPending}
+                  onClick={alternarDitado}
+                  icon={
+                    ditado.ouvindo ? (
+                      <MicOff size={16} aria-hidden="true" />
+                    ) : (
+                      <Mic size={16} aria-hidden="true" />
+                    )
+                  }
+                />
+              ) : null}
               <Button
                 type="submit"
                 aria-label="Enviar mensagem"
