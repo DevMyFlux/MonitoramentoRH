@@ -748,7 +748,7 @@ describe.skipIf(!integrationEnabled)("motor do teste: proteções", () => {
 
       // Nada mudou no teste da Ana, e a IA não foi chamada.
       expect(await turno1(sessaoId)).toMatchObject({ escolha: null, justificativa: null });
-      expect(bia.ia.chamadas).toEqual({ abrir: 0, turno: 0, guarda: 0 });
+      expect(bia.ia.chamadas).toEqual({ abrir: 0, turno: 0, guarda: 0, conversa: 0 });
       await expect(
         bia.motor.tempoEsgotado(bia.ator, sessaoId, { numero: 1 })
       ).rejects.toMatchObject({ statusCode: 404 });

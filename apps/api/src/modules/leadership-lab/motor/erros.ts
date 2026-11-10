@@ -88,6 +88,14 @@ export const erros = {
       "O resultado só fica disponível depois da última situação."
     ),
 
+  limiteDaConversa: (limite: number) =>
+    new HttpError(
+      429,
+      "LAB_CONVERSA_LIMITE",
+      `Você já mandou ${limite} mensagens ao facilitador neste teste. Para dúvidas sobre o resultado, use a contestação.`,
+      { limite }
+    ),
+
   /** A IA não respondeu, ou respondeu fora do contrato. O participante pode tentar de novo. */
   ia: (codigo: CodigoDeFalhaIa) =>
     codigo === "CONTRATO"

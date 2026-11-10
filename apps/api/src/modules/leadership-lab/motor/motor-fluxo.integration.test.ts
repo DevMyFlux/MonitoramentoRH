@@ -178,7 +178,7 @@ describe.skipIf(!integrationEnabled)("motor do teste: fluxo", () => {
         situacao(respostas[0]!).sessaoId
       ]);
       expect(alertas).toHaveLength(0);
-      expect(c.ia.chamadas).toEqual({ abrir: 1, turno: 5, guarda: 0 });
+      expect(c.ia.chamadas).toEqual({ abrir: 1, turno: 5, guarda: 0, conversa: 0 });
     });
   });
 

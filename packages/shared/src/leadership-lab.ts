@@ -100,7 +100,14 @@ export type LabContestacaoStatus = (typeof labContestacaoStatus)[number];
 export const labPermissoes = ["lab_gestao", "lab_especialista"] as const;
 export type LabPermissao = (typeof labPermissoes)[number];
 
-export const labAgentesIa = ["agente_lab", "guarda", "autor", "analista", "agente_forms"] as const;
+export const labAgentesIa = [
+  "agente_lab",
+  "guarda",
+  "autor",
+  "analista",
+  "agente_forms",
+  "facilitador"
+] as const;
 export type LabAgenteIa = (typeof labAgentesIa)[number];
 
 /**

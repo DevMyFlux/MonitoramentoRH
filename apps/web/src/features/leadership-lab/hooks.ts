@@ -3,7 +3,7 @@
 // O teste em andamento tem UM dono: o cache de `chaves.testeAtual`. A tela do teste só o lê; as
 // ações (iniciar, responder, tempo esgotado) o atualizam com a resposta do servidor. Assim o que
 // está na tela é sempre o que o servidor mandou por último.
-import type { LabClassificarEntrada, LabEstadoDoTeste } from "@my-flux/shared";
+import type { LabClassificarEntrada, LabConversaEntrada, LabEstadoDoTeste } from "@my-flux/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../my-flux/client";
 import { labApi } from "./api";
@@ -25,6 +25,14 @@ export type TesteRecebido = { resposta: LabEstadoDoTeste; recebidaEm: number };
 export function repetirSoSeFalhaPassageira(tentativas: number, erro: unknown): boolean {
   if (erro instanceof ApiError && erro.status < 500) return false;
   return tentativas < 1;
+}
+
+/** Uma mensagem ao facilitador. A conversa mora no componente: não há cache nem persistência. */
+export function useConversar(sessaoId: string) {
+  return useMutation({
+    mutationFn: (entrada: LabConversaEntrada) => labApi.conversar(sessaoId, entrada),
+    retry: false
+  });
 }
 
 export function usePainel() {

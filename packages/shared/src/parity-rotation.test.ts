@@ -13,7 +13,11 @@ import {
 /** Every calendar day from `from` to `to` (inclusive), as YYYY-MM-DD. */
 function eachDay(from: string, to: string): string[] {
   const days: string[] = [];
-  for (let t = Date.parse(`${from}T00:00:00Z`); t <= Date.parse(`${to}T00:00:00Z`); t += 86_400_000) {
+  for (
+    let t = Date.parse(`${from}T00:00:00Z`);
+    t <= Date.parse(`${to}T00:00:00Z`);
+    t += 86_400_000
+  ) {
     days.push(new Date(t).toISOString().slice(0, 10));
   }
   return days;
@@ -118,7 +122,9 @@ describe("continuity over consecutive months", () => {
   });
 
   it("counts inversions the same way in both directions", () => {
-    expect(parityInversionsBetween("2026-10", "2027-03")).toBe(parityInversionsBetween("2027-03", "2026-10"));
+    expect(parityInversionsBetween("2026-10", "2027-03")).toBe(
+      parityInversionsBetween("2027-03", "2026-10")
+    );
     expect(parityInversionsBetween("2026-10", "2026-10")).toBe(0);
     // Oct, Dec and Jan invert; Nov and Feb do not.
     expect(parityInversionsBetween("2026-10", "2027-03")).toBe(3);

@@ -62,7 +62,7 @@ describe.skipIf(!integrationEnabled)("ler o teste em andamento", () => {
       await expect(c.motor.estadoDoTeste(c.ator)).rejects.toMatchObject(semTeste);
 
       expect((await fotografia(c)).sessoes).toHaveLength(0);
-      expect(c.ia.chamadas).toEqual({ abrir: 0, turno: 0, guarda: 0 });
+      expect(c.ia.chamadas).toEqual({ abrir: 0, turno: 0, guarda: 0, conversa: 0 });
     });
 
     it("o termo não entra aqui: quem ainda não o aceitou também recebe 'sem teste'", async () => {

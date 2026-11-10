@@ -11,6 +11,7 @@
 // Não é importada por nenhum código de produção; o bundle do servidor não a inclui.
 import type { LabEscolha, LabEstilo } from "@my-flux/shared";
 import {
+  conversaIaRequestSchema,
   guardaIaRequestSchema,
   iniciarSessaoIaRequestSchema,
   proximoTurnoIaRequestSchema
@@ -46,15 +47,22 @@ export const roteiroPadrao: Roteiro = {
 };
 
 export type TipoDeFalha = "erro" | "timeout" | "invalida";
-export type AlvoDaFalha = "abrir" | "turno" | "guarda";
+export type AlvoDaFalha = "abrir" | "turno" | "guarda" | "conversa";
 export type DecisaoDaGuardaFalsa = "seguir" | "mascarar" | "bloquear" | "invalida" | "erro";
 
 export class IaFalsa implements ClienteIa {
-  readonly chamadas = { abrir: 0, turno: 0, guarda: 0 };
+  readonly chamadas = { abrir: 0, turno: 0, guarda: 0, conversa: 0 };
   /** O corpo, em JSON, de cada requisição recebida. */
   readonly corpos: string[] = [];
   /** O mesmo, separado por tipo de chamada. */
-  readonly corposPorAlvo: Record<AlvoDaFalha, string[]> = { abrir: [], turno: [], guarda: [] };
+  readonly corposPorAlvo: Record<AlvoDaFalha, string[]> = {
+    abrir: [],
+    turno: [],
+    guarda: [],
+    conversa: []
+  };
+  /** O que o facilitador falso responde. */
+  respostaDaConversa = "Resposta do facilitador falso.";
   roteiro: Roteiro = roteiroPadrao;
   decisaoDaGuarda: DecisaoDaGuardaFalsa = "seguir";
 
@@ -218,6 +226,19 @@ export class IaFalsa implements ClienteIa {
           uso
         };
     }
+  }
+
+  async conversar(corpo: unknown): Promise<unknown> {
+    this.chamadas.conversa++;
+    this.registrar("conversa", corpo);
+    conversaIaRequestSchema.parse(corpo);
+
+    const falha = this.falhaPendente("conversa");
+    if (falha) {
+      this.lancar(falha);
+      return { lixo: true };
+    }
+    return { resposta: this.respostaDaConversa, uso: this.uso("facilitador") };
   }
 
   private uso(agente: string): Json {

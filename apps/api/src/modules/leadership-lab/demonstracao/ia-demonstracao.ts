@@ -15,11 +15,13 @@
 import { randomUUID } from "node:crypto";
 import type { LabEscolha } from "@my-flux/shared";
 import {
+  conversaIaRequestSchema,
   guardaIaRequestSchema,
   iniciarSessaoIaRequestSchema,
   proximoTurnoIaRequestSchema
 } from "../ia/ia-contrato.js";
 import type { ClienteIa } from "../motor/cliente-ia.js";
+import { responderComoFacilitador } from "./facilitador-demonstracao.js";
 import { cenarioDe, idsDasCategorias } from "../simulador/catalogo.js";
 import { nosDoPercurso, type PassoDoPercurso } from "../simulador/percurso.js";
 import {
@@ -68,7 +70,7 @@ function conteudoDa(numero: number): SituacaoDeDemonstracao {
   return conteudo;
 }
 
-const uso = (agente: "agente_lab" | "guarda"): Json => ({
+const uso = (agente: "agente_lab" | "guarda" | "facilitador"): Json => ({
   agente,
   modelo: "demonstracao",
   versao_instrucao: "demo-1",
@@ -241,6 +243,14 @@ export class IaDemonstracao implements ClienteIa {
       situacao: ultima ? null : situacao(numero + 1),
       resultado: ultima ? RESULTADO_DE_DEMONSTRACAO : null,
       uso: uso("agente_lab")
+    };
+  }
+
+  async conversar(corpo: unknown): Promise<unknown> {
+    const pedido = conversaIaRequestSchema.parse(corpo);
+    return {
+      resposta: responderComoFacilitador(pedido),
+      uso: uso("facilitador")
     };
   }
 

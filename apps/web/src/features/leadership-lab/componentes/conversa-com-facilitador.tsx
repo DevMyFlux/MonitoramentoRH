@@ -1,0 +1,268 @@
+import { type LabMensagemDaConversa, labConversaLimites } from "@my-flux/shared";
+import { Send } from "lucide-react";
+import { motion } from "motion/react";
+import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { cn } from "../../../lib/cn";
+import { type ErroDaTela, descreverErro } from "../erros";
+import { useConversar } from "../hooks";
+import { Button, Textarea } from "../ui";
+import { mola } from "../ui/movimento";
+import { AvatarFacilitador3D } from "./avatar-facilitador-3d";
+import type { EstadoDoAvatar } from "./avatar-facilitador";
+import { Cartao } from "./cartao";
+
+const SAUDACAO =
+  "Oi! Eu sou o facilitador. Posso comentar o seu resultado: o resumo, o ponto forte, o que desenvolver, os níveis por skill, as sugestões ou uma situação específica. O que você quer saber?";
+
+const SUGESTOES = [
+  "Como fui no geral?",
+  "Qual foi o meu ponto forte?",
+  "O que devo desenvolver?",
+  "Quais são as sugestões para mim?"
+] as const;
+
+/** Quanto o facilitador "fala" (avatar) depois de uma resposta. */
+const DURACAO_DA_FALA_MS = 4000;
+
+type Mensagem = {
+  id: number;
+  papel: LabMensagemDaConversa["papel"];
+  texto: string;
+  /** A Guarda não deixou a mensagem seguir: não volta no histórico. */
+  bloqueada?: boolean;
+};
+
+/**
+ * A conversa com o facilitador, depois do resultado. O servidor responde só com base no resultado
+ * deste teste e NADA da conversa é guardado: ela vive neste componente e some ao sair da tela. O
+ * histórico recente vai junto a cada mensagem para o facilitador acompanhar o fio.
+ */
+export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
+  const conversar = useConversar(sessaoId);
+  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
+  const [texto, setTexto] = useState("");
+  const [falando, setFalando] = useState(false);
+  const [erro, setErro] = useState<{ erro: ErroDaTela; mensagem: string } | null>(null);
+  const proximoId = useRef(1);
+  const lista = useRef<HTMLOListElement>(null);
+
+  useEffect(() => {
+    const elemento = lista.current;
+    if (elemento) elemento.scrollTop = elemento.scrollHeight;
+  }, [mensagens, conversar.isPending]);
+
+  useEffect(() => {
+    if (!falando) return;
+    const id = setTimeout(() => setFalando(false), DURACAO_DA_FALA_MS);
+    return () => clearTimeout(id);
+  }, [falando]);
+
+  const estado: EstadoDoAvatar = conversar.isPending
+    ? "refletindo"
+    : texto.trim() !== ""
+      ? "ouvindo"
+      : falando
+        ? "falando"
+        : "ouvindo";
+
+  function historicoRecente(): LabMensagemDaConversa[] {
+    return mensagens
+      .filter((m) => !m.bloqueada)
+      .slice(-labConversaLimites.historico)
+      .map(({ papel, texto: t }) => ({ papel, texto: t }));
+  }
+
+  function enviar(mensagem: string) {
+    const limpo = mensagem.trim();
+    if (limpo === "" || conversar.isPending) return;
+    const historico = historicoRecente();
+    const doParticipante: Mensagem = {
+      id: proximoId.current++,
+      papel: "participante",
+      texto: limpo
+    };
+    setMensagens((atuais) => [...atuais, doParticipante]);
+    setTexto("");
+    setErro(null);
+    conversar.mutate(
+      { mensagem: limpo, historico },
+      {
+        onSuccess: (r) => {
+          const bloqueada = r.desfecho === "bloqueada";
+          setMensagens((atuais) => [
+            ...atuais.map((m) =>
+              m.id === doParticipante.id && bloqueada ? { ...m, bloqueada } : m
+            ),
+            { id: proximoId.current++, papel: "facilitador", texto: r.resposta, bloqueada }
+          ]);
+          setFalando(true);
+        },
+        onError: (e) => {
+          // A pergunta não chegou a ser respondida: sai da lista e volta para a caixa, para tentar de novo.
+          setMensagens((atuais) => atuais.filter((m) => m.id !== doParticipante.id));
+          setTexto(limpo);
+          setErro({ erro: descreverErro(e), mensagem: limpo });
+        }
+      }
+    );
+  }
+
+  function aoEnviar(evento: FormEvent) {
+    evento.preventDefault();
+    enviar(texto);
+  }
+
+  function aoTeclar(evento: KeyboardEvent<HTMLTextAreaElement>) {
+    if (evento.key === "Enter" && !evento.shiftKey && !evento.nativeEvent.isComposing) {
+      evento.preventDefault();
+      enviar(texto);
+    }
+  }
+
+  const semConversa = mensagens.length === 0;
+
+  return (
+    <Cartao
+      titulo="Converse com o facilitador"
+      descricao="Tire dúvidas sobre este resultado. O facilitador responde só com base nele, as respostas são geradas automaticamente e a conversa não é guardada. O que vale é a avaliação validada pelo RH."
+    >
+      <div className="grid gap-6 md:grid-cols-[auto_minmax(0,1fr)]">
+        <div className="mx-auto md:mx-0">
+          <AvatarFacilitador3D estado={estado} tamanho={112} />
+        </div>
+
+        <div className="min-w-0 space-y-4">
+          <ol
+            ref={lista}
+            role="log"
+            aria-label="Conversa com o facilitador"
+            aria-live="polite"
+            className="rolagem-fina max-h-96 space-y-3 overflow-y-auto pr-1"
+          >
+            <Balao papel="facilitador">{SAUDACAO}</Balao>
+            {mensagens.map((m) => (
+              <Balao
+                key={m.id}
+                papel={m.papel}
+                aviso={Boolean(m.bloqueada) && m.papel === "facilitador"}
+              >
+                {m.texto}
+              </Balao>
+            ))}
+            {conversar.isPending ? (
+              <li aria-live="off" className="flex">
+                <span
+                  role="status"
+                  className="rounded-lab-lg rounded-bl-md bg-lab-superficie-3 px-4 py-3 text-lab-pequeno text-lab-tinta-2"
+                >
+                  <span className="sr-only">O facilitador está escrevendo...</span>
+                  <span aria-hidden="true" className="flex gap-1">
+                    {[0, 1, 2].map((i) => (
+                      <span
+                        key={i}
+                        className="h-1.5 w-1.5 animate-lab-pontos rounded-full bg-lab-tinta-3 motion-reduce:animate-none"
+                        style={{ animationDelay: `${i * 0.18}s` }}
+                      />
+                    ))}
+                  </span>
+                </span>
+              </li>
+            ) : null}
+          </ol>
+
+          {semConversa ? (
+            <ul aria-label="Sugestões de perguntas" className="flex flex-wrap gap-2">
+              {SUGESTOES.map((s) => (
+                <li key={s}>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={conversar.isPending}
+                    onClick={() => enviar(s)}
+                  >
+                    {s}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {erro ? (
+            <div
+              role="alert"
+              className="rounded-lab-md border border-lab-perigo/20 bg-lab-perigo-suave p-3.5 text-lab-pequeno text-lab-perigo-texto"
+            >
+              <p className="font-semibold">{erro.erro.titulo}</p>
+              <p className="mt-0.5">{erro.erro.descricao}</p>
+            </div>
+          ) : null}
+
+          <form onSubmit={aoEnviar} className="space-y-2">
+            <label htmlFor="mensagem-ao-facilitador" className="sr-only">
+              Sua mensagem ao facilitador
+            </label>
+            <div className="flex items-end gap-2">
+              <Textarea
+                id="mensagem-ao-facilitador"
+                rows={2}
+                maxLength={labConversaLimites.mensagem}
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                onKeyDown={aoTeclar}
+                placeholder="Pergunte algo sobre o seu resultado..."
+                className="min-h-[3.25rem] flex-1 resize-none"
+              />
+              <Button
+                type="submit"
+                aria-label="Enviar mensagem"
+                loading={conversar.isPending}
+                disabled={texto.trim() === ""}
+                icon={<Send size={16} aria-hidden="true" />}
+              >
+                Enviar
+              </Button>
+            </div>
+            <p className="tabular text-lab-legenda text-lab-tinta-2">
+              {texto.length}/{labConversaLimites.mensagem}. Não escreva nomes, matrículas nem
+              contatos. Enter envia; Shift+Enter quebra a linha.
+            </p>
+          </form>
+        </div>
+      </div>
+    </Cartao>
+  );
+}
+
+function Balao({
+  papel,
+  aviso = false,
+  children
+}: {
+  papel: LabMensagemDaConversa["papel"];
+  aviso?: boolean;
+  children: string;
+}) {
+  const meu = papel === "participante";
+  return (
+    <motion.li
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={mola.suave}
+      className={cn("flex", meu && "justify-end")}
+    >
+      <p
+        className={cn(
+          "max-w-[85%] whitespace-pre-wrap rounded-lab-lg px-4 py-3 text-lab-pequeno leading-6",
+          meu
+            ? "rounded-br-md bg-lab-destaque text-white"
+            : aviso
+              ? "rounded-bl-md border border-lab-aviso/20 bg-lab-aviso-suave text-lab-aviso-texto"
+              : "rounded-bl-md bg-lab-superficie-3 text-lab-tinta"
+        )}
+      >
+        <span className="sr-only">{meu ? "Você: " : "Facilitador: "}</span>
+        {children}
+      </p>
+    </motion.li>
+  );
+}

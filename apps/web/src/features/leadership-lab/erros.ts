@@ -126,6 +126,8 @@ function erroDoCodigo(codigo: CodigoConhecido, mensagemDaApi: string): ErroDaTel
         "O resultado ainda não está disponível",
         "Ele aparece depois da última situação do teste."
       );
+    case "LAB_CONVERSA_LIMITE":
+      return semNovaTentativa("geral", "Limite de mensagens atingido", mensagemDaApi);
     case "LAB_IA_INDISPONIVEL":
     case "LAB_IA_RESPOSTA_INVALIDA":
       return tentarDeNovo(

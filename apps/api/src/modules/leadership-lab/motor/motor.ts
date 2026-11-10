@@ -19,7 +19,10 @@
 import {
   type LabAtor,
   type LabEscolha,
+  type LabConversaResposta,
   type LabMoldeNivel,
+  labConversaEntradaSchema,
+  labConversaLimites,
   labMoldeNiveis,
   medirResposta
 } from "@my-flux/shared";
@@ -38,10 +41,12 @@ import type { PainelDoParticipante } from "../painel/tipos.js";
 import {
   type RespostaTurnoIa,
   aplicarGuarda,
+  conversaIaRequestSchema,
   guardaIaRequestSchema,
   iniciarSessaoIaRequestSchema,
   proximoTurnoIaRequestSchema,
   validarAberturaIa,
+  validarConversaIa,
   validarTurnoIa
 } from "../ia/ia-contrato.js";
 import { type ClienteIa, type DesfechoDaChamada, chamarIa } from "./cliente-ia.js";
@@ -51,6 +56,7 @@ import {
   responderEntradaSchema,
   tempoEsgotadoEntradaSchema
 } from "./entradas.js";
+import { RESPOSTA_BLOQUEADA, contextoDaConversa, historicoSeguro } from "./conversa.js";
 import { erros } from "./erros.js";
 import { fecharTeste } from "./fechamento.js";
 import {
@@ -430,6 +436,78 @@ export class MotorDoTeste {
     });
     if (sessao.status !== "concluida") throw erros.testeEmAndamento();
     return this.montarVisaoDoResultado(sessao);
+  }
+
+  // =========================================================================
+  // Conversa com o facilitador
+  // =========================================================================
+
+  /**
+   * O participante conversa com o facilitador sobre o PRÓPRIO resultado, depois do teste. Nada da
+   * conversa é gravado: só os metadados da chamada, em log_ia. Cada mensagem do participante (a
+   * nova e as do histórico) passa pela Guarda, que falha fechada; a IA só recebe o resultado que
+   * ele já viu. Há um teto de mensagens por teste.
+   */
+  async conversar(
+    ator: LabAtor,
+    sessaoId: string,
+    entradaBruta: unknown
+  ): Promise<LabConversaResposta> {
+    const entrada = labConversaEntradaSchema.parse(entradaBruta);
+    const sessao = await this.buscarSessao(sessaoId);
+    if (!sessao) {
+      assertAcesso(ator, "conversa:enviar", {
+        participanteId: "00000000-0000-0000-0000-000000000000"
+      });
+      throw erros.naoEncontrado();
+    }
+    assertAcesso(ator, "conversa:enviar", { participanteId: sessao.participanteId });
+    if (sessao.status !== "concluida") throw erros.testeEmAndamento();
+
+    const enviadas = await this.db.labLogIa.count({
+      where: { sessaoId, agente: "facilitador", sucesso: true }
+    });
+    if (enviadas >= labConversaLimites.mensagensPorTeste) {
+      throw erros.limiteDaConversa(labConversaLimites.mensagensPorTeste);
+    }
+
+    const doParticipante = entrada.historico.filter((m) => m.papel === "participante");
+    const [nova, ...antigas] = await Promise.all(
+      [entrada.mensagem, ...doParticipante.map((m) => m.texto)].map((texto) =>
+        this.filtrarTextoLivre(sessaoId, texto)
+      )
+    );
+    // Falha fechada: sem a liberação da Guarda, a mensagem não vai para a IA.
+    if (nova === undefined || nova.decisao === "bloquear") {
+      return { desfecho: "bloqueada", resposta: RESPOSTA_BLOQUEADA };
+    }
+    const mensagem = nova.decisao === "mascarar" ? (nova.texto ?? "") : entrada.mensagem;
+    const seguros = antigas.map((a, i) =>
+      a.decisao === "bloquear"
+        ? null
+        : a.decisao === "mascarar"
+          ? a.texto
+          : (doParticipante[i]?.texto ?? null)
+    );
+
+    const visao = await this.montarVisaoDoResultado(sessao);
+    const corpo = conversaIaRequestSchema.parse({
+      molde: sessao.molde.nivel,
+      mensagem,
+      historico: historicoSeguro(entrada.historico, seguros),
+      resultado: contextoDaConversa(visao)
+    });
+    const desfecho = await chamarIa(() => this.ia.conversar(corpo), validarConversaIa);
+    if (!desfecho.ok) {
+      await this.registrarFalha("facilitador", desfecho, sessaoId);
+      throw erros.ia(desfecho.codigo);
+    }
+    await this.db.labLogIa
+      .create({ data: this.dadosDoLog("facilitador", desfecho, sessaoId, desfecho.valor.uso) })
+      .catch((erro: unknown) =>
+        this.logger?.warn({ erro }, "falha ao registrar o log do facilitador")
+      );
+    return { desfecho: "respondida", resposta: desfecho.valor.resposta };
   }
 
   // =========================================================================
@@ -869,7 +947,7 @@ export class MotorDoTeste {
   // =========================================================================
 
   private dadosDoLog(
-    agente: "agente_lab" | "guarda",
+    agente: "agente_lab" | "guarda" | "facilitador",
     desfecho: { latenciaMs: number },
     sessaoId: string | null,
     uso: {
@@ -893,7 +971,7 @@ export class MotorDoTeste {
 
   /** Registra uma chamada que falhou. Nunca lança: o erro original é o que importa. */
   private async registrarFalha(
-    agente: "agente_lab" | "guarda",
+    agente: "agente_lab" | "guarda" | "facilitador",
     desfecho: Extract<DesfechoDaChamada<unknown>, { ok: false }>,
     sessaoId: string | null
   ): Promise<void> {

@@ -1,7 +1,7 @@
 // Leadership Lab — o serviço de IA falso, por HTTP. SÓ para testes.
 //
 // Põe uma IaFalsa atrás de um servidor HTTP de verdade (porta efêmera, só localhost), com as
-// três rotas documentadas e a checagem do X-Servico-Token. Serve para exercitar o cliente
+// rotas documentadas e a checagem do X-Servico-Token. Serve para exercitar o cliente
 // HTTP e a cadeia completa (rotas -> motor -> cliente HTTP -> serviço) sem o serviço Python.
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -11,6 +11,7 @@ export type IaPorHttp = {
   abrirSessao(corpo: unknown): Promise<unknown>;
   proximoTurno(corpo: unknown): Promise<unknown>;
   guarda(corpo: unknown): Promise<unknown>;
+  conversar(corpo: unknown): Promise<unknown>;
 };
 
 export type RequisicaoRecebida = {
@@ -57,6 +58,7 @@ export async function subirServicoIaFalso(ia: IaPorHttp, token: string): Promise
           if (caminho === "/teste/sessoes") return responder(200, await ia.abrirSessao(corpo));
           if (caminho === "/teste/turnos") return responder(200, await ia.proximoTurno(corpo));
           if (caminho === "/agentes/guarda") return responder(200, await ia.guarda(corpo));
+          if (caminho === "/agentes/facilitador") return responder(200, await ia.conversar(corpo));
           return responder(404, { erro: "rota desconhecida" });
         } catch {
           return responder(503, { erro: "serviço indisponível" });

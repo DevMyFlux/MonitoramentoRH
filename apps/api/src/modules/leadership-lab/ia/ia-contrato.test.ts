@@ -12,11 +12,13 @@ import {
 import {
   LIMITE_PALAVRAS_SITUACAO,
   aplicarGuarda,
+  conversaIaRequestSchema,
   guardaIaRequestSchema,
   iniciarSessaoIaRequestSchema,
   proximoTurnoIaRequestSchema,
   turnoIaSchema,
   validarAberturaIa,
+  validarConversaIa,
   validarTurnoIa
 } from "./ia-contrato.js";
 
@@ -763,5 +765,80 @@ describe("requisições para a IA", () => {
       false
     );
     expect(guardaIaRequestSchema.safeParse({ texto: "  " }).success).toBe(false);
+  });
+});
+
+describe("conversa com o facilitador", () => {
+  const resultado = {
+    resumo: "Você conduziu o turno.",
+    ponto_forte: "Comunicação.",
+    ponto_desenvolvimento: null,
+    sugestoes: ["Registre o aviso."],
+    skills: [{ skill: "gestao-os", nivel: 4 }],
+    situacoes: [
+      {
+        numero: 1,
+        marco: false,
+        texto: "Cenário.",
+        opcoes: [
+          { id: "A", texto: "a" },
+          { id: "B", texto: "b" },
+          { id: "C", texto: "c" }
+        ],
+        escolha: "A",
+        tempo_esgotado: false,
+        justificativa: "Boa."
+      }
+    ]
+  };
+  const pedido = { molde: "supervisor", mensagem: "Como fui?", historico: [], resultado };
+
+  it("o pedido é uma lista fechada de campos: nome, aderência e ids não passam", () => {
+    expect(conversaIaRequestSchema.safeParse(pedido).success).toBe(true);
+    for (const extra of [{ nome: "Ana" }, { aderencia: 100 }, { participante_id: "x" }]) {
+      expect(conversaIaRequestSchema.safeParse({ ...pedido, ...extra }).success).toBe(false);
+    }
+    expect(
+      conversaIaRequestSchema.safeParse({
+        ...pedido,
+        resultado: {
+          ...resultado,
+          situacoes: [{ ...resultado.situacoes[0], aderencia: 100 }]
+        }
+      }).success
+    ).toBe(false);
+  });
+
+  it("respeita os limites: mensagem, histórico e papéis", () => {
+    expect(
+      conversaIaRequestSchema.safeParse({ ...pedido, mensagem: "x".repeat(501) }).success
+    ).toBe(false);
+    const msg = { papel: "participante", texto: "oi" };
+    expect(
+      conversaIaRequestSchema.safeParse({ ...pedido, historico: Array(7).fill(msg) }).success
+    ).toBe(false);
+    expect(
+      conversaIaRequestSchema.safeParse({
+        ...pedido,
+        historico: [{ papel: "sistema", texto: "oi" }]
+      }).success
+    ).toBe(false);
+  });
+
+  it("a resposta precisa de texto e do bloco uso do facilitador", () => {
+    const uso = {
+      agente: "facilitador",
+      modelo: "m",
+      versao_instrucao: "1",
+      tokens_entrada: 1,
+      tokens_saida: 1
+    };
+    expect(validarConversaIa({ resposta: "Olá.", uso }).ok).toBe(true);
+    expect(validarConversaIa({ resposta: "  ", uso }).ok).toBe(false);
+    expect(validarConversaIa({ resposta: "Olá.", uso: { ...uso, agente: "guarda" } }).ok).toBe(
+      false
+    );
+    expect(validarConversaIa({ resposta: "Olá.", uso, aderencia: 100 }).ok).toBe(false);
+    expect(validarConversaIa(null).ok).toBe(false);
   });
 });

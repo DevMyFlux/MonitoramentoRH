@@ -16,6 +16,7 @@ import {
 } from "../../features/leadership-lab/ui";
 import { cn } from "../../lib/cn";
 import { Cartao, Estatistica } from "../../features/leadership-lab/componentes/cartao";
+import { ConversaComFacilitador } from "../../features/leadership-lab/componentes/conversa-com-facilitador";
 import { ContestarResultado } from "../../features/leadership-lab/componentes/contestar-resultado";
 import { ErroDaTelaDoLab } from "../../features/leadership-lab/componentes/erro-da-tela";
 import { SeloDeValidacao } from "../../features/leadership-lab/componentes/selo-de-validacao";
@@ -197,6 +198,8 @@ function ResultadoCompleto({ resultado }: { resultado: LabResultado }) {
           ))}
         </ol>
       </Cartao>
+
+      <ConversaComFacilitador sessaoId={resultado.sessaoId} />
 
       <ContestarResultado resultado={resultado} />
 

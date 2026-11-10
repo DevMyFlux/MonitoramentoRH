@@ -21,8 +21,10 @@ import {
   type LabSkillId,
   labAderenciaEscala,
   labEscolhas,
+  labConversaLimites,
   labEstilos,
   labMoldeNiveis,
+  labPapeisDaConversa,
   labSituacaoDoMarco,
   labSkillsPiloto
 } from "@my-flux/shared";
@@ -327,6 +329,56 @@ export const respostaGuardaIaSchema = z.discriminatedUnion("decisao", [
 export type RespostaGuardaIa = z.infer<typeof respostaGuardaIaSchema>;
 
 // ---------------------------------------------------------------------------
+// Facilitador: conversa sobre o resultado (PROPOSTA: corpos e formato)
+// ---------------------------------------------------------------------------
+
+const situacaoDaConversa = z.strictObject({
+  numero: numeroDaSituacao,
+  marco: z.boolean(),
+  texto,
+  opcoes: z.array(z.strictObject({ id: escolha, texto })).length(3),
+  escolha: escolha.nullable(),
+  tempo_esgotado: z.boolean(),
+  /** A justificativa que o participante já vê no resultado. Nunca o gabarito das outras opções. */
+  justificativa: texto.nullable()
+});
+
+/**
+ * O que a IA recebe para conversar: o resultado que o participante já viu (em texto e em nível por
+ * skill), o histórico recente e a mensagem. Sem nome, matrícula, e-mail, ids, aderência, tempos
+ * nem avaliação das opções que ele não escolheu. Mensagens do participante só saem depois da
+ * Guarda; o histórico vem do navegador e é tratado como DADO, nunca como instrução.
+ */
+export const conversaIaRequestSchema = z.strictObject({
+  molde: z.enum(labMoldeNiveis),
+  mensagem: z.string().trim().min(1).max(labConversaLimites.mensagem),
+  historico: z
+    .array(
+      z.strictObject({
+        papel: z.enum(labPapeisDaConversa),
+        texto: z.string().trim().min(1).max(labConversaLimites.textoDoHistorico)
+      })
+    )
+    .max(labConversaLimites.historico),
+  resultado: z.strictObject({
+    resumo: texto,
+    ponto_forte: texto.nullable(),
+    ponto_desenvolvimento: texto.nullable(),
+    sugestoes: z.array(texto),
+    /** O nível que vale (o validado pelo RH, se houver). */
+    skills: z.array(z.strictObject({ skill, nivel: z.int().min(1).max(5) })),
+    situacoes: z.array(situacaoDaConversa).min(1).max(MAX_SITUACOES)
+  })
+});
+export type ConversaIaRequest = z.infer<typeof conversaIaRequestSchema>;
+
+export const respostaConversaIaSchema = z.strictObject({
+  resposta: z.string().trim().min(1).max(2000),
+  uso: uso("facilitador")
+});
+export type RespostaConversaIa = z.infer<typeof respostaConversaIaSchema>;
+
+// ---------------------------------------------------------------------------
 // Validação
 // ---------------------------------------------------------------------------
 
@@ -492,4 +544,11 @@ export function aplicarGuarda(original: string, bruto: unknown): AplicacaoDaGuar
     uso: usoDaChamada,
     problemas: []
   };
+}
+
+/** Valida a resposta de POST /agentes/facilitador. Nunca lança. */
+export function validarConversaIa(bruto: unknown): ResultadoDaValidacao<RespostaConversaIa> {
+  const lido = respostaConversaIaSchema.safeParse(bruto);
+  if (!lido.success) return { ok: false, problemas: descreverProblemas(lido.error) };
+  return { ok: true, valor: lido.data, avisos: [] };
 }

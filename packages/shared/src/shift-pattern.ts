@@ -8,14 +8,20 @@
  *     never Saturday/Sunday: the person works those weekdays and has no Par/Ímpar.
  */
 export type ShiftPatternConfig =
-  | { weekdays?: readonly number[] | null; startHour?: number | null; durationHours?: number | null }
+  | {
+      weekdays?: readonly number[] | null;
+      startHour?: number | null;
+      durationHours?: number | null;
+    }
   | null
   | undefined;
 
 /** True for a fixed-weekday shift without weekends (5x2 — e.g. Comercial, Administrativo). */
 export function isWeekdayOnlyShift(config: ShiftPatternConfig): boolean {
   const weekdays = config?.weekdays;
-  return Array.isArray(weekdays) && weekdays.length > 0 && !weekdays.includes(0) && !weekdays.includes(6);
+  return (
+    Array.isArray(weekdays) && weekdays.length > 0 && !weekdays.includes(0) && !weekdays.includes(6)
+  );
 }
 
 const weekdayNames = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
@@ -25,9 +31,12 @@ export function describeShiftWeekdays(config: ShiftPatternConfig): string {
   const days = [...(config?.weekdays ?? [])].sort((a, b) => a - b);
   if (!days.length) return "";
   const contiguous = days.every((day, index) => index === 0 || day === days[index - 1]! + 1);
-  if (contiguous && days.length > 2) return `${weekdayNames[days[0]!]} a ${weekdayNames[days[days.length - 1]!]}`;
+  if (contiguous && days.length > 2)
+    return `${weekdayNames[days[0]!]} a ${weekdayNames[days[days.length - 1]!]}`;
   const names = days.map((day) => weekdayNames[day]!);
-  return names.length === 1 ? names[0]! : `${names.slice(0, -1).join(", ")} e ${names[names.length - 1]}`;
+  return names.length === 1
+    ? names[0]!
+    : `${names.slice(0, -1).join(", ")} e ${names[names.length - 1]}`;
 }
 
 /** "08:00–17:00", or "" when the shift has no hours. */

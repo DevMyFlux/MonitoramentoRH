@@ -18,7 +18,8 @@
  * HMB's "Conselho" stays blank, matching its original file.
  */
 
-export type ScheduleFooterBox = "leaveLegend" | "restLegend" | "managerSignature" | "supervisorStamp";
+export type ScheduleFooterBox =
+  "leaveLegend" | "restLegend" | "managerSignature" | "supervisorStamp";
 
 export type HeaderImage = {
   /** File name under apps/api/src/modules/scheduling/assets/. */
@@ -97,7 +98,15 @@ export const scheduleTemplates: Record<string, ScheduleTemplateConfig> = {
     // xl/drawings/drawing1.xml (EMU offsets/extents converted to px) so the
     // banner keeps the source's real size and margin, not an estimate.
     headerImages: [
-      { file: "hetrin-header.png", col: 0, colOffPx: 54, row: 0, rowOffPx: 17, widthPx: 491, heightPx: 70 }
+      {
+        file: "hetrin-header.png",
+        col: 0,
+        colOffPx: 54,
+        row: 0,
+        rowOffPx: 17,
+        widthPx: 491,
+        heightPx: 70
+      }
     ],
     headerRowHeight: 70,
     conselhoHoldsSchedule: true,
@@ -123,7 +132,15 @@ export const scheduleTemplates: Record<string, ScheduleTemplateConfig> = {
     // this sheet's 5 fixed columns + day-column width so the same real
     // pixel positions/proportions carry over regardless of month length.
     headerImages: [
-      { file: "hmb-imed.png", col: 0, colOffPx: 29, row: 0, rowOffPx: 17, widthPx: 430, heightPx: 125 },
+      {
+        file: "hmb-imed.png",
+        col: 0,
+        colOffPx: 29,
+        row: 0,
+        rowOffPx: 17,
+        widthPx: 430,
+        heightPx: 125
+      },
       {
         file: "hmb-sus-prefeitura.png",
         col: 15,
@@ -133,7 +150,15 @@ export const scheduleTemplates: Record<string, ScheduleTemplateConfig> = {
         widthPx: 304,
         heightPx: 120
       },
-      { file: "hmb-logo.png", col: 26, colOffPx: 29, row: 0, rowOffPx: 9, widthPx: 236, heightPx: 134 }
+      {
+        file: "hmb-logo.png",
+        col: 26,
+        colOffPx: 29,
+        row: 0,
+        rowOffPx: 9,
+        widthPx: 236,
+        heightPx: 134
+      }
     ],
     headerRowHeight: 75,
     conselhoHoldsSchedule: false,

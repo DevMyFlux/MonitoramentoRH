@@ -318,6 +318,46 @@ export const labCodigosDeErro = [
   "LAB_TEMPO_NAO_ESGOTADO",
   "LAB_TESTE_EM_ANDAMENTO",
   "LAB_IA_INDISPONIVEL",
-  "LAB_IA_RESPOSTA_INVALIDA"
+  "LAB_IA_RESPOSTA_INVALIDA",
+  "LAB_CONVERSA_LIMITE"
 ] as const;
 export type LabCodigoDeErro = (typeof labCodigosDeErro)[number];
+
+// ---------------------------------------------------------------------------
+// Conversa com o facilitador (POST /sessoes/:id/conversa)
+// ---------------------------------------------------------------------------
+// Só depois de o teste terminar, só sobre o próprio resultado. A conversa NÃO é guardada: o
+// navegador manda o histórico recente a cada mensagem e o servidor não grava o texto.
+
+export const labConversaLimites = {
+  /** Caracteres de uma mensagem do participante. */
+  mensagem: 500,
+  /** Caracteres de uma mensagem do histórico (a resposta do facilitador é maior). */
+  textoDoHistorico: 1200,
+  /** Quantas mensagens do histórico recente vão junto (as mais novas). */
+  historico: 6,
+  /** Quantas mensagens o participante manda por teste. */
+  mensagensPorTeste: 30
+} as const;
+
+export const labPapeisDaConversa = ["participante", "facilitador"] as const;
+export type LabPapelDaConversa = (typeof labPapeisDaConversa)[number];
+
+export const labMensagemDaConversaSchema = z.strictObject({
+  papel: z.enum(labPapeisDaConversa),
+  texto: z.string().trim().min(1).max(labConversaLimites.textoDoHistorico)
+});
+export type LabMensagemDaConversa = z.infer<typeof labMensagemDaConversaSchema>;
+
+export const labConversaEntradaSchema = z.strictObject({
+  mensagem: z.string().trim().min(1).max(labConversaLimites.mensagem),
+  historico: z.array(labMensagemDaConversaSchema).max(labConversaLimites.historico).default([])
+});
+export type LabConversaEntrada = z.input<typeof labConversaEntradaSchema>;
+
+/** `bloqueada`: a Guarda não deixou a mensagem seguir; a `resposta` é um aviso fixo do sistema. */
+export const labConversaRespostaSchema = z.object({
+  desfecho: z.enum(["respondida", "bloqueada"]),
+  resposta: z.string()
+});
+export type LabConversaResposta = z.infer<typeof labConversaRespostaSchema>;

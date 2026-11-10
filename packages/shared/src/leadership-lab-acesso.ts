@@ -60,6 +60,10 @@ const matriz = {
   // Simulação local (só no modo demonstração): lista de temas e classificação do texto livre.
   "simulador:ler": { participante: "proprios" },
 
+  // Conversa com o facilitador sobre o próprio resultado (POST /sessoes/:id/conversa). Só do
+  // participante, e só depois de o teste terminar.
+  "conversa:enviar": { participante: "proprios" },
+
   // --- Participante e curador (GET /sessoes/:id/resultado)
   "resultado:ler": { participante: "proprios", curador: "turma" },
 

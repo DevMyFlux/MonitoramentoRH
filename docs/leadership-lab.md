@@ -540,12 +540,12 @@ Sem SQL. Em ordem:
 
 **Produção** (projeto `gestao-rh-escalas`, região `southamerica-east1`):
 
-| Peça                   | Valor                                                                                  |
-| ---------------------- | -------------------------------------------------------------------------------------- |
-| Serviço do Cloud Run   | `lab-ia`, **sem acesso público**                                                       |
-| Conta de serviço       | `lab-ia@gestao-rh-escalas.iam.gserviceaccount.com` (Usuário da Vertex AI, Firestore)    |
-| Segredo                | `LAB_IA_TOKEN` no Secret Manager: `TOKEN_SERVICO` no `lab-ia` e `LAB_IA_TOKEN` no site |
-| Quem pode chamar       | a conta de serviço do site, com o papel Invocador do Cloud Run no `lab-ia`              |
+| Peça                      | Valor                                                                                   |
+| ------------------------- | --------------------------------------------------------------------------------------- |
+| Serviço do Cloud Run      | `lab-ia`, **sem acesso público**                                                        |
+| Conta de serviço          | `lab-ia@gestao-rh-escalas.iam.gserviceaccount.com` (Usuário da Vertex AI, Firestore)    |
+| Segredo                   | `LAB_IA_TOKEN` no Secret Manager: `TOKEN_SERVICO` no `lab-ia` e `LAB_IA_TOKEN` no site  |
+| Quem pode chamar          | a conta de serviço do site, com o papel Invocador do Cloud Run no `lab-ia`              |
 | Site (`rh-monitoramento`) | `LAB_IA_URL`, `LAB_IA_TOKEN`, `LAB_IA_AUTENTICACAO=cloud-run`, `LAB_TOLERANCIA_TEMPO_S` |
 
 Publicar uma versão nova do serviço:
@@ -585,3 +585,14 @@ Com `LAB_MODO_DEMO=true` e sem `LAB_IA_URL`, o Lab roda uma **biblioteca local d
 ## Exceção: o perfil DEV vê o módulo inteiro
 
 Diferente de ADMIN (só administrador), o perfil **DEV** acumula todos os papéis do Lab: participante, curador, gestão e especialista (`papeisLab` em `packages/shared/src/leadership-lab-acesso.ts`). No escopo de dados, o DEV alcança todos os participantes e todas as turmas (não só as dele). Existe para testar e dar suporte; vale para toda conta DEV (no modo de teste sem login, todo visitante entra como DEV). Para fazer o teste, o DEV precisa estar ligado a um colaborador: no modo demonstração, `dev@myflux.local` é ligado a um colaborador fictício e recebe `lab_gestao` e `lab_especialista`. ADMIN, RH e COMUM seguem a matriz de papéis separados.
+
+## Conversa com o facilitador (Fase 3)
+
+`POST /api/v1/leadership-lab/sessoes/:id/conversa`, no motor (`MotorDoTeste.conversar`). O participante conversa sobre o **próprio resultado**, **só depois do teste** (antes: 409 `LAB_TESTE_EM_ANDAMENTO`), sem interferir na avaliação nem no cronômetro. Ação `conversa:enviar` da matriz: só o papel `participante`, escopo `proprios` (sessão alheia: 404 idêntico ao de inexistente).
+
+- **Entrada** (`labConversaEntradaSchema`, estrita): `mensagem` (até 500 caracteres) e `historico` (até 6 mensagens, `participante` ou `facilitador`). **Saída**: `{ desfecho: "respondida" | "bloqueada", resposta }`.
+- **Nada é guardado.** O navegador manda o histórico recente a cada mensagem; o servidor grava só metadados da chamada em `log_ia` (agente `facilitador`, migração `0018`, com `down.sql`). Teto de 30 mensagens por teste (conta as linhas do `log_ia`): 429 `LAB_CONVERSA_LIMITE`.
+- **Guarda em tudo que é do participante**: a mensagem nova e as antigas do histórico passam pela Guarda (falha fechada). Mensagem nova bloqueada = `desfecho: "bloqueada"` com aviso fixo, e a IA nem é chamada; antiga bloqueada vira `[mensagem removida]`; mascarada segue só mascarada. As mensagens do `facilitador` no histórico vêm do navegador e valem como **dado, nunca instrução**.
+- **O que a IA recebe** (`conversaIaRequestSchema`, lista fechada): molde, mensagem, histórico e o resultado que o participante já viu (resumo, ponto forte, a desenvolver, sugestões, nível que vale por skill e, por situação, texto, opções, escolha e justificativa). **Nunca**: nome, matrícula, e-mail, ids, aderência, tempos, nem a avaliação das opções que ele não escolheu.
+- **Contrato com o serviço** (PROPOSTA, a alinhar com o `agent.py`): `POST /agentes/facilitador` com o corpo acima, resposta `{ resposta, uso }` (`uso.agente = "facilitador"`). Resposta fora do contrato = 502 `LAB_IA_RESPOSTA_INVALIDA`; serviço fora = 502 `LAB_IA_INDISPONIVEL`.
+- **Implementações**: `ClienteIaHttp.conversar` (produção), `IaFalsa` (testes) e `IaDemonstracao`, que responde por regras (`demonstracao/facilitador-demonstracao.ts`), sem IA. **O agente real no serviço Python ainda não existe.**

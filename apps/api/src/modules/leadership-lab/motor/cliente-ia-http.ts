@@ -1,7 +1,7 @@
 // Leadership Lab — cliente HTTP do serviço de IA (Python, Google ADK).
 //
-// Fala só com as rotas documentadas do serviço: POST /teste/sessoes, POST /teste/turnos e
-// POST /agentes/guarda, com o token de serviço em X-Servico-Token. Devolve o corpo CRU em JSON;
+// Fala só com as rotas documentadas do serviço: POST /teste/sessoes, POST /teste/turnos,
+// POST /agentes/guarda e POST /agentes/facilitador, com o token de serviço em X-Servico-Token. Devolve o corpo CRU em JSON;
 // quem valida o contrato é o motor. Qualquer falha LANÇA (o motor a trata como falha de
 // transporte), e o nome do erro de tempo esgotado é preservado ("TimeoutError") para o log.
 //
@@ -102,6 +102,10 @@ export class ClienteIaHttp implements ClienteIa {
 
   guarda(corpo: unknown): Promise<unknown> {
     return this.postar("agentes/guarda", corpo);
+  }
+
+  conversar(corpo: unknown): Promise<unknown> {
+    return this.postar("agentes/facilitador", corpo);
   }
 
   private async postar(caminho: string, corpo: unknown): Promise<unknown> {
