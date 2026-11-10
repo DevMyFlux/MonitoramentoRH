@@ -11,8 +11,9 @@ import {
   TableCell,
   TableHead,
   TableHeaderCell,
-  TableRow
-} from "../../../components/ui";
+  TableRow,
+  useNotificar
+} from "../../../features/leadership-lab/ui";
 import { CadastrarParticipante } from "../../../features/leadership-lab/cadastro/cadastrar-participante";
 import { Confirmacao } from "../../../features/leadership-lab/cadastro/confirmacao";
 import { LayoutDoAcompanhamento } from "../../../features/leadership-lab/cadastro/layout-do-acompanhamento";
@@ -40,7 +41,7 @@ export function LabParticipantesPage() {
       ) : (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="max-w-2xl text-sm text-slate-600">
+            <p className="max-w-2xl text-lab-pequeno text-lab-tinta-2">
               Participante é o colaborador ligado a um usuário de perfil comum. Só ele faz os
               testes. Desativar tira o acesso e guarda o histórico.
             </p>
@@ -68,6 +69,7 @@ export function LabParticipantesPage() {
 
 function TabelaDeParticipantes({ participantes }: { participantes: LabParticipanteDoCadastro[] }) {
   const atualizar = useAtualizarParticipante();
+  const notificar = useNotificar();
   const [aDesativar, setADesativar] = useState<LabParticipanteDoCadastro | null>(null);
 
   const fechar = () => {
@@ -93,8 +95,8 @@ function TabelaDeParticipantes({ participantes }: { participantes: LabParticipan
           {participantes.map((p) => (
             <TableRow key={p.id}>
               <TableCell>
-                <span className="block font-medium text-slate-900">{p.colaborador.nome}</span>
-                <span className="block text-xs text-slate-500">
+                <span className="block font-medium text-lab-tinta">{p.colaborador.nome}</span>
+                <span className="block text-lab-legenda text-lab-tinta-2">
                   Matrícula {p.colaborador.identificador}
                 </span>
               </TableCell>
@@ -105,7 +107,7 @@ function TabelaDeParticipantes({ participantes }: { participantes: LabParticipan
               </TableCell>
               <TableCell>
                 <span className="block">{p.usuario.nome}</span>
-                <span className="block text-xs text-slate-500">{p.usuario.email}</span>
+                <span className="block text-lab-legenda text-lab-tinta-2">{p.usuario.email}</span>
               </TableCell>
               <TableCell>
                 <Badge tone={p.ativo ? "success" : "neutral"}>
@@ -139,7 +141,7 @@ function TabelaDeParticipantes({ participantes }: { participantes: LabParticipan
         </TableBody>
       </Table>
       {atualizar.isError && aDesativar === null ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-lab-pequeno text-lab-perigo-texto">
           {descreverErroDoCadastro(atualizar.error, "acompanhamento").descricao}
         </p>
       ) : null}
@@ -158,7 +160,15 @@ function TabelaDeParticipantes({ participantes }: { participantes: LabParticipan
         aoCancelar={fechar}
         aoConfirmar={() => {
           if (aDesativar)
-            atualizar.mutate({ id: aDesativar.id, ativo: false }, { onSuccess: fechar });
+            atualizar.mutate(
+              { id: aDesativar.id, ativo: false },
+              {
+                onSuccess: () => {
+                  notificar({ tom: "sucesso", titulo: "Participante desativado" });
+                  fechar();
+                }
+              }
+            );
         }}
       />
     </>

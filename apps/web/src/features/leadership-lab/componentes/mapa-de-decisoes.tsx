@@ -15,11 +15,11 @@ import {
 const semAlca = "!h-1.5 !w-1.5 !border-0 !bg-transparent";
 
 function tomDaAderencia(aderencia: number, semResposta: boolean): string {
-  if (semResposta) return "border-amber-600";
-  if (aderencia >= 100) return "border-emerald-600";
-  if (aderencia >= 70) return "border-sky-500";
-  if (aderencia >= 40) return "border-amber-500";
-  return "border-red-500";
+  if (semResposta) return "border-lab-aviso";
+  if (aderencia >= 100) return "border-lab-destaque";
+  if (aderencia >= 70) return "border-lab-info";
+  if (aderencia >= 40) return "border-lab-aviso";
+  return "border-lab-perigo";
 }
 
 function NoDaSituacao({ data }: NodeProps) {
@@ -27,19 +27,19 @@ function NoDaSituacao({ data }: NodeProps) {
   return (
     <div
       className={cn(
-        "w-[248px] rounded-xl border-2 bg-white p-3 shadow-sm",
+        "w-[248px] rounded-lab-lg border-2 bg-lab-superficie p-3 shadow-lab-1",
         tomDaAderencia(d.aderencia, d.semResposta)
       )}
     >
       <Handle id="esquerda" type="target" position={Position.Left} className={semAlca} />
       <Handle id="baixo" type="source" position={Position.Bottom} className={semAlca} />
-      <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-950">
+      <p className="flex items-center gap-1.5 text-lab-legenda font-semibold text-lab-tinta">
         Situação {d.numero}
         {d.marco ? (
-          <Flag size={12} className="fill-amber-400 text-amber-600" aria-hidden="true" />
+          <Flag size={12} className="fill-lab-aviso/60 text-lab-aviso" aria-hidden="true" />
         ) : null}
       </p>
-      <p className="mt-1 text-xs leading-5 text-slate-600">{d.resumo}</p>
+      <p className="mt-1 text-lab-legenda leading-5 text-lab-tinta-2">{d.resumo}</p>
     </div>
   );
 }
@@ -49,10 +49,10 @@ function NoDaOpcao({ data }: NodeProps) {
   return (
     <div
       className={cn(
-        "w-[248px] rounded-xl border p-3 text-xs leading-[18px]",
+        "w-[248px] rounded-lab-lg border p-3 text-lab-legenda leading-[18px]",
         d.escolhida
-          ? "border-2 border-emerald-600 bg-emerald-50 text-slate-900 shadow-md"
-          : "border-dashed border-slate-300 bg-slate-50 text-slate-500"
+          ? "border-2 border-lab-destaque bg-lab-destaque-suave text-lab-tinta shadow-lab-2"
+          : "border-dashed border-lab-linha-forte bg-lab-superficie-2 text-lab-tinta-2"
       )}
     >
       <Handle id="cima" type="target" position={Position.Top} className={semAlca} />
@@ -61,7 +61,7 @@ function NoDaOpcao({ data }: NodeProps) {
         <span
           className={cn(
             "mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full text-[10px] font-semibold",
-            d.escolhida ? "bg-emerald-700 text-white" : "bg-slate-200 text-slate-600"
+            d.escolhida ? "bg-lab-destaque text-white" : "bg-lab-superficie-3 text-lab-tinta-2"
           )}
         >
           {d.letra}
@@ -74,8 +74,8 @@ function NoDaOpcao({ data }: NodeProps) {
         </span>
       </p>
       {d.consequencia ? (
-        <p className="mt-2 flex gap-1.5 border-t border-emerald-200 pt-2 text-[11px] leading-[17px] text-emerald-950">
-          <Check size={12} className="mt-0.5 shrink-0 text-emerald-700" aria-hidden="true" />
+        <p className="mt-2 flex gap-1.5 border-t border-lab-destaque/25 pt-2 text-[11px] leading-[17px] text-lab-destaque-texto">
+          <Check size={12} className="mt-0.5 shrink-0 text-lab-destaque" aria-hidden="true" />
           {d.consequencia}
         </p>
       ) : null}
@@ -86,7 +86,7 @@ function NoDaOpcao({ data }: NodeProps) {
 function NoDaOmissao({ data }: NodeProps) {
   const d = data as unknown as DadosDaOmissao;
   return (
-    <div className="w-[248px] rounded-xl border-2 border-amber-600 bg-amber-50 p-3 text-xs leading-[18px] text-amber-950">
+    <div className="w-[248px] rounded-lab-lg border-2 border-lab-aviso bg-lab-aviso-suave p-3 text-lab-legenda leading-[18px] text-lab-aviso-texto">
       <Handle id="cima" type="target" position={Position.Top} className={semAlca} />
       <Handle id="direita" type="source" position={Position.Right} className={semAlca} />
       <p className="flex items-center gap-1.5 font-semibold">
@@ -119,7 +119,7 @@ export function MapaDeDecisoes({ situacoes }: { situacoes: readonly LabSituacaoD
         data-testid="mapa-de-decisoes"
         role="group"
         aria-label="Mapa de decisões: arraste para ver todo o caminho, use os botões para ampliar"
-        className="h-[28rem] w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 sm:h-[34rem]"
+        className="h-[28rem] w-full overflow-hidden rounded-lab-lg border border-lab-linha bg-lab-superficie-2 sm:h-[34rem]"
       >
         <ReactFlow
           nodes={nodes}
@@ -141,7 +141,7 @@ export function MapaDeDecisoes({ situacoes }: { situacoes: readonly LabSituacaoD
           <Controls showInteractive={false} />
         </ReactFlow>
       </div>
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-lab-legenda text-lab-tinta-2">
         Verde: o caminho que você percorreu. Tracejado: as alternativas que você não escolheu. A cor
         da borda da situação mostra a aderência da escolha.
       </p>

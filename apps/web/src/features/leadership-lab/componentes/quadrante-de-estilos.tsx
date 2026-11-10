@@ -31,35 +31,37 @@ export function QuadranteDeEstilos({ perfil }: { perfil: PerfilDisponivel }) {
             <div
               key={estilo}
               className={cn(
-                "rounded-xl border p-4",
-                destacado ? "border-emerald-600 bg-emerald-50" : "border-slate-200 bg-white"
+                "rounded-lab-lg border p-4",
+                destacado
+                  ? "border-lab-destaque bg-lab-destaque-suave"
+                  : "border-lab-linha bg-lab-superficie"
               )}
             >
-              <p className="text-sm font-semibold text-slate-950">{nomeDoEstilo[estilo]}</p>
-              <p className="text-[11px] text-slate-500">{linha}</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">
+              <p className="text-lab-pequeno font-semibold text-lab-tinta">
+                {nomeDoEstilo[estilo]}
+              </p>
+              <p className="text-[11px] text-lab-tinta-2">{linha}</p>
+              <p className="mt-2 text-2xl font-semibold text-lab-tinta">
                 {n}
-                <span className="ml-1 text-xs font-normal text-slate-500">
+                <span className="ml-1 text-lab-legenda font-normal text-lab-tinta-2">
                   {n === 1 ? "escolha" : "escolhas"}
                 </span>
               </p>
               <div
-                className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200"
+                className="mt-2 h-1.5 overflow-hidden rounded-full bg-lab-superficie-3"
                 aria-hidden="true"
               >
-                <div className="h-full rounded-full bg-emerald-600" style={{ width: `${pct}%` }} />
+                <div className="h-full rounded-full bg-lab-destaque" style={{ width: `${pct}%` }} />
               </div>
             </div>
           );
         })}
       </div>
 
-      <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+      <dl className="mt-4 grid gap-2 text-lab-pequeno sm:grid-cols-2">
         <div>
-          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Estilo predominante
-          </dt>
-          <dd className="mt-0.5 font-semibold text-slate-950">
+          <dt className="text-lab-legenda font-medium text-lab-tinta-2">Estilo predominante</dt>
+          <dd className="mt-0.5 font-semibold text-lab-tinta">
             {perfil.estiloPredominante
               ? nomeDoEstilo[perfil.estiloPredominante]
               : perfil.estilosEmpatados.length > 1
@@ -68,10 +70,8 @@ export function QuadranteDeEstilos({ perfil }: { perfil: PerfilDisponivel }) {
           </dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Flexibilidade
-          </dt>
-          <dd className="mt-0.5 font-semibold text-slate-950">
+          <dt className="text-lab-legenda font-medium text-lab-tinta-2">Flexibilidade</dt>
+          <dd className="mt-0.5 font-semibold text-lab-tinta">
             {perfil.flexibilidade
               ? `${nomeDaFlexibilidade[perfil.flexibilidade]}${
                   perfil.flexibilidadePct === null
@@ -82,7 +82,7 @@ export function QuadranteDeEstilos({ perfil }: { perfil: PerfilDisponivel }) {
           </dd>
         </div>
       </dl>
-      <p className="mt-3 text-xs text-slate-500">
+      <p className="mt-3 text-lab-legenda text-lab-tinta-2">
         Baseado em {perfil.nEscolhas} {perfil.nEscolhas === 1 ? "escolha" : "escolhas"} de{" "}
         {perfil.testesConsiderados} {perfil.testesConsiderados === 1 ? "teste" : "testes"}
         {perfil.testesAguardandoValidacao > 0

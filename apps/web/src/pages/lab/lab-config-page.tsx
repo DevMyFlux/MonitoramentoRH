@@ -4,7 +4,15 @@ import {
   labTempoLimiteFaixaS
 } from "@my-flux/shared";
 import { useState } from "react";
-import { Badge, Button, Input, LoadingState } from "../../components/ui";
+import {
+  Badge,
+  Button,
+  CabecalhoDePagina,
+  Escalonar,
+  Input,
+  LoadingState,
+  Revelar
+} from "../../features/leadership-lab/ui";
 import { ErroDaTelaDoLab } from "../../features/leadership-lab/componentes/erro-da-tela";
 import {
   useAtualizarMolde,
@@ -16,19 +24,14 @@ export function LabConfigPage() {
   const config = useConfigDosMoldes();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.13em] text-emerald-800">
-          MY FLUX · Desenvolvimento
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-950">
-          Configuração do Leadership Lab
-        </h1>
-        <p className="mt-1 max-w-2xl text-sm text-slate-600">
-          Defina o tempo de cada situação, quais cargos usam cada teste e quando o teste é liberado
-          para os participantes. Não há dados de pessoas nesta tela.
-        </p>
-      </div>
+    <Escalonar className="space-y-8">
+      <Revelar>
+        <CabecalhoDePagina
+          eyebrow="MY FLUX · Desenvolvimento"
+          titulo="Configuração do Leadership Lab"
+          descricao="Defina o tempo de cada situação, quais cargos usam cada teste e quando o teste é liberado para os participantes. Não há dados de pessoas nesta tela."
+        />
+      </Revelar>
 
       {config.isPending ? (
         <LoadingState />
@@ -44,7 +47,7 @@ export function LabConfigPage() {
           ))}
         </div>
       )}
-    </div>
+    </Escalonar>
   );
 }
 
@@ -112,7 +115,7 @@ function CartaoDoMolde({
       aria-label={`Molde ${molde.nome}`}
       // A validação é a da tela (mensagem em português, no cartão), não a do navegador.
       noValidate
-      className="space-y-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+      className="space-y-5 rounded-lab-lg border border-lab-linha bg-lab-superficie p-5 shadow-lab-1"
       onSubmit={(e) => {
         e.preventDefault();
         enviar();
@@ -120,8 +123,8 @@ function CartaoDoMolde({
     >
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-slate-950">{molde.nome}</h2>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <h2 className="text-lab-corpo font-semibold text-lab-tinta">{molde.nome}</h2>
+          <p className="mt-0.5 text-lab-legenda text-lab-tinta-2">
             {molde.numeroSituacoes} situações por teste
           </p>
         </div>
@@ -132,9 +135,7 @@ function CartaoDoMolde({
 
       {molde.temas.length > 0 ? (
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Temas do teste
-          </p>
+          <p className="text-lab-legenda font-medium text-lab-tinta-2">Temas do teste</p>
           <ul className="mt-1.5 flex flex-wrap gap-1.5">
             {molde.temas.map((tema) => (
               <li key={tema}>
@@ -163,41 +164,43 @@ function CartaoDoMolde({
         }
       />
 
-      <label className="flex items-start gap-3 text-sm text-slate-800">
+      <label className="flex items-start gap-3 text-lab-pequeno text-lab-tinta">
         <input
           type="checkbox"
-          className="mt-0.5 h-4 w-4 accent-emerald-700"
+          className="mt-0.5 h-4 w-4 accent-[rgb(var(--lab-destaque))]"
           checked={ativo}
           onChange={(e) => setAtivo(e.target.checked)}
         />
         <span>
           <span className="font-medium">Teste liberado</span>
-          <span className="block text-xs text-slate-500">
+          <span className="block text-lab-legenda text-lab-tinta-2">
             Só os participantes dos cargos abaixo conseguem iniciar. Exige o tempo definido.
           </span>
         </span>
       </label>
 
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium text-slate-800">Cargos que usam este teste</legend>
+        <legend className="text-lab-pequeno font-medium text-lab-tinta">
+          Cargos que usam este teste
+        </legend>
         <Input
           label="Filtrar cargos"
           value={filtro}
           onChange={(e) => setFiltro(e.target.value)}
           autoComplete="off"
         />
-        <ul className="max-h-60 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-2">
+        <ul className="max-h-60 space-y-1 overflow-y-auto rounded-lab-md border border-lab-linha p-2">
           {filtrados.length === 0 ? (
-            <li className="p-2 text-xs text-slate-500">Nenhum cargo encontrado.</li>
+            <li className="p-2 text-lab-legenda text-lab-tinta-2">Nenhum cargo encontrado.</li>
           ) : (
             filtrados.map((cargo) => {
               const emOutro = cargo.moldeNivel !== null && cargo.moldeNivel !== molde.nivel;
               return (
                 <li key={cargo.id}>
-                  <label className="flex items-start gap-2 rounded p-1.5 text-sm text-slate-800 hover:bg-slate-50">
+                  <label className="flex items-start gap-2 rounded-lab-sm p-1.5 text-lab-pequeno text-lab-tinta hover:bg-lab-superficie-2">
                     <input
                       type="checkbox"
-                      className="mt-0.5 h-4 w-4 accent-emerald-700"
+                      className="mt-0.5 h-4 w-4 accent-[rgb(var(--lab-destaque))]"
                       checked={cargoIds.has(cargo.id)}
                       disabled={emOutro}
                       onChange={() => alternarCargo(cargo.id)}
@@ -205,7 +208,7 @@ function CartaoDoMolde({
                     <span>
                       {cargo.nome}
                       {emOutro ? (
-                        <span className="block text-xs text-slate-500">
+                        <span className="block text-lab-legenda text-lab-tinta-2">
                           Já usa outro teste. Tire-o de lá para usar neste.
                         </span>
                       ) : null}
@@ -216,23 +219,29 @@ function CartaoDoMolde({
             })
           )}
         </ul>
-        <p className="text-xs text-slate-500">
+        <p className="text-lab-legenda text-lab-tinta-2">
           {cargoIds.size} {cargoIds.size === 1 ? "cargo selecionado" : "cargos selecionados"}
         </p>
       </fieldset>
 
       {aviso ? (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+        <p
+          role="alert"
+          className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
+        >
           {aviso}
         </p>
       ) : null}
       {salvar.isError ? (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+        <p
+          role="alert"
+          className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
+        >
           {descreverErroDoCadastro(salvar.error, "configuracao").descricao}
         </p>
       ) : null}
       {salvo ? (
-        <p role="status" className="text-sm text-emerald-800">
+        <p role="status" className="text-lab-pequeno text-lab-destaque-texto">
           Alterações salvas.
         </p>
       ) : null}

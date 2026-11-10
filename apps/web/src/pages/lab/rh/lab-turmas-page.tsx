@@ -14,7 +14,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow
-} from "../../../components/ui";
+} from "../../../features/leadership-lab/ui";
 import { LayoutDoAcompanhamento } from "../../../features/leadership-lab/cadastro/layout-do-acompanhamento";
 import { useCriarTurma, useTurmas } from "../../../features/leadership-lab/cadastro-hooks";
 import { ErroDaTelaDoLab } from "../../../features/leadership-lab/componentes/erro-da-tela";
@@ -55,7 +55,7 @@ export function LabTurmasPage() {
                 <TableCell>
                   <Link
                     to={`/lab/rh/turmas/${t.id}`}
-                    className="font-medium text-emerald-800 underline-offset-2 hover:underline"
+                    className="font-medium text-lab-destaque-texto underline-offset-2 hover:underline"
                   >
                     {t.nome}
                   </Link>
@@ -66,7 +66,9 @@ export function LabTurmasPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>{t.nParticipantes}</TableCell>
-                <TableCell>{formatarDataCurta(t.criadaEm)}</TableCell>
+                <TableCell className="tabular whitespace-nowrap">
+                  {formatarDataCurta(t.criadaEm)}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -96,7 +98,7 @@ function NovaTurma() {
 
   return (
     <form
-      className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+      className="flex flex-wrap items-end gap-3 rounded-lab-lg border border-lab-linha bg-lab-superficie p-4 shadow-lab-1"
       onSubmit={(e) => {
         e.preventDefault();
         enviar();
@@ -116,7 +118,7 @@ function NovaTurma() {
         {criar.isPending ? "Criando..." : "Criar turma"}
       </Button>
       {criar.isError ? (
-        <p role="alert" className="basis-full text-sm text-red-700">
+        <p role="alert" className="basis-full text-lab-pequeno text-lab-perigo-texto">
           {descreverErroDoCadastro(criar.error, "acompanhamento").descricao}
         </p>
       ) : null}

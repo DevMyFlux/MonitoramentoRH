@@ -20,7 +20,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow
-} from "../../../components/ui";
+} from "../../../features/leadership-lab/ui";
 import { Confirmacao } from "../../../features/leadership-lab/cadastro/confirmacao";
 import { LayoutDoAcompanhamento } from "../../../features/leadership-lab/cadastro/layout-do-acompanhamento";
 import { SeloDoMolde } from "../../../features/leadership-lab/cadastro/selo-do-molde";
@@ -41,7 +41,7 @@ export function LabTurmaPage() {
   const voltar = (
     <Link
       to="/lab/rh/turmas"
-      className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-800 hover:underline"
+      className="inline-flex items-center gap-1.5 text-lab-pequeno font-medium text-lab-destaque-texto hover:underline"
     >
       <ArrowLeft size={16} aria-hidden="true" />
       Voltar às turmas
@@ -93,9 +93,9 @@ function Cabecalho({ turma }: { turma: LabTurmaDetalhe }) {
   };
 
   return (
-    <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="space-y-4 rounded-lab-lg border border-lab-linha bg-lab-superficie p-5 shadow-lab-1">
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-lg font-semibold text-slate-950">{turma.nome}</h2>
+        <h2 className="text-lg font-semibold text-lab-tinta">{turma.nome}</h2>
         <Badge tone={turma.ativa ? "success" : "neutral"}>
           {turma.ativa ? "Ativa" : "Encerrada"}
         </Badge>
@@ -126,8 +126,8 @@ function Cabecalho({ turma }: { turma: LabTurmaDetalhe }) {
         </Button>
       </form>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
-        <p className="max-w-xl text-sm text-slate-600">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-lab-linha pt-4">
+        <p className="max-w-xl text-lab-pequeno text-lab-tinta-2">
           {turma.ativa
             ? "Você vê os resultados dos participantes das turmas ativas. Encerrar a turma tira esses resultados da sua vista, sem apagar nada."
             : "Turma encerrada: os resultados dos participantes dela não aparecem para você. Reabra para voltar a acompanhá-los."}
@@ -148,7 +148,7 @@ function Cabecalho({ turma }: { turma: LabTurmaDetalhe }) {
       </div>
 
       {atualizar.isError && !encerrando ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-lab-pequeno text-lab-perigo-texto">
           {descreverErroDoCadastro(atualizar.error, "acompanhamento").descricao}
         </p>
       ) : null}
@@ -188,7 +188,7 @@ function Participantes({ turma }: { turma: LabTurmaDetalhe }) {
 
   return (
     <section className="space-y-4">
-      <h2 className="text-base font-semibold text-slate-950">
+      <h2 className="text-lab-corpo font-semibold text-lab-tinta">
         Participantes ({turma.nParticipantes})
       </h2>
 
@@ -214,8 +214,8 @@ function Participantes({ turma }: { turma: LabTurmaDetalhe }) {
             {turma.participantes.map((p) => (
               <TableRow key={p.id}>
                 <TableCell>
-                  <span className="block font-medium text-slate-900">{p.colaborador.nome}</span>
-                  <span className="block text-xs text-slate-500">
+                  <span className="block font-medium text-lab-tinta">{p.colaborador.nome}</span>
+                  <span className="block text-lab-legenda text-lab-tinta-2">
                     Matrícula {p.colaborador.identificador}
                   </span>
                 </TableCell>
@@ -275,19 +275,21 @@ function IncluirParticipante({ turma }: { turma: LabTurmaDetalhe }) {
 
   if (!turma.ativa) {
     return (
-      <p className="text-sm text-slate-600">Reabra a turma para incluir participantes nela.</p>
+      <p className="text-lab-pequeno text-lab-tinta-2">
+        Reabra a turma para incluir participantes nela.
+      </p>
     );
   }
   if (participantes.isError) {
     return (
-      <p role="alert" className="text-sm text-red-700">
+      <p role="alert" className="text-lab-pequeno text-lab-perigo-texto">
         {descreverErroDoCadastro(participantes.error, "acompanhamento").descricao}
       </p>
     );
   }
   if (participantes.isSuccess && candidatos.length === 0) {
     return (
-      <p className="text-sm text-slate-600">
+      <p className="text-lab-pequeno text-lab-tinta-2">
         {participantes.data.some((p) => p.ativo) ? (
           "Todos os participantes ativos já estão nesta turma."
         ) : (
@@ -295,7 +297,7 @@ function IncluirParticipante({ turma }: { turma: LabTurmaDetalhe }) {
             Não há participantes ativos para incluir.{" "}
             <Link
               to="/lab/rh/participantes"
-              className="font-medium text-emerald-800 hover:underline"
+              className="font-medium text-lab-destaque-texto hover:underline"
             >
               Cadastre participantes
             </Link>{" "}
@@ -308,7 +310,7 @@ function IncluirParticipante({ turma }: { turma: LabTurmaDetalhe }) {
 
   return (
     <form
-      className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+      className="flex flex-wrap items-end gap-3 rounded-lab-lg border border-lab-linha bg-lab-superficie p-4 shadow-lab-1"
       onSubmit={(e) => {
         e.preventDefault();
         if (escolhido) incluir.mutate(escolhido, { onSuccess: () => setEscolhido("") });
@@ -337,7 +339,7 @@ function IncluirParticipante({ turma }: { turma: LabTurmaDetalhe }) {
         {incluir.isPending ? "Incluindo..." : "Incluir na turma"}
       </Button>
       {incluir.isError ? (
-        <p role="alert" className="basis-full text-sm text-red-700">
+        <p role="alert" className="basis-full text-lab-pequeno text-lab-perigo-texto">
           {descreverErroDoCadastro(incluir.error, "acompanhamento").descricao}
         </p>
       ) : null}

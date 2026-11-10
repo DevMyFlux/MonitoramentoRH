@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "../../../components/ui";
+import { Button } from "../ui";
 import type { ErroDaTela } from "../erros";
 import { Cartao } from "./cartao";
 
@@ -25,7 +25,7 @@ export function TermoDeCiencia({ versao, aceitando, erro, aoAceitar }: TermoDeCi
       titulo="Termo de ciência"
       descricao="Leia antes de fazer o primeiro teste do Leadership Lab."
     >
-      <div className="space-y-3 text-sm leading-6 text-slate-700">
+      <div className="space-y-3 text-lab-pequeno leading-6 text-lab-tinta-2">
         <p>O que acontece quando você faz um teste:</p>
         <ul className="list-disc space-y-1 pl-5">
           <li>
@@ -43,17 +43,17 @@ export function TermoDeCiencia({ versao, aceitando, erro, aoAceitar }: TermoDeCi
         </ul>
         <p
           role="note"
-          className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900"
+          className="rounded-lab-md border border-lab-aviso/20 bg-lab-aviso-suave p-3.5 text-lab-legenda leading-5 text-lab-aviso-texto"
         >
           Texto provisório (versão {versao}): o termo completo ainda será definido pelo RH e pelo
           jurídico.
         </p>
       </div>
       <div className="mt-5 grid gap-4">
-        <label className="flex items-start gap-3 text-sm text-slate-800">
+        <label className="flex cursor-pointer items-start gap-3 text-lab-pequeno font-medium text-lab-tinta">
           <input
             type="checkbox"
-            className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-emerald-700"
+            className="mt-0.5 h-[18px] w-[18px] cursor-pointer rounded-lab-sm border-lab-linha-forte accent-[rgb(var(--lab-destaque))]"
             checked={li}
             onChange={(e) => setLi(e.target.checked)}
           />
@@ -62,13 +62,13 @@ export function TermoDeCiencia({ versao, aceitando, erro, aoAceitar }: TermoDeCi
         {erro ? (
           <p
             role="alert"
-            className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+            className="rounded-lab-md border border-lab-perigo/20 bg-lab-perigo-suave p-3.5 text-lab-pequeno text-lab-perigo-texto"
           >
             {erro.titulo}. {erro.descricao}
           </p>
         ) : null}
         <div>
-          <Button disabled={!li || aceitando} onClick={aoAceitar}>
+          <Button loading={aceitando} disabled={!li} onClick={aoAceitar}>
             {aceitando ? "Registrando..." : "Aceitar e continuar"}
           </Button>
         </div>

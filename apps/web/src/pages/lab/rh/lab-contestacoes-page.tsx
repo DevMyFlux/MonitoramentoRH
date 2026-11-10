@@ -1,7 +1,15 @@
 import { type LabContestacaoDoCurador, labLimitesDeTexto } from "@my-flux/shared";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Button, EmptyState, LoadingState, Modal, Select } from "../../../components/ui";
+import {
+  Button,
+  EmptyState,
+  LoadingState,
+  Modal,
+  Select,
+  Textarea,
+  useNotificar
+} from "../../../features/leadership-lab/ui";
 import { LayoutDoAcompanhamento } from "../../../features/leadership-lab/cadastro/layout-do-acompanhamento";
 import {
   IdentificacaoDoParticipante,
@@ -30,7 +38,7 @@ export function LabContestacoesPage() {
 
   return (
     <LayoutDoAcompanhamento>
-      <p className="max-w-3xl text-sm text-slate-600">
+      <p className="max-w-3xl text-lab-pequeno text-lab-tinta-2">
         O participante pode questionar um ponto do próprio resultado. A sua decisão e a nota
         explicativa chegam a ele. Decidir não altera o resultado sozinho: o ajuste de um nível é
         feito na validação, enquanto o resultado aguarda validação.
@@ -63,12 +71,12 @@ export function LabContestacoesPage() {
           {contestacoes.data.map((c) => (
             <li
               key={c.id}
-              className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+              className="space-y-3 rounded-lab-lg border border-lab-linha bg-lab-superficie p-4 shadow-lab-1"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="text-sm">
+                <div className="text-lab-pequeno">
                   <IdentificacaoDoParticipante {...c.participante} />
-                  <span className="mt-1 block text-xs text-slate-500">
+                  <span className="mt-1 block text-lab-legenda text-lab-tinta-2">
                     Contestou em {formatarDataEHora(c.criadoEm)}
                   </span>
                 </div>
@@ -77,12 +85,12 @@ export function LabContestacoesPage() {
                   <SeloDeDecisao status={c.status} />
                 </span>
               </div>
-              <div className="text-sm leading-6">
-                <p className="font-medium text-slate-900">{c.ponto}</p>
-                <p className="text-slate-700">{c.motivo}</p>
+              <div className="text-lab-pequeno leading-6">
+                <p className="font-medium text-lab-tinta">{c.ponto}</p>
+                <p className="text-lab-tinta-2">{c.motivo}</p>
               </div>
               {c.status !== "pendente" ? (
-                <p className="border-l-2 border-slate-200 pl-3 text-sm leading-6 text-slate-600">
+                <p className="border-l-2 border-lab-linha pl-3 text-lab-pequeno leading-6 text-lab-tinta-2">
                   Decisão{c.decididoPor ? ` de ${c.decididoPor}` : ""}
                   {c.decididoEm ? ` em ${formatarDataEHora(c.decididoEm)}` : ""}: {c.nota}
                 </p>
@@ -99,7 +107,7 @@ export function LabContestacoesPage() {
                 ) : null}
                 <Link
                   to={`/lab/rh/revisao/${c.resultadoId}`}
-                  className="text-sm font-medium text-emerald-800 hover:underline"
+                  className="text-lab-pequeno font-medium text-lab-destaque-texto hover:underline"
                 >
                   Abrir o resultado
                 </Link>
@@ -131,6 +139,7 @@ function FormularioDaDecisao({
   aoFechar: () => void;
 }) {
   const decidir = useDecidirContestacao();
+  const notificar = useNotificar();
   const [decisao, setDecisao] = useState<"aceita" | "rejeitada" | null>(null);
   const [nota, setNota] = useState("");
   const [aviso, setAviso] = useState<string | null>(null);
@@ -146,7 +155,18 @@ function FormularioDaDecisao({
       return;
     }
     setAviso(null);
-    decidir.mutate({ id: contestacao.id, decisao, nota: nota.trim() }, { onSuccess: aoFechar });
+    decidir.mutate(
+      { id: contestacao.id, decisao, nota: nota.trim() },
+      {
+        onSuccess: () => {
+          notificar({
+            tom: "sucesso",
+            titulo: decisao === "aceita" ? "Contestação aceita" : "Contestação rejeitada"
+          });
+          aoFechar();
+        }
+      }
+    );
   };
 
   return (
@@ -157,28 +177,31 @@ function FormularioDaDecisao({
         enviar();
       }}
     >
-      <div className="text-sm">
-        <p className="font-medium text-slate-900">{contestacao.ponto}</p>
-        <p className="mt-1 leading-6 text-slate-700">{contestacao.motivo}</p>
+      <div className="text-lab-pequeno">
+        <p className="font-medium text-lab-tinta">{contestacao.ponto}</p>
+        <p className="mt-1 leading-6 text-lab-tinta-2">{contestacao.motivo}</p>
       </div>
-      <p role="note" className="rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-600">
+      <p
+        role="note"
+        className="rounded-lab-md bg-lab-superficie-2 p-3 text-lab-pequeno leading-6 text-lab-tinta-2"
+      >
         {jaValidado
           ? "Este resultado já foi validado, e uma validação não se refaz: a decisão fica registrada, mas o resultado não muda."
           : "Aceitar registra a decisão e a nota. Se o nível de alguma skill deve mudar, faça o ajuste ao validar o resultado."}
       </p>
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium text-slate-700">Decisão</legend>
+        <legend className="text-lab-pequeno font-medium text-lab-tinta-2">Decisão</legend>
         {(
           [
             ["aceita", "Aceitar a contestação"],
             ["rejeitada", "Rejeitar a contestação"]
           ] as const
         ).map(([valor, rotulo]) => (
-          <label key={valor} className="flex items-center gap-2 text-sm text-slate-800">
+          <label key={valor} className="flex items-center gap-2 text-lab-pequeno text-lab-tinta">
             <input
               type="radio"
               name="decisao-da-contestacao"
-              className="h-4 w-4 accent-emerald-700"
+              className="h-4 w-4 accent-[rgb(var(--lab-destaque))]"
               checked={decisao === valor}
               onChange={() => setDecisao(valor)}
             />
@@ -186,27 +209,32 @@ function FormularioDaDecisao({
           </label>
         ))}
       </fieldset>
-      <div className="grid gap-2 text-sm font-medium text-slate-700">
+      <div className="grid gap-2 text-lab-pequeno font-medium text-lab-tinta-2">
         <label htmlFor="nota-da-contestacao">Nota para o participante</label>
-        <textarea
+        <Textarea
           id="nota-da-contestacao"
           rows={4}
           maxLength={labLimitesDeTexto.nota}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-normal text-slate-900 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
           value={nota}
           onChange={(e) => setNota(e.target.value)}
         />
-        <span className="text-xs font-normal text-slate-500">
+        <span className="text-lab-legenda font-normal text-lab-tinta-2">
           {nota.length}/{labLimitesDeTexto.nota}
         </span>
       </div>
       {aviso ? (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+        <p
+          role="alert"
+          className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
+        >
           {aviso}
         </p>
       ) : null}
       {decidir.isError ? (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+        <p
+          role="alert"
+          className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
+        >
           {descreverErroDoCadastro(decidir.error, "acompanhamento").descricao}
         </p>
       ) : null}

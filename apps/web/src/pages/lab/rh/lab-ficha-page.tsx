@@ -6,7 +6,13 @@ import {
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Badge, Button, LoadingState } from "../../../components/ui";
+import {
+  Badge,
+  Button,
+  LoadingState,
+  Textarea,
+  useNotificar
+} from "../../../features/leadership-lab/ui";
 import { Confirmacao } from "../../../features/leadership-lab/cadastro/confirmacao";
 import { LayoutDoAcompanhamento } from "../../../features/leadership-lab/cadastro/layout-do-acompanhamento";
 import {
@@ -35,7 +41,7 @@ export function LabFichaPage() {
     <LayoutDoAcompanhamento>
       <Link
         to="/lab/rh/revisao"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-800 hover:underline"
+        className="inline-flex items-center gap-1.5 text-lab-pequeno font-medium text-lab-destaque-texto hover:underline"
       >
         <ArrowLeft size={16} aria-hidden="true" />
         Voltar à revisão
@@ -60,13 +66,13 @@ function FichaCompleta({ ficha }: { ficha: LabFichaDeRevisao }) {
 
   return (
     <div className="space-y-6">
-      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section className="space-y-4 rounded-lab-lg border border-lab-linha bg-lab-superficie p-5 shadow-lab-1">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-slate-950">
+            <h2 className="text-lg font-semibold text-lab-tinta">
               <IdentificacaoDoParticipante {...ficha.participante} />
             </h2>
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-lab-pequeno text-lab-tinta-2">
               Teste {ficha.moldeNome} · concluído em {formatarDataEHora(ficha.concluidaEm)}
             </p>
           </div>
@@ -93,19 +99,19 @@ function FichaCompleta({ ficha }: { ficha: LabFichaDeRevisao }) {
             }
           />
         </div>
-        <p className="text-sm leading-6 text-slate-700">{ficha.resumo}</p>
+        <p className="text-lab-pequeno leading-6 text-lab-tinta-2">{ficha.resumo}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           {ficha.pontoForte ? (
-            <p className="rounded-lg bg-emerald-50 p-3 text-sm text-slate-800">
-              <span className="block text-xs font-semibold uppercase tracking-wide text-emerald-800">
+            <p className="rounded-lab-md bg-lab-destaque-suave p-3 text-lab-pequeno text-lab-tinta">
+              <span className="block text-lab-legenda font-semibold text-lab-destaque-texto">
                 Ponto forte
               </span>
               {ficha.pontoForte}
             </p>
           ) : null}
           {ficha.pontoDesenvolvimento ? (
-            <p className="rounded-lg bg-amber-50 p-3 text-sm text-slate-800">
-              <span className="block text-xs font-semibold uppercase tracking-wide text-amber-900">
+            <p className="rounded-lab-md bg-lab-aviso-suave p-3 text-lab-pequeno text-lab-tinta">
+              <span className="block text-lab-legenda font-semibold text-lab-aviso-texto">
                 Ponto de desenvolvimento
               </span>
               {ficha.pontoDesenvolvimento}
@@ -117,7 +123,7 @@ function FichaCompleta({ ficha }: { ficha: LabFichaDeRevisao }) {
       {contestacoesPendentes > 0 || alertasAbertos > 0 ? (
         <div
           role="note"
-          className="space-y-1 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+          className="space-y-1 rounded-lab-md border border-lab-aviso/20 bg-lab-aviso-suave p-3 text-lab-pequeno text-lab-aviso-texto"
         >
           {contestacoesPendentes > 0 ? (
             <p>
@@ -156,17 +162,17 @@ function FichaCompleta({ ficha }: { ficha: LabFichaDeRevisao }) {
 
       {ficha.alertas.length > 0 ? (
         <Cartao titulo="Alertas deste teste">
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-2 text-lab-pequeno">
             {ficha.alertas.map((a) => (
               <li key={a.id} className="flex flex-wrap items-center gap-2">
                 <SeloDeAlerta cor={a.cor} />
-                <span className="text-slate-800">
+                <span className="text-lab-tinta">
                   {a.skillNome ? a.skillNome : a.situacao ? `Situação ${a.situacao}` : "—"}
                 </span>
                 <Badge tone={a.status === "aberto" ? "warning" : "neutral"}>
                   {a.status === "aberto" ? "Aberto" : "Encerrado"}
                 </Badge>
-                {a.nota ? <span className="text-slate-600">Nota: {a.nota}</span> : null}
+                {a.nota ? <span className="text-lab-tinta-2">Nota: {a.nota}</span> : null}
               </li>
             ))}
           </ul>
@@ -175,12 +181,12 @@ function FichaCompleta({ ficha }: { ficha: LabFichaDeRevisao }) {
 
       {ficha.contribuicoes.length > 0 ? (
         <Cartao titulo="Contribuições do participante">
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-2 text-lab-pequeno">
             {ficha.contribuicoes.map((c) => (
               <li key={c.id} className="flex flex-wrap items-center gap-2">
                 <SeloDeDecisao status={c.status} />
-                <span className="text-slate-500">Situação {c.situacao}:</span>
-                <span className="text-slate-800">{c.texto}</span>
+                <span className="text-lab-tinta-2">Situação {c.situacao}:</span>
+                <span className="text-lab-tinta">{c.texto}</span>
               </li>
             ))}
           </ul>
@@ -189,16 +195,16 @@ function FichaCompleta({ ficha }: { ficha: LabFichaDeRevisao }) {
 
       {ficha.contestacoes.length > 0 ? (
         <Cartao titulo="Contestações do participante">
-          <ul className="space-y-3 text-sm">
+          <ul className="space-y-3 text-lab-pequeno">
             {ficha.contestacoes.map((c) => (
-              <li key={c.id} className="rounded-lg border border-slate-200 p-3">
+              <li key={c.id} className="rounded-lab-md border border-lab-linha p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <SeloDeDecisao status={c.status} />
-                  <span className="font-medium text-slate-900">{c.ponto}</span>
+                  <span className="font-medium text-lab-tinta">{c.ponto}</span>
                 </div>
-                <p className="mt-2 leading-6 text-slate-700">{c.motivo}</p>
+                <p className="mt-2 leading-6 text-lab-tinta-2">{c.motivo}</p>
                 {c.nota ? (
-                  <p className="mt-2 border-l-2 border-slate-200 pl-3 leading-6 text-slate-600">
+                  <p className="mt-2 border-l-2 border-lab-linha pl-3 leading-6 text-lab-tinta-2">
                     Decisão{c.decididoPor ? ` de ${c.decididoPor}` : ""}: {c.nota}
                   </p>
                 ) : null}
@@ -219,6 +225,7 @@ const NIVEIS = [1, 2, 3, 4, 5] as const;
  */
 function ValidacaoDoResultado({ ficha }: { ficha: LabFichaDeRevisao }) {
   const validar = useValidar(ficha.resultadoId);
+  const notificar = useNotificar();
   const editavel = ficha.statusValidacao === "aguardando_validacao";
   const [niveis, setNiveis] = useState<Record<string, number>>(() =>
     Object.fromEntries(ficha.skills.map((s) => [s.skillId, s.nivelCalculado]))
@@ -244,7 +251,12 @@ function ValidacaoDoResultado({ ficha }: { ficha: LabFichaDeRevisao }) {
         ajustes: ajustes.map((s) => ({ skillId: s.skillId, nivel: niveis[s.skillId] as number })),
         ...(justificativa.trim() === "" ? {} : { justificativa: justificativa.trim() })
       },
-      { onSuccess: () => setConfirmando(false) }
+      {
+        onSuccess: () => {
+          setConfirmando(false);
+          notificar({ tom: "sucesso", titulo: "Resultado validado" });
+        }
+      }
     );
 
   return (
@@ -258,8 +270,8 @@ function ValidacaoDoResultado({ ficha }: { ficha: LabFichaDeRevisao }) {
         : {})}
     >
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
-          <thead className="text-left text-xs uppercase text-slate-500">
+        <table className="min-w-full divide-y divide-lab-linha text-lab-pequeno">
+          <thead className="text-left text-lab-legenda text-lab-tinta-2">
             <tr>
               <th className="py-2 pr-4 font-semibold">Skill</th>
               <th className="px-4 py-2 font-semibold">Escolhas</th>
@@ -268,14 +280,14 @@ function ValidacaoDoResultado({ ficha }: { ficha: LabFichaDeRevisao }) {
               <th className="py-2 pl-4 font-semibold">{editavel ? "Validar como" : "Validado"}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-lab-linha">
             {ficha.skills.map((s) => {
               const mudou = niveis[s.skillId] !== s.nivelCalculado;
               return (
                 <tr key={s.skillId}>
                   <td className="py-2.5 pr-4">
-                    <span className="block font-medium text-slate-900">{s.nome}</span>
-                    <span className="block text-xs text-slate-500">
+                    <span className="block font-medium text-lab-tinta">{s.nome}</span>
+                    <span className="block text-lab-legenda text-lab-tinta-2">
                       {s.tipo ? nomeDoTipoDeSkill[s.tipo] : ""}
                     </span>
                   </td>
@@ -287,7 +299,7 @@ function ValidacaoDoResultado({ ficha }: { ficha: LabFichaDeRevisao }) {
                       <span className="inline-flex items-center gap-2">
                         <select
                           aria-label={`Nível validado de ${s.nome}`}
-                          className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-sm"
+                          className="h-10 cursor-pointer rounded-lab-md border border-lab-linha-forte bg-lab-superficie px-2.5 text-lab-pequeno text-lab-tinta outline-none transition focus:border-lab-destaque focus:ring-4 focus:ring-lab-destaque/15"
                           value={niveis[s.skillId]}
                           onChange={(e) =>
                             setNiveis((atual) => ({
@@ -330,28 +342,30 @@ function ValidacaoDoResultado({ ficha }: { ficha: LabFichaDeRevisao }) {
             pedirConfirmacao();
           }}
         >
-          <div className="grid gap-2 text-sm font-medium text-slate-700">
+          <div className="grid gap-2 text-lab-pequeno font-medium text-lab-tinta-2">
             <label htmlFor="justificativa-da-validacao">
               Justificativa{" "}
-              <span className="font-normal text-slate-500">
+              <span className="font-normal text-lab-tinta-2">
                 {ajustes.length > 0 ? "(obrigatória: você mudou algum nível)" : "(opcional)"}
               </span>
             </label>
-            <textarea
+            <Textarea
               id="justificativa-da-validacao"
               rows={3}
               maxLength={labLimitesDeTexto.nota}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-normal text-slate-900 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
               value={justificativa}
               onChange={(e) => setJustificativa(e.target.value)}
             />
-            <span className="text-xs font-normal text-slate-500">
+            <span className="text-lab-legenda font-normal text-lab-tinta-2">
               {justificativa.length}/{labLimitesDeTexto.nota}. Fica guardada com a validação; o
               participante não a recebe.
             </span>
           </div>
           {aviso ? (
-            <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+            <p
+              role="alert"
+              className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
+            >
               {aviso}
             </p>
           ) : null}
@@ -362,7 +376,7 @@ function ValidacaoDoResultado({ ficha }: { ficha: LabFichaDeRevisao }) {
           </Button>
         </form>
       ) : (
-        <div className="mt-5 space-y-1 rounded-lg bg-slate-50 p-4 text-sm text-slate-700">
+        <div className="mt-5 space-y-1 rounded-lab-md bg-lab-superficie-2 p-4 text-lab-pequeno text-lab-tinta-2">
           <p>
             <span className="font-medium">Validado</span>
             {ficha.validacao.validadoPor ? ` por ${ficha.validacao.validadoPor}` : ""}
@@ -415,26 +429,26 @@ function tomDaAderencia(aderencia: number): "success" | "info" | "warning" | "da
 function SituacaoDaFichaItem({ situacao }: { situacao: LabSituacaoDaFicha }) {
   const escolhida = situacao.opcoes.find((o) => o.id === situacao.escolha);
   return (
-    <li className="rounded-xl border border-slate-200">
+    <li className="rounded-lab-lg border border-lab-linha">
       <details>
-        <summary className="flex cursor-pointer flex-wrap items-center gap-2 p-3 text-sm">
-          <span className="font-semibold text-slate-950">Situação {situacao.numero}</span>
+        <summary className="flex cursor-pointer flex-wrap items-center gap-2 p-3 text-lab-pequeno">
+          <span className="font-semibold text-lab-tinta">Situação {situacao.numero}</span>
           {situacao.marco ? <Badge tone="warning">Marco</Badge> : null}
           <Badge tone={tomDaAderencia(situacao.aderencia)}>
             Aderência {formatarNumero(situacao.aderencia)}%
           </Badge>
           {situacao.alertaVermelho ? <Badge tone="danger">Alerta vermelho</Badge> : null}
-          <span className="text-slate-600">
+          <span className="text-lab-tinta-2">
             {situacao.tempoEsgotado || !escolhida ? "Sem resposta" : `Escolheu ${escolhida.id}`}
           </span>
         </summary>
-        <div className="space-y-2 border-t border-slate-100 p-3 text-sm leading-6">
-          <p className="text-slate-800">{situacao.texto}</p>
-          <ul className="space-y-1 text-slate-700">
+        <div className="space-y-2 border-t border-lab-linha p-3 text-lab-pequeno leading-6">
+          <p className="text-lab-tinta">{situacao.texto}</p>
+          <ul className="space-y-1 text-lab-tinta-2">
             {situacao.opcoes.map((o) => (
               <li
                 key={o.id}
-                className={o.id === situacao.escolha ? "font-semibold text-slate-950" : ""}
+                className={o.id === situacao.escolha ? "font-semibold text-lab-tinta" : ""}
               >
                 {o.id}. {o.texto}
                 {o.id === situacao.escolha ? " (escolhida)" : ""}
@@ -442,21 +456,21 @@ function SituacaoDaFichaItem({ situacao }: { situacao: LabSituacaoDaFicha }) {
             ))}
           </ul>
           {situacao.tempoEsgotado ? (
-            <p className="font-medium text-slate-900">O tempo acabou sem resposta.</p>
+            <p className="font-medium text-lab-tinta">O tempo acabou sem resposta.</p>
           ) : situacao.tempoRespostaMs !== null ? (
-            <p className="text-slate-500">
+            <p className="text-lab-tinta-2">
               Respondeu em {formatarNumero(situacao.tempoRespostaMs / 1000)} s
               {situacao.estilo ? ` · estilo ${nomeDoEstilo[situacao.estilo]}` : ""}
             </p>
           ) : null}
           {situacao.justificativa ? (
-            <p className="text-slate-600">
-              <span className="font-medium text-slate-800">Avaliação:</span>{" "}
+            <p className="text-lab-tinta-2">
+              <span className="font-medium text-lab-tinta">Avaliação:</span>{" "}
               {situacao.justificativa}
             </p>
           ) : null}
           {situacao.consequencia ? (
-            <p className="border-l-2 border-slate-200 pl-3 italic text-slate-600">
+            <p className="border-l-2 border-lab-linha pl-3 italic text-lab-tinta-2">
               {situacao.consequencia}
             </p>
           ) : null}

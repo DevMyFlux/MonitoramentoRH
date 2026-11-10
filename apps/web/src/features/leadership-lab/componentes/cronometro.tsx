@@ -49,28 +49,44 @@ export function Cronometro({ restanteMs, limiteMs, recebidaEm, aoZerar }: Cronom
       : "";
 
   return (
-    <div className="w-full min-w-[9rem] max-w-[14rem]">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Tempo</span>
+    <div className="flex items-center gap-3.5">
+      <svg
+        aria-hidden="true"
+        width={52}
+        height={52}
+        viewBox="0 0 52 52"
+        className="shrink-0 -rotate-90"
+      >
+        <circle cx={26} cy={26} r={22} fill="none" strokeWidth={5} className="stroke-lab-linha" />
+        <circle
+          cx={26}
+          cy={26}
+          r={22}
+          fill="none"
+          strokeWidth={5}
+          strokeLinecap="round"
+          pathLength={1}
+          strokeDasharray={1}
+          strokeDashoffset={1 - fracao}
+          className={cn(
+            "transition-[stroke-dashoffset,stroke] duration-300 ease-linear motion-reduce:transition-none",
+            urgente ? "stroke-lab-perigo" : "stroke-lab-destaque"
+          )}
+        />
+      </svg>
+      <div>
+        <span className="block text-lab-legenda font-medium text-lab-tinta-2">Tempo</span>
         <span
           role="timer"
           aria-label="Tempo restante"
+          data-urgente={urgente ? "true" : undefined}
           className={cn(
-            "font-mono text-2xl font-semibold tabular-nums",
-            urgente ? "text-red-700" : "text-slate-900"
+            "tabular block text-[1.75rem] font-semibold leading-8 tracking-tight",
+            urgente ? "text-lab-perigo" : "text-lab-tinta"
           )}
         >
           {formatarRelogio(faltam)}
         </span>
-      </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200" aria-hidden="true">
-        <div
-          className={cn(
-            "h-full rounded-full transition-[width] duration-300 ease-linear motion-reduce:transition-none",
-            urgente ? "bg-red-600" : "bg-emerald-600"
-          )}
-          style={{ width: `${fracao * 100}%` }}
-        />
       </div>
       <p className="sr-only" aria-live="polite">
         {anuncio}

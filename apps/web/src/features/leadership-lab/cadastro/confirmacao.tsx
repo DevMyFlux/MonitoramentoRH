@@ -1,4 +1,4 @@
-import { Button, Modal } from "../../../components/ui";
+import { Button, Modal } from "../ui";
 
 type ConfirmacaoProps = {
   titulo: string;
@@ -27,10 +27,19 @@ export function Confirmacao({
   aoCancelar
 }: ConfirmacaoProps) {
   return (
-    <Modal isOpen={aberta} title={titulo} description={descricao} onClose={aoCancelar}>
+    <Modal
+      isOpen={aberta}
+      title={titulo}
+      description={descricao}
+      onClose={aoCancelar}
+      closable={!pendente}
+    >
       <div className="space-y-4">
         {erro ? (
-          <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+          <p
+            role="alert"
+            className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
+          >
             {erro}
           </p>
         ) : null}

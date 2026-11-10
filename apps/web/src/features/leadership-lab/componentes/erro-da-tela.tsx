@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { EmptyState, ErrorState } from "../../../components/ui";
+import { EmptyState, ErrorState } from "../ui";
 import type { ErroDaTela } from "../erros";
 
 /** Os erros que são só informação (não adianta tentar de novo), em vez de alarme. */

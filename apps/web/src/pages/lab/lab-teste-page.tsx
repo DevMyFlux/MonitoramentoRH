@@ -1,6 +1,13 @@
 import { labSituacaoDoMarco } from "@my-flux/shared";
-import { Link, useNavigate } from "react-router-dom";
-import { Button, LoadingState } from "../../components/ui";
+import { useNavigate } from "react-router-dom";
+import {
+  BotaoLink,
+  Button,
+  CabecalhoDePagina,
+  Escalonar,
+  LoadingState,
+  Revelar
+} from "../../features/leadership-lab/ui";
 import { Cartao } from "../../features/leadership-lab/componentes/cartao";
 import { ConsequenciaDaEscolha } from "../../features/leadership-lab/componentes/consequencia-da-escolha";
 import { Cronometro } from "../../features/leadership-lab/componentes/cronometro";
@@ -11,9 +18,9 @@ import { descreverErro } from "../../features/leadership-lab/erros";
 import { useTeste } from "../../features/leadership-lab/use-teste";
 
 const VoltarAoPainel = () => (
-  <Link to="/lab">
-    <Button variant="secondary">Voltar ao painel</Button>
-  </Link>
+  <BotaoLink to="/lab" variant="secondary">
+    Voltar ao painel
+  </BotaoLink>
 );
 
 /**
@@ -42,14 +49,14 @@ export function LabTestePage() {
     const { numero } = recebido.resposta;
     return (
       <Cartao titulo="Sua resposta foi guardada">
-        <p className="text-sm leading-6 text-slate-600">
+        <p className="text-lab-pequeno leading-6 text-lab-tinta-2">
           Você respondeu a situação {numero}, mas ainda não conseguimos processá-la. Sua resposta
           não se perde: continue o teste para o sistema tentar de novo.
         </p>
         {teste.erroDeEnvio ? (
           <p
             role="alert"
-            className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+            className="mt-3 rounded-lab-md border border-lab-perigo/20 bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
           >
             {teste.erroDeEnvio.titulo}. {teste.erroDeEnvio.descricao}
           </p>
@@ -66,13 +73,10 @@ export function LabTestePage() {
   const bloqueado = teste.enviando || teste.tempoAcabou;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.13em] text-emerald-800">
-          Leadership Lab
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-950">Teste de liderança</h1>
-      </div>
+    <Escalonar className="mx-auto max-w-3xl space-y-6">
+      <Revelar>
+        <CabecalhoDePagina eyebrow="Leadership Lab" titulo="Teste de liderança" />
+      </Revelar>
 
       <Cartao>
         <div className="flex flex-wrap items-end justify-between gap-6">
@@ -96,7 +100,7 @@ export function LabTestePage() {
       {teste.aviso ? (
         <p
           role="status"
-          className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+          className="rounded-lab-md border border-lab-aviso/20 bg-lab-aviso-suave p-3 text-lab-pequeno text-lab-aviso-texto"
         >
           {teste.aviso}
         </p>
@@ -115,24 +119,24 @@ export function LabTestePage() {
           aoConfirmar={(escolha, texto) => void teste.responder(escolha, texto)}
         />
         {teste.tempoAcabou && teste.enviando ? (
-          <p role="status" className="mt-4 text-sm text-slate-600">
+          <p role="status" className="mt-4 text-lab-pequeno text-lab-tinta-2">
             O tempo acabou. Registrando...
           </p>
         ) : teste.enviando ? (
-          <p role="status" className="mt-4 text-sm text-slate-600">
+          <p role="status" className="mt-4 text-lab-pequeno text-lab-tinta-2">
             Enviando sua resposta...
           </p>
         ) : null}
         {teste.erroDeEnvio ? (
           <div
             role="alert"
-            className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+            className="mt-4 rounded-lab-md border border-lab-perigo/20 bg-lab-perigo-suave p-4 text-lab-pequeno text-lab-perigo-texto"
           >
             <p className="font-semibold">{teste.erroDeEnvio.titulo}</p>
             <p className="mt-1">{teste.erroDeEnvio.descricao}</p>
             {teste.erroDeEnvio.podeTentarDeNovo ? (
               <>
-                <p className="mt-1 text-xs">Reenviar a mesma resposta é seguro.</p>
+                <p className="mt-1 text-lab-legenda">Reenviar a mesma resposta é seguro.</p>
                 <Button
                   className="mt-3"
                   size="sm"
@@ -150,6 +154,6 @@ export function LabTestePage() {
           </div>
         ) : null}
       </Cartao>
-    </div>
+    </Escalonar>
   );
 }

@@ -1,7 +1,9 @@
 import { type LabEscolha, type LabSituacao, labLimiteCaracteresCampoLivre } from "@my-flux/shared";
 import { Check, Flag, Loader2 } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
-import { Badge, Button } from "../../../components/ui";
+import { motion } from "motion/react";
+import { Badge, Button, Textarea } from "../ui";
+import { mola } from "../ui/movimento";
 import { cn } from "../../../lib/cn";
 import { escolhaDaTecla, teclaDaOpcao } from "../rotulos";
 import type { EstadoDoAvatar } from "./avatar-facilitador";
@@ -74,7 +76,7 @@ export function SituacaoDoTeste({
   }
 
   return (
-    <form onSubmit={enviar} className="space-y-6">
+    <form onSubmit={enviar} className="space-y-7">
       <CenaDaSituacao cena={situacao.cena ?? null} estado={estadoDoAvatar} />
       <div className="space-y-3">
         {situacao.marco ? (
@@ -82,28 +84,31 @@ export function SituacaoDoTeste({
             <Flag size={12} aria-hidden="true" /> Situação de marco
           </Badge>
         ) : null}
-        <p className="text-lg leading-8 text-slate-900">{situacao.texto}</p>
+        <p className="text-[1.25rem] font-medium leading-8 tracking-[-0.012em] text-lab-tinta">
+          {situacao.texto}
+        </p>
       </div>
 
       <fieldset disabled={desabilitado} className="space-y-3">
-        <legend className="mb-3 text-sm font-medium text-slate-700">
+        <legend className="mb-3 text-lab-pequeno font-medium text-lab-tinta">
           O que você faz?{" "}
-          <span className="font-normal text-slate-500">
+          <span className="font-normal text-lab-tinta-2">
             Escolha com o mouse ou tecle 1, 2 ou 3.
           </span>
         </legend>
         {situacao.opcoes.map((opcao) => {
           const selecionada = escolha === opcao.id;
           return (
-            <label
+            <motion.label
               key={opcao.id}
+              {...(desabilitado ? {} : { whileHover: { y: -2 }, whileTap: { scale: 0.995 } })}
+              transition={mola.viva}
               className={cn(
-                "relative flex cursor-pointer items-start gap-4 rounded-2xl border-2 p-4 transition duration-200 has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-emerald-200 motion-reduce:transition-none",
+                "relative flex cursor-pointer items-start gap-4 rounded-lab-lg border p-5 transition-[border-color,background-color,box-shadow] duration-lab has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-lab-destaque/20 motion-reduce:transition-none",
                 selecionada
-                  ? "border-emerald-600 bg-emerald-50 shadow-md"
-                  : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md motion-reduce:hover:translate-y-0",
-                desabilitado &&
-                  "cursor-not-allowed opacity-70 hover:translate-y-0 hover:shadow-none"
+                  ? "border-lab-destaque bg-lab-destaque-suave shadow-lab-2 ring-1 ring-lab-destaque"
+                  : "border-lab-linha bg-lab-superficie shadow-lab-1 hover:border-lab-linha-forte hover:shadow-lab-2",
+                desabilitado && "cursor-not-allowed opacity-70"
               )}
             >
               <input
@@ -116,15 +121,19 @@ export function SituacaoDoTeste({
               />
               <span
                 className={cn(
-                  "grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-semibold transition-colors",
-                  selecionada ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-700"
+                  "grid h-9 w-9 shrink-0 place-items-center rounded-full text-lab-pequeno font-semibold transition-colors duration-lab",
+                  selecionada
+                    ? "bg-lab-destaque text-white"
+                    : "bg-lab-superficie-3 text-lab-tinta-2"
                 )}
               >
                 {`${opcao.id}.`}
               </span>
-              <span className="flex-1 text-sm leading-6 text-slate-800">{opcao.texto}</span>
+              <span className="flex-1 pt-1 text-lab-corpo leading-6 text-lab-tinta">
+                {opcao.texto}
+              </span>
               {selecionada && enviando ? (
-                <span className="flex items-center gap-1 text-xs font-medium text-emerald-800">
+                <span className="flex items-center gap-1.5 pt-1 text-lab-legenda font-medium text-lab-destaque-texto">
                   <Loader2
                     size={16}
                     className="animate-spin motion-reduce:animate-none"
@@ -133,41 +142,48 @@ export function SituacaoDoTeste({
                   Enviando...
                 </span>
               ) : selecionada ? (
-                <Check size={18} className="mt-1 text-emerald-700" aria-hidden="true" />
+                <motion.span
+                  initial={{ scale: 0.4, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={mola.viva}
+                  className="mt-1.5 text-lab-destaque"
+                >
+                  <Check size={18} aria-hidden="true" />
+                </motion.span>
               ) : (
                 <kbd
                   aria-hidden="true"
-                  className="hidden h-6 min-w-6 items-center justify-center rounded border border-slate-300 bg-slate-50 px-1.5 text-xs font-medium text-slate-600 sm:inline-flex"
+                  className="mt-1 hidden h-6 min-w-6 items-center justify-center rounded-lab-sm border border-lab-linha-forte bg-lab-superficie-2 px-1.5 text-lab-legenda font-medium text-lab-tinta-2 sm:inline-flex"
                 >
                   {teclaDaOpcao[opcao.id]}
                 </kbd>
               )}
-            </label>
+            </motion.label>
           );
         })}
       </fieldset>
 
       <div>
-        <label htmlFor="texto-livre" className="text-sm font-medium text-slate-700">
+        <label htmlFor="texto-livre" className="text-lab-pequeno font-medium text-lab-tinta">
           O que mais você faria?{" "}
-          <span className="font-normal text-slate-500">Opcional, e sem relógio próprio.</span>
+          <span className="font-normal text-lab-tinta-2">Opcional, e sem relógio próprio.</span>
         </label>
-        <textarea
+        <Textarea
           id="texto-livre"
           rows={3}
           maxLength={labLimiteCaracteresCampoLivre}
           value={texto}
           disabled={desabilitado}
           onChange={(e) => setTexto(e.target.value)}
-          className="mt-2 w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10 disabled:opacity-60"
+          className="mt-2"
           placeholder="Escreva só se quiser acrescentar algo à opção escolhida."
         />
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="tabular mt-1.5 text-lab-legenda text-lab-tinta-2">
           {texto.length}/{labLimiteCaracteresCampoLivre}
         </p>
       </div>
 
-      <Button type="submit" disabled={desabilitado || escolha === null}>
+      <Button type="submit" size="lg" disabled={desabilitado || escolha === null}>
         Confirmar resposta
       </Button>
     </form>

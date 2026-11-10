@@ -1,11 +1,12 @@
 // Leadership Lab — os dois gráficos do painel (Recharts). Carregado sob demanda: o restante do
-// sistema não paga o peso da biblioteca de gráficos.
+// sistema não paga o peso da biblioteca de gráficos. Visual: grade quase invisível, linhas finas,
+// área com degradê suave e um tooltip no mesmo vocabulário dos cartões.
 import type { LabPontoDaEvolucao, LabSkillDoPainel } from "@my-flux/shared";
 import {
+  Area,
   CartesianGrid,
-  Legend,
+  ComposedChart,
   Line,
-  LineChart,
   PolarAngleAxis,
   PolarGrid,
   PolarRadiusAxis,
@@ -23,9 +24,8 @@ import {
   descricaoDoRadar,
   quebrarEmLinhas
 } from "../dados-dos-graficos";
-
-const VERDE = "#047857";
-const AZUL = "#1d4ed8";
+import { cores } from "../ui/cores";
+import { useAnimacaoReduzida } from "../ui/movimento";
 
 type PropsDoRotulo = {
   x?: number | string;
@@ -38,7 +38,7 @@ type PropsDoRotulo = {
 function RotuloDoEixo({ x = 0, y = 0, textAnchor, payload }: PropsDoRotulo) {
   const linhas = quebrarEmLinhas(String(payload?.value ?? ""), 16);
   return (
-    <text x={x} y={y} textAnchor={textAnchor} fontSize={11} fill="#475569">
+    <text x={x} y={y} textAnchor={textAnchor} fontSize={11} fill={cores.tinta2}>
       {linhas.map((linha, i) => (
         <tspan key={linha} x={x} dy={i === 0 ? 0 : 13}>
           {linha}
@@ -48,7 +48,51 @@ function RotuloDoEixo({ x = 0, y = 0, textAnchor, payload }: PropsDoRotulo) {
   );
 }
 
+type PayloadDoTooltip = { name?: string | number; value?: string | number; color?: string };
+
+/** O tooltip: cartão branco com sombra, uma linha por série, com a cor da série. */
+function DicaDoGrafico({
+  active,
+  payload,
+  label,
+  sufixo = ""
+}: {
+  active?: boolean;
+  payload?: readonly PayloadDoTooltip[];
+  label?: string | number;
+  sufixo?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-lab-md border border-lab-linha bg-lab-superficie px-3.5 py-2.5 shadow-lab-2">
+      {label !== undefined ? (
+        <p className="mb-1.5 text-lab-legenda font-medium text-lab-tinta">{label}</p>
+      ) : null}
+      <ul className="space-y-1">
+        {payload.map((item) => (
+          <li
+            key={String(item.name)}
+            className="flex items-center gap-2 text-lab-legenda text-lab-tinta-2"
+          >
+            <span
+              aria-hidden="true"
+              className="h-2 w-2 rounded-full"
+              style={{ background: item.color }}
+            />
+            {item.name}:{" "}
+            <span className="tabular font-semibold text-lab-tinta">
+              {item.value}
+              {sufixo}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function RadarDeSkills({ skills }: { skills: readonly LabSkillDoPainel[] }) {
+  const reduzida = useAnimacaoReduzida();
   return (
     <div
       role="img"
@@ -56,15 +100,35 @@ export function RadarDeSkills({ skills }: { skills: readonly LabSkillDoPainel[] 
       className="h-80 w-full"
     >
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart data={dadosDoRadar(skills)} outerRadius="58%">
-          <PolarGrid />
+        <RadarChart
+          data={dadosDoRadar(skills)}
+          outerRadius="52%"
+          margin={{ top: 12, right: 36, bottom: 12, left: 36 }}
+        >
+          <PolarGrid stroke={cores.linha} />
           <PolarAngleAxis
             dataKey="skill"
             tick={(props: PropsDoRotulo) => <RotuloDoEixo {...props} />}
           />
-          <PolarRadiusAxis angle={90} domain={[0, 5]} tickCount={6} tick={{ fontSize: 10 }} />
-          <Radar dataKey="nivel" name="Nível" stroke={VERDE} fill="#10b981" fillOpacity={0.35} />
-          <Tooltip />
+          <PolarRadiusAxis
+            angle={90}
+            domain={[0, 5]}
+            tickCount={6}
+            axisLine={false}
+            tick={{ fontSize: 10, fill: cores.tinta2 }}
+          />
+          <Radar
+            dataKey="nivel"
+            name="Nível"
+            stroke={cores.destaque}
+            strokeWidth={2}
+            fill={cores.destaque}
+            fillOpacity={0.16}
+            isAnimationActive={!reduzida}
+            animationDuration={900}
+            animationEasing="ease-out"
+          />
+          <Tooltip content={<DicaDoGrafico />} cursor={false} />
         </RadarChart>
       </ResponsiveContainer>
     </div>
@@ -72,6 +136,7 @@ export function RadarDeSkills({ skills }: { skills: readonly LabSkillDoPainel[] 
 }
 
 export function GraficoDeEvolucao({ pontos }: { pontos: readonly LabPontoDaEvolucao[] }) {
+  const reduzida = useAnimacaoReduzida();
   return (
     <div
       role="img"
@@ -79,31 +144,80 @@ export function GraficoDeEvolucao({ pontos }: { pontos: readonly LabPontoDaEvolu
       className="h-72 w-full"
     >
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart
+        <ComposedChart
           data={dadosDaEvolucao(pontos)}
-          margin={{ top: 8, right: 16, bottom: 0, left: 0 }}
+          margin={{ top: 12, right: 12, bottom: 0, left: -12 }}
         >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="rotulo" tick={{ fontSize: 11 }} />
-          <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-          <Tooltip />
-          <Legend />
+          <defs>
+            <linearGradient id="lab-degrade-aderencia" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={cores.destaque} stopOpacity={0.22} />
+              <stop offset="100%" stopColor={cores.destaque} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} stroke={cores.linha} />
+          <XAxis
+            dataKey="rotulo"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={10}
+            tick={{ fontSize: 11, fill: cores.tinta2 }}
+          />
+          <YAxis
+            domain={[0, 100]}
+            tickLine={false}
+            axisLine={false}
+            tickMargin={6}
+            tick={{ fontSize: 11, fill: cores.tinta2 }}
+          />
+          <Tooltip
+            content={<DicaDoGrafico sufixo="%" />}
+            cursor={{ stroke: cores.linha, strokeWidth: 1 }}
+          />
+          <Area
+            type="monotone"
+            dataKey="aderencia"
+            name="Aderência"
+            stroke="none"
+            fill="url(#lab-degrade-aderencia)"
+            legendType="none"
+            tooltipType="none"
+            isAnimationActive={!reduzida}
+            animationDuration={900}
+          />
           <Line
             type="monotone"
             dataKey="aderencia"
             name="Aderência"
-            stroke={VERDE}
-            strokeWidth={2}
+            stroke={cores.destaque}
+            strokeWidth={2.5}
+            dot={{ r: 3.5, strokeWidth: 2, fill: "#fff" }}
+            activeDot={{ r: 5.5, strokeWidth: 2, fill: "#fff" }}
+            isAnimationActive={!reduzida}
+            animationDuration={900}
           />
           <Line
             type="monotone"
             dataKey="agilidade"
             name="Agilidade"
-            stroke={AZUL}
-            strokeWidth={2}
+            stroke={cores.info}
+            strokeWidth={2.5}
+            dot={{ r: 3.5, strokeWidth: 2, fill: "#fff" }}
+            activeDot={{ r: 5.5, strokeWidth: 2, fill: "#fff" }}
+            isAnimationActive={!reduzida}
+            animationDuration={900}
           />
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
+      <ul className="mt-3 flex items-center justify-center gap-5 text-lab-legenda text-lab-tinta-2">
+        <li className="flex items-center gap-2">
+          <span aria-hidden="true" className="h-2 w-2 rounded-full bg-lab-destaque" />
+          Aderência
+        </li>
+        <li className="flex items-center gap-2">
+          <span aria-hidden="true" className="h-2 w-2 rounded-full bg-lab-info" />
+          Agilidade
+        </li>
+      </ul>
     </div>
   );
 }

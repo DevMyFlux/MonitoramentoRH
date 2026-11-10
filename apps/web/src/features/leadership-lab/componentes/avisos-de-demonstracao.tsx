@@ -1,13 +1,12 @@
 import { ArrowRight, FlaskConical } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Button } from "../../../components/ui";
+import { BotaoLink } from "../ui";
 
 /** A faixa do painel quando o servidor está em modo demonstração (LAB_MODO_DEMO). */
 export function FaixaDeDemonstracao() {
   return (
     <div
       role="note"
-      className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"
+      className="flex gap-3 rounded-lab-lg border border-lab-aviso/20 bg-lab-aviso-suave p-5 text-lab-pequeno leading-6 text-lab-aviso-texto"
     >
       <FlaskConical size={20} className="mt-0.5 shrink-0" aria-hidden="true" />
       <p>
@@ -25,15 +24,15 @@ export function FaixaDeDemonstracao() {
  */
 export function DicaDaContaDeParticipante() {
   return (
-    <div className="mx-auto max-w-xl space-y-3 text-center text-sm leading-6 text-slate-600">
+    <div className="mx-auto max-w-xl space-y-3 text-center text-lab-pequeno leading-6 text-lab-tinta-2">
       <p>
         Neste ambiente de teste, para fazer o teste entre com a conta de participante{" "}
-        <strong className="font-semibold text-slate-900">comum@myflux.local</strong> (a mesma senha
+        <strong className="font-semibold text-lab-tinta">comum@myflux.local</strong> (a mesma senha
         de demonstração das outras contas).
       </p>
-      <Link to="/login" className="inline-block">
-        <Button icon={<ArrowRight size={16} aria-hidden="true" />}>Ir para o login</Button>
-      </Link>
+      <BotaoLink to="/login" icon={<ArrowRight size={16} aria-hidden="true" />}>
+        Ir para o login
+      </BotaoLink>
     </div>
   );
 }

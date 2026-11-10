@@ -1,22 +1,26 @@
 import { CornerDownRight } from "lucide-react";
+import { Revelar } from "../ui";
 
-/** O efeito da escolha anterior, antes da próxima situação. Entra com uma animação curta. */
+/** O efeito da escolha anterior, antes da próxima situação. Entra com a animação padrão. */
 export function ConsequenciaDaEscolha({ texto }: { texto: string }) {
   return (
-    <section className="animate-lab-entrada rounded-2xl border border-emerald-200 bg-emerald-50 p-4 motion-reduce:animate-none">
+    <Revelar
+      as="section"
+      className="rounded-lab-lg border border-lab-sucesso/20 bg-lab-sucesso-suave p-5"
+    >
       <div className="flex gap-3">
         <CornerDownRight
           size={20}
-          className="mt-0.5 shrink-0 text-emerald-700"
+          className="mt-0.5 shrink-0 text-lab-sucesso"
           aria-hidden="true"
         />
         <div>
-          <h2 className="text-sm font-semibold text-emerald-950">
+          <h2 className="text-lab-pequeno font-semibold text-lab-sucesso-texto">
             O que aconteceu depois da sua escolha
           </h2>
-          <p className="mt-1 text-sm leading-6 text-emerald-950/90">{texto}</p>
+          <p className="mt-1 text-lab-corpo leading-6 text-lab-sucesso-texto/90">{texto}</p>
         </div>
       </div>
-    </section>
+    </Revelar>
   );
 }

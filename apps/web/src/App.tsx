@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { type ComponentType, Suspense, useEffect, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AppShell } from "./components/layout";
 import { clearSession, request, saveSession, session } from "./features/my-flux/client";
@@ -19,12 +19,17 @@ async function autoLoginAsDev(): Promise<void> {
   saveSession(payload.accessToken, payload.refreshToken);
 }
 
+/** O layout que envolve a página: o AppShell do sistema, ou o de um módulo com visual próprio. */
+type LayoutDaPagina = ComponentType<{ breadcrumbs: string[]; children: ReactNode }>;
+
 export function App({
   breadcrumbs = ["MY FLUX"],
-  children
+  children,
+  layout: Layout = AppShell
 }: {
   breadcrumbs?: string[];
   children?: ReactNode;
+  layout?: LayoutDaPagina;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -115,5 +120,10 @@ export function App({
     );
   }
 
-  return <AppShell breadcrumbs={breadcrumbs}>{children}</AppShell>;
+  return (
+    // O Suspense é para o layout de um módulo carregado sob demanda (o do Leadership Lab).
+    <Suspense fallback={<div className="min-h-screen bg-[#f5f5f7]" />}>
+      <Layout breadcrumbs={breadcrumbs}>{children}</Layout>
+    </Suspense>
+  );
 }

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "../../../lib/cn";
+import { AnelDeProgresso, type TomDeProgresso, Revelar } from "../ui";
 
 type CartaoProps = {
   /** Âncora para os atalhos do painel. */
@@ -12,27 +13,35 @@ type CartaoProps = {
   children: ReactNode;
 };
 
-/** Um bloco do painel: título, descrição opcional e o conteúdo. */
+/**
+ * Um bloco da tela: superfície branca com borda fina, título, descrição opcional e o conteúdo.
+ * Entra com a animação padrão (escalonada, se estiver dentro de um `Escalonar`).
+ */
 export function Cartao({ id, titulo, descricao, acao, className, children }: CartaoProps) {
   return (
-    <section
-      id={id}
+    <Revelar
+      as="section"
+      {...(id ? { id } : {})}
       className={cn(
-        "scroll-mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm",
+        "scroll-mt-24 rounded-lab-lg border border-lab-linha bg-lab-superficie p-6 shadow-lab-1 sm:p-7",
         className
       )}
     >
       {titulo || acao ? (
-        <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            {titulo ? <h2 className="text-base font-semibold text-slate-950">{titulo}</h2> : null}
-            {descricao ? <p className="mt-1 text-sm text-slate-500">{descricao}</p> : null}
+        <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            {titulo ? <h2 className="text-lab-h2 text-lab-tinta">{titulo}</h2> : null}
+            {descricao ? (
+              <p className="mt-1.5 max-w-2xl text-lab-pequeno leading-5 text-lab-tinta-2">
+                {descricao}
+              </p>
+            ) : null}
           </div>
           {acao}
         </header>
       ) : null}
       {children}
-    </section>
+    </Revelar>
   );
 }
 
@@ -42,31 +51,48 @@ type EstatisticaProps = {
   detalhe?: ReactNode;
   /** Âncora (#seção): o cartão vira um atalho para o bloco que detalha o número. */
   href?: string;
+  /** Um anel de progresso (0 a 100) ao lado do número, para indicadores em porcentagem. */
+  anel?: { valor: number; tom?: TomDeProgresso };
 };
 
 /** Um cartão de número: rótulo, valor grande e uma linha de detalhe. Com `href`, é um atalho. */
-export function Estatistica({ rotulo, valor, detalhe, href }: EstatisticaProps) {
+export function Estatistica({ rotulo, valor, detalhe, href, anel }: EstatisticaProps) {
   const corpo = (
-    <>
-      <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-emerald-600/80" />
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{rotulo}</p>
-      <p className="mt-2 text-3xl font-semibold text-slate-950">{valor}</p>
-      {detalhe ? <p className="mt-1 text-xs text-slate-500">{detalhe}</p> : null}
-    </>
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-lab-pequeno font-medium text-lab-tinta-2">{rotulo}</p>
+        <p className="tabular mt-3 text-[2.25rem] font-semibold leading-none tracking-[-0.03em] text-lab-tinta">
+          {valor}
+        </p>
+        {detalhe ? (
+          <p className="mt-3 text-lab-legenda leading-4 text-lab-tinta-2">{detalhe}</p>
+        ) : null}
+      </div>
+      {anel ? (
+        <AnelDeProgresso
+          valor={anel.valor}
+          tamanho={52}
+          espessura={6}
+          tom={anel.tom ?? "destaque"}
+        />
+      ) : null}
+    </div>
   );
-  const base =
-    "relative block overflow-hidden rounded-xl border border-slate-200 bg-white p-4 pt-5 shadow-sm";
+  const base = "block rounded-lab-lg border border-lab-linha bg-lab-superficie p-5 shadow-lab-1";
   return href ? (
-    <a
-      href={href}
-      className={cn(
-        base,
-        "transition duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-      )}
-    >
-      {corpo}
-    </a>
+    <Revelar className="h-full">
+      <a
+        href={href}
+        className={cn(
+          base,
+          "h-full",
+          "transition duration-lab ease-lab hover:-translate-y-0.5 hover:border-lab-linha-forte hover:shadow-lab-2 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+        )}
+      >
+        {corpo}
+      </a>
+    </Revelar>
   ) : (
-    <div className={base}>{corpo}</div>
+    <Revelar className={base}>{corpo}</Revelar>
   );
 }

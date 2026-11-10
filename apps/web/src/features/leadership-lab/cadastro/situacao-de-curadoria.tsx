@@ -1,5 +1,5 @@
 import type { LabAlertaCor, LabContestacaoStatus, LabContribuicaoStatus } from "@my-flux/shared";
-import { Badge } from "../../../components/ui";
+import { Badge } from "../ui";
 
 const tomDoStatus = {
   pendente: "warning",
@@ -47,8 +47,8 @@ export function IdentificacaoDoParticipante({
 }) {
   return (
     <>
-      <span className="block font-medium text-slate-900">{nome}</span>
-      <span className="block text-xs text-slate-500">
+      <span className="block font-medium text-lab-tinta">{nome}</span>
+      <span className="block text-lab-legenda text-lab-tinta-2">
         Matrícula {identificador} · {cargo ?? "Sem cargo"} · {operacao}
       </span>
     </>

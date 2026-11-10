@@ -4,7 +4,7 @@ import {
   labBuscaMinimaCaracteres
 } from "@my-flux/shared";
 import { useState } from "react";
-import { Button, Input, Modal } from "../../../components/ui";
+import { Button, Input, Modal, useNotificar } from "../ui";
 import { cn } from "../../../lib/cn";
 import {
   buscaValida,
@@ -46,10 +46,19 @@ function Formulario({ aoFechar }: { aoFechar: () => void }) {
   const colaboradores = useColaboradoresElegiveis(useValorComAtraso(buscaColaborador));
   const usuarios = useUsuariosElegiveis(useValorComAtraso(buscaUsuario));
   const cadastrar = useCadastrarParticipante();
+  const notificar = useNotificar();
 
   const enviar = () => {
     if (colaboradorId === null || usuarioId === null) return;
-    cadastrar.mutate({ employeeId: colaboradorId, userId: usuarioId }, { onSuccess: aoFechar });
+    cadastrar.mutate(
+      { employeeId: colaboradorId, userId: usuarioId },
+      {
+        onSuccess: () => {
+          notificar({ tom: "sucesso", titulo: "Participante cadastrado" });
+          aoFechar();
+        }
+      }
+    );
   };
 
   return (
@@ -113,7 +122,10 @@ function Formulario({ aoFechar }: { aoFechar: () => void }) {
       </Busca>
 
       {cadastrar.isError ? (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+        <p
+          role="alert"
+          className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
+        >
           {descreverErroDoCadastro(cadastrar.error, "acompanhamento").descricao}
         </p>
       ) : null}
@@ -169,14 +181,16 @@ function Busca({
       <div role="radiogroup" aria-label={rotulo} className="space-y-1.5">
         {valida ? children : null}
       </div>
-      {valida && carregando ? <p className="text-xs text-slate-500">Buscando...</p> : null}
+      {valida && carregando ? (
+        <p className="text-lab-legenda text-lab-tinta-2">Buscando...</p>
+      ) : null}
       {valida && erro ? (
-        <p role="alert" className="text-xs text-red-700">
+        <p role="alert" className="text-lab-legenda text-lab-perigo-texto">
           {erro}
         </p>
       ) : null}
       {valida && vazio && !carregando ? (
-        <p className="text-xs text-slate-500">{textoVazio}</p>
+        <p className="text-lab-legenda text-lab-tinta-2">{textoVazio}</p>
       ) : null}
     </fieldset>
   );
@@ -196,8 +210,10 @@ function Opcao({
   return (
     <label
       className={cn(
-        "flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm transition",
-        marcado ? "border-emerald-600 bg-emerald-50" : "border-slate-200 hover:bg-slate-50"
+        "flex cursor-pointer items-start gap-3 rounded-lab-md border p-3 text-lab-pequeno transition",
+        marcado
+          ? "border-lab-destaque bg-lab-destaque-suave"
+          : "border-lab-linha hover:bg-lab-superficie-2"
       )}
     >
       <input
@@ -205,7 +221,7 @@ function Opcao({
         name={nome}
         checked={marcado}
         onChange={aoMarcar}
-        className="mt-1 h-4 w-4 accent-emerald-700"
+        className="mt-1 h-4 w-4 accent-[rgb(var(--lab-destaque))]"
       />
       <span className="min-w-0 space-y-0.5">{children}</span>
     </label>
@@ -223,11 +239,11 @@ function OpcaoDoColaborador({
 }) {
   return (
     <Opcao nome="colaborador" marcado={marcado} aoMarcar={aoMarcar}>
-      <span className="block font-medium text-slate-900">{c.nome}</span>
-      <span className="block text-xs text-slate-500">
+      <span className="block font-medium text-lab-tinta">{c.nome}</span>
+      <span className="block text-lab-legenda text-lab-tinta-2">
         Matrícula {c.identificador} · {c.cargo ?? "Sem cargo"} · {c.operacao}
       </span>
-      <span className="block text-xs">
+      <span className="block text-lab-legenda">
         <SeloDoMolde molde={c.molde} />
       </span>
     </Opcao>
@@ -245,8 +261,8 @@ function OpcaoDoUsuario({
 }) {
   return (
     <Opcao nome="usuario" marcado={marcado} aoMarcar={aoMarcar}>
-      <span className="block font-medium text-slate-900">{u.nome}</span>
-      <span className="block text-xs text-slate-500">{u.email}</span>
+      <span className="block font-medium text-lab-tinta">{u.nome}</span>
+      <span className="block text-lab-legenda text-lab-tinta-2">{u.email}</span>
     </Opcao>
   );
 }
