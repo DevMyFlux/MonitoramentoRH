@@ -1,0 +1,46 @@
+{
+  "molde": "supervisor",
+  "mensagem": "Por que a situação 2 não foi a melhor escolha?",
+  "historico": [
+    { "papel": "participante", "texto": "Como fui no geral?" },
+    { "papel": "facilitador", "texto": "Você conduziu o turno com atenção ao cliente." }
+  ],
+  "resultado": {
+    "resumo": "Diagnóstico encontrado: prioridade de OS.",
+    "ponto_forte": "Comunicação com o solicitante.",
+    "ponto_desenvolvimento": null,
+    "sugestoes": ["Registre o aviso ao solicitante.", "Ferramenta: matriz GUT"],
+    "skills": [
+      { "skill": "gestao-os", "nivel": 4 },
+      { "skill": "delegacao", "nivel": 2 }
+    ],
+    "situacoes": [
+      {
+        "numero": 1,
+        "marco": false,
+        "texto": "Uma OS urgente chegou junto com a preventiva. O que você faz?",
+        "opcoes": [
+          { "id": "A", "texto": "Reúno a equipe e replanejo o turno." },
+          { "id": "B", "texto": "Mantenho a preventiva." },
+          { "id": "C", "texto": "Peço ao cliente para esperar." }
+        ],
+        "escolha": "A",
+        "tempo_esgotado": false,
+        "justificativa": "Replanejar com a equipe protege o SLA."
+      },
+      {
+        "numero": 2,
+        "marco": false,
+        "texto": "O fornecedor atrasou o material da OS crítica.",
+        "opcoes": [
+          { "id": "A", "texto": "Compro por conta própria." },
+          { "id": "B", "texto": "Aviso o solicitante e replanejo." },
+          { "id": "C", "texto": "Aguardo o fornecedor." }
+        ],
+        "escolha": null,
+        "tempo_esgotado": true,
+        "justificativa": null
+      }
+    ]
+  }
+}

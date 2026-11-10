@@ -184,15 +184,30 @@ def normalizar_guarda(bruta: dict[str, Any], original: str) -> tuple[str, str | 
     return "bloquear", None
 
 
+MAX_RESPOSTA_CONVERSA = 2000
+
+
+def normalizar_conversa(bruta: dict[str, Any]) -> str:
+    """A resposta do facilitador. Só texto: vazia, grande demais ou com cara de JSON/gabarito é refeita."""
+    resposta = _texto(bruta.get("resposta"), "resposta")
+    if len(resposta) > MAX_RESPOSTA_CONVERSA:
+        raise ViolacaoDoContrato(f"resposta: mais de {MAX_RESPOSTA_CONVERSA} caracteres")
+    if resposta.startswith(("{", "[")):
+        raise ViolacaoDoContrato("resposta: precisa ser texto corrido, não JSON")
+    return resposta
+
+
 __all__ = [
     "ESCOLHAS",
     "ESTILOS",
+    "MAX_RESPOSTA_CONVERSA",
     "MAX_SITUACOES",
     "NIVEIS",
     "SKILLS",
     "SITUACAO_DO_MARCO",
     "ViolacaoDoContrato",
     "avaliacao_da_escolha",
+    "normalizar_conversa",
     "normalizar_guarda",
     "normalizar_resultado",
     "normalizar_situacao",

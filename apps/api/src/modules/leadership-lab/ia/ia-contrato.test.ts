@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   type Json,
@@ -840,5 +841,28 @@ describe("conversa com o facilitador", () => {
     );
     expect(validarConversaIa({ resposta: "Olá.", uso, aderencia: 100 }).ok).toBe(false);
     expect(validarConversaIa(null).ok).toBe(false);
+  });
+});
+
+describe("paridade com o serviço Python (services/lab-ia/tests/fixtures)", () => {
+  // Os mesmos arquivos são lidos por tests/simular_facilitador.py: se um lado mudar o formato, o
+  // outro teste reprova.
+  const lerFixture = (nome: string): unknown =>
+    JSON.parse(
+      readFileSync(
+        new URL(`../../../../../../services/lab-ia/tests/fixtures/${nome}`, import.meta.url),
+        "utf8"
+      )
+    );
+
+  it("o pedido que o serviço aceita é um pedido válido para o backend", () => {
+    expect(conversaIaRequestSchema.safeParse(lerFixture("conversa-pedido.json")).success).toBe(
+      true
+    );
+  });
+
+  it("a resposta que o serviço devolve passa na validação do backend", () => {
+    const r = validarConversaIa(lerFixture("conversa-resposta.json"));
+    expect(r.ok, JSON.stringify(r)).toBe(true);
   });
 });

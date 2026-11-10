@@ -1,9 +1,10 @@
-"""Serviço de IA do Leadership Lab (agente_lab + guarda).
+"""Serviço de IA do Leadership Lab (agente_lab + guarda + facilitador).
 
 Rotas do contrato (docs/leadership-lab.md, "Contrato com o serviço de IA"):
   POST /teste/sessoes   {molde, temas, numero_situacoes} -> {sessao_id, ...turno da situação 1, uso}
   POST /teste/turnos    {sessao_id, numero, escolha, tempo_esgotado, texto_livre} -> {...turno, uso}
   POST /agentes/guarda  {texto} -> {decisao, texto, uso}
+  POST /agentes/facilitador  {molde, mensagem, historico, resultado} -> {resposta, uso}
 
 Toda chamada exige o cabeçalho X-Servico-Token igual a TOKEN_SERVICO (o LAB_IA_TOKEN do site).
 """
@@ -14,19 +15,21 @@ import hmac
 import logging
 import os
 import uuid
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import FastAPI, Header, HTTPException
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 import agente
 from agente import Uso
 from contrato import (
     MAX_SITUACOES,
     NIVEIS,
+    SKILLS,
     ViolacaoDoContrato,
     _texto_ou_nulo,
     avaliacao_da_escolha,
+    normalizar_conversa,
     normalizar_guarda,
     normalizar_resultado,
     normalizar_situacao,
@@ -76,6 +79,53 @@ class ProximoTurno(Estrito):
 
 class Guarda(Estrito):
     texto: str = Field(min_length=1)
+
+
+# O facilitador: espelha conversaIaRequestSchema (apps/api/.../ia/ia-contrato.ts). Os limites são os de
+# labConversaLimites (packages/shared). Sem nome, aderência, tempos nem ids: lista fechada de campos.
+Letra = Literal["A", "B", "C"]
+TextoNaoVazio = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+
+
+class OpcaoDaConversa(Estrito):
+    id: Letra
+    texto: TextoNaoVazio
+
+
+class SituacaoDaConversa(Estrito):
+    numero: int = Field(ge=1, le=MAX_SITUACOES)
+    marco: bool
+    texto: TextoNaoVazio
+    opcoes: list[OpcaoDaConversa] = Field(min_length=3, max_length=3)
+    escolha: Letra | None
+    tempo_esgotado: bool
+    justificativa: TextoNaoVazio | None
+
+
+class SkillDaConversa(Estrito):
+    skill: Literal[tuple(SKILLS)]  # type: ignore[valid-type]
+    nivel: int = Field(ge=1, le=5)
+
+
+class ResultadoDaConversa(Estrito):
+    resumo: TextoNaoVazio
+    ponto_forte: TextoNaoVazio | None
+    ponto_desenvolvimento: TextoNaoVazio | None
+    sugestoes: list[TextoNaoVazio]
+    skills: list[SkillDaConversa]
+    situacoes: list[SituacaoDaConversa] = Field(min_length=1, max_length=MAX_SITUACOES)
+
+
+class MensagemDaConversa(Estrito):
+    papel: Literal["participante", "facilitador"]
+    texto: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1200)]
+
+
+class Conversa(Estrito):
+    molde: Literal["encarregado", "supervisor", "coordenador"]
+    mensagem: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=500)]
+    historico: list[MensagemDaConversa] = Field(max_length=6)
+    resultado: ResultadoDaConversa
 
 
 # ---------------------------------------------------------------------------
@@ -213,6 +263,23 @@ def guarda(corpo: Guarda, x_servico_token: str | None = Header(default=None)) ->
         log.warning("guarda falhou: %s", erro)
         decisao, texto = "bloquear", None
     return {"decisao": decisao, "texto": texto, "uso": uso.bloco("guarda")}
+
+
+@app.post("/agentes/facilitador")
+def facilitador(corpo: Conversa, x_servico_token: str | None = Header(default=None)) -> dict[str, Any]:
+    """Responde uma dúvida sobre o resultado já concluído. Sem estado: nada da conversa é guardado aqui."""
+    exigir_token(x_servico_token)
+    uso = Uso()
+    pedido = agente.pedido_de_conversa(corpo.model_dump())
+
+    def gerar(texto: str) -> str:
+        bruto = agente.gerar_json(
+            agente.INSTRUCAO_FACILITADOR, agente.ESQUEMA_CONVERSA, texto, uso, temperatura=0.4
+        )
+        return normalizar_conversa(bruto)
+
+    resposta = _com_retentativa(gerar, pedido, uso)
+    return {"resposta": resposta, "uso": uso.bloco("facilitador")}
 
 
 __all__ = ["app", "NIVEIS"]
