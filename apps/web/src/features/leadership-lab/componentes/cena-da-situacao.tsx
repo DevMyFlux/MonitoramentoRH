@@ -2,7 +2,8 @@ import type { LabCena } from "@my-flux/shared";
 import { FlaskConical } from "lucide-react";
 import { Badge } from "../ui";
 import { descricaoDoEstado, nomeDoPersonagem } from "../rotulos";
-import { AvatarFacilitador, type EstadoDoAvatar } from "./avatar-facilitador";
+import type { EstadoDoAvatar } from "./avatar-facilitador";
+import { AvatarFacilitador3D } from "./avatar-facilitador-3d";
 import { Personagem } from "./personagens";
 
 type CenaDaSituacaoProps = { cena: LabCena | null; estado: EstadoDoAvatar };
@@ -23,8 +24,8 @@ export function CenaDaSituacao({ cena, estado }: CenaDaSituacaoProps) {
         </div>
       ) : null}
       <div className="flex items-end justify-between gap-4">
-        <figure className="flex w-28 flex-col items-center gap-1 text-center">
-          <AvatarFacilitador estado={estado} tamanho={88} />
+        <figure className="flex w-32 flex-col items-center gap-1 text-center">
+          <AvatarFacilitador3D estado={estado} tamanho={112} />
           <figcaption className="text-lab-legenda font-medium text-lab-tinta">
             Facilitador
           </figcaption>
