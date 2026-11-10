@@ -2,6 +2,7 @@ import { Component, lazy, type ReactNode, Suspense } from "react";
 import { useAnimacaoReduzida } from "../ui/movimento";
 import { descricaoDoEstado } from "../rotulos";
 import { AvatarFacilitador, type EstadoDoAvatar } from "./avatar-facilitador";
+import { PROPORCAO_DO_FACILITADOR } from "./avatar-poses";
 import { suportaWebGL } from "./avatar-suporte";
 
 // O three.js só carrega quando um facilitador 3D é mostrado.
@@ -39,7 +40,7 @@ export function AvatarFacilitador3D({ estado, tamanho = 96 }: AvatarFacilitador3
       data-estado={estado}
       data-modo="3d"
       className="shrink-0"
-      style={{ width: tamanho, height: tamanho * 1.3 }}
+      style={{ width: tamanho, height: tamanho / PROPORCAO_DO_FACILITADOR }}
     >
       <FallbackSeFalhar fallback={<div aria-hidden="true">{doisD}</div>}>
         <Suspense fallback={<div aria-hidden="true">{doisD}</div>}>

@@ -1,77 +1,73 @@
-// Leadership Lab — as poses do facilitador 3D, uma por estado. Dados puros (sem three.js), para o
-// que cada estado "faz" ser testável e para a cena só interpolar até o alvo.
+// Leadership Lab — o "jeito" do facilitador 3D em cada estado. Dados puros (sem three.js), para o
+// que cada estado faz ser testável e para a cena só interpolar até o alvo.
 import type { EstadoDoAvatar } from "./avatar-facilitador";
 
 export type Pose = {
-  /** Braço da frente: rotação em X (negativo levanta para a frente) e em Z (abre para o lado). */
-  bracoX: number;
-  bracoZ: number;
-  /** Cotovelo dobrado (0 = braço esticado). */
-  cotovelo: number;
-  polegar: boolean;
-  /** Cabeça: inclinação lateral (Z) e para cima/baixo (X). */
-  cabecaZ: number;
-  cabecaX: number;
-  /** Boca: abertura média (0 a 1), amplitude da fala e largura relativa. */
-  boca: number;
-  fala: boolean;
-  largura: number;
-  /** Quanto o corpo "flutua" (refletindo). */
-  flutua: boolean;
+  /** Inclinação lateral do corpo, em radianos. */
+  inclina: number;
+  /** Quanto ele se aproxima da câmera (eixo Z), em unidades da cena. */
+  avanca: number;
+  /** Balanço lateral contínuo: amplitude (rad) e frequência (rad/s). */
+  balanca: number;
+  balancaFreq: number;
+  /** Pulso de escala ("fala"): amplitude e frequência. */
+  pulso: number;
+  pulsoFreq: number;
+  /** Flutuação vertical: amplitude em unidades da cena e frequência. */
+  flutua: number;
+  flutuaFreq: number;
+  /** Quanto o olhar (a rotação) acompanha o ponteiro do mouse. */
+  segue: number;
 };
 
 export const poses: Record<EstadoDoAvatar, Pose> = {
-  // Aponta para a situação, com a boca em movimento.
+  // Aponta para a situação: pulsa no ritmo da fala e balança de leve.
   falando: {
-    bracoX: -2.55,
-    bracoZ: -0.25,
-    cotovelo: 0.15,
-    polegar: false,
-    cabecaZ: 0,
-    cabecaX: -0.05,
-    boca: 0.35,
-    fala: true,
-    largura: 1,
-    flutua: false
+    inclina: 0,
+    avanca: 0.05,
+    balanca: 0.025,
+    balancaFreq: 2.4,
+    pulso: 0.012,
+    pulsoFreq: 9,
+    flutua: 0.01,
+    flutuaFreq: 1.8,
+    segue: 0.35
   },
-  // Braços relaxados, cabeça inclinada: escuta.
+  // Inclina-se para ouvir, quase parado, acompanhando o ponteiro.
   ouvindo: {
-    bracoX: 0.05,
-    bracoZ: -0.12,
-    cotovelo: 0,
-    polegar: false,
-    cabecaZ: 0.2,
-    cabecaX: 0,
-    boca: 0.04,
-    fala: false,
-    largura: 0.8,
-    flutua: false
+    inclina: 0.07,
+    avanca: 0.22,
+    balanca: 0,
+    balancaFreq: 0,
+    pulso: 0,
+    pulsoFreq: 0,
+    flutua: 0.008,
+    flutuaFreq: 1.4,
+    segue: 0.55
   },
-  // Mão no queixo, olhando para cima, flutuando de leve.
+  // Flutua devagar, balançando, "pensando".
   refletindo: {
-    bracoX: -1.35,
-    bracoZ: 0.55,
-    cotovelo: 1.9,
-    polegar: false,
-    cabecaZ: -0.12,
-    cabecaX: -0.18,
-    boca: 0.03,
-    fala: false,
-    largura: 0.6,
-    flutua: true
+    inclina: -0.04,
+    avanca: 0,
+    balanca: 0.05,
+    balancaFreq: 1.1,
+    pulso: 0,
+    pulsoFreq: 0,
+    flutua: 0.045,
+    flutuaFreq: 2,
+    segue: 0.2
   },
-  // Joinha e sorriso.
+  // Comemora: salta num ritmo curto.
   feedback: {
-    bracoX: -1.25,
-    bracoZ: -0.35,
-    cotovelo: 0.9,
-    polegar: true,
-    cabecaZ: 0,
-    cabecaX: 0.05,
-    boca: 0.2,
-    fala: false,
-    largura: 1.4,
-    flutua: false
+    inclina: 0,
+    avanca: 0.1,
+    balanca: 0.03,
+    balancaFreq: 5,
+    pulso: 0.02,
+    pulsoFreq: 6,
+    flutua: 0.035,
+    flutuaFreq: 6,
+    segue: 0.25
   }
 };
 
@@ -79,3 +75,6 @@ export const poses: Record<EstadoDoAvatar, Pose> = {
 export function amortecer(atual: number, alvo: number, taxa: number, dt: number): number {
   return atual + (alvo - atual) * (1 - Math.exp(-taxa * dt));
 }
+
+/** Largura sobre altura da imagem do facilitador (`facilitador.webp`). */
+export const PROPORCAO_DO_FACILITADOR = 663 / 1100;

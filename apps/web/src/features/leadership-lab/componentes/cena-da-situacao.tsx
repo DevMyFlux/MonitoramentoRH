@@ -25,7 +25,7 @@ export function CenaDaSituacao({ cena, estado }: CenaDaSituacaoProps) {
       ) : null}
       <div className="flex items-end justify-between gap-4">
         <figure className="flex w-32 flex-col items-center gap-1 text-center">
-          <AvatarFacilitador3D estado={estado} tamanho={112} />
+          <AvatarFacilitador3D estado={estado} tamanho={104} />
           <figcaption className="text-lab-legenda font-medium text-lab-tinta">
             Facilitador
           </figcaption>

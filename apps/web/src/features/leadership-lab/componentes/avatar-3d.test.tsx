@@ -22,19 +22,21 @@ describe("AvatarFacilitador3D", () => {
 });
 
 describe("poses do facilitador", () => {
-  it("cada estado tem a sua pose, e só o feedback faz joinha", () => {
+  it("cada estado tem a sua pose", () => {
     expect(Object.keys(poses).sort()).toEqual([...estados].sort());
-    expect(estados.filter((e) => poses[e].polegar)).toEqual(["feedback"]);
   });
 
-  it("só falando mexe a boca; só refletindo flutua", () => {
-    expect(estados.filter((e) => poses[e].fala)).toEqual(["falando"]);
-    expect(estados.filter((e) => poses[e].flutua)).toEqual(["refletindo"]);
+  it("só falando pulsa no ritmo da fala; só refletindo flutua devagar", () => {
+    expect(estados.filter((e) => poses[e].pulsoFreq >= 9)).toEqual(["falando"]);
+    expect(poses.refletindo.flutua).toBeGreaterThan(poses.falando.flutua);
   });
 
-  it("ouvindo inclina a cabeça; falando levanta o braço para apontar", () => {
-    expect(poses.ouvindo.cabecaZ).not.toBe(0);
-    expect(poses.falando.bracoX).toBeLessThan(poses.ouvindo.bracoX);
+  it("ouvindo se inclina e se aproxima mais do que os outros, e segue mais o ponteiro", () => {
+    for (const e of estados.filter((x) => x !== "ouvindo")) {
+      expect(poses.ouvindo.avanca).toBeGreaterThan(poses[e].avanca);
+      expect(poses.ouvindo.segue).toBeGreaterThan(poses[e].segue);
+    }
+    expect(poses.ouvindo.inclina).not.toBe(0);
   });
 });
 

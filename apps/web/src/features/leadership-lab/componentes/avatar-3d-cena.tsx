@@ -1,184 +1,99 @@
-// Leadership Lab — o facilitador em 3D (three.js via @react-three/fiber). Personagem procedural:
-// o mesmo mascote do avatar 2D (gota preta, boné, camiseta com o Ø), montado com formas simples,
-// sem modelo externo. Carregado sob demanda por `avatar-facilitador-3d.tsx`.
-import { Canvas, useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+// Leadership Lab — o facilitador em 3D (three.js via @react-three/fiber). O personagem é o mascote
+// oficial (`facilitador.webp`, recorte com transparência) num plano em perspectiva: gira para
+// acompanhar o ponteiro e se move conforme o estado (poses em `avatar-poses.ts`), sobre uma sombra
+// suave. Carregado sob demanda por `avatar-facilitador-3d.tsx`.
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { EstadoDoAvatar } from "./avatar-facilitador";
-import { amortecer, type Pose, poses } from "./avatar-poses";
+import { amortecer, PROPORCAO_DO_FACILITADOR, type Pose, poses } from "./avatar-poses";
+import imagem from "./facilitador.webp";
 
-const PRETO = "#111827";
-const CAMISETA = "#1f2937";
-const PELE = "#f2c9a0";
-const BRANCO = "#f8fafc";
+const ALTURA = 1.66;
+const LARGURA = ALTURA * PROPORCAO_DO_FACILITADOR;
 
-type PecaProps = { pose: Pose; parada: boolean };
-
-/** A cabeça em gota: um perfil girado em torno do eixo Y. */
-function geometriaDaGota(): THREE.LatheGeometry {
-  const pontos: THREE.Vector2[] = [];
-  for (let i = 0; i <= 24; i++) {
-    const t = i / 24;
-    // Largo embaixo, afunila para cima até uma ponta suave.
-    const raio = 0.36 * Math.sin(Math.PI * Math.pow(t, 0.75)) * (1 - 0.25 * t);
-    pontos.push(new THREE.Vector2(Math.max(raio, 0.001), t * 0.72 - 0.25));
-  }
-  return new THREE.LatheGeometry(pontos, 40);
+/** Uma mancha radial escura e suave, para a sombra no chão. */
+function texturaDaSombra(): THREE.CanvasTexture {
+  const tela = document.createElement("canvas");
+  tela.width = tela.height = 128;
+  const ctx = tela.getContext("2d")!;
+  const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grad.addColorStop(0, "rgba(0,0,0,0.55)");
+  grad.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(tela);
 }
 
-function Personagem({ pose, parada }: PecaProps) {
-  const corpo = useRef<THREE.Group>(null);
-  const cabeca = useRef<THREE.Group>(null);
-  const braco = useRef<THREE.Group>(null);
-  const antebraco = useRef<THREE.Group>(null);
-  const polegar = useRef<THREE.Mesh>(null);
-  const boca = useRef<THREE.Mesh>(null);
-  const olhos = useRef<THREE.Group>(null);
-  const atual = useRef({ ...pose, abertura: pose.boca });
-  const gota = useMemo(() => geometriaDaGota(), []);
+type PersonagemProps = { pose: Pose; parado: boolean };
+
+function Personagem({ pose, parado }: PersonagemProps) {
+  const carregada = useLoader(THREE.TextureLoader, imagem);
+  const textura = useMemo(() => {
+    const t = carregada.clone();
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 8;
+    t.needsUpdate = true;
+    return t;
+  }, [carregada]);
+  const sombra = useMemo(() => texturaDaSombra(), []);
+  const figura = useRef<THREE.Group>(null);
+  const sombraMalha = useRef<THREE.Mesh>(null);
+  const ponteiro = useRef({ x: 0, y: 0 });
+  const atual = useRef({ inclina: 0, avanca: 0, segueX: 0, segueY: 0 });
+
+  // O ponteiro vale para a janela inteira (o canvas é pequeno): -1 a 1 em cada eixo.
+  useEffect(() => {
+    if (parado) return;
+    const aoMover = (e: PointerEvent) => {
+      ponteiro.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      ponteiro.current.y = -((e.clientY / window.innerHeight) * 2 - 1);
+    };
+    window.addEventListener("pointermove", aoMover);
+    return () => window.removeEventListener("pointermove", aoMover);
+  }, [parado]);
 
   useFrame((estado, delta) => {
     const dt = Math.min(delta, 0.05);
     const t = estado.clock.elapsedTime;
+    const taxa = parado ? 1000 : 6;
     const a = atual.current;
-    // Parado (menos movimento): vai direto à pose, sem animação contínua.
-    const taxa = parada ? 1000 : 7;
-    a.bracoX = amortecer(a.bracoX, pose.bracoX, taxa, dt);
-    a.bracoZ = amortecer(a.bracoZ, pose.bracoZ, taxa, dt);
-    a.cotovelo = amortecer(a.cotovelo, pose.cotovelo, taxa, dt);
-    a.cabecaZ = amortecer(a.cabecaZ, pose.cabecaZ, taxa, dt);
-    a.cabecaX = amortecer(a.cabecaX, pose.cabecaX, taxa, dt);
-    a.largura = amortecer(a.largura, pose.largura, taxa, dt);
+    a.inclina = amortecer(a.inclina, pose.inclina, taxa, dt);
+    a.avanca = amortecer(a.avanca, pose.avanca, taxa, dt);
+    a.segueX = amortecer(a.segueX, parado ? 0 : ponteiro.current.x * pose.segue, 4, dt);
+    a.segueY = amortecer(a.segueY, parado ? 0 : ponteiro.current.y * pose.segue, 4, dt);
 
-    const respira = parada ? 0 : Math.sin(t * 1.8) * 0.012;
-    const flutua = parada || !pose.flutua ? 0 : 0.05 + Math.sin(t * 2.2) * 0.04;
-    if (corpo.current) corpo.current.position.y = respira + flutua;
-    if (cabeca.current) {
-      cabeca.current.rotation.z = a.cabecaZ;
-      cabeca.current.rotation.x = a.cabecaX;
-    }
-    if (braco.current) {
-      braco.current.rotation.x = a.bracoX;
-      braco.current.rotation.z = a.bracoZ;
-    }
-    if (antebraco.current) antebraco.current.rotation.x = -a.cotovelo;
-    if (polegar.current) polegar.current.visible = pose.polegar;
-    if (boca.current) {
-      const abertura =
-        pose.fala && !parada
-          ? 0.04 + Math.abs(Math.sin(t * 11)) * pose.boca * 0.22
-          : pose.boca * 0.22;
-      a.abertura = amortecer(a.abertura, abertura, parada ? 1000 : 25, dt);
-      boca.current.scale.set(0.07 * a.largura, Math.max(0.012, a.abertura * 0.5), 0.03);
-    }
-    if (olhos.current) {
-      // Piscar a cada ~4 s.
-      const fase = parada ? 0 : t % 4;
-      olhos.current.scale.y = fase > 3.85 ? 0.1 : 1;
+    const grupo = figura.current;
+    if (!grupo) return;
+    const balanco = parado ? 0 : Math.sin(t * pose.balancaFreq) * pose.balanca;
+    const sobe = parado ? 0 : Math.abs(Math.sin(t * pose.flutuaFreq * 0.5)) * pose.flutua;
+    const pulso = parado ? 0 : Math.sin(t * pose.pulsoFreq) * pose.pulso;
+    grupo.rotation.set(-a.segueY * 0.35, a.segueX * 0.55, a.inclina + balanco);
+    grupo.position.set(0, sobe, a.avanca);
+    grupo.scale.setScalar(1 + pulso);
+    if (sombraMalha.current) {
+      const afastamento = 1 - sobe * 3;
+      sombraMalha.current.scale.set(0.95 * afastamento, 0.22 * afastamento, 1);
     }
   });
 
   return (
-    <group ref={corpo}>
-      {/* pernas e tênis */}
-      {[-0.1, 0.1].map((x) => (
-        <group key={x} position={[x, 0.42, 0]}>
-          <mesh position={[0, -0.05, 0]}>
-            <capsuleGeometry args={[0.065, 0.3, 6, 12]} />
-            <meshStandardMaterial color={PRETO} roughness={0.5} />
-          </mesh>
-          <mesh position={[0, -0.34, 0.04]}>
-            <boxGeometry args={[0.15, 0.08, 0.26]} />
-            <meshStandardMaterial color={CAMISETA} roughness={0.6} />
-          </mesh>
-          <mesh position={[0, -0.395, 0.04]}>
-            <boxGeometry args={[0.16, 0.03, 0.27]} />
-            <meshStandardMaterial color={BRANCO} roughness={0.7} />
-          </mesh>
-        </group>
-      ))}
-      {/* shorts e camiseta */}
-      <mesh position={[0, 0.5, 0]}>
-        <cylinderGeometry args={[0.2, 0.22, 0.2, 24]} />
-        <meshStandardMaterial color={PRETO} roughness={0.55} />
+    <>
+      <mesh
+        ref={sombraMalha}
+        position={[0, -ALTURA / 2 - 0.02, 0]}
+        rotation={[-Math.PI / 2.4, 0, 0]}
+      >
+        <planeGeometry args={[LARGURA * 1.6, LARGURA * 1.6]} />
+        <meshBasicMaterial map={sombra} transparent depthWrite={false} />
       </mesh>
-      <mesh position={[0, 0.78, 0]} scale={[1, 1, 0.78]}>
-        <capsuleGeometry args={[0.2, 0.26, 8, 24]} />
-        <meshStandardMaterial color={CAMISETA} roughness={0.6} />
-      </mesh>
-      {/* o Ø da camiseta */}
-      <group position={[0, 0.78, 0.165]}>
-        <mesh>
-          <torusGeometry args={[0.055, 0.008, 12, 32]} />
-          <meshStandardMaterial color={BRANCO} />
-        </mesh>
-        <mesh rotation={[0, 0, -0.9]}>
-          <boxGeometry args={[0.15, 0.012, 0.01]} />
-          <meshStandardMaterial color={BRANCO} />
+      <group ref={figura} position={[0, 0, 0]}>
+        <mesh position={[0, 0, 0]}>
+          <planeGeometry args={[LARGURA, ALTURA]} />
+          <meshBasicMaterial map={textura} transparent alphaTest={0.02} toneMapped={false} />
         </mesh>
       </group>
-
-      {/* braço de trás, relaxado */}
-      <group position={[0.24, 0.96, 0]} rotation={[0, 0, -0.14]}>
-        <mesh position={[0, -0.17, 0]}>
-          <capsuleGeometry args={[0.052, 0.22, 6, 12]} />
-          <meshStandardMaterial color={PRETO} roughness={0.5} />
-        </mesh>
-      </group>
-      {/* braço da frente: ombro, antebraço (cotovelo), mão e polegar */}
-      <group ref={braco} position={[-0.24, 0.96, 0]}>
-        <mesh position={[0, -0.14, 0]}>
-          <capsuleGeometry args={[0.052, 0.18, 6, 12]} />
-          <meshStandardMaterial color={PRETO} roughness={0.5} />
-        </mesh>
-        <group ref={antebraco} position={[0, -0.28, 0]}>
-          <mesh position={[0, -0.12, 0]}>
-            <capsuleGeometry args={[0.048, 0.14, 6, 12]} />
-            <meshStandardMaterial color={PRETO} roughness={0.5} />
-          </mesh>
-          <mesh position={[0, -0.27, 0]}>
-            <sphereGeometry args={[0.062, 16, 16]} />
-            <meshStandardMaterial color={PRETO} roughness={0.5} />
-          </mesh>
-          <mesh ref={polegar} position={[0, -0.34, 0.01]} visible={false}>
-            <capsuleGeometry args={[0.022, 0.07, 4, 8]} />
-            <meshStandardMaterial color={PRETO} roughness={0.5} />
-          </mesh>
-        </group>
-      </group>
-
-      {/* cabeça em gota, com rosto, olhos, boca e boné */}
-      <group ref={cabeca} position={[0, 1.08, 0]}>
-        <mesh geometry={gota} position={[0, 0.05, 0]}>
-          <meshStandardMaterial color={PRETO} roughness={0.32} metalness={0.1} />
-        </mesh>
-        <mesh position={[0, 0.22, 0.2]} scale={[1, 1.05, 0.55]}>
-          <sphereGeometry args={[0.23, 32, 32]} />
-          <meshStandardMaterial color={PELE} roughness={0.7} />
-        </mesh>
-        <group ref={olhos} position={[0, 0.26, 0.31]}>
-          {[-0.075, 0.075].map((x) => (
-            <mesh key={x} position={[x, 0, 0]}>
-              <sphereGeometry args={[0.024, 16, 16]} />
-              <meshStandardMaterial color={PRETO} roughness={0.2} />
-            </mesh>
-          ))}
-        </group>
-        <mesh ref={boca} position={[0, 0.15, 0.335]}>
-          <sphereGeometry args={[1, 16, 16]} />
-          <meshStandardMaterial color="#7f1d1d" roughness={0.6} />
-        </mesh>
-        {/* boné: calota achatada e aba para a frente */}
-        <mesh position={[0, 0.37, 0]} scale={[1.08, 0.62, 1.08]} rotation={[0.06, 0, 0]}>
-          <sphereGeometry args={[0.28, 32, 20, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshStandardMaterial color={CAMISETA} roughness={0.6} side={THREE.DoubleSide} />
-        </mesh>
-        <mesh position={[0, 0.375, 0.29]} rotation={[0.18, 0, 0]}>
-          <boxGeometry args={[0.36, 0.022, 0.2]} />
-          <meshStandardMaterial color={PRETO} roughness={0.5} />
-        </mesh>
-      </group>
-    </group>
+    </>
   );
 }
 
@@ -192,17 +107,13 @@ type Avatar3DCenaProps = {
 export default function Avatar3DCena({ estado, tamanho, parado }: Avatar3DCenaProps) {
   return (
     <Canvas
-      style={{ width: tamanho, height: tamanho * 1.3 }}
+      style={{ width: tamanho, height: tamanho / PROPORCAO_DO_FACILITADOR }}
       dpr={[1, 2]}
       frameloop={parado ? "demand" : "always"}
-      camera={{ position: [0, 0.95, 4.2], fov: 30 }}
+      camera={{ position: [0, 0, 5], fov: 24 }}
       gl={{ alpha: true, antialias: true }}
-      onCreated={({ camera }) => camera.lookAt(0, 0.85, 0)}
     >
-      <ambientLight intensity={1.1} />
-      <directionalLight position={[2.5, 4, 5]} intensity={2.4} />
-      <directionalLight position={[-3, 2, -2]} intensity={0.8} color="#bfe6d4" />
-      <Personagem pose={poses[estado]} parada={parado} />
+      <Personagem pose={poses[estado]} parado={parado} />
     </Canvas>
   );
 }
