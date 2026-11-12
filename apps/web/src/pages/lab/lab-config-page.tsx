@@ -8,9 +8,12 @@ import {
   Badge,
   Button,
   CabecalhoDePagina,
+  classeDaSuperficie,
   Escalonar,
   Input,
   LoadingState,
+  Marcacao,
+  MensagemDeErro,
   Revelar
 } from "../../features/leadership-lab/ui";
 import { ErroDaTelaDoLab } from "../../features/leadership-lab/componentes/erro-da-tela";
@@ -19,6 +22,7 @@ import {
   useConfigDosMoldes
 } from "../../features/leadership-lab/cadastro-hooks";
 import { descreverErroDoCadastro } from "../../features/leadership-lab/erros";
+import { cn } from "../../lib/cn";
 
 export function LabConfigPage() {
   const config = useConfigDosMoldes();
@@ -115,7 +119,7 @@ function CartaoDoMolde({
       aria-label={`Molde ${molde.nome}`}
       // A validação é a da tela (mensagem em português, no cartão), não a do navegador.
       noValidate
-      className="space-y-5 rounded-lab-lg border border-lab-linha bg-lab-superficie p-5 shadow-lab-1"
+      className={cn(classeDaSuperficie, "space-y-5 p-5")}
       onSubmit={(e) => {
         e.preventDefault();
         enviar();
@@ -165,12 +169,7 @@ function CartaoDoMolde({
       />
 
       <label className="flex items-start gap-3 text-lab-pequeno text-lab-tinta">
-        <input
-          type="checkbox"
-          className="mt-0.5 h-4 w-4 accent-[rgb(var(--lab-destaque))]"
-          checked={ativo}
-          onChange={(e) => setAtivo(e.target.checked)}
-        />
+        <Marcacao className="mt-0.5" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} />
         <span>
           <span className="font-medium">Teste liberado</span>
           <span className="block text-lab-legenda text-lab-tinta-2">
@@ -198,9 +197,8 @@ function CartaoDoMolde({
               return (
                 <li key={cargo.id}>
                   <label className="flex items-start gap-2 rounded-lab-sm p-1.5 text-lab-pequeno text-lab-tinta hover:bg-lab-superficie-2">
-                    <input
-                      type="checkbox"
-                      className="mt-0.5 h-4 w-4 accent-[rgb(var(--lab-destaque))]"
+                    <Marcacao
+                      className="mt-0.5"
                       checked={cargoIds.has(cargo.id)}
                       disabled={emOutro}
                       onChange={() => alternarCargo(cargo.id)}
@@ -224,21 +222,11 @@ function CartaoDoMolde({
         </p>
       </fieldset>
 
-      {aviso ? (
-        <p
-          role="alert"
-          className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
-        >
-          {aviso}
-        </p>
-      ) : null}
+      {aviso ? <MensagemDeErro>{aviso}</MensagemDeErro> : null}
       {salvar.isError ? (
-        <p
-          role="alert"
-          className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
-        >
+        <MensagemDeErro>
           {descreverErroDoCadastro(salvar.error, "configuracao").descricao}
-        </p>
+        </MensagemDeErro>
       ) : null}
       {salvo ? (
         <p role="status" className="text-lab-pequeno text-lab-destaque-texto">
@@ -246,7 +234,7 @@ function CartaoDoMolde({
         </p>
       ) : null}
 
-      <Button type="submit" disabled={!mudou || salvar.isPending}>
+      <Button type="submit" disabled={!mudou} loading={salvar.isPending}>
         {salvar.isPending ? "Salvando..." : `Salvar ${molde.nome}`}
       </Button>
     </form>

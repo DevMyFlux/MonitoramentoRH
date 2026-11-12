@@ -1,7 +1,7 @@
 // Leadership Lab — os dados dos gráficos, separados do desenho para poderem ser testados sem o
 // Recharts. Cada gráfico tem também uma versão em texto (lista ou tabela) para leitor de tela.
 import type { LabPontoDaEvolucao, LabSkillDoPainel } from "@my-flux/shared";
-import { formatarDataCurta } from "./rotulos";
+import { formatarDataCurta, formatarNumero } from "./rotulos";
 
 /**
  * Quebra um rótulo em linhas de até `maximo` caracteres, só entre palavras. Os nomes das skills são
@@ -57,4 +57,23 @@ export function descricaoDaEvolucao(pontos: readonly LabPontoDaEvolucao[]): stri
   return dadosDaEvolucao(pontos)
     .map((p) => `${p.rotulo} (${p.data}): aderência ${p.aderencia}, agilidade ${p.agilidade}`)
     .join("; ");
+}
+
+/**
+ * A linha de detalhe do cartão "Último teste": a aderência dele e, quando o servidor já libera a
+ * tendência (a regra dos testes mínimos é dele), quanto mudou em relação ao teste anterior.
+ */
+export function resumoDoUltimoTeste(
+  pontos: readonly LabPontoDaEvolucao[],
+  tendenciaDisponivel: boolean
+): string | null {
+  const ultimo = pontos.at(-1);
+  if (!ultimo) return null;
+  const base = `Aderência de ${formatarNumero(ultimo.aderenciaGeral)}%`;
+  const anterior = pontos.at(-2);
+  if (!tendenciaDisponivel || !anterior) return base;
+  const diferenca = Math.round((ultimo.aderenciaGeral - anterior.aderenciaGeral) * 10) / 10;
+  if (diferenca === 0) return `${base}, igual ao teste anterior`;
+  const pontosDeDiferenca = `${formatarNumero(Math.abs(diferenca))} ${Math.abs(diferenca) === 1 ? "ponto" : "pontos"}`;
+  return `${base}, ${pontosDeDiferenca} ${diferenca > 0 ? "acima" : "abaixo"} do teste anterior`;
 }

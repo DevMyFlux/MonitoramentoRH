@@ -5,7 +5,7 @@ import {
 } from "@my-flux/shared";
 import { Check, FlaskConical, Play, Search } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { Badge, Button, Revelar, Textarea } from "../ui";
+import { Badge, Button, MensagemDeErro, Revelar, Textarea } from "../ui";
 import { cn } from "../../../lib/cn";
 import { type ErroDaTela, descreverErro } from "../erros";
 import { useClassificarProblema, useTemasSimulados } from "../hooks";
@@ -98,7 +98,8 @@ export function EscolhaDoProblema({
           <Button
             type="submit"
             variant="secondary"
-            disabled={!textoValido || classificar.isPending}
+            disabled={!textoValido}
+            loading={classificar.isPending}
             icon={<Search size={16} aria-hidden="true" />}
           >
             {classificar.isPending ? "Buscando..." : "Buscar simulação"}
@@ -108,12 +109,9 @@ export function EscolhaDoProblema({
 
       <div aria-live="polite" className="mt-4 space-y-3">
         {classificar.isError ? (
-          <p
-            role="alert"
-            className="rounded-lab-md border border-lab-perigo/20 bg-lab-perigo-suave p-3.5 text-lab-pequeno text-lab-perigo-texto"
-          >
+          <MensagemDeErro>
             {descreverErro(classificar.error).titulo}. Você pode escolher um tema da lista.
-          </p>
+          </MensagemDeErro>
         ) : null}
         {resultado?.resultado === "encontrado" ? (
           <p className="text-lab-pequeno text-lab-tinta-2">
@@ -166,9 +164,9 @@ export function EscolhaDoProblema({
       ) : null}
 
       {temas.isError ? (
-        <p role="alert" className="mt-3 text-lab-pequeno text-lab-perigo-texto">
+        <MensagemDeErro variante="texto" className="mt-3">
           Não foi possível carregar os temas agora. Tente de novo em instantes.
-        </p>
+        </MensagemDeErro>
       ) : null}
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -193,12 +191,9 @@ export function EscolhaDoProblema({
         </Button>
       </div>
       {erroAoIniciar ? (
-        <p
-          role="alert"
-          className="mt-3 rounded-lab-md border border-lab-perigo/20 bg-lab-perigo-suave p-3.5 text-lab-pequeno text-lab-perigo-texto"
-        >
+        <MensagemDeErro className="mt-3">
           {erroAoIniciar.titulo}. {erroAoIniciar.descricao}
-        </p>
+        </MensagemDeErro>
       ) : null}
     </Cartao>
   );

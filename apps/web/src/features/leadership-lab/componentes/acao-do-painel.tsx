@@ -1,7 +1,7 @@
 import type { LabAcaoDoPainel } from "@my-flux/shared";
 import { labSituacaoDoMarco } from "@my-flux/shared";
 import { Play } from "lucide-react";
-import { BotaoLink, Button } from "../ui";
+import { BotaoLink, Button, MensagemDeErro } from "../ui";
 import type { ErroDaTela } from "../erros";
 import { motivoDeIndisponibilidade } from "../rotulos";
 import { CartaoDeTreinamento } from "./cartao-de-treinamento";
@@ -94,12 +94,9 @@ export function AcaoDoPainel({
       }
     >
       {erroAoIniciar ? (
-        <p
-          role="alert"
-          className="mt-4 rounded-lab-md border border-lab-perigo/20 bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
-        >
+        <MensagemDeErro className="mt-4">
           {erroAoIniciar.titulo}. {erroAoIniciar.descricao}
-        </p>
+        </MensagemDeErro>
       ) : null}
     </CartaoDeTreinamento>
   );

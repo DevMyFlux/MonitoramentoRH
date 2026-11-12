@@ -4,7 +4,7 @@ import {
   labBuscaMinimaCaracteres
 } from "@my-flux/shared";
 import { useState } from "react";
-import { Button, Input, Modal, useNotificar } from "../ui";
+import { Button, Input, Marcacao, MensagemDeErro, Modal, useNotificar } from "../ui";
 import { cn } from "../../../lib/cn";
 import {
   buscaValida,
@@ -122,12 +122,9 @@ function Formulario({ aoFechar }: { aoFechar: () => void }) {
       </Busca>
 
       {cadastrar.isError ? (
-        <p
-          role="alert"
-          className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
-        >
+        <MensagemDeErro>
           {descreverErroDoCadastro(cadastrar.error, "acompanhamento").descricao}
-        </p>
+        </MensagemDeErro>
       ) : null}
 
       <div className="flex flex-wrap justify-end gap-2">
@@ -136,7 +133,8 @@ function Formulario({ aoFechar }: { aoFechar: () => void }) {
         </Button>
         <Button
           type="submit"
-          disabled={colaboradorId === null || usuarioId === null || cadastrar.isPending}
+          disabled={colaboradorId === null || usuarioId === null}
+          loading={cadastrar.isPending}
         >
           {cadastrar.isPending ? "Cadastrando..." : "Cadastrar participante"}
         </Button>
@@ -185,9 +183,9 @@ function Busca({
         <p className="text-lab-legenda text-lab-tinta-2">Buscando...</p>
       ) : null}
       {valida && erro ? (
-        <p role="alert" className="text-lab-legenda text-lab-perigo-texto">
+        <MensagemDeErro variante="texto" className="text-lab-legenda">
           {erro}
-        </p>
+        </MensagemDeErro>
       ) : null}
       {valida && vazio && !carregando ? (
         <p className="text-lab-legenda text-lab-tinta-2">{textoVazio}</p>
@@ -216,13 +214,7 @@ function Opcao({
           : "border-lab-linha hover:bg-lab-superficie-2"
       )}
     >
-      <input
-        type="radio"
-        name={nome}
-        checked={marcado}
-        onChange={aoMarcar}
-        className="mt-1 h-4 w-4 accent-[rgb(var(--lab-destaque))]"
-      />
+      <Marcacao type="radio" name={nome} checked={marcado} onChange={aoMarcar} className="mt-1" />
       <span className="min-w-0 space-y-0.5">{children}</span>
     </label>
   );

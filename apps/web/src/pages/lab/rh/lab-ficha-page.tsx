@@ -9,7 +9,9 @@ import { Link, useParams } from "react-router-dom";
 import {
   Badge,
   Button,
+  classeDaSuperficie,
   LoadingState,
+  MensagemDeErro,
   Textarea,
   useNotificar
 } from "../../../features/leadership-lab/ui";
@@ -32,6 +34,7 @@ import {
   nomeDoEstilo,
   nomeDoTipoDeSkill
 } from "../../../features/leadership-lab/rotulos";
+import { cn } from "../../../lib/cn";
 
 export function LabFichaPage() {
   const { resultadoId = "" } = useParams();
@@ -66,7 +69,7 @@ function FichaCompleta({ ficha }: { ficha: LabFichaDeRevisao }) {
 
   return (
     <div className="space-y-6">
-      <section className="space-y-4 rounded-lab-lg border border-lab-linha bg-lab-superficie p-5 shadow-lab-1">
+      <section className={cn(classeDaSuperficie, "space-y-4 p-5")}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-lab-tinta">
@@ -371,15 +374,8 @@ function ValidacaoDoResultado({ ficha }: { ficha: LabFichaDeRevisao }) {
               participante não a recebe.
             </span>
           </div>
-          {aviso ? (
-            <p
-              role="alert"
-              className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
-            >
-              {aviso}
-            </p>
-          ) : null}
-          <Button type="submit" disabled={validar.isPending}>
+          {aviso ? <MensagemDeErro>{aviso}</MensagemDeErro> : null}
+          <Button type="submit" loading={validar.isPending}>
             {ajustes.length > 0
               ? `Validar com ${ajustes.length === 1 ? "1 ajuste" : `${ajustes.length} ajustes`}`
               : "Validar resultado"}

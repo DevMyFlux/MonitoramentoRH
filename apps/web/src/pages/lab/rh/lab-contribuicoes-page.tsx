@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import {
   Badge,
   Button,
+  classeDaSuperficie,
   EmptyState,
   LoadingState,
   Select,
@@ -22,6 +23,7 @@ import {
 } from "../../../features/leadership-lab/curadoria-hooks";
 import { descreverErroDoCadastro } from "../../../features/leadership-lab/erros";
 import { formatarDataEHora } from "../../../features/leadership-lab/rotulos";
+import { cn } from "../../../lib/cn";
 
 const filtros = [
   { value: "pendente", label: "Pendentes" },
@@ -81,10 +83,7 @@ export function LabContribuicoesPage() {
       ) : (
         <ul className="space-y-3">
           {contribuicoes.data.map((c) => (
-            <li
-              key={c.id}
-              className="space-y-3 rounded-lab-lg border border-lab-linha bg-lab-superficie p-4 shadow-lab-1"
-            >
+            <li key={c.id} className={cn(classeDaSuperficie, "space-y-3 p-4")}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="text-lab-pequeno">
                   <IdentificacaoDoParticipante {...c.participante} />

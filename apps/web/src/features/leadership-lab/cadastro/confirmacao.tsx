@@ -1,4 +1,4 @@
-import { Button, Modal } from "../ui";
+import { Button, MensagemDeErro, Modal } from "../ui";
 
 type ConfirmacaoProps = {
   titulo: string;
@@ -35,14 +35,7 @@ export function Confirmacao({
       closable={!pendente}
     >
       <div className="space-y-4">
-        {erro ? (
-          <p
-            role="alert"
-            className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
-          >
-            {erro}
-          </p>
-        ) : null}
+        {erro ? <MensagemDeErro>{erro}</MensagemDeErro> : null}
         <div className="flex flex-wrap justify-end gap-2">
           <Button variant="secondary" onClick={aoCancelar} disabled={pendente}>
             Cancelar

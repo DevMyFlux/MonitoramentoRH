@@ -1,10 +1,11 @@
 import type { HTMLAttributes, TableHTMLAttributes } from "react";
 import { cn } from "../../../lib/cn";
+import { classeDaSuperficie } from "./superficie";
 
 /** A tabela do Lab: moldura de cartão, cabeçalho discreto, linhas separadas por fios finos. */
 export function Table({ className, ...props }: TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="rolagem-fina overflow-x-auto rounded-lab-lg border border-lab-linha bg-lab-superficie shadow-lab-1">
+    <div className={cn(classeDaSuperficie, "rolagem-fina overflow-x-auto")}>
       <table className={cn("min-w-full text-lab-pequeno", className)} {...props} />
     </div>
   );

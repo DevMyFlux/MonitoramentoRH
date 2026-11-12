@@ -25,7 +25,10 @@ import { ErroDaTelaDoLab } from "../../features/leadership-lab/componentes/erro-
 import { QuadranteDeEstilos } from "../../features/leadership-lab/componentes/quadrante-de-estilos";
 import { SeloDeValidacao } from "../../features/leadership-lab/componentes/selo-de-validacao";
 import { TermoDeCiencia } from "../../features/leadership-lab/componentes/termo-de-ciencia";
-import { dadosDaEvolucao } from "../../features/leadership-lab/dados-dos-graficos";
+import {
+  dadosDaEvolucao,
+  resumoDoUltimoTeste
+} from "../../features/leadership-lab/dados-dos-graficos";
 import { descreverErro } from "../../features/leadership-lab/erros";
 import { useAceitarTermo, useIniciarTeste, usePainel } from "../../features/leadership-lab/hooks";
 import {
@@ -100,6 +103,7 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
   const aceitarTermo = useAceitarTermo();
   const iniciar = useIniciarTeste();
   const { indicadores, evolucao } = painel;
+  const ultimo = resumoDoUltimoTeste(evolucao.pontos, evolucao.tendenciaDisponivel);
 
   return (
     <>
@@ -195,6 +199,7 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
           rotulo="Último teste"
           href="#seus-testes"
           valor={indicadores.ultimoTesteEm ? formatarDataCurta(indicadores.ultimoTesteEm) : "—"}
+          {...(ultimo ? { detalhe: ultimo } : {})}
         />
       </section>
 

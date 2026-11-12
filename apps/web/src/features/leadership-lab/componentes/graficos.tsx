@@ -4,6 +4,8 @@
 import type { LabPontoDaEvolucao, LabSkillDoPainel } from "@my-flux/shared";
 import {
   Area,
+  Bar,
+  BarChart,
   CartesianGrid,
   ComposedChart,
   Line,
@@ -25,6 +27,7 @@ import {
   quebrarEmLinhas
 } from "../dados-dos-graficos";
 import { cores } from "../ui/cores";
+import { descricaoDaDistribuicao, type FaixaDeAderencia } from "../visao-geral-dados";
 import { useAnimacaoReduzida } from "../ui/movimento";
 
 type PropsDoRotulo = {
@@ -218,6 +221,48 @@ export function GraficoDeEvolucao({ pontos }: { pontos: readonly LabPontoDaEvolu
           Agilidade
         </li>
       </ul>
+    </div>
+  );
+}
+
+/** Quantos resultados em cada faixa de aderência (visão geral do RH). */
+export function DistribuicaoDeAderencia({ faixas }: { faixas: readonly FaixaDeAderencia[] }) {
+  const reduzida = useAnimacaoReduzida();
+  return (
+    <div
+      role="img"
+      aria-label={`Distribuição da aderência. ${descricaoDaDistribuicao(faixas)}`}
+      className="h-64 w-full"
+    >
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={[...faixas]} margin={{ top: 12, right: 12, bottom: 0, left: -20 }}>
+          <CartesianGrid vertical={false} stroke={cores.linha} />
+          <XAxis
+            dataKey="faixa"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={10}
+            tick={{ fontSize: 11, fill: cores.tinta2 }}
+          />
+          <YAxis
+            allowDecimals={false}
+            tickLine={false}
+            axisLine={false}
+            tickMargin={6}
+            tick={{ fontSize: 11, fill: cores.tinta2 }}
+          />
+          <Tooltip content={<DicaDoGrafico />} cursor={{ fill: cores.destaqueSuave }} />
+          <Bar
+            dataKey="resultados"
+            name="Resultados"
+            fill={cores.destaque}
+            radius={[6, 6, 0, 0]}
+            maxBarSize={56}
+            isAnimationActive={!reduzida}
+            animationDuration={700}
+          />
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }

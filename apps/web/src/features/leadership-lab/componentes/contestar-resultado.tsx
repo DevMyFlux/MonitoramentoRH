@@ -5,7 +5,7 @@ import {
   labLimitesDeTexto
 } from "@my-flux/shared";
 import { useState } from "react";
-import { Badge, Button, Select, Textarea } from "../ui";
+import { Badge, Button, MensagemDeErro, Select, Textarea } from "../ui";
 import { useContestar, useMinhasContestacoes } from "../curadoria-hooks";
 import { descreverErro } from "../erros";
 import { formatarDataEHora } from "../rotulos";
@@ -87,21 +87,9 @@ export function ContestarResultado({ resultado }: { resultado: LabResultado }) {
             {motivo.length}/{labLimitesDeTexto.motivo}. Só o RH da sua turma lê.
           </span>
         </div>
-        {aviso ? (
-          <p
-            role="alert"
-            className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
-          >
-            {aviso}
-          </p>
-        ) : null}
+        {aviso ? <MensagemDeErro>{aviso}</MensagemDeErro> : null}
         {contestar.isError ? (
-          <p
-            role="alert"
-            className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
-          >
-            {descreverErro(contestar.error).descricao}
-          </p>
+          <MensagemDeErro>{descreverErro(contestar.error).descricao}</MensagemDeErro>
         ) : null}
         {enviada ? (
           <p role="status" className="text-lab-pequeno text-lab-destaque-texto">
@@ -114,9 +102,9 @@ export function ContestarResultado({ resultado }: { resultado: LabResultado }) {
       </form>
 
       {minhas.isError ? (
-        <p role="alert" className="mt-5 text-lab-pequeno text-lab-perigo-texto">
+        <MensagemDeErro variante="texto" className="mt-5">
           Não foi possível carregar as suas contestações agora. Atualize a página.
-        </p>
+        </MensagemDeErro>
       ) : minhas.data && minhas.data.length > 0 ? (
         <div className="mt-6 space-y-3">
           <h3 className="text-lab-pequeno font-semibold text-lab-tinta">Suas contestações</h3>

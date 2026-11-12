@@ -13,7 +13,7 @@ import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from 
 import { cn } from "../../../lib/cn";
 import { type ErroDaTela, descreverErro } from "../erros";
 import { useAprender, useConversar } from "../hooks";
-import { Button, Textarea } from "../ui";
+import { Button, Marcacao, MensagemDeErro, Textarea } from "../ui";
 import { mola } from "../ui/movimento";
 import { useDitado, textoDoErroDoDitado } from "../voz/ditado";
 import { chavesDeVoz, usePreferencia } from "../voz/preferencias";
@@ -278,20 +278,14 @@ function ConversaDoFacilitador({ conversar, textos }: { conversar: Conversar; te
           ) : null}
 
           {erro ? (
-            <div
-              role="alert"
-              className="rounded-lab-md border border-lab-perigo/20 bg-lab-perigo-suave p-3.5 text-lab-pequeno text-lab-perigo-texto"
-            >
-              <p className="font-semibold">{erro.erro.titulo}</p>
+            <MensagemDeErro titulo={erro.erro.titulo}>
               <p className="mt-0.5">{erro.erro.descricao}</p>
-            </div>
+            </MensagemDeErro>
           ) : null}
 
           {fala.suportada ? (
             <label className="flex w-fit cursor-pointer items-center gap-2 text-lab-pequeno text-lab-tinta-2">
-              <input
-                type="checkbox"
-                className="h-4 w-4 cursor-pointer accent-[rgb(var(--lab-destaque))]"
+              <Marcacao
                 checked={lerRespostas}
                 onChange={(e) => {
                   definirLerRespostas(e.target.checked);
@@ -334,9 +328,7 @@ function ConversaDoFacilitador({ conversar, textos }: { conversar: Conversar; te
           ) : null}
 
           {ditado.erro ? (
-            <p role="alert" className="text-lab-pequeno text-lab-perigo-texto">
-              {textoDoErroDoDitado[ditado.erro]}
-            </p>
+            <MensagemDeErro variante="texto">{textoDoErroDoDitado[ditado.erro]}</MensagemDeErro>
           ) : null}
 
           <form onSubmit={aoEnviar} className="space-y-2">

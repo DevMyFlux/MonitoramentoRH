@@ -4,7 +4,8 @@ import {
   dadosDoRadar,
   descricaoDaEvolucao,
   descricaoDoRadar,
-  quebrarEmLinhas
+  quebrarEmLinhas,
+  resumoDoUltimoTeste
 } from "./dados-dos-graficos";
 import { AGORA, painel } from "../../test/dados-do-lab";
 
@@ -85,5 +86,21 @@ describe("evolução", () => {
     expect(descricaoDaEvolucao(pontos)).toBe(
       "Teste 1 (02/03/2026): aderência 76, agilidade 88.33; Teste 2 (09/03/2026): aderência 82, agilidade 70"
     );
+  });
+
+  it("o resumo do último teste traz a aderência e, com a tendência liberada, a diferença", () => {
+    expect(resumoDoUltimoTeste([], false)).toBeNull();
+    expect(resumoDoUltimoTeste(pontos, false)).toBe("Aderência de 82%");
+    expect(resumoDoUltimoTeste(pontos, true)).toBe(
+      "Aderência de 82%, 6 pontos acima do teste anterior"
+    );
+    const [primeiro, segundo] = pontos;
+    expect(resumoDoUltimoTeste([segundo!, primeiro!], true)).toBe(
+      "Aderência de 76%, 6 pontos abaixo do teste anterior"
+    );
+    expect(resumoDoUltimoTeste([primeiro!, { ...primeiro!, resultadoId: "r3" }], true)).toBe(
+      "Aderência de 76%, igual ao teste anterior"
+    );
+    expect(resumoDoUltimoTeste([primeiro!], true)).toBe("Aderência de 76%");
   });
 });
