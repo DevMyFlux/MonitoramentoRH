@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { cn } from "../../../lib/cn";
-import { AnelDeProgresso, type TomDeProgresso, Revelar } from "../ui";
+import { AnelDeProgresso, classeDaSuperficie, type TomDeProgresso, Revelar } from "../ui";
 
 type CartaoProps = {
   /** Âncora para os atalhos do painel. */
@@ -22,10 +23,7 @@ export function Cartao({ id, titulo, descricao, acao, className, children }: Car
     <Revelar
       as="section"
       {...(id ? { id } : {})}
-      className={cn(
-        "scroll-mt-24 rounded-lab-lg border border-lab-linha bg-lab-superficie p-6 shadow-lab-1 sm:p-7",
-        className
-      )}
+      className={cn(classeDaSuperficie, "scroll-mt-24 p-6 sm:p-7", className)}
     >
       {titulo || acao ? (
         <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -51,12 +49,14 @@ type EstatisticaProps = {
   detalhe?: ReactNode;
   /** Âncora (#seção): o cartão vira um atalho para o bloco que detalha o número. */
   href?: string;
+  /** Rota do aplicativo: o cartão vira um link para a tela que trata o número. */
+  para?: string;
   /** Um anel de progresso (0 a 100) ao lado do número, para indicadores em porcentagem. */
   anel?: { valor: number; tom?: TomDeProgresso };
 };
 
 /** Um cartão de número: rótulo, valor grande e uma linha de detalhe. Com `href`, é um atalho. */
-export function Estatistica({ rotulo, valor, detalhe, href, anel }: EstatisticaProps) {
+export function Estatistica({ rotulo, valor, detalhe, href, para, anel }: EstatisticaProps) {
   const corpo = (
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
@@ -78,17 +78,21 @@ export function Estatistica({ rotulo, valor, detalhe, href, anel }: EstatisticaP
       ) : null}
     </div>
   );
-  const base = "block rounded-lab-lg border border-lab-linha bg-lab-superficie p-5 shadow-lab-1";
-  return href ? (
+  const base = cn(classeDaSuperficie, "block p-5");
+  const classeDoAtalho = cn(
+    base,
+    "h-full",
+    "transition duration-lab ease-lab hover:-translate-y-0.5 hover:border-lab-linha-forte hover:shadow-lab-2 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+  );
+  return para ? (
     <Revelar className="h-full">
-      <a
-        href={href}
-        className={cn(
-          base,
-          "h-full",
-          "transition duration-lab ease-lab hover:-translate-y-0.5 hover:border-lab-linha-forte hover:shadow-lab-2 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-        )}
-      >
+      <Link to={para} className={classeDoAtalho}>
+        {corpo}
+      </Link>
+    </Revelar>
+  ) : href ? (
+    <Revelar className="h-full">
+      <a href={href} className={classeDoAtalho}>
         {corpo}
       </a>
     </Revelar>

@@ -68,7 +68,8 @@ type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
 };
 
 export function Select({ className, error, id, label, options, ...props }: SelectProps) {
-  const selectId = id ?? props.name;
+  const generatedId = useId();
+  const selectId = id ?? props.name ?? generatedId;
 
   return (
     <label className={classeDoRotulo} htmlFor={selectId}>
@@ -76,6 +77,8 @@ export function Select({ className, error, id, label, options, ...props }: Selec
       <span className="relative block">
         <select
           id={selectId}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${selectId}-hint` : undefined}
           className={cn(
             classeDoCampo,
             "h-11 cursor-pointer appearance-none pl-3.5 pr-10",
@@ -97,7 +100,12 @@ export function Select({ className, error, id, label, options, ...props }: Selec
         />
       </span>
       {error ? (
-        <span className="text-lab-legenda font-normal text-lab-perigo-texto">{error}</span>
+        <span
+          id={`${selectId}-hint`}
+          className="text-lab-legenda font-normal text-lab-perigo-texto"
+        >
+          {error}
+        </span>
       ) : null}
     </label>
   );

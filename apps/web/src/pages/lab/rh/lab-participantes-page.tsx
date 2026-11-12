@@ -6,6 +6,7 @@ import {
   Button,
   EmptyState,
   LoadingState,
+  MensagemDeErro,
   Table,
   TableBody,
   TableCell,
@@ -130,7 +131,19 @@ function TabelaDeParticipantes({ participantes }: { participantes: LabParticipan
                     variant="secondary"
                     aria-label={`Reativar ${p.colaborador.nome}`}
                     disabled={atualizar.isPending}
-                    onClick={() => atualizar.mutate({ id: p.id, ativo: true })}
+                    onClick={() =>
+                      atualizar.mutate(
+                        { id: p.id, ativo: true },
+                        {
+                          onSuccess: () =>
+                            notificar({
+                              tom: "sucesso",
+                              titulo: "Participante reativado",
+                              descricao: `${p.colaborador.nome} voltou a ter acesso ao Leadership Lab.`
+                            })
+                        }
+                      )
+                    }
                   >
                     Reativar
                   </Button>
@@ -141,9 +154,9 @@ function TabelaDeParticipantes({ participantes }: { participantes: LabParticipan
         </TableBody>
       </Table>
       {atualizar.isError && aDesativar === null ? (
-        <p role="alert" className="text-lab-pequeno text-lab-perigo-texto">
+        <MensagemDeErro variante="texto">
           {descreverErroDoCadastro(atualizar.error, "acompanhamento").descricao}
-        </p>
+        </MensagemDeErro>
       ) : null}
       <Confirmacao
         aberta={aDesativar !== null}

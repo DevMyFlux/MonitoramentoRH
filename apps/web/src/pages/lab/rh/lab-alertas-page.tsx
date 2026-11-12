@@ -6,6 +6,7 @@ import {
   Button,
   EmptyState,
   LoadingState,
+  MensagemDeErro,
   Modal,
   Select,
   Table,
@@ -217,27 +218,17 @@ function FormularioDaNota({
           {nota.length}/{labLimitesDeTexto.nota}
         </span>
       </div>
-      {aviso ? (
-        <p
-          role="alert"
-          className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
-        >
-          {aviso}
-        </p>
-      ) : null}
+      {aviso ? <MensagemDeErro>{aviso}</MensagemDeErro> : null}
       {tratar.isError ? (
-        <p
-          role="alert"
-          className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
-        >
+        <MensagemDeErro>
           {descreverErroDoCadastro(tratar.error, "acompanhamento").descricao}
-        </p>
+        </MensagemDeErro>
       ) : null}
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="secondary" onClick={aoFechar} disabled={tratar.isPending}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={tratar.isPending}>
+        <Button type="submit" loading={tratar.isPending}>
           {tratar.isPending ? "Encerrando..." : "Encerrar alerta"}
         </Button>
       </div>

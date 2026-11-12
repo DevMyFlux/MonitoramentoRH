@@ -6,6 +6,7 @@ import {
   CabecalhoDePagina,
   Escalonar,
   LoadingState,
+  MensagemDeErro,
   Revelar
 } from "../../features/leadership-lab/ui";
 import { Cartao } from "../../features/leadership-lab/componentes/cartao";
@@ -54,12 +55,9 @@ export function LabTestePage() {
           não se perde: continue o teste para o sistema tentar de novo.
         </p>
         {teste.erroDeEnvio ? (
-          <p
-            role="alert"
-            className="mt-3 rounded-lab-md border border-lab-perigo/20 bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
-          >
+          <MensagemDeErro className="mt-3">
             {teste.erroDeEnvio.titulo}. {teste.erroDeEnvio.descricao}
-          </p>
+          </MensagemDeErro>
         ) : null}
         <Button className="mt-4" disabled={teste.enviando} onClick={() => void teste.retomar()}>
           {teste.enviando ? "Continuando..." : "Continuar teste"}
@@ -128,11 +126,7 @@ export function LabTestePage() {
           </p>
         ) : null}
         {teste.erroDeEnvio ? (
-          <div
-            role="alert"
-            className="mt-4 rounded-lab-md border border-lab-perigo/20 bg-lab-perigo-suave p-4 text-lab-pequeno text-lab-perigo-texto"
-          >
-            <p className="font-semibold">{teste.erroDeEnvio.titulo}</p>
+          <MensagemDeErro className="mt-4" titulo={teste.erroDeEnvio.titulo}>
             <p className="mt-1">{teste.erroDeEnvio.descricao}</p>
             {teste.erroDeEnvio.podeTentarDeNovo ? (
               <>
@@ -151,7 +145,7 @@ export function LabTestePage() {
                 <VoltarAoPainel />
               </div>
             )}
-          </div>
+          </MensagemDeErro>
         ) : null}
       </Cartao>
     </Escalonar>

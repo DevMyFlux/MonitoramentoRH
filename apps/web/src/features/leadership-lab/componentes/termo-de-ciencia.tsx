@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "../ui";
+import { Button, Marcacao, MensagemDeErro } from "../ui";
 import type { ErroDaTela } from "../erros";
 import { Cartao } from "./cartao";
 
@@ -51,21 +51,13 @@ export function TermoDeCiencia({ versao, aceitando, erro, aoAceitar }: TermoDeCi
       </div>
       <div className="mt-5 grid gap-4">
         <label className="flex cursor-pointer items-start gap-3 text-lab-pequeno font-medium text-lab-tinta">
-          <input
-            type="checkbox"
-            className="mt-0.5 h-[18px] w-[18px] cursor-pointer rounded-lab-sm border-lab-linha-forte accent-[rgb(var(--lab-destaque))]"
-            checked={li}
-            onChange={(e) => setLi(e.target.checked)}
-          />
+          <Marcacao className="mt-0.5" checked={li} onChange={(e) => setLi(e.target.checked)} />
           <span>Li e estou ciente.</span>
         </label>
         {erro ? (
-          <p
-            role="alert"
-            className="rounded-lab-md border border-lab-perigo/20 bg-lab-perigo-suave p-3.5 text-lab-pequeno text-lab-perigo-texto"
-          >
+          <MensagemDeErro>
             {erro.titulo}. {erro.descricao}
-          </p>
+          </MensagemDeErro>
         ) : null}
         <div>
           <Button loading={aceitando} disabled={!li} onClick={aoAceitar}>

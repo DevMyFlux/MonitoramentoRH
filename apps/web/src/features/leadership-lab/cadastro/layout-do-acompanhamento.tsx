@@ -6,8 +6,9 @@ import { usePendencias } from "../curadoria-hooks";
 
 type Aba = { para: string; rotulo: string; pendencias?: keyof LabPendencias };
 
-/** Primeiro o que pede decisão do curador; depois o cadastro de quem participa. */
+/** O resumo; depois o que pede decisão do curador; por fim o cadastro de quem participa. */
 const abas: readonly Aba[] = [
+  { para: "/lab/rh/visao-geral", rotulo: "Visão geral" },
   { para: "/lab/rh/revisao", rotulo: "Revisão", pendencias: "resultadosAguardando" },
   { para: "/lab/rh/alertas", rotulo: "Alertas", pendencias: "alertasAbertos" },
   { para: "/lab/rh/contestacoes", rotulo: "Contestações", pendencias: "contestacoesPendentes" },

@@ -5,9 +5,11 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Badge,
   Button,
+  classeDaSuperficie,
   EmptyState,
   Input,
   LoadingState,
+  MensagemDeErro,
   Table,
   TableBody,
   TableCell,
@@ -20,6 +22,7 @@ import { useCriarTurma, useTurmas } from "../../../features/leadership-lab/cadas
 import { ErroDaTelaDoLab } from "../../../features/leadership-lab/componentes/erro-da-tela";
 import { descreverErroDoCadastro } from "../../../features/leadership-lab/erros";
 import { formatarDataCurta } from "../../../features/leadership-lab/rotulos";
+import { cn } from "../../../lib/cn";
 
 export function LabTurmasPage() {
   const turmas = useTurmas();
@@ -98,7 +101,7 @@ function NovaTurma() {
 
   return (
     <form
-      className="flex flex-wrap items-end gap-3 rounded-lab-lg border border-lab-linha bg-lab-superficie p-4 shadow-lab-1"
+      className={cn(classeDaSuperficie, "flex flex-wrap items-end gap-3 p-4")}
       onSubmit={(e) => {
         e.preventDefault();
         enviar();
@@ -114,13 +117,13 @@ function NovaTurma() {
           error={aviso ?? undefined}
         />
       </div>
-      <Button type="submit" icon={<Plus size={16} aria-hidden="true" />} disabled={criar.isPending}>
+      <Button type="submit" icon={<Plus size={16} aria-hidden="true" />} loading={criar.isPending}>
         {criar.isPending ? "Criando..." : "Criar turma"}
       </Button>
       {criar.isError ? (
-        <p role="alert" className="basis-full text-lab-pequeno text-lab-perigo-texto">
+        <MensagemDeErro variante="texto" className="basis-full">
           {descreverErroDoCadastro(criar.error, "acompanhamento").descricao}
-        </p>
+        </MensagemDeErro>
       ) : null}
     </form>
   );

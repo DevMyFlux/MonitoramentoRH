@@ -3,8 +3,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Button,
+  classeDaSuperficie,
   EmptyState,
   LoadingState,
+  Marcacao,
+  MensagemDeErro,
   Modal,
   Select,
   Textarea,
@@ -23,6 +26,7 @@ import {
 } from "../../../features/leadership-lab/curadoria-hooks";
 import { descreverErroDoCadastro } from "../../../features/leadership-lab/erros";
 import { formatarDataEHora } from "../../../features/leadership-lab/rotulos";
+import { cn } from "../../../lib/cn";
 
 const filtros = [
   { value: "pendente", label: "Pendentes" },
@@ -69,10 +73,7 @@ export function LabContestacoesPage() {
       ) : (
         <ul className="space-y-3">
           {contestacoes.data.map((c) => (
-            <li
-              key={c.id}
-              className="space-y-3 rounded-lab-lg border border-lab-linha bg-lab-superficie p-4 shadow-lab-1"
-            >
+            <li key={c.id} className={cn(classeDaSuperficie, "space-y-3 p-4")}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="text-lab-pequeno">
                   <IdentificacaoDoParticipante {...c.participante} />
@@ -198,10 +199,9 @@ function FormularioDaDecisao({
           ] as const
         ).map(([valor, rotulo]) => (
           <label key={valor} className="flex items-center gap-2 text-lab-pequeno text-lab-tinta">
-            <input
+            <Marcacao
               type="radio"
               name="decisao-da-contestacao"
-              className="h-4 w-4 accent-[rgb(var(--lab-destaque))]"
               checked={decisao === valor}
               onChange={() => setDecisao(valor)}
             />
@@ -222,27 +222,17 @@ function FormularioDaDecisao({
           {nota.length}/{labLimitesDeTexto.nota}
         </span>
       </div>
-      {aviso ? (
-        <p
-          role="alert"
-          className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
-        >
-          {aviso}
-        </p>
-      ) : null}
+      {aviso ? <MensagemDeErro>{aviso}</MensagemDeErro> : null}
       {decidir.isError ? (
-        <p
-          role="alert"
-          className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
-        >
+        <MensagemDeErro>
           {descreverErroDoCadastro(decidir.error, "acompanhamento").descricao}
-        </p>
+        </MensagemDeErro>
       ) : null}
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="secondary" onClick={aoFechar} disabled={decidir.isPending}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={decidir.isPending}>
+        <Button type="submit" loading={decidir.isPending}>
           {decidir.isPending ? "Registrando..." : "Registrar decisão"}
         </Button>
       </div>

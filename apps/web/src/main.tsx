@@ -38,6 +38,9 @@ const LabTurmasPage = lazy(() =>
 const LabTurmaPage = lazy(() =>
   import("./pages/lab/rh/lab-turma-page").then((m) => ({ default: m.LabTurmaPage }))
 );
+const LabVisaoGeralPage = lazy(() =>
+  import("./pages/lab/rh/lab-visao-geral-page").then((m) => ({ default: m.LabVisaoGeralPage }))
+);
 const LabRevisaoPage = lazy(() =>
   import("./pages/lab/rh/lab-revisao-page").then((m) => ({ default: m.LabRevisaoPage }))
 );
@@ -133,7 +136,15 @@ const router = createBrowserRouter([
       </PaginaDoLab>
     )
   },
-  { path: "/lab/rh", element: <Navigate to="/lab/rh/revisao" replace /> },
+  { path: "/lab/rh", element: <Navigate to="/lab/rh/visao-geral" replace /> },
+  {
+    path: "/lab/rh/visao-geral",
+    element: (
+      <PaginaDoLab breadcrumbs={["Acompanhamento", "Visão geral"]}>
+        <LabVisaoGeralPage />
+      </PaginaDoLab>
+    )
+  },
   {
     path: "/lab/rh/revisao",
     element: (

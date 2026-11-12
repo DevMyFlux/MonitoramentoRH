@@ -10,9 +10,11 @@ import { Link, useParams } from "react-router-dom";
 import {
   Badge,
   Button,
+  classeDaSuperficie,
   EmptyState,
   Input,
   LoadingState,
+  MensagemDeErro,
   Select,
   Table,
   TableBody,
@@ -33,6 +35,7 @@ import {
 } from "../../../features/leadership-lab/cadastro-hooks";
 import { ErroDaTelaDoLab } from "../../../features/leadership-lab/componentes/erro-da-tela";
 import { descreverErroDoCadastro } from "../../../features/leadership-lab/erros";
+import { cn } from "../../../lib/cn";
 
 export function LabTurmaPage() {
   const { id = "" } = useParams();
@@ -93,7 +96,7 @@ function Cabecalho({ turma }: { turma: LabTurmaDetalhe }) {
   };
 
   return (
-    <section className="space-y-4 rounded-lab-lg border border-lab-linha bg-lab-superficie p-5 shadow-lab-1">
+    <section className={cn(classeDaSuperficie, "space-y-4 p-5")}>
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="text-lg font-semibold text-lab-tinta">{turma.nome}</h2>
         <Badge tone={turma.ativa ? "success" : "neutral"}>
@@ -148,9 +151,9 @@ function Cabecalho({ turma }: { turma: LabTurmaDetalhe }) {
       </div>
 
       {atualizar.isError && !encerrando ? (
-        <p role="alert" className="text-lab-pequeno text-lab-perigo-texto">
+        <MensagemDeErro variante="texto">
           {descreverErroDoCadastro(atualizar.error, "acompanhamento").descricao}
-        </p>
+        </MensagemDeErro>
       ) : null}
 
       <Confirmacao
@@ -282,9 +285,9 @@ function IncluirParticipante({ turma }: { turma: LabTurmaDetalhe }) {
   }
   if (participantes.isError) {
     return (
-      <p role="alert" className="text-lab-pequeno text-lab-perigo-texto">
+      <MensagemDeErro variante="texto">
         {descreverErroDoCadastro(participantes.error, "acompanhamento").descricao}
-      </p>
+      </MensagemDeErro>
     );
   }
   if (participantes.isSuccess && candidatos.length === 0) {
@@ -310,7 +313,7 @@ function IncluirParticipante({ turma }: { turma: LabTurmaDetalhe }) {
 
   return (
     <form
-      className="flex flex-wrap items-end gap-3 rounded-lab-lg border border-lab-linha bg-lab-superficie p-4 shadow-lab-1"
+      className={cn(classeDaSuperficie, "flex flex-wrap items-end gap-3 p-4")}
       onSubmit={(e) => {
         e.preventDefault();
         if (escolhido) incluir.mutate(escolhido, { onSuccess: () => setEscolhido("") });
@@ -335,13 +338,13 @@ function IncluirParticipante({ turma }: { turma: LabTurmaDetalhe }) {
           ]}
         />
       </div>
-      <Button type="submit" disabled={!escolhido || incluir.isPending}>
+      <Button type="submit" disabled={!escolhido} loading={incluir.isPending}>
         {incluir.isPending ? "Incluindo..." : "Incluir na turma"}
       </Button>
       {incluir.isError ? (
-        <p role="alert" className="basis-full text-lab-pequeno text-lab-perigo-texto">
+        <MensagemDeErro variante="texto" className="basis-full">
           {descreverErroDoCadastro(incluir.error, "acompanhamento").descricao}
-        </p>
+        </MensagemDeErro>
       ) : null}
     </form>
   );
