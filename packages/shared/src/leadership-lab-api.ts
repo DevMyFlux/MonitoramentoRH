@@ -11,6 +11,7 @@
 //
 // Datas viajam como texto ISO 8601 (é o que o JSON faz com um Date).
 import { z } from "zod";
+import { labTiposDeFonte } from "./leadership-lab-pedagogia.js";
 import { labCenaSchema, labSimulacaoSchema } from "./leadership-lab-simulador-api.js";
 import {
   labAlertaCores,
@@ -246,6 +247,8 @@ export const labResultadoSchema = z.object({
   pontoForte: z.string().nullable(),
   pontoDesenvolvimento: z.string().nullable(),
   sugestoes: z.array(z.string()),
+  /** Alguma situação do teste era experimental: o resultado não vale como oficial. */
+  experimental: z.boolean().default(false),
   situacoes: z.array(labSituacaoDoResultadoSchema),
   /** De que simulação local foi o teste. Nula nos demais testes. */
   simulacao: labSimulacaoSchema.nullable().default(null)
@@ -355,9 +358,23 @@ export const labConversaEntradaSchema = z.strictObject({
 });
 export type LabConversaEntrada = z.input<typeof labConversaEntradaSchema>;
 
+/** Uma fonte citada pelo facilitador. O sistema mostra título, instituição e tipo; nunca trecho extenso. */
+export const labFonteCitadaSchema = z.object({
+  id: z.string(),
+  titulo: z.string(),
+  instituicao: z.string(),
+  tipo: z.enum(labTiposDeFonte),
+  url: z.string().nullable(),
+  /** O conteúdo desta fonte passou pela validação técnica do negócio. */
+  validada: z.boolean()
+});
+export type LabFonteCitada = z.infer<typeof labFonteCitadaSchema>;
+
 /** `bloqueada`: a Guarda não deixou a mensagem seguir; a `resposta` é um aviso fixo do sistema. */
 export const labConversaRespostaSchema = z.object({
   desfecho: z.enum(["respondida", "bloqueada"]),
-  resposta: z.string()
+  resposta: z.string(),
+  /** De onde veio a explicação, quando veio da base de conhecimento. Vazio = conhecimento geral. */
+  fontes: z.array(labFonteCitadaSchema).default([])
 });
 export type LabConversaResposta = z.infer<typeof labConversaRespostaSchema>;

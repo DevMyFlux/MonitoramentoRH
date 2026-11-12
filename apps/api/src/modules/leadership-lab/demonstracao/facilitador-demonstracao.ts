@@ -17,7 +17,7 @@ function listar(itens: readonly string[]): string {
   return itens.map((i) => `• ${i}`).join("\n");
 }
 
-function explicarSituacao(r: ConversaIaRequest["resultado"], numero: number): string {
+function explicarSituacao(r: NonNullable<ConversaIaRequest["resultado"]>, numero: number): string {
   const s = r.situacoes.find((x) => x.numero === numero);
   if (!s) return `Este teste não tem a situação ${numero}. Tente uma de 1 a ${r.situacoes.length}.`;
   const escolhida = s.opcoes.find((o) => o.id === s.escolha);
@@ -35,6 +35,7 @@ function explicarSituacao(r: ConversaIaRequest["resultado"], numero: number): st
 export function responderComoFacilitador(pedido: ConversaIaRequest): string {
   const { resultado: r } = pedido;
   const msg = normalizar(pedido.mensagem);
+  if (r === null) return responderAprendizagem(pedido, msg);
 
   const situacao = /situacao\s*(\d{1,2})/.exec(msg) ?? /\b(?:a|na|da)\s+(\d{1,2})\b/.exec(msg);
   if (situacao?.[1]) return explicarSituacao(r, Number(situacao[1]));
@@ -73,3 +74,24 @@ export function responderComoFacilitador(pedido: ConversaIaRequest): string {
     return "Por nada! Se quiser, posso comentar outro ponto do seu resultado.";
   return AJUDA;
 }
+
+/** O modo aprendizagem da demonstração: orienta pelo que o cargo cobra. Não explica norma nenhuma. */
+function responderAprendizagem(pedido: ConversaIaRequest, msg: string): string {
+  const c = pedido.contexto;
+  if (c === null) return AJUDA_DA_APRENDIZAGEM;
+  if (/responsabilidade|cargo|o que (se )?espera|meu papel/.test(msg)) {
+    return `Neste cargo, o que se espera:\n${listar(c.responsabilidades)}\n\n${c.limite_tecnico}`;
+  }
+  if (/foco|estudar|desenvolver|melhorar|evoluir|proximo/.test(msg)) {
+    const nomes = c.foco.map((s) => nomeDaSkill.get(s) ?? s);
+    const fraca = c.perfil?.skills.find((s) => s.recorrente);
+    const extra = fraca
+      ? `\n\nNos seus testes, vale reforçar: ${nomeDaSkill.get(fraca.skill) ?? fraca.skill}.`
+      : "";
+    return `As competências que mais pesam neste cargo:\n${listar(nomes)}${extra}`;
+  }
+  return AJUDA_DA_APRENDIZAGEM;
+}
+
+const AJUDA_DA_APRENDIZAGEM =
+  "Estou no modo de demonstração e não tenho a base de conhecimento. Posso dizer o que se espera do seu cargo e quais competências vale desenvolver. Para explicações de gestão e procedimentos, é preciso o facilitador com a IA ligada.";

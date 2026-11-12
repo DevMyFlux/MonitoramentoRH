@@ -63,6 +63,8 @@ export class IaFalsa implements ClienteIa {
   };
   /** O que o facilitador falso responde. */
   respostaDaConversa = "Resposta do facilitador falso.";
+  /** As fontes que o facilitador falso cita. */
+  fontesDaConversa: Array<Record<string, unknown>> = [];
   roteiro: Roteiro = roteiroPadrao;
   decisaoDaGuarda: DecisaoDaGuardaFalsa = "seguir";
 
@@ -238,7 +240,11 @@ export class IaFalsa implements ClienteIa {
       this.lancar(falha);
       return { lixo: true };
     }
-    return { resposta: this.respostaDaConversa, uso: this.uso("facilitador") };
+    return {
+      resposta: this.respostaDaConversa,
+      fontes: this.fontesDaConversa,
+      uso: this.uso("facilitador")
+    };
   }
 
   private uso(agente: string): Json {

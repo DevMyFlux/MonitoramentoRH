@@ -286,7 +286,8 @@ describe("visaoDoResultado: depois do último turno", () => {
     resumo: "Resumo.",
     pontoForte: "Forte.",
     pontoDesenvolvimento: "Desenvolver.",
-    sugestoes: ["Uma."]
+    sugestoes: ["Uma."],
+    experimental: false
   };
   const turnos = [2, 1].map((numero) => ({
     numero,

@@ -43,7 +43,11 @@ describe.skipIf(!integrationEnabled)("motor do teste: conversa com o facilitador
     c.ia.respostaDaConversa = "Você foi bem na comunicação.";
 
     const r = await perguntar(c, sessaoId, { mensagem: "Como fui no geral?" });
-    expect(r).toEqual({ desfecho: "respondida", resposta: "Você foi bem na comunicação." });
+    expect(r).toEqual({
+      desfecho: "respondida",
+      resposta: "Você foi bem na comunicação.",
+      fontes: []
+    });
 
     const enviado = c.ia.corposPorAlvo.conversa[0]!;
     const corpo = JSON.parse(enviado) as Record<string, unknown>;
@@ -109,7 +113,7 @@ describe.skipIf(!integrationEnabled)("motor do teste: conversa com o facilitador
     const { c, sessaoId } = await concluido();
     c.ia.decisaoDaGuarda = "bloquear";
     const r = await perguntar(c, sessaoId, { mensagem: "Meu CPF é 123" });
-    expect(r).toEqual({ desfecho: "bloqueada", resposta: RESPOSTA_BLOQUEADA });
+    expect(r).toEqual({ desfecho: "bloqueada", resposta: RESPOSTA_BLOQUEADA, fontes: [] });
     expect(c.ia.chamadas.conversa).toBe(0);
   });
 

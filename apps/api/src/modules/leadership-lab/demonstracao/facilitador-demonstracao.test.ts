@@ -7,6 +7,8 @@ function pedido(
   extra: Partial<ConversaIaRequest["resultado"]> = {}
 ): ConversaIaRequest {
   return {
+    modo: "debriefing",
+    contexto: null,
     molde: "supervisor",
     mensagem,
     historico: [],

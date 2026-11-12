@@ -55,6 +55,7 @@ const LAB_MIGRATION = "0015_leadership_lab";
 const ENGINE_MIGRATION = "0016_leadership_lab_engine";
 const PAINEL_MIGRATION = "0017_leadership_lab_painel_sem_vazamento";
 const FACILITADOR_MIGRATION = "0018_leadership_lab_facilitador";
+const BASE_MIGRATION = "0019_leadership_lab_base_pedagogica";
 const PRE_LAB_MIGRATION = "0014_employee_termination_date";
 const rolesScript = readFileSync(
   fileURLToPath(new URL("../../../../prisma/ops/leadership-lab-roles.sql", import.meta.url)),
@@ -117,7 +118,8 @@ suite("migração 0015_leadership_lab: subir, descer e subir de novo", () => {
       LAB_MIGRATION,
       ENGINE_MIGRATION,
       PAINEL_MIGRATION,
-      FACILITADOR_MIGRATION
+      FACILITADOR_MIGRATION,
+      BASE_MIGRATION
     ]);
   });
 

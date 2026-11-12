@@ -41,6 +41,8 @@ function sessao(): SessaoComMolde {
     moldeId: "molde-1",
     modo: "dinamico",
     iaSessaoId: "ia-1",
+    rubricaVersao: null,
+    dificuldade: null,
     status: "em_andamento",
     iniciadaEm: t("2026-03-02T10:00:00Z"),
     concluidaEm: null,

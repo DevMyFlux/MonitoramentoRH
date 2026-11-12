@@ -901,7 +901,8 @@ describe.skipIf(!integrationEnabled)("rotas do Leadership Lab", () => {
       expect(r.statusCode, r.body).toBe(200);
       expect(r.json().data).toEqual({
         desfecho: "respondida",
-        resposta: "Seu ponto forte foi a comunicação."
+        resposta: "Seu ponto forte foi a comunicação.",
+        fontes: []
       });
       expect(r.headers["cache-control"]).toBe("no-store");
 

@@ -679,6 +679,7 @@ describe("requisições para a IA", () => {
 
   it("os campos que chegam à IA são exatamente estes (a lista fechada)", () => {
     expect(Object.keys(iniciarSessaoIaRequestSchema.shape).sort()).toEqual([
+      "contexto",
       "molde",
       "numero_situacoes",
       "temas"
@@ -792,7 +793,14 @@ describe("conversa com o facilitador", () => {
       }
     ]
   };
-  const pedido = { molde: "supervisor", mensagem: "Como fui?", historico: [], resultado };
+  const pedido = {
+    modo: "debriefing",
+    contexto: null,
+    molde: "supervisor",
+    mensagem: "Como fui?",
+    historico: [],
+    resultado
+  };
 
   it("o pedido é uma lista fechada de campos: nome, aderência e ids não passam", () => {
     expect(conversaIaRequestSchema.safeParse(pedido).success).toBe(true);
@@ -834,12 +842,12 @@ describe("conversa com o facilitador", () => {
       tokens_entrada: 1,
       tokens_saida: 1
     };
-    expect(validarConversaIa({ resposta: "Olá.", uso }).ok).toBe(true);
-    expect(validarConversaIa({ resposta: "  ", uso }).ok).toBe(false);
-    expect(validarConversaIa({ resposta: "Olá.", uso: { ...uso, agente: "guarda" } }).ok).toBe(
-      false
-    );
-    expect(validarConversaIa({ resposta: "Olá.", uso, aderencia: 100 }).ok).toBe(false);
+    const ok = { resposta: "Olá.", fontes: [], uso };
+    expect(validarConversaIa(ok).ok).toBe(true);
+    expect(validarConversaIa({ ...ok, resposta: "  " }).ok).toBe(false);
+    expect(validarConversaIa({ ...ok, uso: { ...uso, agente: "guarda" } }).ok).toBe(false);
+    expect(validarConversaIa({ ...ok, aderencia: 100 }).ok).toBe(false);
+    expect(validarConversaIa({ resposta: "Olá.", uso }).ok).toBe(false); // fontes é obrigatório
     expect(validarConversaIa(null).ok).toBe(false);
   });
 });

@@ -56,7 +56,14 @@ import {
   responderEntradaSchema,
   tempoEsgotadoEntradaSchema
 } from "./entradas.js";
-import { RESPOSTA_BLOQUEADA, contextoDaConversa, historicoSeguro } from "./conversa.js";
+import {
+  RESPOSTA_BLOQUEADA,
+  contextoDaConversa,
+  contextoPedagogico,
+  dadosDaBase,
+  historicoSeguro
+} from "./conversa.js";
+import { carregarPerfilResumido, type PerfilResumido } from "../personalizacao/perfil-resumido.js";
 import { erros } from "./erros.js";
 import { fecharTeste } from "./fechamento.js";
 import {
@@ -111,6 +118,15 @@ type Intencao =
 
 /** Margem somada ao timeout da IA para dimensionar a reserva do turno. */
 const MARGEM_DA_RESERVA_MS = 5_000;
+
+/** Os campos da base pedagógica que o turno guarda (JSON nulo vira DbNull no Prisma). */
+function dadosDoTurnoDaBase(base: Parameters<typeof dadosDaBase>[0]) {
+  const { basePedagogica, fundamentacao } = dadosDaBase(base);
+  return {
+    basePedagogica: basePedagogica ?? Prisma.DbNull,
+    fundamentacao
+  };
+}
 
 function ehViolacaoDeUnicidade(erro: unknown): boolean {
   return erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002";
@@ -278,10 +294,15 @@ export class MotorDoTeste {
 
     // O corpo sai do schema estrito: só molde, temas e quantidade de situações. Com um tema de
     // simulação escolhido, ele é o único tema (nunca o texto que o participante digitou).
+    const contexto = contextoPedagogico(
+      molde.nivel as LabMoldeNivel,
+      await this.perfilDoParticipante(participanteId, molde.nivel as LabMoldeNivel)
+    );
     const corpo = iniciarSessaoIaRequestSchema.parse({
       molde: molde.nivel,
       temas: entrada.categoriaId !== undefined ? [entrada.categoriaId] : temas,
-      numero_situacoes: molde.numeroSituacoes
+      numero_situacoes: molde.numeroSituacoes,
+      contexto
     });
     const desfecho = await chamarIa(() => this.ia.abrirSessao(corpo), validarAberturaIa);
     if (!desfecho.ok) {
@@ -299,6 +320,8 @@ export class MotorDoTeste {
             participanteId,
             moldeId: molde.id,
             iaSessaoId: abertura.sessao_id,
+            rubricaVersao: contexto.rubrica_versao,
+            dificuldade: contexto.dificuldade_base,
             iniciadaEm: apresentadaEm
           }
         });
@@ -310,6 +333,7 @@ export class MotorDoTeste {
             texto: abertura.situacao.texto,
             opcoes: abertura.situacao.opcoes,
             estiloAdequado: abertura.situacao.estilo_adequado,
+            ...dadosDoTurnoDaBase(abertura.situacao.base),
             apresentadaEm
           }
         });
@@ -479,7 +503,7 @@ export class MotorDoTeste {
     );
     // Falha fechada: sem a liberação da Guarda, a mensagem não vai para a IA.
     if (nova === undefined || nova.decisao === "bloquear") {
-      return { desfecho: "bloqueada", resposta: RESPOSTA_BLOQUEADA };
+      return { desfecho: "bloqueada", resposta: RESPOSTA_BLOQUEADA, fontes: [] };
     }
     const mensagem = nova.decisao === "mascarar" ? (nova.texto ?? "") : entrada.mensagem;
     const seguros = antigas.map((a, i) =>
@@ -492,6 +516,11 @@ export class MotorDoTeste {
 
     const visao = await this.montarVisaoDoResultado(sessao);
     const corpo = conversaIaRequestSchema.parse({
+      modo: "debriefing",
+      contexto: contextoPedagogico(
+        sessao.molde.nivel as LabMoldeNivel,
+        await this.perfilDoParticipante(sessao.participanteId, sessao.molde.nivel as LabMoldeNivel)
+      ),
       molde: sessao.molde.nivel,
       mensagem,
       historico: historicoSeguro(entrada.historico, seguros),
@@ -507,7 +536,27 @@ export class MotorDoTeste {
       .catch((erro: unknown) =>
         this.logger?.warn({ erro }, "falha ao registrar o log do facilitador")
       );
-    return { desfecho: "respondida", resposta: desfecho.valor.resposta };
+    return {
+      desfecho: "respondida",
+      resposta: desfecho.valor.resposta,
+      fontes: desfecho.valor.fontes
+    };
+  }
+
+  /**
+   * O histórico individual resumido. Se a consulta falhar, o teste e a conversa seguem sem
+   * personalização (fallback): ela melhora a experiência, não é condição para ela existir.
+   */
+  private async perfilDoParticipante(
+    participanteId: string,
+    molde: LabMoldeNivel
+  ): Promise<PerfilResumido | null> {
+    try {
+      return await carregarPerfilResumido(this.db, participanteId, molde);
+    } catch (erro) {
+      this.logger?.warn({ erro }, "falha ao resumir o histórico individual");
+      return null;
+    }
   }
 
   // =========================================================================
@@ -774,6 +823,7 @@ export class MotorDoTeste {
               texto: resposta.situacao.texto,
               opcoes: resposta.situacao.opcoes,
               estiloAdequado: resposta.situacao.estilo_adequado,
+              ...dadosDoTurnoDaBase(resposta.situacao.base),
               apresentadaEm: agora
             }
           });

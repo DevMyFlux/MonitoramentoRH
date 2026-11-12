@@ -6,6 +6,7 @@ export * from "./leadership-lab-cadastro-api.js";
 export * from "./leadership-lab-curadoria-api.js";
 export * from "./leadership-lab-simulador-api.js";
 export * from "./leadership-lab-calculos.js";
+export * from "./leadership-lab-pedagogia.js";
 export * from "./parity-rotation.js";
 export * from "./schedule-codes.js";
 export * from "./schedule-templates.js";
