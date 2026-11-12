@@ -42,7 +42,8 @@ assert post(PEDIDO, headers={"X-Servico-Token": "errado"}).status_code == 401
 r = post(PEDIDO)
 assert r.status_code == 200, r.text
 corpo = r.json()
-assert set(corpo) == {"resposta", "uso"} == set(MODELO_RESPOSTA), corpo.keys()
+assert set(corpo) == {"resposta", "fontes", "uso"} == set(MODELO_RESPOSTA), corpo.keys()
+assert corpo["fontes"] == [], "sem fonte usada, nenhuma citação"
 assert set(corpo["uso"]) == set(MODELO_RESPOSTA["uso"]), "o bloco uso precisa ter os campos do contrato"
 assert corpo["uso"]["agente"] == "facilitador" and corpo["resposta"] == MODELO_RESPOSTA["resposta"]
 assert len(chamadas) == 1 and chamadas[0]["esquema"] is agente.ESQUEMA_CONVERSA
@@ -73,6 +74,9 @@ def invalido(mutar, motivo):
     assert not chamadas, f"o modelo não pode ser chamado: {motivo}"
 
 invalido(lambda p: p.update(nome="Ana"), "campo extra na raiz")
+invalido(lambda p: p.update(modo="outro"), "modo desconhecido")
+invalido(lambda p: p.update(resultado=None), "debriefing sem resultado")
+invalido(lambda p: p.update(modo="aprendizagem"), "aprendizagem com resultado e sem contexto")
 invalido(lambda p: p["resultado"]["situacoes"][0].update(aderencia=100), "aderência na situação")
 invalido(lambda p: p["resultado"].update(aderencia_geral=76), "aderência no resultado")
 invalido(lambda p: p.update(mensagem="x" * 501), "mensagem grande demais")

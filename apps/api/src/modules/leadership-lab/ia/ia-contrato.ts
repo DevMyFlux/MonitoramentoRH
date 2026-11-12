@@ -341,6 +341,11 @@ export const contextoPedagogicoIaSchema = z.strictObject({
     .array(z.strictObject({ skill, profundidade: z.enum(labProfundidadesTecnicas) }))
     .max(8),
   limite_tecnico: texto,
+  /** A rubrica em vigor: o que cada nível da escala significa e o que observar em cada skill de foco. */
+  rubrica: z.strictObject({
+    niveis: z.array(z.strictObject({ aderencia, criterio: texto })).length(4),
+    observar: z.array(z.strictObject({ skill, criterio: texto })).max(8)
+  }),
   dificuldade_base: dificuldade,
   /** Nulo para quem ainda não tem testes concluídos. */
   perfil: perfilResumidoIaSchema.nullable()

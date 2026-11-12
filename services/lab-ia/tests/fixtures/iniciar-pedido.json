@@ -1,0 +1,110 @@
+{
+  "molde": "supervisor",
+  "temas": [
+    "Prioridade de OS"
+  ],
+  "numero_situacoes": 5,
+  "contexto": {
+    "rubrica_versao": "2026-11-1",
+    "responsabilidades": [
+      "Gerir prioridades e ordens de serviço",
+      "Gerir pessoas e conflitos da equipe",
+      "Comunicar-se com clientes e solicitantes",
+      "Organizar recursos (pessoas, materiais, prazos)",
+      "Acompanhar indicadores e resultados"
+    ],
+    "foco": [
+      "gestao-os",
+      "gestao-equipe",
+      "comunicacao-cliente",
+      "materiais-custos",
+      "decisao-pressao"
+    ],
+    "profundidade_tecnica": [
+      {
+        "skill": "aplicacao-nr-pop",
+        "profundidade": "aplicacao"
+      },
+      {
+        "skill": "gestao-os",
+        "profundidade": "aplicacao"
+      },
+      {
+        "skill": "contingencia",
+        "profundidade": "aplicacao"
+      },
+      {
+        "skill": "materiais-custos",
+        "profundidade": "aplicacao"
+      }
+    ],
+    "limite_tecnico": "Cobra priorizar, alocar e acompanhar. Não cobra executar o reparo: cobra garantir que o procedimento correto seja seguido por quem executa.",
+    "rubrica": {
+      "niveis": [
+        {
+          "aderencia": 100,
+          "criterio": "Resolve o problema no nível de responsabilidade do cargo, protege pessoas, cliente e contrato, comunica quem precisa saber e acompanha o encaminhamento."
+        },
+        {
+          "aderencia": 70,
+          "criterio": "Caminho correto, mas incompleto: falta comunicar, registrar, acompanhar ou envolver quem deveria."
+        },
+        {
+          "aderencia": 40,
+          "criterio": "Adia, centraliza o que deveria delegar, delega sem acompanhar ou ignora uma parte relevante do problema, sem expor pessoas a risco."
+        },
+        {
+          "aderencia": 10,
+          "criterio": "Viola procedimento ou norma de segurança, expõe pessoas a risco, esconde informação do cliente ou compromete o contrato."
+        }
+      ],
+      "observar": [
+        {
+          "skill": "gestao-os",
+          "criterio": "Prioriza a OS pelo impacto (risco, SLA, cliente) e organiza a sequência de atendimento."
+        },
+        {
+          "skill": "gestao-equipe",
+          "criterio": "Escuta, alinha expectativas, trata o conflito pelo comportamento e não pela pessoa."
+        },
+        {
+          "skill": "comunicacao-cliente",
+          "criterio": "Informa o solicitante com clareza, prazo realista e sem esconder o problema."
+        },
+        {
+          "skill": "materiais-custos",
+          "criterio": "Garante material e ferramenta certos, no prazo, com atenção ao custo."
+        },
+        {
+          "skill": "decisao-pressao",
+          "criterio": "Decide com as informações disponíveis dentro do tempo, ponderando risco e impacto."
+        }
+      ]
+    },
+    "dificuldade_base": 2,
+    "perfil": {
+      "testes_considerados": 2,
+      "testes_provisorios": 1,
+      "skills": [
+        {
+          "skill": "delegacao",
+          "nivel": 2,
+          "tendencia": "caindo",
+          "testes": 2,
+          "provisorio": true,
+          "escolhas_fracas": 2,
+          "recorrente": true
+        },
+        {
+          "skill": "gestao-os",
+          "nivel": 4,
+          "tendencia": "subindo",
+          "testes": 2,
+          "provisorio": false,
+          "escolhas_fracas": 0,
+          "recorrente": false
+        }
+      ]
+    }
+  }
+}

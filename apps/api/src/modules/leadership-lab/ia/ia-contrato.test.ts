@@ -10,6 +10,7 @@ import {
   turnoDocumentado,
   usoExemplo
 } from "./ia-exemplos.js";
+import { contextoPedagogico } from "../motor/conversa.js";
 import {
   LIMITE_PALAVRAS_SITUACAO,
   aplicarGuarda,
@@ -872,5 +873,50 @@ describe("paridade com o serviço Python (services/lab-ia/tests/fixtures)", () =
   it("a resposta que o serviço devolve passa na validação do backend", () => {
     const r = validarConversaIa(lerFixture("conversa-resposta.json"));
     expect(r.ok, JSON.stringify(r)).toBe(true);
+  });
+
+  it("o pedido de abertura com contexto que o backend monta é o que o serviço aceita (e vice-versa)", () => {
+    const fixture = lerFixture("iniciar-pedido.json") as { contexto: unknown };
+    expect(iniciarSessaoIaRequestSchema.safeParse(fixture).success).toBe(true);
+    // O construtor real gera exatamente o contexto do fixture: mudou o formato, um dos lados reprova.
+    const perfil = {
+      testesConsiderados: 2,
+      testesProvisorios: 1,
+      dificuldadeSugerida: 2,
+      skills: [
+        {
+          skill: "delegacao",
+          nivel: 2,
+          tendencia: "caindo",
+          testes: 2,
+          provisorio: true,
+          escolhasFracas: 2,
+          recorrente: true
+        },
+        {
+          skill: "gestao-os",
+          nivel: 4,
+          tendencia: "subindo",
+          testes: 2,
+          provisorio: false,
+          escolhasFracas: 0,
+          recorrente: false
+        }
+      ]
+    } as never;
+    expect(contextoPedagogico("supervisor", perfil)).toEqual(fixture.contexto);
+  });
+
+  it("o contexto não aceita dado pessoal nem campo fora da lista", () => {
+    const { contexto, ...resto } = lerFixture("iniciar-pedido.json") as { contexto: Raiz };
+    for (const campo of ["nome", "email", "participante_id", "matricula", "cargo"]) {
+      expect(
+        iniciarSessaoIaRequestSchema.safeParse({
+          ...resto,
+          contexto: { ...contexto, [campo]: "x" }
+        }).success,
+        campo
+      ).toBe(false);
+    }
   });
 });

@@ -102,6 +102,34 @@ def normalizar_situacao(bruta: dict[str, Any], numero: int) -> dict[str, Any]:
     return {"publica": publica, "gabarito": gabarito, "rota": bruta.get("rota")}
 
 
+def dificuldade_alvo(numero: int, total: int, base: int) -> int:
+    """Dificuldade progressiva: as duas primeiras situações na base sugerida pelo histórico, as demais
+    um degrau acima (no máximo 3). Calculada aqui, em código: o modelo escreve para o alvo, mas não o escolhe."""
+    base = max(1, min(3, base))
+    return base if numero <= 2 else min(3, base + 1)
+
+
+def normalizar_base(bruta: Any, alvo: int, fontes_recuperadas: list[str], fundamentada: str) -> dict[str, Any]:
+    """A base pedagógica de uma situação, no formato do contrato.
+
+    - competências: só as do piloto, sem repetição, de 1 a 3 (o que não é skill conhecida é descartado);
+    - dificuldade: a do alvo, decidida pelo serviço;
+    - fontes: só ids que o serviço recuperou (o modelo não cita fonte que não lhe foi dada);
+    - fundamentação: calculada a partir do cadastro das fontes, nunca declarada pelo modelo.
+    """
+    bruta = bruta if isinstance(bruta, dict) else {}
+    competencias = _skills(bruta.get("competencias"))[:3]
+    if not competencias:
+        raise ViolacaoDoContrato("situacao.base.competencias: informe de 1 a 3 skills do piloto")
+    usadas = [i for i in dict.fromkeys(bruta.get("fontes_usadas") or []) if i in fontes_recuperadas][:3]
+    return {
+        "competencias": competencias,
+        "dificuldade": alvo,
+        "fontes": usadas,
+        "fundamentacao": fundamentada,
+    }
+
+
 def avaliacao_da_escolha(
     numero: int, escolha: str | None, gabarito: dict[str, Any], contribuicao: str | None
 ) -> dict[str, Any]:
@@ -207,6 +235,8 @@ __all__ = [
     "SITUACAO_DO_MARCO",
     "ViolacaoDoContrato",
     "avaliacao_da_escolha",
+    "dificuldade_alvo",
+    "normalizar_base",
     "normalizar_conversa",
     "normalizar_guarda",
     "normalizar_resultado",

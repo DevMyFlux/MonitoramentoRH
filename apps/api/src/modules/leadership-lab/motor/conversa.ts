@@ -83,6 +83,10 @@ export function contextoPedagogico(
       profundidade
     })),
     limite_tecnico: e.limiteTecnico,
+    rubrica: {
+      niveis: labRubrica.niveis.map((n) => ({ aderencia: n.aderencia, criterio: n.criterio })),
+      observar: e.foco.map((skill) => ({ skill, criterio: labRubrica.observar[skill] }))
+    },
     dificuldade_base: perfil?.dificuldadeSugerida ?? 1,
     perfil:
       perfil === null || perfil.testesConsiderados === 0
