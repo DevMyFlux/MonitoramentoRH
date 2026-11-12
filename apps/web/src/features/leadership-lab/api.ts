@@ -86,6 +86,9 @@ export const labApi = {
   /** Conversa com o facilitador sobre o próprio resultado. Nada da conversa é guardado. */
   conversar: (sessaoId: string, entrada: LabConversaEntrada) =>
     chamar(labConversaRespostaSchema, "POST", `${daSessao(sessaoId)}/conversa`, entrada),
+  /** Espaço de aprendizagem: dúvidas ao facilitador fora do teste. Nada é guardado. */
+  aprender: (entrada: LabConversaEntrada) =>
+    chamar(labConversaRespostaSchema, "POST", "/aprendizagem/conversa", entrada),
   resultado: (sessaoId: string) =>
     chamar(labResultadoSchema, "GET", `${daSessao(sessaoId)}/resultado`)
 };

@@ -104,7 +104,11 @@ describe("voz na conversa com o facilitador", () => {
 
   it("ler as respostas: desligado por padrão; ligado, fala a resposta e lembra a escolha", async () => {
     ligarVoz({ ditado: false });
-    conversar.mockResolvedValue({ desfecho: "respondida", resposta: "Foi a comunicação." });
+    conversar.mockResolvedValue({
+      desfecho: "respondida",
+      resposta: "Foi a comunicação.",
+      fontes: []
+    });
     renderizar(<ConversaComFacilitador sessaoId="s" />);
     const usuario = userEvent.setup();
 

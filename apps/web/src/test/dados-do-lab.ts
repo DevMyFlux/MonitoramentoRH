@@ -87,6 +87,7 @@ export function resultado(extra: Partial<LabResultado> = {}): LabResultado {
     sessaoId: "sessao-1",
     concluidaEm: AGORA,
     statusValidacao: "aguardando_validacao",
+    experimental: false,
     aderenciaGeral: 76,
     agilidade: 88.33,
     niveisPorSkill: [

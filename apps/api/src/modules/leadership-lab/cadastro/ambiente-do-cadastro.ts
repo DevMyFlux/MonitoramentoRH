@@ -48,14 +48,16 @@ export class AmbienteDoCadastro {
   }
   private operacaoDaBase!: Operacao;
 
-  static async subir(): Promise<AmbienteDoCadastro> {
+  static async subir(
+    config: Parameters<typeof configDeTeste>[0] = {}
+  ): Promise<AmbienteDoCadastro> {
     const banco = await prepararBanco();
     // A conexão do app (lib/prisma) é criada na primeira importação, lendo DATABASE_URL.
     process.env.DATABASE_URL = banco.db.url;
     const { buildApp } = await import("../../../app.js");
     const { prisma } = await import("../../../lib/prisma.js");
     const app = await buildApp({
-      lab: { ia: new IaFalsa(), config: configDeTeste(), agora: new RelogioFalso().agora }
+      lab: { ia: new IaFalsa(), config: configDeTeste(config), agora: new RelogioFalso().agora }
     });
 
     // O fixture cria o perfil COMUM; os demais perfis entram aqui.

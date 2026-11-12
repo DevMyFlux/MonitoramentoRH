@@ -53,7 +53,10 @@ const ordemDasSkills = new Map<string, number>(labSkillsPiloto.map((s, i) => [s.
 type FiltroDeStatus = "aguardando_validacao" | "validado" | "ajustado" | "todos";
 
 export class RevisaoDoLab {
-  constructor(private readonly db: PrismaClient) {}
+  constructor(
+    private readonly db: PrismaClient,
+    private readonly opcoes: { exigeBaseValidada?: boolean } = {}
+  ) {}
 
   /** Quanto espera uma decisão do curador. Alimenta os números das abas. */
   async pendencias(user: AuthenticatedUser, ator: LabAtor): Promise<LabPendencias> {
@@ -95,6 +98,7 @@ export class RevisaoDoLab {
         statusValidacao: true,
         aderenciaGeral: true,
         agilidade: true,
+        experimental: true,
         sessao: {
           select: {
             id: true,
@@ -140,6 +144,7 @@ export class RevisaoDoLab {
               sessaoId: l.sessao.id,
               concluidaEm: l.sessao.concluidaEm.toISOString(),
               statusValidacao: statusDeValidacao(l.statusValidacao),
+              experimental: l.experimental,
               participante: participanteResumido(l.sessao.participante),
               moldeNome: l.sessao.molde.nome,
               aderenciaGeral: l.aderenciaGeral,
@@ -202,10 +207,14 @@ export class RevisaoDoLab {
       await tx.$queryRaw`SELECT id FROM leadership_lab.resultado WHERE id = ${resultadoId}::uuid FOR UPDATE`;
       const resultado = await tx.labResultado.findUniqueOrThrow({
         where: { id: resultadoId },
-        select: { statusValidacao: true, sessaoId: true }
+        select: { statusValidacao: true, sessaoId: true, experimental: true }
       });
       if (resultado.statusValidacao !== "aguardando_validacao") {
         throw errosDaCuradoria.resultadoJaValidado();
+      }
+      // Com a trava ligada, resultado de situação sem base validada nunca vira oficial.
+      if (this.opcoes.exigeBaseValidada && resultado.experimental) {
+        throw errosDaCuradoria.resultadoExperimental();
       }
 
       const perfis = await tx.labPerfilSkill.findMany({ where: { sessaoId: resultado.sessaoId } });
@@ -349,6 +358,7 @@ export class RevisaoDoLab {
       sessaoId,
       concluidaEm: concluidaEm.toISOString(),
       statusValidacao: statusDeValidacao(resultado.statusValidacao),
+      experimental: resultado.experimental,
       participante: participanteResumido(resultado.sessao.participante),
       moldeNome: resultado.sessao.molde.nome,
       aderenciaGeral: resultado.aderenciaGeral,

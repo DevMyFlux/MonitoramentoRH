@@ -78,6 +78,16 @@ function FichaCompleta({ ficha }: { ficha: LabFichaDeRevisao }) {
           </div>
           <SeloDeValidacao status={ficha.statusValidacao} />
         </div>
+        {ficha.experimental ? (
+          <p
+            role="note"
+            className="rounded-lab-md border border-lab-info/20 bg-lab-info-suave p-3 text-lab-pequeno leading-6 text-lab-info-texto"
+          >
+            <strong className="font-semibold">Resultado experimental.</strong> Alguma situação deste
+            teste não tinha base validada (rubrica ou fontes). Considere o resultado ao decidir a
+            validação; ele não deve ser tratado como avaliação oficial.
+          </p>
+        ) : null}
         <div className="grid gap-4 sm:grid-cols-4">
           <Estatistica
             rotulo="Aderência geral"

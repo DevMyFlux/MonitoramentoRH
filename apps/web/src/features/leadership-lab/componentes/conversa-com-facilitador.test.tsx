@@ -5,14 +5,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../../my-flux/client";
 import { renderizar } from "../../../test/render";
 import { labApi } from "../api";
-import { ConversaComFacilitador } from "./conversa-com-facilitador";
+import { AprendizagemComFacilitador, ConversaComFacilitador } from "./conversa-com-facilitador";
 
 vi.mock("../api", async (importOriginal) => {
   const original = await importOriginal<typeof import("../api")>();
-  return { ...original, labApi: { conversar: vi.fn() } };
+  return { ...original, labApi: { conversar: vi.fn(), aprender: vi.fn() } };
 });
 
 const conversar = vi.mocked(labApi.conversar);
+const aprender = vi.mocked(labApi.aprender);
 
 function abrir() {
   return renderizar(<ConversaComFacilitador sessaoId="sessao-1" />);
@@ -35,7 +36,11 @@ describe("conversa com o facilitador", () => {
   });
 
   it("uma sugestão envia a pergunta e mostra a resposta; as sugestões somem", async () => {
-    conversar.mockResolvedValue({ desfecho: "respondida", resposta: "Foi a comunicação." });
+    conversar.mockResolvedValue({
+      desfecho: "respondida",
+      resposta: "Foi a comunicação.",
+      fontes: []
+    });
     abrir();
     await userEvent
       .setup()
@@ -52,8 +57,8 @@ describe("conversa com o facilitador", () => {
 
   it("Enter envia, Shift+Enter não; o histórico recente vai junto, sem a saudação", async () => {
     conversar
-      .mockResolvedValueOnce({ desfecho: "respondida", resposta: "Resposta 1." })
-      .mockResolvedValueOnce({ desfecho: "respondida", resposta: "Resposta 2." });
+      .mockResolvedValueOnce({ desfecho: "respondida", resposta: "Resposta 1.", fontes: [] })
+      .mockResolvedValueOnce({ desfecho: "respondida", resposta: "Resposta 2.", fontes: [] });
     abrir();
     const usuario = userEvent.setup();
     const caixa = screen.getByRole("textbox", { name: "Sua mensagem ao facilitador" });
@@ -83,9 +88,10 @@ describe("conversa com o facilitador", () => {
     conversar
       .mockResolvedValueOnce({
         desfecho: "bloqueada",
-        resposta: "Não consegui usar essa mensagem."
+        resposta: "Não consegui usar essa mensagem.",
+        fontes: []
       })
-      .mockResolvedValueOnce({ desfecho: "respondida", resposta: "Ok." });
+      .mockResolvedValueOnce({ desfecho: "respondida", resposta: "Ok.", fontes: [] });
     abrir();
     const usuario = userEvent.setup();
     const caixa = screen.getByRole("textbox", { name: "Sua mensagem ao facilitador" });
@@ -113,7 +119,11 @@ describe("conversa com o facilitador", () => {
     expect((caixa as HTMLTextAreaElement).value).toBe("Como fui?");
     expect(screen.queryByText("Como fui?", { selector: "p" })).toBeNull();
 
-    conversar.mockResolvedValueOnce({ desfecho: "respondida", resposta: "Você foi bem." });
+    conversar.mockResolvedValueOnce({
+      desfecho: "respondida",
+      resposta: "Você foi bem.",
+      fontes: []
+    });
     await usuario.keyboard("{Enter}");
     expect(await screen.findByText("Você foi bem.")).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
@@ -133,7 +143,7 @@ describe("conversa com o facilitador", () => {
   });
 
   it("não envia mensagem em branco nem duas ao mesmo tempo", async () => {
-    let responder!: (v: { desfecho: "respondida"; resposta: string }) => void;
+    let responder!: (v: { desfecho: "respondida"; resposta: string; fontes: [] }) => void;
     conversar.mockReturnValue(new Promise((r) => (responder = r)));
     abrir();
     const usuario = userEvent.setup();
@@ -145,7 +155,76 @@ describe("conversa com o facilitador", () => {
     await usuario.type(caixa, "de novo{Enter}");
     expect(conversar).toHaveBeenCalledTimes(1);
     expect(screen.getByText("O facilitador está escrevendo...")).toBeTruthy();
-    responder({ desfecho: "respondida", resposta: "Olá!" });
+    responder({ desfecho: "respondida", resposta: "Olá!", fontes: [] });
     await screen.findByText("Olá!");
+  });
+});
+
+const fonte = {
+  id: "sebrae-escuta-ativa",
+  titulo: "Escuta ativa",
+  instituicao: "Sebrae",
+  tipo: "material_educacional",
+  url: "https://exemplo.org/escuta",
+  validada: false
+} as const;
+
+describe("fontes citadas", () => {
+  it("mostra título, instituição, tipo, o aviso de não validada e o link", async () => {
+    conversar.mockResolvedValue({
+      desfecho: "respondida",
+      resposta: "Ouça mais.",
+      fontes: [fonte]
+    });
+    abrir();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Como fui no geral?" }));
+    const lista = await screen.findByRole("list", { name: "Fontes citadas" });
+    expect(lista.textContent).toContain("Escuta ativa");
+    expect(lista.textContent).toContain("Sebrae · Material educacional");
+    expect(lista.textContent).toContain("fonte ainda não validada");
+    const link = screen.getByRole("link", { name: /abrir fonte/ });
+    expect(link.getAttribute("href")).toBe("https://exemplo.org/escuta");
+    expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+  });
+
+  it("não cria link para endereço que não é https e omite o aviso se a fonte é validada", async () => {
+    conversar.mockResolvedValue({
+      desfecho: "respondida",
+      resposta: "Veja.",
+      fontes: [{ ...fonte, url: "javascript:alert(1)", validada: true }]
+    });
+    abrir();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Como fui no geral?" }));
+    const lista = await screen.findByRole("list", { name: "Fontes citadas" });
+    expect(screen.queryByRole("link", { name: /abrir fonte/ })).toBeNull();
+    expect(lista.textContent).not.toContain("não validada");
+  });
+});
+
+describe("espaço de aprendizagem", () => {
+  it("usa a rota de aprendizagem, sem sessão, e sugere perguntas de gestão", async () => {
+    aprender.mockResolvedValue({ desfecho: "respondida", resposta: "Feedback é...", fontes: [] });
+    renderizar(<AprendizagemComFacilitador />);
+    expect(screen.getByText(/Nada aqui vale como avaliação/)).toBeTruthy();
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Como dar um feedback difícil?" }));
+    expect(await screen.findByText("Feedback é...")).toBeTruthy();
+    expect(aprender).toHaveBeenCalledWith({
+      mensagem: "Como dar um feedback difícil?",
+      historico: []
+    });
+    expect(conversar).not.toHaveBeenCalled();
+  });
+
+  it("com um teste em andamento mostra o motivo e devolve a pergunta à caixa", async () => {
+    aprender.mockRejectedValue(
+      new ApiError("Há um teste em andamento.", 409, "LAB_APRENDIZAGEM_BLOQUEADA")
+    );
+    renderizar(<AprendizagemComFacilitador />);
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Como dar um feedback difícil?" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("Termine o teste antes");
   });
 });

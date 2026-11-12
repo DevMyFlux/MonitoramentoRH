@@ -45,9 +45,10 @@ type ComId = { Params: { id: string } };
 export async function registrarRotasDaCuradoria(
   app: FastifyInstance,
   users: UserRepository,
-  db: PrismaClient
+  db: PrismaClient,
+  opcoes: { exigeBaseValidada?: boolean } = {}
 ): Promise<void> {
-  const revisao = new RevisaoDoLab(db);
+  const revisao = new RevisaoDoLab(db, opcoes);
   const alertas = new AlertasDoLab(db);
   const contribuicoes = new ContribuicoesDoLab(db);
   const contestacoes = new ContestacoesDoLab(db);

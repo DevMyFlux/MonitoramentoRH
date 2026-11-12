@@ -137,6 +137,19 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
         }
       />
 
+      {painel.termo.aceito && painel.acao.tipo !== "continuar" ? (
+        <p className="text-lab-pequeno text-lab-tinta-2">
+          Quer estudar antes ou depois de um teste?{" "}
+          <Link
+            to="/lab/aprendizagem"
+            className="font-medium text-lab-destaque underline underline-offset-2"
+          >
+            Abrir o espaço de aprendizagem
+          </Link>
+          . Sem nota, com o facilitador.
+        </p>
+      ) : null}
+
       <section aria-label="Indicadores" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Estatistica
           rotulo="Testes feitos"

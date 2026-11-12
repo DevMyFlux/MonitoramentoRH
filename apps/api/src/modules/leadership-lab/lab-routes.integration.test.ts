@@ -928,6 +928,44 @@ describe.skipIf(!integrationEnabled)("rotas do Leadership Lab", () => {
       ).toBe(403);
     });
 
+    it("o espaço de aprendizagem: sem login 401, só participante, recusa durante o teste e responde sem resultado", async () => {
+      await montar(TOKEN_DO_SERVICO);
+      iaDoServico.respostaDaConversa = "Feedback é informação para melhorar.";
+      const u = await participante();
+      await chamar(appHttp!, u.token, "POST", "/termo");
+      const caminho = "/aprendizagem/conversa";
+
+      expect((await chamar(appHttp!, "", "POST", caminho, { mensagem: "Oi" })).statusCode).toBe(
+        401
+      );
+      const admin = await semVinculo("ADMIN");
+      expect(
+        (await chamar(appHttp!, admin.token, "POST", caminho, { mensagem: "Oi" })).statusCode
+      ).toBe(403);
+
+      // Fora do teste: responde, e o serviço recebe o modo aprendizagem sem resultado.
+      const r = await chamar(appHttp!, u.token, "POST", caminho, { mensagem: "O que é feedback?" });
+      expect(r.statusCode, r.body).toBe(200);
+      expect(r.json().data).toEqual({
+        desfecho: "respondida",
+        resposta: "Feedback é informação para melhorar.",
+        fontes: []
+      });
+      expect(r.headers["cache-control"]).toBe("no-store");
+      const corpo = servico!.requisicoes.at(-1)!.corpo as Record<string, unknown>;
+      expect(servico!.requisicoes.at(-1)!.caminho).toBe("/agentes/facilitador");
+      expect(corpo).toMatchObject({ modo: "aprendizagem", resultado: null });
+      expect(JSON.stringify(corpo)).not.toContain(u.participanteId!);
+
+      // Com um teste em andamento, não.
+      await chamar(appHttp!, u.token, "POST", "/sessoes");
+      const durante = await chamar(appHttp!, u.token, "POST", caminho, {
+        mensagem: "Me dá uma dica"
+      });
+      expect(durante.statusCode).toBe(409);
+      expect(durante.json()).toMatchObject({ code: "LAB_APRENDIZAGEM_BLOQUEADA" });
+    });
+
     it("token de serviço errado: o serviço recusa (401) e o participante recebe 502, sem o segredo", async () => {
       await montar("token-errado");
       const u = await participante();

@@ -97,6 +97,19 @@ function ResultadoCompleto({ resultado }: { resultado: LabResultado }) {
         </Revelar>
       ) : null}
 
+      {resultado.experimental ? (
+        <Revelar>
+          <p
+            role="note"
+            className="rounded-lab-lg border border-lab-info/20 bg-lab-info-suave p-4 text-lab-pequeno leading-6 text-lab-info-texto"
+          >
+            <strong className="font-semibold">Resultado experimental.</strong> Algumas situações
+            deste teste ainda não têm critérios validados pelo RH. Use-o para se desenvolver; ele
+            não vale como avaliação oficial.
+          </p>
+        </Revelar>
+      ) : null}
+
       <section aria-label="Números do teste" className="grid gap-4 sm:grid-cols-3">
         <Estatistica
           rotulo="Aderência geral"

@@ -15,6 +15,13 @@ export const errosDaCuradoria = {
       "Este resultado já foi validado. Uma validação não se refaz."
     ),
 
+  resultadoExperimental: () =>
+    new HttpError(
+      409,
+      "LAB_RESULTADO_EXPERIMENTAL",
+      "Este resultado usa situações sem base validada (experimental) e não pode ser validado como oficial."
+    ),
+
   justificativaObrigatoria: () =>
     new HttpError(
       422,

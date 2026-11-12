@@ -621,3 +621,34 @@ describe.skipIf(!integrationEnabled)("revisão dos resultados", () => {
     });
   });
 });
+
+describe.skipIf(!integrationEnabled)("revisão: resultado experimental", () => {
+  let amb: AmbienteDaCuradoria;
+  let rh: Pessoa;
+
+  beforeAll(async () => {
+    amb = await AmbienteDaCuradoria.subir({ exigeBaseValidada: true });
+    rh = await amb.curador();
+  }, 60_000);
+
+  afterAll(async () => {
+    await amb?.encerrar();
+  });
+
+  it("a ficha avisa que o resultado é experimental e, com a trava ligada, ele não é validado", async () => {
+    const p = await amb.participanteComTeste();
+    await amb.turmaCom(rh, [p]);
+    const f = await amb.http(rh, "GET", `/revisao/${p.resultadoId!}`);
+    expect(f.status, JSON.stringify(f.corpo)).toBe(200);
+    expect(labFichaDeRevisaoSchema.parse(f.corpo.data).experimental).toBe(true);
+
+    const r = await amb.http(rh, "POST", `/resultados/${p.resultadoId!}/validacao`, {});
+    expect(r.status).toBe(409);
+    expect(r.corpo.code ?? r.corpo.error?.code).toBe("LAB_RESULTADO_EXPERIMENTAL");
+    const [linha] = await amb.consulta(
+      "SELECT status_validacao FROM leadership_lab.resultado WHERE id = $1",
+      [p.resultadoId]
+    );
+    expect(linha?.status_validacao).toBe("aguardando_validacao");
+  });
+});

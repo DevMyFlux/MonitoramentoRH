@@ -35,6 +35,14 @@ export function useConversar(sessaoId: string) {
   });
 }
 
+/** Uma mensagem ao facilitador no espaço de aprendizagem (sem teste). */
+export function useAprender() {
+  return useMutation({
+    mutationFn: (entrada: LabConversaEntrada) => labApi.aprender(entrada),
+    retry: false
+  });
+}
+
 export function usePainel() {
   return useQuery({
     queryKey: chaves.painel,

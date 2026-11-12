@@ -26,6 +26,9 @@ const LabTestePage = lazy(() =>
 const LabResultadoPage = lazy(() =>
   import("./pages/lab/lab-resultado-page").then((m) => ({ default: m.LabResultadoPage }))
 );
+const LabAprendizagemPage = lazy(() =>
+  import("./pages/lab/lab-aprendizagem-page").then((m) => ({ default: m.LabAprendizagemPage }))
+);
 const LabParticipantesPage = lazy(() =>
   import("./pages/lab/rh/lab-participantes-page").then((m) => ({ default: m.LabParticipantesPage }))
 );
@@ -119,6 +122,14 @@ const router = createBrowserRouter([
     element: (
       <PaginaDoLab breadcrumbs={["Resultado"]}>
         <LabResultadoPage />
+      </PaginaDoLab>
+    )
+  },
+  {
+    path: "/lab/aprendizagem",
+    element: (
+      <PaginaDoLab breadcrumbs={["Aprendizagem"]}>
+        <LabAprendizagemPage />
       </PaginaDoLab>
     )
   },

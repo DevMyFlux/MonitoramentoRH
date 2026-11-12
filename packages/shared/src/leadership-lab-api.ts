@@ -322,7 +322,8 @@ export const labCodigosDeErro = [
   "LAB_TESTE_EM_ANDAMENTO",
   "LAB_IA_INDISPONIVEL",
   "LAB_IA_RESPOSTA_INVALIDA",
-  "LAB_CONVERSA_LIMITE"
+  "LAB_CONVERSA_LIMITE",
+  "LAB_APRENDIZAGEM_BLOQUEADA"
 ] as const;
 export type LabCodigoDeErro = (typeof labCodigosDeErro)[number];
 

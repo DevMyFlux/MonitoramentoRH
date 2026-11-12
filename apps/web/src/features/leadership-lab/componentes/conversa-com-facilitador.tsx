@@ -1,10 +1,18 @@
-import { type LabMensagemDaConversa, labConversaLimites } from "@my-flux/shared";
+import {
+  type LabConversaEntrada,
+  type LabConversaResposta,
+  type LabFonteCitada,
+  type LabMensagemDaConversa,
+  labConversaLimites,
+  labRotuloDoTipoDeFonte
+} from "@my-flux/shared";
+import type { UseMutationResult } from "@tanstack/react-query";
 import { Mic, MicOff, Send, Volume2 } from "lucide-react";
 import { motion } from "motion/react";
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { cn } from "../../../lib/cn";
 import { type ErroDaTela, descreverErro } from "../erros";
-import { useConversar } from "../hooks";
+import { useAprender, useConversar } from "../hooks";
 import { Button, Textarea } from "../ui";
 import { mola } from "../ui/movimento";
 import { useDitado, textoDoErroDoDitado } from "../voz/ditado";
@@ -14,15 +22,43 @@ import { AvatarFacilitador3D } from "./avatar-facilitador-3d";
 import type { EstadoDoAvatar } from "./avatar-facilitador";
 import { Cartao } from "./cartao";
 
-const SAUDACAO =
-  "Oi! Eu sou o facilitador. Posso comentar o seu resultado: o resumo, o ponto forte, o que desenvolver, os níveis por skill, as sugestões ou uma situação específica. O que você quer saber?";
+type Textos = {
+  titulo: string;
+  descricao: string;
+  saudacao: string;
+  sugestoes: readonly string[];
+  placeholder: string;
+};
 
-const SUGESTOES = [
-  "Como fui no geral?",
-  "Qual foi o meu ponto forte?",
-  "O que devo desenvolver?",
-  "Quais são as sugestões para mim?"
-] as const;
+const TEXTOS_DO_RESULTADO: Textos = {
+  titulo: "Converse com o facilitador",
+  descricao:
+    "Tire dúvidas sobre este resultado. O facilitador responde só com base nele, as respostas são geradas automaticamente e a conversa não é guardada. O que vale é a avaliação validada pelo RH.",
+  saudacao:
+    "Oi! Eu sou o facilitador. Posso comentar o seu resultado: o resumo, o ponto forte, o que desenvolver, os níveis por skill, as sugestões ou uma situação específica. O que você quer saber?",
+  sugestoes: [
+    "Como fui no geral?",
+    "Qual foi o meu ponto forte?",
+    "O que devo desenvolver?",
+    "Quais são as sugestões para mim?"
+  ],
+  placeholder: "Pergunte algo sobre o seu resultado..."
+};
+
+const TEXTOS_DA_APRENDIZAGEM: Textos = {
+  titulo: "Tire dúvidas com o facilitador",
+  descricao:
+    "Converse sobre gestão de pessoas e de equipes, do jeito que o seu cargo pede. As respostas são geradas automaticamente, citam as fontes quando há e a conversa não é guardada. Nada aqui vale como avaliação.",
+  saudacao:
+    "Oi! Eu sou o facilitador. Aqui você estuda sem nota: posso explicar conceitos de liderança, mostrar como agir em situações do seu dia a dia e indicar o que vale desenvolver. Sobre o que quer conversar?",
+  sugestoes: [
+    "Como dar um feedback difícil?",
+    "Como delegar sem perder o controle?",
+    "O que se espera do meu cargo?",
+    "Como priorizar quando tudo é urgente?"
+  ],
+  placeholder: "Pergunte algo sobre liderança no seu cargo..."
+};
 
 /** Quanto o facilitador "fala" (avatar) depois de uma resposta. */
 const DURACAO_DA_FALA_MS = 4000;
@@ -31,9 +67,13 @@ type Mensagem = {
   id: number;
   papel: LabMensagemDaConversa["papel"];
   texto: string;
+  /** Fontes que o facilitador citou (só as que o sistema recuperou). */
+  fontes?: readonly LabFonteCitada[];
   /** A Guarda não deixou a mensagem seguir: não volta no histórico. */
   bloqueada?: boolean;
 };
+
+type Conversar = UseMutationResult<LabConversaResposta, Error, LabConversaEntrada>;
 
 /**
  * A conversa com o facilitador, depois do resultado. O servidor responde só com base no resultado
@@ -41,7 +81,15 @@ type Mensagem = {
  * histórico recente vai junto a cada mensagem para o facilitador acompanhar o fio.
  */
 export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
-  const conversar = useConversar(sessaoId);
+  return <ConversaDoFacilitador conversar={useConversar(sessaoId)} textos={TEXTOS_DO_RESULTADO} />;
+}
+
+/** O mesmo facilitador fora do teste: dúvidas de gestão, sem resultado e sem nota. */
+export function AprendizagemComFacilitador() {
+  return <ConversaDoFacilitador conversar={useAprender()} textos={TEXTOS_DA_APRENDIZAGEM} />;
+}
+
+function ConversaDoFacilitador({ conversar, textos }: { conversar: Conversar; textos: Textos }) {
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [texto, setTexto] = useState("");
   const [falando, setFalando] = useState(false);
@@ -112,7 +160,13 @@ export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
             ...atuais.map((m) =>
               m.id === doParticipante.id && bloqueada ? { ...m, bloqueada } : m
             ),
-            { id: proximoId.current++, papel: "facilitador", texto: r.resposta, bloqueada }
+            {
+              id: proximoId.current++,
+              papel: "facilitador",
+              texto: r.resposta,
+              fontes: r.fontes,
+              bloqueada
+            }
           ]);
           setFalando(true);
           if (lerRespostas) fala.falar(r.resposta);
@@ -160,10 +214,7 @@ export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
   const semConversa = mensagens.length === 0;
 
   return (
-    <Cartao
-      titulo="Converse com o facilitador"
-      descricao="Tire dúvidas sobre este resultado. O facilitador responde só com base nele, as respostas são geradas automaticamente e a conversa não é guardada. O que vale é a avaliação validada pelo RH."
-    >
+    <Cartao titulo={textos.titulo} descricao={textos.descricao}>
       <div className="grid gap-6 md:grid-cols-[auto_minmax(0,1fr)]">
         <div className="mx-auto md:mx-0">
           <AvatarFacilitador3D estado={estado} tamanho={112} />
@@ -177,12 +228,13 @@ export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
             aria-live="polite"
             className="rolagem-fina max-h-96 space-y-3 overflow-y-auto pr-1"
           >
-            <Balao papel="facilitador">{SAUDACAO}</Balao>
+            <Balao papel="facilitador">{textos.saudacao}</Balao>
             {mensagens.map((m) => (
               <Balao
                 key={m.id}
                 papel={m.papel}
                 aviso={Boolean(m.bloqueada) && m.papel === "facilitador"}
+                fontes={m.fontes ?? []}
               >
                 {m.texto}
               </Balao>
@@ -210,7 +262,7 @@ export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
 
           {semConversa ? (
             <ul aria-label="Sugestões de perguntas" className="flex flex-wrap gap-2">
-              {SUGESTOES.map((s) => (
+              {textos.sugestoes.map((s) => (
                 <li key={s}>
                   <Button
                     size="sm"
@@ -299,7 +351,7 @@ export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
                 value={texto}
                 onChange={(e) => setTexto(e.target.value)}
                 onKeyDown={aoTeclar}
-                placeholder="Pergunte algo sobre o seu resultado..."
+                placeholder={textos.placeholder}
                 className="min-h-[3.25rem] flex-1 resize-none"
               />
               {ditado.suportado ? (
@@ -343,10 +395,12 @@ export function ConversaComFacilitador({ sessaoId }: { sessaoId: string }) {
 function Balao({
   papel,
   aviso = false,
+  fontes = [],
   children
 }: {
   papel: LabMensagemDaConversa["papel"];
   aviso?: boolean;
+  fontes?: readonly LabFonteCitada[];
   children: string;
 }) {
   const meu = papel === "participante";
@@ -355,7 +409,7 @@ function Balao({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={mola.suave}
-      className={cn("flex", meu && "justify-end")}
+      className={cn("flex flex-col gap-1.5", meu ? "items-end" : "items-start")}
     >
       <p
         className={cn(
@@ -370,6 +424,39 @@ function Balao({
         <span className="sr-only">{meu ? "Você: " : "Facilitador: "}</span>
         {children}
       </p>
+      {fontes.length > 0 ? <FontesCitadas fontes={fontes} /> : null}
     </motion.li>
+  );
+}
+
+/** Só título, instituição, tipo e link: nunca um trecho da fonte. Link só se for https. */
+function FontesCitadas({ fontes }: { fontes: readonly LabFonteCitada[] }) {
+  return (
+    <ul
+      aria-label="Fontes citadas"
+      className="max-w-[85%] space-y-1 text-lab-legenda text-lab-tinta-2"
+    >
+      {fontes.map((f) => (
+        <li key={f.id} className="flex flex-wrap items-center gap-x-2">
+          <span className="font-medium text-lab-tinta">{f.titulo}</span>
+          <span>
+            {f.instituicao} · {labRotuloDoTipoDeFonte[f.tipo]}
+          </span>
+          {f.validada ? null : (
+            <span className="text-lab-aviso-texto">(fonte ainda não validada)</span>
+          )}
+          {f.url !== null && f.url.startsWith("https://") ? (
+            <a
+              href={f.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-lab-destaque underline underline-offset-2"
+            >
+              abrir fonte<span className="sr-only"> ({f.titulo}), abre em nova aba</span>
+            </a>
+          ) : null}
+        </li>
+      ))}
+    </ul>
   );
 }

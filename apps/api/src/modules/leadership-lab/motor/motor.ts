@@ -50,7 +50,7 @@ import {
   validarTurnoIa
 } from "../ia/ia-contrato.js";
 import { type ClienteIa, type DesfechoDaChamada, chamarIa } from "./cliente-ia.js";
-import type { ConfigDoMotor } from "./config.js";
+import { type ConfigDoMotor, LIMITE_CONVERSAS_HORA_PADRAO } from "./config.js";
 import {
   iniciarEntradaSchema,
   responderEntradaSchema,
@@ -139,6 +139,7 @@ export class MotorDoTeste {
   private readonly relogio: () => Date;
   private readonly logger: LoggerDoMotor | undefined;
   private readonly temasDeSimulacao: ReadonlySet<string> | undefined;
+  private readonly mensagensDeAprendizagem = new Map<string, number[]>();
 
   constructor(dependencias: DependenciasDoMotor) {
     this.temasDeSimulacao = dependencias.temasDeSimulacao;
@@ -147,6 +148,11 @@ export class MotorDoTeste {
     this.config = dependencias.config;
     this.relogio = dependencias.agora ?? (() => new Date());
     this.logger = dependencias.logger;
+  }
+
+  /** A trava de resultado experimental está ligada (LAB_EXIGE_BASE_VALIDADA)? */
+  get exigeBaseValidada(): boolean {
+    return this.config.exigeBaseValidada === true;
   }
 
   /** Há simulação local (modo demonstração)? As rotas /simulador só existem se sim. */
@@ -495,6 +501,73 @@ export class MotorDoTeste {
       throw erros.limiteDaConversa(labConversaLimites.mensagensPorTeste);
     }
 
+    const visao = await this.montarVisaoDoResultado(sessao);
+    return this.responderComoFacilitador({
+      modo: "debriefing",
+      sessaoId,
+      participanteId: sessao.participanteId,
+      molde: sessao.molde.nivel as LabMoldeNivel,
+      entrada,
+      resultado: contextoDaConversa(visao)
+    });
+  }
+
+  /**
+   * Espaço de aprendizagem: o participante tira dúvidas com o facilitador FORA de um teste. Só com
+   * o termo aceito e nenhum teste em andamento (o facilitador nunca ajuda numa situação
+   * cronometrada), com teto de mensagens por hora. A IA recebe o cargo, a rubrica e o histórico
+   * resumido, nunca respostas de testes. Nada é gravado além dos metadados da chamada.
+   */
+  async aprender(ator: LabAtor, entradaBruta: unknown): Promise<LabConversaResposta> {
+    assertAcesso(ator, "aprendizagem:conversar");
+    const entrada = labConversaEntradaSchema.parse(entradaBruta);
+    const participanteId = this.participanteDe(ator);
+
+    if (await buscarSessaoAtiva(this.db, participanteId)) throw erros.aprendizagemBloqueada();
+    const resolvido = await resolverMoldeDoParticipante(this.db, participanteId);
+    if ("falta" in resolvido) {
+      throw resolvido.falta === "cargo" ? erros.cargoNaoInformado() : erros.moldeNaoMapeado();
+    }
+    this.reservarMensagemDeAprendizagem(participanteId);
+
+    return this.responderComoFacilitador({
+      modo: "aprendizagem",
+      sessaoId: null,
+      participanteId,
+      molde: resolvido.molde.nivel as LabMoldeNivel,
+      entrada,
+      resultado: null
+    });
+  }
+
+  /** Teto por hora, por participante, em memória (por instância): é freio de custo, não cota. */
+  private reservarMensagemDeAprendizagem(participanteId: string): void {
+    const limite = this.config.limiteConversasHora ?? LIMITE_CONVERSAS_HORA_PADRAO;
+    const agora = this.relogio().getTime();
+    const recentes = (this.mensagensDeAprendizagem.get(participanteId) ?? []).filter(
+      (t) => agora - t < 3_600_000
+    );
+    if (recentes.length >= limite) {
+      this.mensagensDeAprendizagem.set(participanteId, recentes);
+      throw erros.limiteDaAprendizagem(limite);
+    }
+    recentes.push(agora);
+    this.mensagensDeAprendizagem.set(participanteId, recentes);
+  }
+
+  /**
+   * Núcleo das duas conversas: passa cada mensagem do participante pela Guarda (falha fechada),
+   * monta o corpo estrito com o contexto pedagógico e valida a resposta antes de devolvê-la.
+   */
+  private async responderComoFacilitador(args: {
+    modo: "debriefing" | "aprendizagem";
+    sessaoId: string | null;
+    participanteId: string;
+    molde: LabMoldeNivel;
+    entrada: z.output<typeof labConversaEntradaSchema>;
+    resultado: ReturnType<typeof contextoDaConversa> | null;
+  }): Promise<LabConversaResposta> {
+    const { entrada, sessaoId } = args;
     const doParticipante = entrada.historico.filter((m) => m.papel === "participante");
     const [nova, ...antigas] = await Promise.all(
       [entrada.mensagem, ...doParticipante.map((m) => m.texto)].map((texto) =>
@@ -514,17 +587,16 @@ export class MotorDoTeste {
           : (doParticipante[i]?.texto ?? null)
     );
 
-    const visao = await this.montarVisaoDoResultado(sessao);
     const corpo = conversaIaRequestSchema.parse({
-      modo: "debriefing",
+      modo: args.modo,
       contexto: contextoPedagogico(
-        sessao.molde.nivel as LabMoldeNivel,
-        await this.perfilDoParticipante(sessao.participanteId, sessao.molde.nivel as LabMoldeNivel)
+        args.molde,
+        await this.perfilDoParticipante(args.participanteId, args.molde)
       ),
-      molde: sessao.molde.nivel,
+      molde: args.molde,
       mensagem,
       historico: historicoSeguro(entrada.historico, seguros),
-      resultado: contextoDaConversa(visao)
+      resultado: args.resultado
     });
     const desfecho = await chamarIa(() => this.ia.conversar(corpo), validarConversaIa);
     if (!desfecho.ok) {
@@ -845,7 +917,7 @@ export class MotorDoTeste {
    * fora do contrato, o texto é bloqueado e o teste segue sem ele.
    */
   private async filtrarTextoLivre(
-    sessaoId: string,
+    sessaoId: string | null,
     texto: string
   ): Promise<{ decisao: "seguir" | "mascarar" | "bloquear"; texto: string | null }> {
     const corpo = guardaIaRequestSchema.parse({ texto });

@@ -34,8 +34,10 @@ export function roteiroComAlertaNa(situacao: number, extra: Partial<Roteiro> = {
 export class AmbienteDaCuradoria {
   private constructor(readonly cad: AmbienteDoCadastro) {}
 
-  static async subir(): Promise<AmbienteDaCuradoria> {
-    return new AmbienteDaCuradoria(await AmbienteDoCadastro.subir());
+  static async subir(
+    config: Parameters<typeof AmbienteDoCadastro.subir>[0] = {}
+  ): Promise<AmbienteDaCuradoria> {
+    return new AmbienteDaCuradoria(await AmbienteDoCadastro.subir(config));
   }
 
   encerrar(): Promise<void> {
