@@ -659,7 +659,8 @@ describe.skipIf(!integrationEnabled)("motor do teste: proteções", () => {
     it("a IA só recebe o molde, os temas e a quantidade de situações", async () => {
       const c = await novoCenario(banco);
       await c.motor.iniciar(c.ator);
-      expect(JSON.parse(c.ia.corposPorAlvo.abrir[0]!)).toEqual({
+      const corpo = JSON.parse(c.ia.corposPorAlvo.abrir[0]!);
+      expect(corpo).toMatchObject({
         molde: "supervisor",
         temas: [
           "Prioridade de OS",
@@ -669,6 +670,10 @@ describe.skipIf(!integrationEnabled)("motor do teste: proteções", () => {
         ],
         numero_situacoes: 5
       });
+      // O contexto pedagógico vem do enquadramento do cargo; quem nunca fez teste não tem perfil.
+      expect(Object.keys(corpo).sort()).toEqual(["contexto", "molde", "numero_situacoes", "temas"]);
+      expect(corpo.contexto.perfil).toBeNull();
+      expect(corpo.contexto.dificuldade_base).toBe(1);
     });
 
     describe("limite de testes por dia", () => {
@@ -748,7 +753,7 @@ describe.skipIf(!integrationEnabled)("motor do teste: proteções", () => {
 
       // Nada mudou no teste da Ana, e a IA não foi chamada.
       expect(await turno1(sessaoId)).toMatchObject({ escolha: null, justificativa: null });
-      expect(bia.ia.chamadas).toEqual({ abrir: 0, turno: 0, guarda: 0 });
+      expect(bia.ia.chamadas).toEqual({ abrir: 0, turno: 0, guarda: 0, conversa: 0 });
       await expect(
         bia.motor.tempoEsgotado(bia.ator, sessaoId, { numero: 1 })
       ).rejects.toMatchObject({ statusCode: 404 });
@@ -916,7 +921,7 @@ describe.skipIf(!integrationEnabled)("motor do teste: proteções", () => {
       // E cada tipo de chamada só carrega os campos previstos.
       const chaves = (alvo: "abrir" | "turno" | "guarda") =>
         [...new Set(c.ia.corposPorAlvo[alvo].flatMap((b) => Object.keys(JSON.parse(b))))].sort();
-      expect(chaves("abrir")).toEqual(["molde", "numero_situacoes", "temas"]);
+      expect(chaves("abrir")).toEqual(["contexto", "molde", "numero_situacoes", "temas"]);
       expect(chaves("turno")).toEqual([
         "escolha",
         "numero",

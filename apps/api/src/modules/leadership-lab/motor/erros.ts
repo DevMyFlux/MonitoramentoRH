@@ -88,6 +88,30 @@ export const erros = {
       "O resultado só fica disponível depois da última situação."
     ),
 
+  /** O espaço de aprendizagem fecha enquanto há teste em andamento: não pode virar atalho de pistas. */
+  aprendizagemBloqueada: () =>
+    new HttpError(
+      409,
+      "LAB_APRENDIZAGEM_BLOQUEADA",
+      "Há um teste em andamento. O facilitador só ajuda depois que você concluir o teste."
+    ),
+
+  limiteDaAprendizagem: (limite: number) =>
+    new HttpError(
+      429,
+      "LAB_CONVERSA_LIMITE",
+      `Você atingiu ${limite} mensagens na última hora. Volte daqui a pouco.`,
+      { limite }
+    ),
+
+  limiteDaConversa: (limite: number) =>
+    new HttpError(
+      429,
+      "LAB_CONVERSA_LIMITE",
+      `Você já mandou ${limite} mensagens ao facilitador neste teste. Para dúvidas sobre o resultado, use a contestação.`,
+      { limite }
+    ),
+
   /** A IA não respondeu, ou respondeu fora do contrato. O participante pode tentar de novo. */
   ia: (codigo: CodigoDeFalhaIa) =>
     codigo === "CONTRATO"

@@ -1,7 +1,19 @@
 import type { LabPainel, LabSkillDoPainel } from "@my-flux/shared";
+import { ArrowRight } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Badge, LoadingState, Skeleton } from "../../components/ui";
+import {
+  Badge,
+  CabecalhoDePagina,
+  Escalonar,
+  LoadingState,
+  NivelEmSegmentos,
+  NumeroAnimado,
+  Revelar,
+  Skeleton,
+  useNotificar
+} from "../../features/leadership-lab/ui";
+import { classeDoBotao } from "../../features/leadership-lab/ui";
 import { cn } from "../../lib/cn";
 import { AcaoDoPainel } from "../../features/leadership-lab/componentes/acao-do-painel";
 import {
@@ -40,6 +52,8 @@ const AguardandoGrafico = () => (
   <Skeleton className="h-72 w-full" aria-label="Carregando gráfico" />
 );
 
+const comoPorcentagem = (n: number) => `${formatarNumero(n)}%`;
+
 export function LabPainelPage() {
   const painel = usePainel();
 
@@ -67,23 +81,22 @@ export function LabPainelPage() {
 
 function Pagina({ children }: { children: React.ReactNode }) {
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.13em] text-emerald-800">
-          MY FLUX · Desenvolvimento
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-950">Leadership Lab</h1>
-        <p className="mt-1 max-w-2xl text-sm text-slate-600">
-          Treine decisões de liderança com situações do dia a dia e acompanhe a sua evolução.
-        </p>
-      </div>
+    <Escalonar className="space-y-8">
+      <Revelar>
+        <CabecalhoDePagina
+          eyebrow="MY FLUX · Desenvolvimento"
+          titulo="Leadership Lab"
+          descricao="Treine decisões de liderança com situações do dia a dia e acompanhe a sua evolução."
+        />
+      </Revelar>
       {children}
-    </div>
+    </Escalonar>
   );
 }
 
 function PainelCompleto({ painel }: { painel: LabPainel }) {
   const navigate = useNavigate();
+  const notificar = useNotificar();
   const aceitarTermo = useAceitarTermo();
   const iniciar = useIniciarTeste();
   const { indicadores, evolucao } = painel;
@@ -96,7 +109,16 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
           versao={painel.termo.versaoAtual}
           aceitando={aceitarTermo.isPending}
           erro={aceitarTermo.error ? descreverErro(aceitarTermo.error) : null}
-          aoAceitar={() => aceitarTermo.mutate()}
+          aoAceitar={() =>
+            aceitarTermo.mutate(undefined, {
+              onSuccess: () =>
+                notificar({
+                  tom: "sucesso",
+                  titulo: "Termo registrado",
+                  descricao: "Você já pode iniciar o seu teste."
+                })
+            })
+          }
         />
       )}
 
@@ -115,11 +137,24 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
         }
       />
 
+      {painel.termo.aceito && painel.acao.tipo !== "continuar" ? (
+        <p className="text-lab-pequeno text-lab-tinta-2">
+          Quer estudar antes ou depois de um teste?{" "}
+          <Link
+            to="/lab/aprendizagem"
+            className="font-medium text-lab-destaque underline underline-offset-2"
+          >
+            Abrir o espaço de aprendizagem
+          </Link>
+          . Sem nota, com o facilitador.
+        </p>
+      ) : null}
+
       <section aria-label="Indicadores" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Estatistica
           rotulo="Testes feitos"
           href="#seus-testes"
-          valor={indicadores.testesFeitos}
+          valor={<NumeroAnimado valor={indicadores.testesFeitos} formatar={String} />}
           detalhe={
             indicadores.testesFeitos === 0
               ? "Faça o primeiro teste"
@@ -130,20 +165,30 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
           rotulo="Aderência média"
           href="#evolucao"
           valor={
-            indicadores.aderenciaMedia === null
-              ? "—"
-              : `${formatarNumero(indicadores.aderenciaMedia)}%`
+            indicadores.aderenciaMedia === null ? (
+              "—"
+            ) : (
+              <NumeroAnimado valor={indicadores.aderenciaMedia} formatar={comoPorcentagem} />
+            )
           }
+          {...(indicadores.aderenciaMedia === null
+            ? {}
+            : { anel: { valor: indicadores.aderenciaMedia } })}
           detalhe="Quanto suas escolhas combinam com o estilo adequado"
         />
         <Estatistica
           rotulo="Agilidade média"
           href="#evolucao"
           valor={
-            indicadores.agilidadeMedia === null
-              ? "—"
-              : `${formatarNumero(indicadores.agilidadeMedia)}%`
+            indicadores.agilidadeMedia === null ? (
+              "—"
+            ) : (
+              <NumeroAnimado valor={indicadores.agilidadeMedia} formatar={comoPorcentagem} />
+            )
           }
+          {...(indicadores.agilidadeMedia === null
+            ? {}
+            : { anel: { valor: indicadores.agilidadeMedia, tom: "info" as const } })}
           detalhe="Quão rápido você decide, dentro do tempo"
         />
         <Estatistica
@@ -153,118 +198,128 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
         />
       </section>
 
-      <Cartao
-        id="evolucao"
-        titulo="Sua evolução"
-        descricao="Aderência e agilidade de cada teste concluído."
-      >
-        {evolucao.pontos.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-            Sua evolução aparece aqui depois do primeiro teste concluído. Comece pelo bloco de
-            início, no topo da página.
-          </p>
-        ) : (
-          <>
-            <Suspense fallback={<AguardandoGrafico />}>
-              <GraficoDeEvolucao pontos={evolucao.pontos} />
-            </Suspense>
-            <details className="mt-4 text-sm">
-              <summary className="cursor-pointer text-slate-600 hover:text-emerald-800">
-                Ver os números em tabela
-              </summary>
-              <table className="mt-3 w-full text-left text-sm">
-                <thead className="text-xs uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="py-1 pr-3 font-medium">Teste</th>
-                    <th className="py-1 pr-3 font-medium">Data</th>
-                    <th className="py-1 pr-3 font-medium">Aderência</th>
-                    <th className="py-1 pr-3 font-medium">Agilidade</th>
-                    <th className="py-1 font-medium">Situação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dadosDaEvolucao(evolucao.pontos).map((p) => (
-                    <tr key={p.rotulo} className="border-t border-slate-100">
-                      <td className="py-1.5 pr-3">{p.rotulo}</td>
-                      <td className="py-1.5 pr-3">{p.data}</td>
-                      <td className="py-1.5 pr-3">{formatarNumero(p.aderencia)}%</td>
-                      <td className="py-1.5 pr-3">{formatarNumero(p.agilidade)}%</td>
-                      <td className="py-1.5">
-                        {p.aguardandoValidacao ? (
-                          <Badge tone="warning">Aguardando validação</Badge>
-                        ) : (
-                          <Badge tone="success">Validado</Badge>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </details>
-          </>
-        )}
-        {evolucao.tendenciaDisponivel ? null : (
-          <p className="mt-4 text-xs text-slate-500">
-            A tendência da sua evolução aparece depois de 3 testes concluídos (você fez{" "}
-            {indicadores.testesFeitos}).
-          </p>
-        )}
-      </Cartao>
-
-      <Cartao
-        id="seus-testes"
-        titulo="Seus testes"
-        descricao="Abra um resultado para rever as suas escolhas, o nível validado pelo RH e, se discordar de algum ponto, contestar."
-      >
-        {evolucao.pontos.length === 0 ? (
-          <p className="text-sm text-slate-500">
-            Quando você concluir um teste, ele aparece aqui, com o link para o resultado.
-          </p>
-        ) : (
-          <ul className="divide-y divide-slate-100">
-            {[...evolucao.pontos].reverse().map((ponto) => (
-              <li
-                key={ponto.resultadoId}
-                className="flex flex-wrap items-center justify-between gap-2 py-2.5"
-              >
-                <div className="flex flex-wrap items-center gap-3 text-sm">
-                  <span className="font-medium text-slate-900">
-                    {formatarDataEHora(ponto.concluidaEm)}
-                  </span>
-                  <span className="text-slate-600">
-                    Aderência {formatarNumero(ponto.aderenciaGeral)}%
-                  </span>
-                  <SeloDeValidacao status={ponto.statusValidacao} />
+      <div className="grid items-start gap-8 xl:grid-cols-3">
+        <Cartao
+          id="evolucao"
+          className="xl:col-span-2"
+          titulo="Sua evolução"
+          descricao="Aderência e agilidade de cada teste concluído."
+        >
+          {evolucao.pontos.length === 0 ? (
+            <p className="rounded-lab-md border border-dashed border-lab-linha-forte bg-lab-superficie-2 p-5 text-lab-pequeno leading-6 text-lab-tinta-2">
+              Sua evolução aparece aqui depois do primeiro teste concluído. Comece pelo bloco de
+              início, no topo da página.
+            </p>
+          ) : (
+            <>
+              <Suspense fallback={<AguardandoGrafico />}>
+                <GraficoDeEvolucao pontos={evolucao.pontos} />
+              </Suspense>
+              <details className="group mt-5 text-lab-pequeno">
+                <summary className="inline-flex cursor-pointer items-center gap-1.5 text-lab-tinta-2 transition-colors hover:text-lab-destaque-texto">
+                  Ver os números em tabela
+                </summary>
+                <div className="rolagem-fina mt-3 overflow-x-auto">
+                  <table className="w-full text-left text-lab-pequeno">
+                    <thead className="text-lab-legenda text-lab-tinta-2">
+                      <tr>
+                        <th className="py-2 pr-4 font-medium">Teste</th>
+                        <th className="py-2 pr-4 font-medium">Data</th>
+                        <th className="py-2 pr-4 font-medium">Aderência</th>
+                        <th className="py-2 pr-4 font-medium">Agilidade</th>
+                        <th className="py-2 font-medium">Situação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dadosDaEvolucao(evolucao.pontos).map((p) => (
+                        <tr key={p.rotulo} className="border-t border-lab-linha">
+                          <td className="py-2.5 pr-4">{p.rotulo}</td>
+                          <td className="py-2.5 pr-4">{p.data}</td>
+                          <td className="tabular py-2.5 pr-4">{formatarNumero(p.aderencia)}%</td>
+                          <td className="tabular py-2.5 pr-4">{formatarNumero(p.agilidade)}%</td>
+                          <td className="py-2.5">
+                            {p.aguardandoValidacao ? (
+                              <Badge tone="warning">Aguardando validação</Badge>
+                            ) : (
+                              <Badge tone="success">Validado</Badge>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <Link
-                  to={`/lab/resultado/${ponto.sessaoId}`}
-                  aria-label={`Ver o resultado do teste de ${formatarDataEHora(ponto.concluidaEm)}`}
-                  className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+              </details>
+            </>
+          )}
+          {evolucao.tendenciaDisponivel ? null : (
+            <p className="mt-5 text-lab-legenda text-lab-tinta-2">
+              A tendência da sua evolução aparece depois de 3 testes concluídos (você fez{" "}
+              {indicadores.testesFeitos}).
+            </p>
+          )}
+        </Cartao>
+
+        <Cartao
+          id="seus-testes"
+          titulo="Seus testes"
+          descricao="Abra um resultado para rever as suas escolhas, o nível validado pelo RH e, se discordar de algum ponto, contestar."
+        >
+          {evolucao.pontos.length === 0 ? (
+            <p className="text-lab-pequeno text-lab-tinta-2">
+              Quando você concluir um teste, ele aparece aqui, com o link para o resultado.
+            </p>
+          ) : (
+            <ul className="rolagem-fina -my-1 max-h-[26rem] divide-y divide-lab-linha overflow-y-auto pr-1">
+              {[...evolucao.pontos].reverse().map((ponto) => (
+                <li
+                  key={ponto.resultadoId}
+                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3.5"
                 >
-                  Ver resultado
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Cartao>
+                  <div className="min-w-0 space-y-1">
+                    <p className="tabular text-lab-pequeno font-medium text-lab-tinta">
+                      {formatarDataEHora(ponto.concluidaEm)}
+                    </p>
+                    <p className="flex flex-wrap items-center gap-2 text-lab-pequeno text-lab-tinta-2">
+                      <span>Aderência {formatarNumero(ponto.aderenciaGeral)}%</span>
+                      <SeloDeValidacao status={ponto.statusValidacao} />
+                    </p>
+                  </div>
+                  <Link
+                    to={`/lab/resultado/${ponto.sessaoId}`}
+                    aria-label={`Ver o resultado do teste de ${formatarDataEHora(ponto.concluidaEm)}`}
+                    className={cn(classeDoBotao("secondary", "sm"), "group")}
+                  >
+                    Ver resultado
+                    <ArrowRight
+                      size={14}
+                      aria-hidden="true"
+                      className="transition-transform duration-lab group-hover:translate-x-0.5 motion-reduce:transition-none"
+                    />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Cartao>
+      </div>
 
       <Cartao
         id="skills"
         titulo="Suas skills"
         descricao="O nível mais recente de cada skill, de 1 a 5. O nível validado pelo RH, quando houver, substitui o calculado."
       >
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-8 lg:grid-cols-2">
           {painel.skills.some((s) => s.nivel !== null) ? (
             <Suspense fallback={<AguardandoGrafico />}>
               <RadarDeSkills skills={painel.skills} />
             </Suspense>
           ) : (
-            <p className="self-center text-sm text-slate-500">
+            <p className="self-center text-lab-pequeno text-lab-tinta-2">
               O radar das suas skills aparece depois do primeiro teste concluído.
             </p>
           )}
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-lab-linha">
             {painel.skills.map((skill) => (
               <LinhaDeSkill key={skill.skillId} skill={skill} />
             ))}
@@ -272,32 +327,61 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
         </div>
       </Cartao>
 
-      <Cartao
-        titulo="Seu estilo de liderança"
-        descricao="Como você costuma conduzir a equipe, a partir das suas escolhas."
-      >
-        {painel.tipoDePerfil.disponivel ? (
-          <QuadranteDeEstilos perfil={painel.tipoDePerfil} />
-        ) : (
-          <p className="text-sm text-slate-600">
-            Seu perfil aparece depois de {painel.tipoDePerfil.testesNecessarios} testes concluídos.
-            Você fez {painel.tipoDePerfil.testesFeitos}.
-          </p>
-        )}
-      </Cartao>
+      <div className="grid gap-8 xl:grid-cols-2">
+        <Cartao
+          className={painel.sugestoes.itens.length > 0 ? "" : "xl:col-span-2"}
+          titulo="Seu estilo de liderança"
+          descricao="Como você costuma conduzir a equipe, a partir das suas escolhas."
+        >
+          {painel.tipoDePerfil.disponivel ? (
+            <QuadranteDeEstilos perfil={painel.tipoDePerfil} />
+          ) : (
+            <p className="text-lab-pequeno leading-6 text-lab-tinta-2">
+              Seu perfil aparece depois de {painel.tipoDePerfil.testesNecessarios} testes
+              concluídos. Você fez {painel.tipoDePerfil.testesFeitos}.
+            </p>
+          )}
+        </Cartao>
+
+        {painel.sugestoes.itens.length > 0 ? (
+          <Cartao
+            titulo="Sugestões para você"
+            {...(painel.sugestoes.origem
+              ? { acao: <SeloDeValidacao status={painel.sugestoes.origem.statusValidacao} /> }
+              : {})}
+            descricao={
+              painel.sugestoes.origem
+                ? `Do seu teste de ${formatarDataCurta(painel.sugestoes.origem.concluidaEm)}.`
+                : "Do seu último teste."
+            }
+          >
+            <ul className="space-y-3">
+              {painel.sugestoes.itens.map((sugestao) => (
+                <li key={sugestao} className="flex gap-3 text-lab-pequeno leading-6 text-lab-tinta">
+                  <span
+                    aria-hidden="true"
+                    className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-lab-destaque"
+                  />
+                  {sugestao}
+                </li>
+              ))}
+            </ul>
+          </Cartao>
+        ) : null}
+      </div>
 
       {painel.alertas.length > 0 ? (
         <Cartao
           titulo="Alertas abertos"
           descricao="Pontos que merecem atenção, vindos de testes concluídos."
         >
-          <ul className="space-y-3">
+          <ul className="divide-y divide-lab-linha">
             {painel.alertas.map((alerta) => (
               <li
                 key={alerta.id}
-                className="flex flex-wrap items-center gap-3 text-sm text-slate-700"
+                className="flex flex-wrap items-center gap-3 py-3 text-lab-pequeno text-lab-tinta"
               >
-                <Badge tone={alerta.cor === "vermelho" ? "danger" : "warning"}>
+                <Badge dot tone={alerta.cor === "vermelho" ? "danger" : "warning"}>
                   {nomeDoAlerta[alerta.cor]}
                 </Badge>
                 <span>
@@ -313,26 +397,6 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
           </ul>
         </Cartao>
       ) : null}
-
-      {painel.sugestoes.itens.length > 0 ? (
-        <Cartao
-          titulo="Sugestões para você"
-          {...(painel.sugestoes.origem
-            ? { acao: <SeloDeValidacao status={painel.sugestoes.origem.statusValidacao} /> }
-            : {})}
-          descricao={
-            painel.sugestoes.origem
-              ? `Do seu teste de ${formatarDataCurta(painel.sugestoes.origem.concluidaEm)}.`
-              : "Do seu último teste."
-          }
-        >
-          <ul className="list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
-            {painel.sugestoes.itens.map((sugestao) => (
-              <li key={sugestao}>{sugestao}</li>
-            ))}
-          </ul>
-        </Cartao>
-      ) : null}
     </>
   );
 }
@@ -340,26 +404,26 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
 function LinhaDeSkill({ skill }: { skill: LabSkillDoPainel }) {
   const nivel = skill.nivel;
   return (
-    <li className="flex flex-wrap items-center justify-between gap-2 py-2.5">
-      <div>
-        <p className="text-sm font-medium text-slate-900">{skill.nome}</p>
-        <p className="text-xs text-slate-500">{nomeDoTipoDeSkill[skill.tipo]}</p>
+    <li className="flex flex-wrap items-center justify-between gap-2 py-3.5">
+      <div className="min-w-0 space-y-1">
+        <p className="text-lab-pequeno font-medium text-lab-tinta">{skill.nome}</p>
+        <p className="flex flex-wrap items-center gap-2 text-lab-legenda text-lab-tinta-2">
+          {nomeDoTipoDeSkill[skill.tipo]}
+          {nivel === null || skill.validado ? null : (
+            <Badge tone="warning">Aguardando validação</Badge>
+          )}
+        </p>
       </div>
       {nivel === null ? (
-        <span className="text-xs text-slate-500">Sem evidência ainda</span>
+        <span className="text-lab-legenda text-lab-tinta-2">Sem evidência ainda</span>
       ) : (
         <div className="flex items-center gap-3">
-          {skill.validado ? null : <Badge tone="warning">Aguardando validação</Badge>}
           <span className="sr-only">Nível {nivel} de 5</span>
-          <span aria-hidden="true" className="flex gap-0.5">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <span
-                key={n}
-                className={cn("h-2 w-4 rounded-sm", n <= nivel ? "bg-emerald-600" : "bg-slate-200")}
-              />
-            ))}
-          </span>
-          <span aria-hidden="true" className="w-8 text-right text-sm font-semibold text-slate-900">
+          <NivelEmSegmentos nivel={nivel} />
+          <span
+            aria-hidden="true"
+            className="tabular w-8 text-right text-lab-pequeno font-semibold text-lab-tinta"
+          >
             {nivel}/5
           </span>
         </div>

@@ -31,7 +31,9 @@ describe("holidaysOfMonth", () => {
   it("adds the São Paulo dates for HMB only", () => {
     expect(holidaysOfMonth(2027, 1, "HMB").map((h) => h.day)).toEqual([1, 25]);
     expect(holidaysOfMonth(2027, 1, "HETRIN").map((h) => h.day)).toEqual([1]);
-    expect(holidaysOfMonth(2026, 7, "HMB")).toEqual([{ day: 9, name: "Revolução Constitucionalista (feriado estadual)" }]);
+    expect(holidaysOfMonth(2026, 7, "HMB")).toEqual([
+      { day: 9, name: "Revolução Constitucionalista (feriado estadual)" }
+    ]);
     expect(holidaysOfMonth(2026, 7, "HETRIN")).toEqual([]);
   });
 

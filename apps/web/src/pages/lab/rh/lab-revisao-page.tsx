@@ -11,8 +11,9 @@ import {
   TableCell,
   TableHead,
   TableHeaderCell,
-  TableRow
-} from "../../../components/ui";
+  TableRow,
+  classeDoBotao
+} from "../../../features/leadership-lab/ui";
 import { IdentificacaoDoParticipante } from "../../../features/leadership-lab/cadastro/situacao-de-curadoria";
 import { LayoutDoAcompanhamento } from "../../../features/leadership-lab/cadastro/layout-do-acompanhamento";
 import { ErroDaTelaDoLab } from "../../../features/leadership-lab/componentes/erro-da-tela";
@@ -104,7 +105,9 @@ function TabelaDaRevisao({ itens }: { itens: LabItemDaRevisao[] }) {
               <IdentificacaoDoParticipante {...item.participante} />
             </TableCell>
             <TableCell>{item.moldeNome}</TableCell>
-            <TableCell>{formatarDataEHora(item.concluidaEm)}</TableCell>
+            <TableCell className="tabular whitespace-nowrap">
+              {formatarDataEHora(item.concluidaEm)}
+            </TableCell>
             <TableCell>{formatarNumero(item.aderenciaGeral)}%</TableCell>
             <TableCell>{formatarNumero(item.agilidade)}%</TableCell>
             <TableCell>
@@ -130,7 +133,7 @@ function TabelaDaRevisao({ itens }: { itens: LabItemDaRevisao[] }) {
               <Link
                 to={`/lab/rh/revisao/${item.resultadoId}`}
                 aria-label={`Revisar o resultado de ${item.participante.nome}`}
-                className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+                className={classeDoBotao("secondary", "sm")}
               >
                 {item.statusValidacao === "aguardando_validacao" ? "Revisar" : "Abrir"}
               </Link>

@@ -1,0 +1,18 @@
+{
+  "id": "enap-lideranca-gestao-equipes",
+  "titulo": "Liderança e Gestão de Equipes",
+  "instituicao": "ENAP",
+  "tipo": "material_educacional",
+  "categoria": "Desenvolvimento gerencial",
+  "assunto": "liderança e gestão de equipes",
+  "competencias": [
+    "gestao-equipe",
+    "decisao-pressao",
+    "delegacao"
+  ],
+  "cargos": [],
+  "conteudo_extraido": false,
+  "pontos_chave": [],
+  "validada": false,
+  "observacoes": "Indicado pelo negócio; título e URL a confirmar. Conteúdo ainda não ingerido."
+}

@@ -76,8 +76,8 @@ describe("Cronometro", () => {
 
   it("fica vermelho nos últimos 10 segundos", () => {
     montar(15_000);
-    expect(screen.getByRole("timer").className).not.toContain("text-red");
+    expect(screen.getByRole("timer").dataset.urgente).toBeUndefined();
     avancar(5_000);
-    expect(screen.getByRole("timer").className).toContain("text-red");
+    expect(screen.getByRole("timer").dataset.urgente).toBe("true");
   });
 });

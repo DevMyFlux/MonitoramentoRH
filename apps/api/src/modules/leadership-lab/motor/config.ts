@@ -25,9 +25,18 @@ export type ConfigDoMotor = {
    * painel avisa a tela. Ausente ou falso em produção normal.
    */
   demonstracao?: boolean;
+  /**
+   * Resultado de teste com situação experimental não pode ser validado como oficial pelo RH
+   * (LAB_EXIGE_BASE_VALIDADA=true). Padrão falso: o resultado é marcado como experimental e o RH
+   * decide. Ligue quando a rubrica e as fontes estiverem validadas.
+   */
+  exigeBaseValidada?: boolean;
+  /** Mensagens ao facilitador por participante por hora, fora de um teste (LAB_LIMITE_CONVERSAS_HORA). */
+  limiteConversasHora?: number;
 };
 
 export const IA_TIMEOUT_PADRAO_MS = 25_000;
+export const LIMITE_CONVERSAS_HORA_PADRAO = 30;
 export const FUSO_PADRAO = "America/Sao_Paulo";
 
 export class ConfigDoLabInvalida extends Error {
@@ -62,6 +71,10 @@ export function lerConfigDoLab(env: Record<string, string | undefined>): ConfigD
     );
   }
   return {
+    exigeBaseValidada: env.LAB_EXIGE_BASE_VALIDADA?.trim().toLowerCase() === "true",
+    limiteConversasHora:
+      numero(env, "LAB_LIMITE_CONVERSAS_HORA", { inteiro: true, minimo: 1 }) ??
+      LIMITE_CONVERSAS_HORA_PADRAO,
     toleranciaTempoS,
     limiteTestesDia: numero(env, "LAB_LIMITE_TESTES_DIA", { inteiro: true, minimo: 1 }) ?? null,
     versaoTermo: labTermoVersaoAtual,

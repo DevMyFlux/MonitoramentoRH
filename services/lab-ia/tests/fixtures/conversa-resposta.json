@@ -1,0 +1,11 @@
+{
+  "resposta": "Na situação 2 o tempo acabou antes de você decidir, então ela contou como omissão.",
+  "fontes": [],
+  "uso": {
+    "agente": "facilitador",
+    "modelo": "gemini-3.5-flash",
+    "versao_instrucao": "lab-ia-diagnostico-2026-11-05.1",
+    "tokens_entrada": 1200,
+    "tokens_saida": 60
+  }
+}

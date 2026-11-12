@@ -1,11 +1,12 @@
 import type { LabAcaoDoPainel } from "@my-flux/shared";
+import { labSituacaoDoMarco } from "@my-flux/shared";
 import { Play } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Button } from "../../../components/ui";
+import { BotaoLink, Button } from "../ui";
 import type { ErroDaTela } from "../erros";
 import { motivoDeIndisponibilidade } from "../rotulos";
-import { Cartao } from "./cartao";
+import { CartaoDeTreinamento } from "./cartao-de-treinamento";
 import { EscolhaDoProblema } from "./escolha-do-problema";
+import { MapaDoCaminho } from "./mapa-do-caminho";
 
 type AcaoDoPainelProps = {
   acao: LabAcaoDoPainel;
@@ -27,27 +28,41 @@ export function AcaoDoPainel({
 }: AcaoDoPainelProps) {
   if (acao.tipo === "continuar") {
     return (
-      <Cartao titulo="Você tem um teste em andamento">
-        <p className="text-sm leading-6 text-slate-600">
-          Você parou na situação {acao.situacaoAtual} de {acao.totalSituacoes} ({acao.molde.nome}).
-          O tempo de cada situação não para enquanto você está fora.
-        </p>
-        <Link to="/lab/teste" className="mt-4 inline-block">
-          <Button icon={<Play size={16} aria-hidden="true" />}>Continuar teste</Button>
-        </Link>
-      </Cartao>
+      <CartaoDeTreinamento
+        eyebrow="Em andamento"
+        titulo="Você tem um teste em andamento"
+        descricao={`Você parou na situação ${acao.situacaoAtual} de ${acao.totalSituacoes} (${acao.molde.nome}). O tempo de cada situação não para enquanto você está fora.`}
+        lateral={
+          <MapaDoCaminho
+            total={acao.totalSituacoes}
+            atual={acao.situacaoAtual}
+            marco={labSituacaoDoMarco}
+            compacto
+          />
+        }
+        acao={
+          <BotaoLink to="/lab/teste" size="lg" icon={<Play size={16} aria-hidden="true" />}>
+            Continuar teste
+          </BotaoLink>
+        }
+      />
     );
   }
 
   if (acao.tipo === "indisponivel") {
     const motivo = motivoDeIndisponibilidade[acao.motivo];
     return (
-      <Cartao titulo={motivo.titulo}>
-        <p className="text-sm leading-6 text-slate-600">{motivo.descricao(acao.limiteDiario)}</p>
-        <Button className="mt-4" disabled icon={<Play size={16} aria-hidden="true" />}>
-          Iniciar teste
-        </Button>
-      </Cartao>
+      <CartaoDeTreinamento
+        tom="neutro"
+        eyebrow="Indisponível agora"
+        titulo={motivo.titulo}
+        descricao={motivo.descricao(acao.limiteDiario)}
+        acao={
+          <Button size="lg" disabled icon={<Play size={16} aria-hidden="true" />}>
+            Iniciar teste
+          </Button>
+        }
+      />
     );
   }
 
@@ -63,27 +78,29 @@ export function AcaoDoPainel({
   }
 
   return (
-    <Cartao titulo="Pronto para o próximo teste">
-      <p className="text-sm leading-6 text-slate-600">
-        Teste de {acao.molde.nome}. Cada situação tem um tempo limite, que começa a contar assim que
-        ela aparece na tela.
-      </p>
+    <CartaoDeTreinamento
+      eyebrow="Próximo treinamento"
+      titulo="Pronto para o próximo teste"
+      descricao={`Teste de ${acao.molde.nome}. Cada situação tem um tempo limite, que começa a contar assim que ela aparece na tela.`}
+      acao={
+        <Button
+          size="lg"
+          loading={iniciando}
+          onClick={() => aoIniciar()}
+          icon={<Play size={16} aria-hidden="true" />}
+        >
+          {iniciando ? "Iniciando..." : "Iniciar teste"}
+        </Button>
+      }
+    >
       {erroAoIniciar ? (
         <p
           role="alert"
-          className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+          className="mt-4 rounded-lab-md border border-lab-perigo/20 bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
         >
           {erroAoIniciar.titulo}. {erroAoIniciar.descricao}
         </p>
       ) : null}
-      <Button
-        className="mt-4"
-        disabled={iniciando}
-        onClick={() => aoIniciar()}
-        icon={<Play size={16} aria-hidden="true" />}
-      >
-        {iniciando ? "Iniciando..." : "Iniciar teste"}
-      </Button>
-    </Cartao>
+    </CartaoDeTreinamento>
   );
 }

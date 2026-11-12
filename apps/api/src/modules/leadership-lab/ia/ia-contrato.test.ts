@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   type Json,
@@ -9,14 +10,17 @@ import {
   turnoDocumentado,
   usoExemplo
 } from "./ia-exemplos.js";
+import { contextoPedagogico } from "../motor/conversa.js";
 import {
   LIMITE_PALAVRAS_SITUACAO,
   aplicarGuarda,
+  conversaIaRequestSchema,
   guardaIaRequestSchema,
   iniciarSessaoIaRequestSchema,
   proximoTurnoIaRequestSchema,
   turnoIaSchema,
   validarAberturaIa,
+  validarConversaIa,
   validarTurnoIa
 } from "./ia-contrato.js";
 
@@ -676,6 +680,7 @@ describe("requisições para a IA", () => {
 
   it("os campos que chegam à IA são exatamente estes (a lista fechada)", () => {
     expect(Object.keys(iniciarSessaoIaRequestSchema.shape).sort()).toEqual([
+      "contexto",
       "molde",
       "numero_situacoes",
       "temas"
@@ -763,5 +768,155 @@ describe("requisições para a IA", () => {
       false
     );
     expect(guardaIaRequestSchema.safeParse({ texto: "  " }).success).toBe(false);
+  });
+});
+
+describe("conversa com o facilitador", () => {
+  const resultado = {
+    resumo: "Você conduziu o turno.",
+    ponto_forte: "Comunicação.",
+    ponto_desenvolvimento: null,
+    sugestoes: ["Registre o aviso."],
+    skills: [{ skill: "gestao-os", nivel: 4 }],
+    situacoes: [
+      {
+        numero: 1,
+        marco: false,
+        texto: "Cenário.",
+        opcoes: [
+          { id: "A", texto: "a" },
+          { id: "B", texto: "b" },
+          { id: "C", texto: "c" }
+        ],
+        escolha: "A",
+        tempo_esgotado: false,
+        justificativa: "Boa."
+      }
+    ]
+  };
+  const pedido = {
+    modo: "debriefing",
+    contexto: null,
+    molde: "supervisor",
+    mensagem: "Como fui?",
+    historico: [],
+    resultado
+  };
+
+  it("o pedido é uma lista fechada de campos: nome, aderência e ids não passam", () => {
+    expect(conversaIaRequestSchema.safeParse(pedido).success).toBe(true);
+    for (const extra of [{ nome: "Ana" }, { aderencia: 100 }, { participante_id: "x" }]) {
+      expect(conversaIaRequestSchema.safeParse({ ...pedido, ...extra }).success).toBe(false);
+    }
+    expect(
+      conversaIaRequestSchema.safeParse({
+        ...pedido,
+        resultado: {
+          ...resultado,
+          situacoes: [{ ...resultado.situacoes[0], aderencia: 100 }]
+        }
+      }).success
+    ).toBe(false);
+  });
+
+  it("respeita os limites: mensagem, histórico e papéis", () => {
+    expect(
+      conversaIaRequestSchema.safeParse({ ...pedido, mensagem: "x".repeat(501) }).success
+    ).toBe(false);
+    const msg = { papel: "participante", texto: "oi" };
+    expect(
+      conversaIaRequestSchema.safeParse({ ...pedido, historico: Array(7).fill(msg) }).success
+    ).toBe(false);
+    expect(
+      conversaIaRequestSchema.safeParse({
+        ...pedido,
+        historico: [{ papel: "sistema", texto: "oi" }]
+      }).success
+    ).toBe(false);
+  });
+
+  it("a resposta precisa de texto e do bloco uso do facilitador", () => {
+    const uso = {
+      agente: "facilitador",
+      modelo: "m",
+      versao_instrucao: "1",
+      tokens_entrada: 1,
+      tokens_saida: 1
+    };
+    const ok = { resposta: "Olá.", fontes: [], uso };
+    expect(validarConversaIa(ok).ok).toBe(true);
+    expect(validarConversaIa({ ...ok, resposta: "  " }).ok).toBe(false);
+    expect(validarConversaIa({ ...ok, uso: { ...uso, agente: "guarda" } }).ok).toBe(false);
+    expect(validarConversaIa({ ...ok, aderencia: 100 }).ok).toBe(false);
+    expect(validarConversaIa({ resposta: "Olá.", uso }).ok).toBe(false); // fontes é obrigatório
+    expect(validarConversaIa(null).ok).toBe(false);
+  });
+});
+
+describe("paridade com o serviço Python (services/lab-ia/tests/fixtures)", () => {
+  // Os mesmos arquivos são lidos por tests/simular_facilitador.py: se um lado mudar o formato, o
+  // outro teste reprova.
+  const lerFixture = (nome: string): unknown =>
+    JSON.parse(
+      readFileSync(
+        new URL(`../../../../../../services/lab-ia/tests/fixtures/${nome}`, import.meta.url),
+        "utf8"
+      )
+    );
+
+  it("o pedido que o serviço aceita é um pedido válido para o backend", () => {
+    expect(conversaIaRequestSchema.safeParse(lerFixture("conversa-pedido.json")).success).toBe(
+      true
+    );
+  });
+
+  it("a resposta que o serviço devolve passa na validação do backend", () => {
+    const r = validarConversaIa(lerFixture("conversa-resposta.json"));
+    expect(r.ok, JSON.stringify(r)).toBe(true);
+  });
+
+  it("o pedido de abertura com contexto que o backend monta é o que o serviço aceita (e vice-versa)", () => {
+    const fixture = lerFixture("iniciar-pedido.json") as { contexto: unknown };
+    expect(iniciarSessaoIaRequestSchema.safeParse(fixture).success).toBe(true);
+    // O construtor real gera exatamente o contexto do fixture: mudou o formato, um dos lados reprova.
+    const perfil = {
+      testesConsiderados: 2,
+      testesProvisorios: 1,
+      dificuldadeSugerida: 2,
+      skills: [
+        {
+          skill: "delegacao",
+          nivel: 2,
+          tendencia: "caindo",
+          testes: 2,
+          provisorio: true,
+          escolhasFracas: 2,
+          recorrente: true
+        },
+        {
+          skill: "gestao-os",
+          nivel: 4,
+          tendencia: "subindo",
+          testes: 2,
+          provisorio: false,
+          escolhasFracas: 0,
+          recorrente: false
+        }
+      ]
+    } as never;
+    expect(contextoPedagogico("supervisor", perfil)).toEqual(fixture.contexto);
+  });
+
+  it("o contexto não aceita dado pessoal nem campo fora da lista", () => {
+    const { contexto, ...resto } = lerFixture("iniciar-pedido.json") as { contexto: Raiz };
+    for (const campo of ["nome", "email", "participante_id", "matricula", "cargo"]) {
+      expect(
+        iniciarSessaoIaRequestSchema.safeParse({
+          ...resto,
+          contexto: { ...contexto, [campo]: "x" }
+        }).success,
+        campo
+      ).toBe(false);
+    }
   });
 });

@@ -66,9 +66,15 @@ function goodFriday(year: number): { month: number; day: number } {
 }
 
 /** Holidays that fall in a month (1-12), sorted by day, for the given unit code. */
-export function holidaysOfMonth(year: number, month: number, unitCode?: string | null): ScheduleHoliday[] {
+export function holidaysOfMonth(
+  year: number,
+  month: number,
+  unitCode?: string | null
+): ScheduleHoliday[] {
   const fixed = [...nationalHolidays, ...(unitCode ? (unitHolidays[unitCode] ?? []) : [])];
-  const found: ScheduleHoliday[] = fixed.filter((h) => h.month === month).map((h) => ({ day: h.day, name: h.name }));
+  const found: ScheduleHoliday[] = fixed
+    .filter((h) => h.month === month)
+    .map((h) => ({ day: h.day, name: h.name }));
   const friday = goodFriday(year);
   if (friday.month === month) found.push({ day: friday.day, name: "Sexta-feira Santa" });
   return found.sort((a, b) => a.day - b.day);

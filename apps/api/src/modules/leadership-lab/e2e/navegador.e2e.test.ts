@@ -107,6 +107,15 @@ describe.skipIf(!ligado)("Leadership Lab no navegador", () => {
     ).toBe(5);
     await capturar(page, "05-resultado");
 
+    // A conversa com o facilitador: pergunta pronta, resposta do serviço (falso), nada guardado.
+    ambiente.ia.respostaDaConversa = "Resposta do facilitador no e2e.";
+    await page.getByRole("button", { name: "Qual foi o meu ponto forte?" }).click();
+    await page.getByText("Resposta do facilitador no e2e.").waitFor();
+    expect(await page.getByRole("log", { name: "Conversa com o facilitador" }).isVisible()).toBe(
+      true
+    );
+    await capturar(page, "05b-conversa");
+
     // De volta ao painel: o teste já está nos números.
     await page.getByRole("link", { name: "Voltar ao painel" }).click();
     await page.waitForURL("**/lab");

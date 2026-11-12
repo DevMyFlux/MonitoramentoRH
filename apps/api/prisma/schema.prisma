@@ -1281,6 +1281,9 @@ model LabSessao {
   modo           String          @default("dinamico")
   /// Identificador opaco da conversa no serviço de IA. Nunca é o id do usuário.
   iaSessaoId     String?         @unique @map("ia_sessao_id")
+  /// A versão da rubrica com que o teste foi conduzido, e a dificuldade-base que o histórico sugeriu.
+  rubricaVersao  String?         @map("rubrica_versao")
+  dificuldade    Int?            @db.SmallInt
   status         String          @default("em_andamento")
   iniciadaEm     DateTime        @default(now()) @map("iniciada_em") @db.Timestamptz(3)
   concluidaEm    DateTime?       @map("concluida_em") @db.Timestamptz(3)
@@ -1324,6 +1327,9 @@ model LabTurno {
   /// Reserva enquanto a IA é consultada para este turno. Nulo = ninguém processando;
   /// vencida = quem reservou morreu e outra requisição pode assumir.
   processandoAte  DateTime? @map("processando_ate") @db.Timestamptz(3)
+  /// Competências, dificuldade e fontes da situação, e se ela é validada ou experimental.
+  basePedagogica  Json?     @map("base_pedagogica")
+  fundamentacao   String?
   skills          LabTurnoSkill[]
   alertas         LabAlerta[]
   contribuicao    LabContribuicao?
@@ -1362,6 +1368,8 @@ model LabResultado {
   pontoDesenvolvimento  String?   @map("ponto_desenvolvimento")
   sugestoes             Json      @default("[]")
   respostaIa            Json      @map("resposta_ia")
+  /// Alguma situação do teste era experimental: o resultado não vale como oficial.
+  experimental          Boolean   @default(false)
   statusValidacao       String    @default("aguardando_validacao") @map("status_validacao")
   validadoPor           String?   @map("validado_por") @db.Uuid
   validadoEm            DateTime? @map("validado_em") @db.Timestamptz(3)

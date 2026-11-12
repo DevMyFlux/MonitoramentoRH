@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { lazy, Suspense } from "react";
+import React, { lazy } from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, Navigate, RouterProvider, Link } from "react-router-dom";
@@ -14,7 +14,6 @@ import { MonthlySchedulePage } from "./pages/monthly-schedule-page";
 import { UsersPage } from "./pages/users-page";
 import { EmployeesPage } from "./pages/employees-page";
 import { HomeRedirect } from "./pages/home-redirect";
-import { LoadingState } from "./components/ui";
 import "./styles.css";
 
 // Leadership Lab: páginas carregadas sob demanda (o painel traz a biblioteca de gráficos).
@@ -26,6 +25,9 @@ const LabTestePage = lazy(() =>
 );
 const LabResultadoPage = lazy(() =>
   import("./pages/lab/lab-resultado-page").then((m) => ({ default: m.LabResultadoPage }))
+);
+const LabAprendizagemPage = lazy(() =>
+  import("./pages/lab/lab-aprendizagem-page").then((m) => ({ default: m.LabAprendizagemPage }))
 );
 const LabParticipantesPage = lazy(() =>
   import("./pages/lab/rh/lab-participantes-page").then((m) => ({ default: m.LabParticipantesPage }))
@@ -54,6 +56,12 @@ const LabContribuicoesPage = lazy(() =>
 const LabConfigPage = lazy(() =>
   import("./pages/lab/lab-config-page").then((m) => ({ default: m.LabConfigPage }))
 );
+// O layout do Lab (menu, topo e transições do design system do módulo) também é sob demanda: o
+// Motion e os estilos dele não pesam nas outras áreas do sistema. A espera das páginas (Suspense)
+// fica dentro dele.
+const LabShell = lazy(() =>
+  import("./features/leadership-lab/layout/lab-shell").then((m) => ({ default: m.LabShell }))
+);
 function PaginaDoLab({
   breadcrumbs,
   children
@@ -62,8 +70,8 @@ function PaginaDoLab({
   children: React.ReactNode;
 }) {
   return (
-    <App breadcrumbs={["MY FLUX", "Leadership Lab", ...breadcrumbs]}>
-      <Suspense fallback={<LoadingState />}>{children}</Suspense>
+    <App layout={LabShell} breadcrumbs={["MY FLUX", "Leadership Lab", ...breadcrumbs]}>
+      {children}
     </App>
   );
 }
@@ -114,6 +122,14 @@ const router = createBrowserRouter([
     element: (
       <PaginaDoLab breadcrumbs={["Resultado"]}>
         <LabResultadoPage />
+      </PaginaDoLab>
+    )
+  },
+  {
+    path: "/lab/aprendizagem",
+    element: (
+      <PaginaDoLab breadcrumbs={["Aprendizagem"]}>
+        <LabAprendizagemPage />
       </PaginaDoLab>
     )
   },

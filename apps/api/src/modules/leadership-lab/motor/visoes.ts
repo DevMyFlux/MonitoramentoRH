@@ -136,6 +136,8 @@ export type VisaoDoResultado = {
   pontoDesenvolvimento: string | null;
   sugestoes: string[];
   situacoes: SituacaoDoResultado[];
+  /** Alguma situação era experimental: o resultado não vale como oficial. */
+  experimental: boolean;
 };
 
 const niveisDoBanco = z.record(
@@ -157,6 +159,7 @@ export function visaoDoResultado(args: {
     | "pontoForte"
     | "pontoDesenvolvimento"
     | "sugestoes"
+    | "experimental"
   >;
   turnos: ReadonlyArray<
     Pick<
@@ -205,6 +208,7 @@ export function visaoDoResultado(args: {
     pontoForte: resultado.pontoForte,
     pontoDesenvolvimento: resultado.pontoDesenvolvimento,
     sugestoes: textosDoBanco.parse(resultado.sugestoes),
+    experimental: resultado.experimental,
     situacoes: [...turnos]
       .sort((a, b) => a.numero - b.numero)
       .map((t) => ({

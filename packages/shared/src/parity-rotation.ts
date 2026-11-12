@@ -87,7 +87,10 @@ export function effectiveParity(
   referenceMonth: string | null | undefined,
   targetMonth: string
 ): ParityGroup {
-  const inversions = parityInversionsBetween(referenceMonth || DEFAULT_PARITY_REFERENCE_MONTH, targetMonth);
+  const inversions = parityInversionsBetween(
+    referenceMonth || DEFAULT_PARITY_REFERENCE_MONTH,
+    targetMonth
+  );
   if (inversions % 2 === 0) return registered;
   return registered === "ODD" ? "EVEN" : "ODD";
 }

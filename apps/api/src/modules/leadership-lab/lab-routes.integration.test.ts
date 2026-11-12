@@ -874,6 +874,98 @@ describe.skipIf(!integrationEnabled)("rotas do Leadership Lab", () => {
       }
     });
 
+    it("a conversa com o facilitador passa pela Guarda e pelo serviço, e só depois do resultado", async () => {
+      await montar(TOKEN_DO_SERVICO);
+      iaDoServico.respostaDaConversa = "Seu ponto forte foi a comunicação.";
+      const u = await participante();
+      await chamar(appHttp!, u.token, "POST", "/termo");
+      const { sessaoId } = (await chamar(appHttp!, u.token, "POST", "/sessoes")).json().data;
+      const caminho = `/sessoes/${sessaoId}/conversa`;
+
+      // Durante o teste, não.
+      const cedo = await chamar(appHttp!, u.token, "POST", caminho, { mensagem: "Oi" });
+      expect(cedo.statusCode).toBe(409);
+      expect(cedo.json()).toMatchObject({ code: "LAB_TESTE_EM_ANDAMENTO" });
+
+      for (const n of [1, 2, 3, 4, 5]) {
+        aguardar(10_000);
+        await chamar(appHttp!, u.token, "POST", `/sessoes/${sessaoId}/respostas`, {
+          numero: n,
+          escolha: "A"
+        });
+      }
+
+      const r = await chamar(appHttp!, u.token, "POST", caminho, {
+        mensagem: "Qual foi o meu ponto forte?"
+      });
+      expect(r.statusCode, r.body).toBe(200);
+      expect(r.json().data).toEqual({
+        desfecho: "respondida",
+        resposta: "Seu ponto forte foi a comunicação.",
+        fontes: []
+      });
+      expect(r.headers["cache-control"]).toBe("no-store");
+
+      const caminhos = servico!.requisicoes.map((x) => x.caminho).slice(-2);
+      expect(caminhos).toEqual(["/agentes/guarda", "/agentes/facilitador"]);
+      const enviado = JSON.stringify(servico!.requisicoes.at(-1)!.corpo);
+      for (const pessoal of [u.id, u.participanteId!, sessaoId, `${u.id}@teste.local`]) {
+        expect(enviado).not.toContain(pessoal);
+      }
+
+      // Campo desconhecido, outro perfil e sessão alheia.
+      expect(
+        (await chamar(appHttp!, u.token, "POST", caminho, { mensagem: "Oi", aderencia: 1 }))
+          .statusCode
+      ).toBe(400);
+      const outro = await participante();
+      expect(
+        (await chamar(appHttp!, outro.token, "POST", caminho, { mensagem: "Oi" })).statusCode
+      ).toBe(404);
+      const admin = await semVinculo("ADMIN");
+      expect(
+        (await chamar(appHttp!, admin.token, "POST", caminho, { mensagem: "Oi" })).statusCode
+      ).toBe(403);
+    });
+
+    it("o espaço de aprendizagem: sem login 401, só participante, recusa durante o teste e responde sem resultado", async () => {
+      await montar(TOKEN_DO_SERVICO);
+      iaDoServico.respostaDaConversa = "Feedback é informação para melhorar.";
+      const u = await participante();
+      await chamar(appHttp!, u.token, "POST", "/termo");
+      const caminho = "/aprendizagem/conversa";
+
+      expect((await chamar(appHttp!, "", "POST", caminho, { mensagem: "Oi" })).statusCode).toBe(
+        401
+      );
+      const admin = await semVinculo("ADMIN");
+      expect(
+        (await chamar(appHttp!, admin.token, "POST", caminho, { mensagem: "Oi" })).statusCode
+      ).toBe(403);
+
+      // Fora do teste: responde, e o serviço recebe o modo aprendizagem sem resultado.
+      const r = await chamar(appHttp!, u.token, "POST", caminho, { mensagem: "O que é feedback?" });
+      expect(r.statusCode, r.body).toBe(200);
+      expect(r.json().data).toEqual({
+        desfecho: "respondida",
+        resposta: "Feedback é informação para melhorar.",
+        fontes: []
+      });
+      expect(r.headers["cache-control"]).toBe("no-store");
+      const corpo = servico!.requisicoes.at(-1)!.corpo as Record<string, unknown>;
+      expect(servico!.requisicoes.at(-1)!.caminho).toBe("/agentes/facilitador");
+      expect(corpo).toMatchObject({ modo: "aprendizagem", resultado: null });
+      expect(JSON.stringify(corpo)).not.toContain(u.participanteId!);
+
+      // Com um teste em andamento, não.
+      await chamar(appHttp!, u.token, "POST", "/sessoes");
+      const durante = await chamar(appHttp!, u.token, "POST", caminho, {
+        mensagem: "Me dá uma dica"
+      });
+      expect(durante.statusCode).toBe(409);
+      expect(durante.json()).toMatchObject({ code: "LAB_APRENDIZAGEM_BLOQUEADA" });
+    });
+
     it("token de serviço errado: o serviço recusa (401) e o participante recebe 502, sem o segredo", async () => {
       await montar("token-errado");
       const u = await participante();

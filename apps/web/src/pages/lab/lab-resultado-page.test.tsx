@@ -67,6 +67,21 @@ describe("tela de resultado", () => {
     expect(screen.getAllByText("Aguardando validação").length).toBeGreaterThan(0);
   });
 
+  it("resultado experimental: avisa que não vale como avaliação oficial", async () => {
+    api.resultado.mockResolvedValue(resultado({ experimental: true }));
+    abrir();
+    expect(
+      (await screen.findByText("Resultado experimental.")).closest("[role=note]")
+    ).toBeTruthy();
+  });
+
+  it("resultado com base validada: sem o aviso de experimental", async () => {
+    api.resultado.mockResolvedValue(resultado({ experimental: false }));
+    abrir();
+    await screen.findByText("Aderência geral");
+    expect(screen.queryByText("Resultado experimental.")).toBeNull();
+  });
+
   it("validado pelo RH: selo de validado e sem o aviso", async () => {
     api.resultado.mockResolvedValue(resultado({ statusValidacao: "validado" }));
     abrir();

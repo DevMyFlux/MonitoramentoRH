@@ -1,10 +1,22 @@
 import type { LabResultado, LabSituacaoDoResultado } from "@my-flux/shared";
 import { ArrowLeft, FlaskConical } from "lucide-react";
 import { lazy, Suspense } from "react";
-import { Link, useParams } from "react-router-dom";
-import { Badge, Button, LoadingState, Skeleton } from "../../components/ui";
+import { useParams } from "react-router-dom";
+import {
+  Badge,
+  BotaoLink,
+  CabecalhoDePagina,
+  Escalonar,
+  Expansivel,
+  LoadingState,
+  NivelEmSegmentos,
+  NumeroAnimado,
+  Revelar,
+  Skeleton
+} from "../../features/leadership-lab/ui";
 import { cn } from "../../lib/cn";
 import { Cartao, Estatistica } from "../../features/leadership-lab/componentes/cartao";
+import { ConversaComFacilitador } from "../../features/leadership-lab/componentes/conversa-com-facilitador";
 import { ContestarResultado } from "../../features/leadership-lab/componentes/contestar-resultado";
 import { ErroDaTelaDoLab } from "../../features/leadership-lab/componentes/erro-da-tela";
 import { SeloDeValidacao } from "../../features/leadership-lab/componentes/selo-de-validacao";
@@ -24,12 +36,12 @@ const MapaDeDecisoes = lazy(() =>
 );
 
 const VoltarAoPainel = () => (
-  <Link to="/lab">
-    <Button variant="secondary" icon={<ArrowLeft size={16} aria-hidden="true" />}>
-      Voltar ao painel
-    </Button>
-  </Link>
+  <BotaoLink to="/lab" variant="secondary" icon={<ArrowLeft size={16} aria-hidden="true" />}>
+    Voltar ao painel
+  </BotaoLink>
 );
+
+const comoPorcentagem = (n: number) => `${formatarNumero(n)}%`;
 
 export function LabResultadoPage() {
   const { sessaoId = "" } = useParams();
@@ -50,15 +62,15 @@ export function LabResultadoPage() {
 
 function ResultadoCompleto({ resultado }: { resultado: LabResultado }) {
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.13em] text-emerald-800">
-            Leadership Lab
-          </p>
-          <h1 className="mt-2 text-2xl font-semibold text-slate-950">Resultado do teste</h1>
+    <Escalonar className="mx-auto max-w-4xl space-y-8">
+      <Revelar>
+        <CabecalhoDePagina
+          eyebrow="Leadership Lab"
+          titulo="Resultado do teste"
+          acao={<SeloDeValidacao status={resultado.statusValidacao} />}
+        >
           {resultado.simulacao ? (
-            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-700">
+            <p className="mt-3 flex flex-wrap items-center gap-2 text-lab-pequeno text-lab-tinta">
               <Badge tone="info" className="gap-1">
                 <FlaskConical size={12} aria-hidden="true" /> Simulação local
               </Badge>
@@ -66,55 +78,71 @@ function ResultadoCompleto({ resultado }: { resultado: LabResultado }) {
             </p>
           ) : null}
           {resultado.concluidaEm ? (
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1.5 text-lab-pequeno text-lab-tinta-2">
               Concluído em {formatarDataEHora(resultado.concluidaEm)}
             </p>
           ) : null}
-        </div>
-        <SeloDeValidacao status={resultado.statusValidacao} />
-      </div>
+        </CabecalhoDePagina>
+      </Revelar>
 
       {resultado.statusValidacao === "aguardando_validacao" ? (
-        <p
-          role="note"
-          className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
-        >
-          Este resultado ainda será validado pelo RH. Só depois disso ele passa a fazer parte do seu
-          histórico oficial.
-        </p>
+        <Revelar>
+          <p
+            role="note"
+            className="rounded-lab-lg border border-lab-aviso/20 bg-lab-aviso-suave p-4 text-lab-pequeno leading-6 text-lab-aviso-texto"
+          >
+            Este resultado ainda será validado pelo RH. Só depois disso ele passa a fazer parte do
+            seu histórico oficial.
+          </p>
+        </Revelar>
+      ) : null}
+
+      {resultado.experimental ? (
+        <Revelar>
+          <p
+            role="note"
+            className="rounded-lab-lg border border-lab-info/20 bg-lab-info-suave p-4 text-lab-pequeno leading-6 text-lab-info-texto"
+          >
+            <strong className="font-semibold">Resultado experimental.</strong> Algumas situações
+            deste teste ainda não têm critérios validados pelo RH. Use-o para se desenvolver; ele
+            não vale como avaliação oficial.
+          </p>
+        </Revelar>
       ) : null}
 
       <section aria-label="Números do teste" className="grid gap-4 sm:grid-cols-3">
         <Estatistica
           rotulo="Aderência geral"
-          valor={`${formatarNumero(resultado.aderenciaGeral)}%`}
+          valor={<NumeroAnimado valor={resultado.aderenciaGeral} formatar={comoPorcentagem} />}
+          anel={{ valor: resultado.aderenciaGeral }}
           detalhe="Quanto suas escolhas combinam com o estilo adequado"
         />
         <Estatistica
           rotulo="Agilidade"
-          valor={`${formatarNumero(resultado.agilidade)}%`}
+          valor={<NumeroAnimado valor={resultado.agilidade} formatar={comoPorcentagem} />}
+          anel={{ valor: resultado.agilidade, tom: "info" }}
           detalhe="Quão rápido você decidiu, dentro do tempo"
         />
         <Estatistica rotulo="Situações" valor={resultado.situacoes.length} />
       </section>
 
       <Cartao titulo="Resumo">
-        <p className="text-sm leading-6 text-slate-700">{resultado.resumo}</p>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <p className="text-lab-corpo leading-7 text-lab-tinta">{resultado.resumo}</p>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
           {resultado.pontoForte ? (
-            <div className="rounded-lg bg-emerald-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
-                Ponto forte
+            <div className="rounded-lab-md bg-lab-sucesso-suave p-5">
+              <p className="text-lab-legenda font-semibold text-lab-sucesso-texto">Ponto forte</p>
+              <p className="mt-1.5 text-lab-pequeno leading-6 text-lab-tinta">
+                {resultado.pontoForte}
               </p>
-              <p className="mt-1 text-sm leading-6 text-slate-800">{resultado.pontoForte}</p>
             </div>
           ) : null}
           {resultado.pontoDesenvolvimento ? (
-            <div className="rounded-lg bg-amber-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
+            <div className="rounded-lab-md bg-lab-aviso-suave p-5">
+              <p className="text-lab-legenda font-semibold text-lab-aviso-texto">
                 Ponto de desenvolvimento
               </p>
-              <p className="mt-1 text-sm leading-6 text-slate-800">
+              <p className="mt-1.5 text-lab-pequeno leading-6 text-lab-tinta">
                 {resultado.pontoDesenvolvimento}
               </p>
             </div>
@@ -124,7 +152,7 @@ function ResultadoCompleto({ resultado }: { resultado: LabResultado }) {
 
       {resultado.niveisPorSkill.length > 0 ? (
         <Cartao titulo="Nível por skill" descricao="De 1 a 5, nas skills que este teste avaliou.">
-          <ul className="divide-y divide-slate-100">
+          <ul className="divide-y divide-lab-linha">
             {resultado.niveisPorSkill.map((skill) => {
               // O que vale é o nível que o RH validou; antes da validação, o calculado.
               const nivel = skill.nivelValidado ?? skill.nivel;
@@ -132,36 +160,26 @@ function ResultadoCompleto({ resultado }: { resultado: LabResultado }) {
               return (
                 <li
                   key={skill.skillId}
-                  className="flex flex-wrap items-center justify-between gap-2 py-2.5"
+                  className="flex flex-wrap items-center justify-between gap-2 py-3.5"
                 >
                   <div>
-                    <p className="text-sm font-medium text-slate-900">{skill.nome}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-lab-pequeno font-medium text-lab-tinta">{skill.nome}</p>
+                    <p className="text-lab-legenda text-lab-tinta-2">
                       {skill.tipo ? `${nomeDoTipoDeSkill[skill.tipo]} · ` : ""}
                       {skill.nEvidencias} {skill.nEvidencias === 1 ? "escolha" : "escolhas"}
                     </p>
                     {ajustado ? (
-                      <p className="text-xs text-amber-800">
+                      <p className="text-lab-legenda text-lab-aviso-texto">
                         Calculado: {skill.nivel}/5 · ajustado pelo RH na validação
                       </p>
                     ) : null}
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="sr-only">Nível {nivel} de 5</span>
-                    <span aria-hidden="true" className="flex gap-0.5">
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <span
-                          key={n}
-                          className={cn(
-                            "h-2 w-4 rounded-sm",
-                            n <= nivel ? "bg-emerald-600" : "bg-slate-200"
-                          )}
-                        />
-                      ))}
-                    </span>
+                    <NivelEmSegmentos nivel={nivel} />
                     <span
                       aria-hidden="true"
-                      className="w-8 text-right text-sm font-semibold text-slate-900"
+                      className="tabular w-8 text-right text-lab-pequeno font-semibold text-lab-tinta"
                     >
                       {nivel}/5
                     </span>
@@ -183,31 +201,47 @@ function ResultadoCompleto({ resultado }: { resultado: LabResultado }) {
       </Cartao>
 
       <Cartao titulo="Suas escolhas, situação por situação">
-        <ol className="space-y-4">
+        <ol className="relative space-y-4">
+          <span
+            aria-hidden="true"
+            className="absolute bottom-6 left-[11px] top-6 w-px bg-lab-linha-forte"
+          />
           {resultado.situacoes.map((situacao) => (
             <SituacaoDoResultadoItem key={situacao.numero} situacao={situacao} />
           ))}
         </ol>
       </Cartao>
 
+      <ConversaComFacilitador sessaoId={resultado.sessaoId} />
+
       <ContestarResultado resultado={resultado} />
 
       {resultado.sugestoes.length > 0 ? (
         <Cartao titulo="Sugestões para você">
-          <ul className="list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
+          <ul className="space-y-3">
             {resultado.sugestoes.map((sugestao) => (
-              <li key={sugestao}>{sugestao}</li>
+              <li key={sugestao} className="flex gap-3 text-lab-pequeno leading-6 text-lab-tinta">
+                <span
+                  aria-hidden="true"
+                  className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-lab-destaque"
+                />
+                {sugestao}
+              </li>
             ))}
           </ul>
         </Cartao>
       ) : null}
 
-      <VoltarAoPainel />
-    </div>
+      <Revelar>
+        <VoltarAoPainel />
+      </Revelar>
+    </Escalonar>
   );
 }
 
-function tomDaAderencia(aderencia: number): "success" | "info" | "warning" | "danger" | "neutral" {
+type Tom = "success" | "info" | "warning" | "danger" | "neutral";
+
+function tomDaAderencia(aderencia: number): Tom {
   if (aderencia >= 100) return "success";
   if (aderencia >= 70) return "info";
   if (aderencia >= 40) return "warning";
@@ -215,40 +249,71 @@ function tomDaAderencia(aderencia: number): "success" | "info" | "warning" | "da
   return "neutral";
 }
 
+const corDoMarcador: Record<Tom, string> = {
+  success: "bg-lab-sucesso",
+  info: "bg-lab-info",
+  warning: "bg-lab-aviso",
+  danger: "bg-lab-perigo",
+  neutral: "bg-lab-tinta-3"
+};
+
+/** Uma situação do teste na linha do tempo: o cabeçalho resume, e o cartão abre e fecha. */
 function SituacaoDoResultadoItem({ situacao }: { situacao: LabSituacaoDoResultado }) {
   const escolhida = situacao.opcoes.find((o) => o.id === situacao.escolha);
+  const tom = tomDaAderencia(situacao.aderencia);
   return (
-    <li className="rounded-xl border border-slate-200 p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-semibold text-slate-950">Situação {situacao.numero}</span>
-        {situacao.marco ? <Badge tone="warning">Marco</Badge> : null}
-        <Badge tone={tomDaAderencia(situacao.aderencia)}>
-          Aderência {formatarNumero(situacao.aderencia)}%
-        </Badge>
-        {situacao.tempoRespostaMs !== null ? (
-          <span className="text-xs text-slate-500">
-            respondeu em {formatarNumero(situacao.tempoRespostaMs / 1000)} s
-          </span>
-        ) : null}
-      </div>
-      <p className="mt-3 text-sm leading-6 text-slate-700">{situacao.texto}</p>
-      <p className="mt-3 text-sm text-slate-900">
-        {situacao.tempoEsgotado || !escolhida ? (
-          <span className="font-medium">Sem resposta: o tempo acabou.</span>
-        ) : (
-          <>
-            <span className="font-semibold">Sua escolha ({escolhida.id}):</span> {escolhida.texto}
-          </>
+    <li className="relative pl-10">
+      <span
+        aria-hidden="true"
+        className={cn(
+          "absolute left-0 top-[1.4rem] grid h-6 w-6 place-items-center rounded-full text-[0.6875rem] font-semibold text-white ring-4 ring-lab-superficie",
+          corDoMarcador[tom]
         )}
-      </p>
-      {situacao.justificativa ? (
-        <p className="mt-2 text-sm leading-6 text-slate-600">{situacao.justificativa}</p>
-      ) : null}
-      {situacao.consequencia ? (
-        <p className="mt-2 border-l-2 border-slate-200 pl-3 text-sm italic leading-6 text-slate-600">
-          {situacao.consequencia}
-        </p>
-      ) : null}
+      >
+        {situacao.numero}
+      </span>
+      <Expansivel
+        abertoNoInicio
+        className="rounded-lab-lg border border-lab-linha bg-lab-superficie-2 p-5"
+        cabecalho={
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-lab-pequeno font-semibold text-lab-tinta">
+              Situação {situacao.numero}
+            </span>
+            {situacao.marco ? <Badge tone="warning">Marco</Badge> : null}
+            <Badge tone={tom}>Aderência {formatarNumero(situacao.aderencia)}%</Badge>
+            {situacao.tempoRespostaMs !== null ? (
+              <span className="text-lab-legenda text-lab-tinta-2">
+                respondeu em {formatarNumero(situacao.tempoRespostaMs / 1000)} s
+              </span>
+            ) : null}
+          </span>
+        }
+      >
+        <div className="pt-4">
+          <p className="text-lab-pequeno leading-6 text-lab-tinta-2">{situacao.texto}</p>
+          <p className="mt-3 text-lab-pequeno text-lab-tinta">
+            {situacao.tempoEsgotado || !escolhida ? (
+              <span className="font-medium">Sem resposta: o tempo acabou.</span>
+            ) : (
+              <>
+                <span className="font-semibold">Sua escolha ({escolhida.id}):</span>{" "}
+                {escolhida.texto}
+              </>
+            )}
+          </p>
+          {situacao.justificativa ? (
+            <p className="mt-2 text-lab-pequeno leading-6 text-lab-tinta-2">
+              {situacao.justificativa}
+            </p>
+          ) : null}
+          {situacao.consequencia ? (
+            <p className="mt-3 border-l-2 border-lab-linha-forte pl-3 text-lab-pequeno italic leading-6 text-lab-tinta-2">
+              {situacao.consequencia}
+            </p>
+          ) : null}
+        </div>
+      </Expansivel>
     </li>
   );
 }

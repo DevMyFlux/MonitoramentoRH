@@ -6,6 +6,7 @@
 // implementação consegue contornar o contrato. Falha de rede, tempo esgotado ou status de erro
 // devem LANÇAR; o motor trata qualquer exceção como falha de transporte.
 import type {
+  ConversaIaRequest,
   GuardaIaRequest,
   IniciarSessaoIaRequest,
   ProximoTurnoIaRequest,
@@ -19,6 +20,8 @@ export interface ClienteIa {
   proximoTurno(corpo: ProximoTurnoIaRequest): Promise<unknown>;
   /** POST /agentes/guarda */
   guarda(corpo: GuardaIaRequest): Promise<unknown>;
+  /** POST /agentes/facilitador */
+  conversar(corpo: ConversaIaRequest): Promise<unknown>;
 }
 
 /** Falha ao falar com o serviço (rede, status de erro, resposta que não é JSON). */

@@ -13,8 +13,10 @@ import {
   TableCell,
   TableHead,
   TableHeaderCell,
-  TableRow
-} from "../../../components/ui";
+  TableRow,
+  Textarea,
+  useNotificar
+} from "../../../features/leadership-lab/ui";
 import { LayoutDoAcompanhamento } from "../../../features/leadership-lab/cadastro/layout-do-acompanhamento";
 import {
   IdentificacaoDoParticipante,
@@ -38,7 +40,7 @@ export function LabAlertasPage() {
 
   return (
     <LayoutDoAcompanhamento>
-      <p className="max-w-3xl text-sm text-slate-600">
+      <p className="max-w-3xl text-lab-pequeno text-lab-tinta-2">
         Alertas são pedagógicos, não disciplinares: servem para o RH conversar com o participante. O
         vermelho nasce na hora, quando uma escolha é avaliada como muito distante do estilo
         adequado, e por isso aparece mesmo com o teste em andamento. O amarelo aparece quando a
@@ -82,19 +84,21 @@ export function LabAlertasPage() {
               <TableRow key={a.id}>
                 <TableCell>
                   <SeloDeAlerta cor={a.cor} />
-                  <span className="mt-1 block text-slate-800">
+                  <span className="mt-1 block text-lab-tinta">
                     {a.skillNome ?? (a.situacao ? `Situação ${a.situacao}` : "—")}
                   </span>
                 </TableCell>
                 <TableCell>
                   <IdentificacaoDoParticipante {...a.participante} />
                 </TableCell>
-                <TableCell>{formatarDataEHora(a.criadoEm)}</TableCell>
+                <TableCell className="tabular whitespace-nowrap">
+                  {formatarDataEHora(a.criadoEm)}
+                </TableCell>
                 <TableCell>
                   {a.testeConcluido && a.resultadoId ? (
                     <Link
                       to={`/lab/rh/revisao/${a.resultadoId}`}
-                      className="font-medium text-emerald-800 hover:underline"
+                      className="font-medium text-lab-destaque-texto hover:underline"
                     >
                       Abrir resultado
                     </Link>
@@ -107,7 +111,7 @@ export function LabAlertasPage() {
                     {a.status === "aberto" ? "Aberto" : "Encerrado"}
                   </Badge>
                   {a.status === "encerrado" ? (
-                    <span className="mt-1 block text-xs text-slate-500">
+                    <span className="mt-1 block text-lab-legenda text-lab-tinta-2">
                       {a.tratadoPor ? `${a.tratadoPor}` : ""}
                       {a.tratadoEm ? ` em ${formatarDataEHora(a.tratadoEm)}` : ""}
                       {a.nota ? `: ${a.nota}` : ""}
@@ -164,6 +168,7 @@ function FormularioDaNota({
   aoFechar: () => void;
 }) {
   const tratar = useTratarAlerta();
+  const notificar = useNotificar();
   const [nota, setNota] = useState("");
   const [aviso, setAviso] = useState<string | null>(null);
 
@@ -173,7 +178,19 @@ function FormularioDaNota({
       return;
     }
     setAviso(null);
-    tratar.mutate({ id: alerta.id, nota: nota.trim() }, { onSuccess: aoFechar });
+    tratar.mutate(
+      { id: alerta.id, nota: nota.trim() },
+      {
+        onSuccess: () => {
+          notificar({
+            tom: "sucesso",
+            titulo: "Alerta encerrado",
+            descricao: "A nota da conversa foi registrada."
+          });
+          aoFechar();
+        }
+      }
+    );
   };
 
   return (
@@ -184,30 +201,35 @@ function FormularioDaNota({
         enviar();
       }}
     >
-      <p className="text-sm text-slate-600">
+      <p className="text-lab-pequeno text-lab-tinta-2">
         {alerta.participante.nome} · {alerta.skillNome ?? `Situação ${alerta.situacao}`}
       </p>
-      <div className="grid gap-2 text-sm font-medium text-slate-700">
+      <div className="grid gap-2 text-lab-pequeno font-medium text-lab-tinta-2">
         <label htmlFor="nota-do-alerta">Nota da conversa</label>
-        <textarea
+        <Textarea
           id="nota-do-alerta"
           rows={4}
           maxLength={labLimitesDeTexto.nota}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-normal text-slate-900 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
           value={nota}
           onChange={(e) => setNota(e.target.value)}
         />
-        <span className="text-xs font-normal text-slate-500">
+        <span className="text-lab-legenda font-normal text-lab-tinta-2">
           {nota.length}/{labLimitesDeTexto.nota}
         </span>
       </div>
       {aviso ? (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+        <p
+          role="alert"
+          className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
+        >
           {aviso}
         </p>
       ) : null}
       {tratar.isError ? (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+        <p
+          role="alert"
+          className="rounded-lab-md bg-lab-perigo-suave p-3 text-lab-pequeno text-lab-perigo-texto"
+        >
           {descreverErroDoCadastro(tratar.error, "acompanhamento").descricao}
         </p>
       ) : null}

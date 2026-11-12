@@ -1,0 +1,17 @@
+{
+  "id": "senai-gestao-de-pessoas",
+  "titulo": "Gestão de Pessoas",
+  "instituicao": "SENAI",
+  "tipo": "material_educacional",
+  "categoria": "Desenvolvimento gerencial",
+  "assunto": "gestão de pessoas delegação motivação liderança",
+  "competencias": [
+    "delegacao",
+    "gestao-equipe"
+  ],
+  "cargos": [],
+  "conteudo_extraido": false,
+  "pontos_chave": [],
+  "validada": false,
+  "observacoes": "Indicado pelo negócio; título e URL a confirmar. Conteúdo ainda não ingerido."
+}

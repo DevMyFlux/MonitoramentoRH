@@ -40,7 +40,13 @@ export const scheduleCodes: ScheduleCode[] = [
   { code: "LP", label: "Licença Paternidade", category: "LEAVE", blocksAvailability: true },
   { code: "AT", label: "Atestado", category: "LEAVE", blocksAvailability: true },
   { code: "LMA", label: "Licença Médica", category: "LEAVE", blocksAvailability: true },
-  { code: "F", label: "Folga", category: "REST", blocksAvailability: false, color: { font: "7F7F7F", bold: false } },
+  {
+    code: "F",
+    label: "Folga",
+    category: "REST",
+    blocksAvailability: false,
+    color: { font: "7F7F7F", bold: false }
+  },
   { code: "FE", label: "Folga Saúde", category: "REST", blocksAvailability: false },
   { code: "FA", label: "Day Off", category: "REST", blocksAvailability: false },
   { code: "BH", label: "Folga Banco de Horas", category: "REST", blocksAvailability: false },
@@ -53,8 +59,20 @@ export const scheduleCodes: ScheduleCode[] = [
   },
   { code: "M", label: "Manhã", category: "WORK", blocksAvailability: false },
   { code: "T", label: "Tarde", category: "WORK", blocksAvailability: false },
-  { code: "D", label: "Diurno", category: "WORK", blocksAvailability: false, color: { font: "1F4E78", bold: true } },
-  { code: "N", label: "Noturno", category: "WORK", blocksAvailability: false, color: { font: "7030A0", bold: true } }
+  {
+    code: "D",
+    label: "Diurno",
+    category: "WORK",
+    blocksAvailability: false,
+    color: { font: "1F4E78", bold: true }
+  },
+  {
+    code: "N",
+    label: "Noturno",
+    category: "WORK",
+    blocksAvailability: false,
+    color: { font: "7030A0", bold: true }
+  }
 ];
 
 export const scheduleCodeMap: Record<string, ScheduleCode> = Object.fromEntries(

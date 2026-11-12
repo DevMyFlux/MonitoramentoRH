@@ -54,6 +54,8 @@ import {
 const LAB_MIGRATION = "0015_leadership_lab";
 const ENGINE_MIGRATION = "0016_leadership_lab_engine";
 const PAINEL_MIGRATION = "0017_leadership_lab_painel_sem_vazamento";
+const FACILITADOR_MIGRATION = "0018_leadership_lab_facilitador";
+const BASE_MIGRATION = "0019_leadership_lab_base_pedagogica";
 const PRE_LAB_MIGRATION = "0014_employee_termination_date";
 const rolesScript = readFileSync(
   fileURLToPath(new URL("../../../../prisma/ops/leadership-lab-roles.sql", import.meta.url)),
@@ -115,7 +117,9 @@ suite("migração 0015_leadership_lab: subir, descer e subir de novo", () => {
     expect(comDescida.map((m) => m.name)).toEqual([
       LAB_MIGRATION,
       ENGINE_MIGRATION,
-      PAINEL_MIGRATION
+      PAINEL_MIGRATION,
+      FACILITADOR_MIGRATION,
+      BASE_MIGRATION
     ]);
   });
 
@@ -186,6 +190,33 @@ suite("migração 0015_leadership_lab: subir, descer e subir de novo", () => {
 
     await db.client.query(motor.up);
     expect((await db.client.query(colunaDoLease)).rows[0].n).toBe(1);
+  }, 60_000);
+
+  it("0018: subir aceita o agente facilitador em log_ia; descer o recusa de novo e apaga as linhas dele", async () => {
+    const facilitador = readMigrations().find((m) => m.name === FACILITADOR_MIGRATION)!;
+    const log = (agente: string): Colunas => ({
+      agente,
+      versao_instrucao: "v1",
+      modelo: "m",
+      latencia_ms: 10,
+      sucesso: true
+    });
+    // Antes: só os agentes antigos (a restrição da 0015).
+    await db.client.query(facilitador.down!);
+    expect(
+      await tentarInserir(db.client, "leadership_lab.log_ia", log("facilitador"))
+    ).toMatchObject({ constraint: "ck_log_ia_agente" });
+
+    await db.client.query(facilitador.up);
+    await inserir(db.client, "leadership_lab.log_ia", log("facilitador"));
+    await inserir(db.client, "leadership_lab.log_ia", log("guarda"));
+
+    await db.client.query(facilitador.down!);
+    const { rows } = await db.client.query(
+      `SELECT agente FROM leadership_lab.log_ia WHERE agente IN ('facilitador', 'guarda')`
+    );
+    expect(rows.map((r) => r.agente)).toEqual(["guarda"]);
+    await db.client.query(facilitador.up);
   }, 60_000);
 
   it("0017: subir corrige a view do painel, descer restaura a contagem antiga, subir corrige de novo", async () => {

@@ -5,7 +5,7 @@ import {
 } from "@my-flux/shared";
 import { Check, FlaskConical, Play, Search } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { Badge, Button } from "../../../components/ui";
+import { Badge, Button, Revelar, Textarea } from "../ui";
 import { cn } from "../../../lib/cn";
 import { type ErroDaTela, descreverErro } from "../erros";
 import { useClassificarProblema, useTemasSimulados } from "../hooks";
@@ -76,20 +76,22 @@ export function EscolhaDoProblema({
       }
     >
       <form onSubmit={buscar} className="space-y-3">
-        <label htmlFor="descricao-do-problema" className="text-sm font-medium text-slate-700">
+        <label
+          htmlFor="descricao-do-problema"
+          className="text-lab-pequeno font-medium text-lab-tinta"
+        >
           Descreva o problema
         </label>
-        <textarea
+        <Textarea
           id="descricao-do-problema"
           rows={3}
           maxLength={labLimiteDescricaoDoProblema}
           value={descricao}
           onChange={(e) => setDescricao(e.target.value)}
           placeholder="Ex.: Estou com problema para realizar a manutenção do ar-condicionado"
-          className="w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
         />
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="max-w-xl text-xs leading-5 text-slate-500">
+          <p className="max-w-xl text-lab-legenda leading-5 text-lab-tinta-2">
             O que você escreve só serve para escolher o tema. Não é guardado, não vai para nenhuma
             IA nem para serviços externos. A simulação é local e o conteúdo é demonstrativo.
           </p>
@@ -108,24 +110,24 @@ export function EscolhaDoProblema({
         {classificar.isError ? (
           <p
             role="alert"
-            className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+            className="rounded-lab-md border border-lab-perigo/20 bg-lab-perigo-suave p-3.5 text-lab-pequeno text-lab-perigo-texto"
           >
             {descreverErro(classificar.error).titulo}. Você pode escolher um tema da lista.
           </p>
         ) : null}
         {resultado?.resultado === "encontrado" ? (
-          <p className="text-sm text-slate-700">
+          <p className="text-lab-pequeno text-lab-tinta-2">
             Encontramos este tema para o que você descreveu. Confirme para começar, ou escolha
             outro.
           </p>
         ) : null}
         {resultado?.resultado === "ambiguo" ? (
-          <p className="text-sm text-slate-700">
+          <p className="text-lab-pequeno text-lab-tinta-2">
             O que você descreveu combina com mais de um tema. Qual deles é o seu caso?
           </p>
         ) : null}
         {resultado?.resultado === "sem-correspondencia" ? (
-          <p className="text-sm text-slate-700">
+          <p className="text-lab-pequeno text-lab-tinta-2">
             Não reconhecemos um tema nesse texto. Escolha um dos temas abaixo.
           </p>
         ) : null}
@@ -142,19 +144,21 @@ export function EscolhaDoProblema({
                 aria-pressed={escolhido?.id === tema.id}
                 onClick={() => setEscolhido(tema)}
                 className={cn(
-                  "flex h-full w-full flex-col rounded-xl border-2 p-3 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 motion-reduce:transition-none",
+                  "flex h-full w-full flex-col rounded-lab-lg border p-4 text-left transition-[border-color,background-color,box-shadow,transform] duration-lab hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
                   escolhido?.id === tema.id
-                    ? "border-emerald-600 bg-emerald-50 shadow-md"
-                    : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md motion-reduce:hover:translate-y-0"
+                    ? "border-lab-destaque bg-lab-destaque-suave shadow-lab-2 ring-1 ring-lab-destaque"
+                    : "border-lab-linha bg-lab-superficie shadow-lab-1 hover:border-lab-linha-forte hover:shadow-lab-2"
                 )}
               >
-                <span className="flex items-center justify-between gap-2 text-sm font-semibold text-slate-950">
+                <span className="flex items-center justify-between gap-2 text-lab-pequeno font-semibold text-lab-tinta">
                   {tema.nome}
                   {escolhido?.id === tema.id ? (
-                    <Check size={16} className="text-emerald-700" aria-hidden="true" />
+                    <Check size={16} className="text-lab-destaque" aria-hidden="true" />
                   ) : null}
                 </span>
-                <span className="mt-1 text-xs leading-5 text-slate-600">{tema.descricao}</span>
+                <span className="mt-1 text-lab-legenda leading-5 text-lab-tinta-2">
+                  {tema.descricao}
+                </span>
               </button>
             </li>
           ))}
@@ -162,7 +166,7 @@ export function EscolhaDoProblema({
       ) : null}
 
       {temas.isError ? (
-        <p role="alert" className="mt-3 text-sm text-red-800">
+        <p role="alert" className="mt-3 text-lab-pequeno text-lab-perigo-texto">
           Não foi possível carregar os temas agora. Tente de novo em instantes.
         </p>
       ) : null}
@@ -191,7 +195,7 @@ export function EscolhaDoProblema({
       {erroAoIniciar ? (
         <p
           role="alert"
-          className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+          className="mt-3 rounded-lab-md border border-lab-perigo/20 bg-lab-perigo-suave p-3.5 text-lab-pequeno text-lab-perigo-texto"
         >
           {erroAoIniciar.titulo}. {erroAoIniciar.descricao}
         </p>
@@ -202,10 +206,10 @@ export function EscolhaDoProblema({
 
 function TemaEscolhido({ tema }: { tema: LabTemaSimulado }) {
   return (
-    <div className="mt-3 animate-lab-entrada rounded-xl border-2 border-emerald-600 bg-emerald-50 p-4 motion-reduce:animate-none">
-      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">Tema</p>
-      <p className="mt-1 text-base font-semibold text-slate-950">{tema.nome}</p>
-      <p className="mt-1 text-sm leading-6 text-slate-700">{tema.descricao}</p>
-    </div>
+    <Revelar className="mt-3 rounded-lab-lg border border-lab-destaque bg-lab-destaque-suave p-5 ring-1 ring-lab-destaque">
+      <p className="text-lab-legenda font-semibold text-lab-destaque-texto">Tema</p>
+      <p className="mt-1 text-lab-h3 text-lab-tinta">{tema.nome}</p>
+      <p className="mt-1 text-lab-pequeno leading-6 text-lab-tinta-2">{tema.descricao}</p>
+    </Revelar>
   );
 }

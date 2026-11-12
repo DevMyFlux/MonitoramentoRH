@@ -124,6 +124,8 @@ export const labItemDaRevisaoSchema = z.object({
   sessaoId: z.string(),
   concluidaEm: dataIso,
   statusValidacao: z.enum(labStatusValidacao),
+  /** Alguma situação não tinha base validada: o resultado é experimental, não oficial. */
+  experimental: z.boolean().default(false),
   participante: labParticipanteResumidoSchema,
   moldeNome: z.string(),
   aderenciaGeral: z.number(),
@@ -229,6 +231,7 @@ export const labFichaDeRevisaoSchema = z.object({
   sessaoId: z.string(),
   concluidaEm: dataIso,
   statusValidacao: z.enum(labStatusValidacao),
+  experimental: z.boolean().default(false),
   participante: labParticipanteResumidoSchema,
   moldeNome: z.string(),
   aderenciaGeral: z.number(),
@@ -256,6 +259,7 @@ export type LabFichaDeRevisao = z.infer<typeof labFichaDeRevisaoSchema>;
 /** Códigos de erro novos da curadoria, além dos de labCodigosDeErro e do cadastro. */
 export const labCodigosDeErroDaCuradoria = [
   "LAB_RESULTADO_JA_VALIDADO",
+  "LAB_RESULTADO_EXPERIMENTAL",
   "LAB_JUSTIFICATIVA_OBRIGATORIA",
   "LAB_AJUSTE_INVALIDO",
   "LAB_ALERTA_JA_TRATADO",

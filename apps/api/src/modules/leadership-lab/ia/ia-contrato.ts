@@ -21,8 +21,13 @@ import {
   type LabSkillId,
   labAderenciaEscala,
   labEscolhas,
+  labConversaLimites,
+  labDificuldades,
   labEstilos,
   labMoldeNiveis,
+  labPapeisDaConversa,
+  labProfundidadesTecnicas,
+  labTiposDeFonte,
   labSituacaoDoMarco,
   labSkillsPiloto
 } from "@my-flux/shared";
@@ -45,6 +50,7 @@ const estilo = z.enum(labEstilos);
 const aderencia = z.literal([...labAderenciaEscala]);
 const idsDeSkills = labSkillsPiloto.map((s) => s.id) as unknown as [LabSkillId, ...LabSkillId[]];
 const skill = z.enum(idsDeSkills);
+const dificuldade = z.literal([...labDificuldades]);
 
 /** Bloco `uso`: metadados de cada chamada, para o log_ia. Nunca conteúdo. PROPOSTA (campos). */
 function uso<A extends LabAgenteIa>(agente: A) {
@@ -115,6 +121,41 @@ export const avaliacaoAnteriorIaSchema = z
     }
   });
 
+// ---------------------------------------------------------------------------
+// Base pedagógica de uma situação (competências, dificuldade, fontes, fundamentação)
+// ---------------------------------------------------------------------------
+
+/** O identificador de uma ficha da base de conhecimento (slug estável). */
+export const idDeFonteSchema = z.string().regex(/^[a-z0-9][a-z0-9-]{2,63}$/);
+
+/**
+ * Em que a situação se apoia. A IA diz o que pretende desenvolver e quais fontes usou; quem diz se
+ * a fundamentação é "validada" é o SERVIÇO (a partir do cadastro das fontes, nunca do modelo) e,
+ * por último, o backend (`fundamentacaoFinal`, que também exige a rubrica validada). Ausente =
+ * situação experimental.
+ */
+export const baseDaSituacaoSchema = z
+  .strictObject({
+    /** As competências (skills) que a situação pretende desenvolver. */
+    competencias: z.array(skill).min(1).max(3),
+    dificuldade: dificuldade,
+    fontes: z.array(idDeFonteSchema).max(3),
+    fundamentacao: z.enum(["validada", "experimental"])
+  })
+  .superRefine((b, ctx) => {
+    if (b.fundamentacao === "validada" && b.fontes.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["fundamentacao"],
+        message: "fundamentação validada exige ao menos uma fonte"
+      });
+    }
+    if (new Set(b.competencias).size !== b.competencias.length) {
+      ctx.addIssue({ code: "custom", path: ["competencias"], message: "competências repetidas" });
+    }
+  });
+export type BaseDaSituacao = z.infer<typeof baseDaSituacaoSchema>;
+
 /** Uma situação com três respostas. */
 export const situacaoIaSchema = z
   .strictObject({
@@ -123,7 +164,9 @@ export const situacaoIaSchema = z
     estilo_adequado: estilo,
     texto,
     /** Sempre três: A, B e C, nessa ordem. */
-    opcoes: z.tuple([opcao("A"), opcao("B"), opcao("C")])
+    opcoes: z.tuple([opcao("A"), opcao("B"), opcao("C")]),
+    /** Opcional por compatibilidade: sem ela, a situação é experimental. */
+    base: baseDaSituacaoSchema.optional()
   })
   .superRefine((s, ctx) => {
     // A terceira situação é o marco, e só ela.
@@ -266,14 +309,60 @@ export type RespostaAberturaIa = z.infer<typeof respostaAberturaIaSchema>;
 // Requisições do backend para a IA (PROPOSTA: corpos). Lista fechada de campos.
 // ---------------------------------------------------------------------------
 
+/** O histórico individual resumido: sem identificação, só o que ajuda a adaptar a próxima situação. */
+export const perfilResumidoIaSchema = z.strictObject({
+  testes_considerados: z.int().min(0),
+  testes_provisorios: z.int().min(0),
+  skills: z
+    .array(
+      z.strictObject({
+        skill,
+        nivel: z.int().min(1).max(5),
+        tendencia: z.enum(["subindo", "estavel", "caindo", "sem_base"]),
+        testes: z.int().min(1),
+        provisorio: z.boolean(),
+        escolhas_fracas: z.int().min(0),
+        recorrente: z.boolean()
+      })
+    )
+    .max(5)
+});
+export type PerfilResumidoIa = z.infer<typeof perfilResumidoIaSchema>;
+
 /**
- * Só o que a IA precisa saber: o nível do molde, os temas e quantas situações. Nada sobre
- * o participante, o colaborador, a operação ou a unidade.
+ * O que o cargo cobra e a rubrica em vigor. Vem de packages/shared (nunca da IA) e é o que impede
+ * a IA de cobrar de um coordenador o que é de um técnico.
+ */
+export const contextoPedagogicoIaSchema = z.strictObject({
+  rubrica_versao: texto,
+  responsabilidades: z.array(texto).max(8),
+  foco: z.array(skill).max(8),
+  profundidade_tecnica: z
+    .array(z.strictObject({ skill, profundidade: z.enum(labProfundidadesTecnicas) }))
+    .max(8),
+  limite_tecnico: texto,
+  /** A rubrica em vigor: o que cada nível da escala significa e o que observar em cada skill de foco. */
+  rubrica: z.strictObject({
+    niveis: z.array(z.strictObject({ aderencia, criterio: texto })).length(4),
+    observar: z.array(z.strictObject({ skill, criterio: texto })).max(8)
+  }),
+  dificuldade_base: dificuldade,
+  /** Nulo para quem ainda não tem testes concluídos. */
+  perfil: perfilResumidoIaSchema.nullable()
+});
+export type ContextoPedagogicoIa = z.infer<typeof contextoPedagogicoIaSchema>;
+
+/**
+ * Só o que a IA precisa saber: o nível do molde, os temas, quantas situações e o contexto
+ * pedagógico (o que o cargo cobra, a rubrica e o histórico resumido). Nada sobre o participante,
+ * o colaborador, a operação ou a unidade.
  */
 export const iniciarSessaoIaRequestSchema = z.strictObject({
   molde: z.enum(labMoldeNiveis),
   temas: z.array(texto).min(1),
-  numero_situacoes: z.int().min(3).max(MAX_SITUACOES)
+  numero_situacoes: z.int().min(3).max(MAX_SITUACOES),
+  /** Opcional por compatibilidade com serviços antigos; o motor sempre envia. */
+  contexto: contextoPedagogicoIaSchema.optional()
 });
 export type IniciarSessaoIaRequest = z.infer<typeof iniciarSessaoIaRequestSchema>;
 
@@ -325,6 +414,99 @@ export const respostaGuardaIaSchema = z.discriminatedUnion("decisao", [
   z.strictObject({ decisao: z.literal("bloquear"), texto: z.null(), uso: usoDaGuarda })
 ]);
 export type RespostaGuardaIa = z.infer<typeof respostaGuardaIaSchema>;
+
+// ---------------------------------------------------------------------------
+// Facilitador: conversa sobre o resultado (PROPOSTA: corpos e formato)
+// ---------------------------------------------------------------------------
+
+const situacaoDaConversa = z.strictObject({
+  numero: numeroDaSituacao,
+  marco: z.boolean(),
+  texto,
+  opcoes: z.array(z.strictObject({ id: escolha, texto })).length(3),
+  escolha: escolha.nullable(),
+  tempo_esgotado: z.boolean(),
+  /** A justificativa que o participante já vê no resultado. Nunca o gabarito das outras opções. */
+  justificativa: texto.nullable()
+});
+
+const resultadoDaConversaSchema = z.strictObject({
+  resumo: texto,
+  ponto_forte: texto.nullable(),
+  ponto_desenvolvimento: texto.nullable(),
+  sugestoes: z.array(texto),
+  /** O nível que vale (o validado pelo RH, se houver). */
+  skills: z.array(z.strictObject({ skill, nivel: z.int().min(1).max(5) })),
+  situacoes: z.array(situacaoDaConversa).min(1).max(MAX_SITUACOES)
+});
+
+/**
+ * O que a IA recebe para conversar. Dois modos:
+ *  - `debriefing`: depois do teste, com o resultado que o participante já viu;
+ *  - `aprendizagem`: fora de qualquer teste, sobre gestão, liderança e procedimentos, adaptada ao
+ *    cargo e ao histórico resumido. Nunca durante uma situação cronometrada (o backend recusa).
+ * Sem nome, matrícula, e-mail, ids, aderência, tempos nem avaliação das opções que ele não
+ * escolheu. Mensagens do participante só saem depois da Guarda; o histórico vem do navegador e é
+ * tratado como DADO, nunca como instrução.
+ */
+export const conversaIaRequestSchema = z
+  .strictObject({
+    modo: z.enum(["debriefing", "aprendizagem"]),
+    molde: z.enum(labMoldeNiveis),
+    mensagem: z.string().trim().min(1).max(labConversaLimites.mensagem),
+    historico: z
+      .array(
+        z.strictObject({
+          papel: z.enum(labPapeisDaConversa),
+          texto: z.string().trim().min(1).max(labConversaLimites.textoDoHistorico)
+        })
+      )
+      .max(labConversaLimites.historico),
+    resultado: resultadoDaConversaSchema.nullable(),
+    contexto: contextoPedagogicoIaSchema.nullable()
+  })
+  .superRefine((c, ctx) => {
+    if (c.modo === "debriefing" && c.resultado === null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["resultado"],
+        message: "o debriefing exige o resultado"
+      });
+    }
+    if (c.modo === "aprendizagem" && c.resultado !== null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["resultado"],
+        message: "o modo aprendizagem não tem resultado"
+      });
+    }
+    if (c.modo === "aprendizagem" && c.contexto === null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["contexto"],
+        message: "a aprendizagem exige o contexto"
+      });
+    }
+  });
+export type ConversaIaRequest = z.infer<typeof conversaIaRequestSchema>;
+
+/** A fonte que o serviço usou, com o que o sistema precisa para citá-la. */
+export const fonteCitadaIaSchema = z.strictObject({
+  id: idDeFonteSchema,
+  titulo: texto,
+  instituicao: texto,
+  tipo: z.enum(labTiposDeFonte),
+  url: z.url({ protocol: /^https$/ }).nullable(),
+  validada: z.boolean()
+});
+
+export const respostaConversaIaSchema = z.strictObject({
+  resposta: z.string().trim().min(1).max(2000),
+  /** Fontes da base de conhecimento em que a resposta se apoia. Vazio = conhecimento geral. */
+  fontes: z.array(fonteCitadaIaSchema).max(3),
+  uso: uso("facilitador")
+});
+export type RespostaConversaIa = z.infer<typeof respostaConversaIaSchema>;
 
 // ---------------------------------------------------------------------------
 // Validação
@@ -492,4 +674,11 @@ export function aplicarGuarda(original: string, bruto: unknown): AplicacaoDaGuar
     uso: usoDaChamada,
     problemas: []
   };
+}
+
+/** Valida a resposta de POST /agentes/facilitador. Nunca lança. */
+export function validarConversaIa(bruto: unknown): ResultadoDaValidacao<RespostaConversaIa> {
+  const lido = respostaConversaIaSchema.safeParse(bruto);
+  if (!lido.success) return { ok: false, problemas: descreverProblemas(lido.error) };
+  return { ok: true, valor: lido.data, avisos: [] };
 }

@@ -1,0 +1,21 @@
+{
+  "id": "sebrae-escuta-ativa",
+  "titulo": "Desenvolva sua escuta ativa (e-book)",
+  "instituicao": "Sebrae",
+  "tipo": "material_educacional",
+  "categoria": "Desenvolvimento gerencial",
+  "assunto": "escuta ativa comunicação diálogo liderança",
+  "url": "https://sebrae.com.br/Sebrae/Portal%20Sebrae/Arquivos/ebook_sebrae_desenvolva-sua-escuta-ativa.pdf",
+  "competencias": [
+    "gestao-equipe",
+    "comunicacao-cliente"
+  ],
+  "cargos": [],
+  "conteudo_extraido": true,
+  "pontos_chave": [
+    "A escuta ativa é uma habilidade que sustenta um diálogo de qualidade e se relaciona com a liderança.",
+    "Praticá-la é demonstrar interesse real pelo que a outra pessoa diz, buscando entender suas necessidades e dificuldades."
+  ],
+  "validada": false,
+  "observacoes": "Pontos-chave sintetizados a partir de trechos do documento exibidos em pesquisa; o documento completo ainda não foi lido nem validado tecnicamente."
+}

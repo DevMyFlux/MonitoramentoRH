@@ -13,6 +13,8 @@
 //   POST /sessoes/:id/respostas         envia A, B ou C (e o campo livre)
 //   POST /sessoes/:id/tempo-esgotado    avisa que o relógio zerou (o servidor confere)
 //   GET  /sessoes/:id/resultado         resultado de um teste concluído
+//   POST /sessoes/:id/conversa          conversa com o facilitador sobre o próprio resultado
+//   POST /aprendizagem/conversa         dúvidas com o facilitador fora do teste (nunca durante)
 //   GET  /simulador/temas               (só no modo demonstração) os temas da simulação local
 //   POST /simulador/classificar         (só no modo demonstração) propõe um tema a partir do texto
 //
@@ -123,6 +125,18 @@ export async function registrarRotasDoLab(
     return { data: { ...resultado, simulacao } };
   });
 
+  app.post<ComId>(
+    "/sessoes/:id/conversa",
+    { bodyLimit: LIMITE_DO_CORPO_BYTES },
+    async (request) => ({
+      data: await motor.conversar(await atorDe(request), request.params.id, request.body)
+    })
+  );
+
+  app.post("/aprendizagem/conversa", { bodyLimit: LIMITE_DO_CORPO_BYTES }, async (request) => ({
+    data: await motor.aprender(await atorDe(request), request.body)
+  }));
+
   if (motor.temSimulador) {
     app.get("/simulador/temas", async (request) => {
       assertAcesso(await atorDe(request), "simulador:ler");
@@ -138,5 +152,5 @@ export async function registrarRotasDoLab(
   }
 
   await registrarRotasDoCadastro(app, users, db);
-  await registrarRotasDaCuradoria(app, users, db);
+  await registrarRotasDaCuradoria(app, users, db, { exigeBaseValidada: motor.exigeBaseValidada });
 }

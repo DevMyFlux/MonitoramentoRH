@@ -1,0 +1,121 @@
+/*
+ * Leadership Lab — tokens do design system.
+ *
+ * Tudo vive sob `.lab` (a raiz do LabShell): o resto do MY FLUX não enxerga nada daqui e continua
+ * com o visual atual. Os valores são canais RGB separados por espaço, para o Tailwind compor a
+ * transparência (`bg-lab-destaque/10`). O mapeamento para classes está em tailwind.config.ts.
+ *
+ * As cores dos gráficos (SVG do Recharts) estão espelhadas em `cores.ts`; mexeu aqui, mexa lá.
+ */
+.lab {
+  /* Superfícies: fundo cinza-gelo, cartões brancos, poços levemente rebaixados. */
+  --lab-fundo: 245 245 247;
+  --lab-superficie: 255 255 255;
+  --lab-superficie-2: 250 250 251;
+  --lab-superficie-3: 242 242 245;
+
+  /* Texto: tinta quase preta e dois graus de apoio. O terceiro só serve a ícone e ao desabilitado. */
+  --lab-tinta: 29 29 31;
+  --lab-tinta-2: 99 99 105;
+  --lab-tinta-3: 134 134 139;
+
+  /* Linhas finas. */
+  --lab-linha: 232 232 237;
+  --lab-linha-forte: 210 210 215;
+
+  /* Destaque da marca (verde do MY FLUX): ação principal, seleção e progresso. */
+  --lab-destaque: 4 120 87;
+  --lab-destaque-forte: 6 95 70;
+  --lab-destaque-suave: 236 247 242;
+  --lab-destaque-texto: 6 78 59;
+
+  /* Semânticas: cada uma com a cor, o fundo suave e o texto sobre o fundo suave. */
+  --lab-sucesso: 4 120 87;
+  --lab-sucesso-suave: 236 247 242;
+  --lab-sucesso-texto: 6 78 59;
+  --lab-aviso: 180 83 9;
+  --lab-aviso-suave: 255 248 235;
+  --lab-aviso-texto: 120 53 15;
+  --lab-perigo: 185 28 28;
+  --lab-perigo-suave: 254 242 242;
+  --lab-perigo-texto: 153 27 27;
+  --lab-info: 29 78 216;
+  --lab-info-suave: 239 246 255;
+  --lab-info-texto: 30 64 175;
+
+  /* Sombras: discretas, em camadas. */
+  --lab-sombra-1: 0 1px 2px rgb(0 0 0 / 0.04), 0 0 0 1px rgb(0 0 0 / 0.03);
+  --lab-sombra-2: 0 8px 28px -10px rgb(0 0 0 / 0.14), 0 2px 6px rgb(0 0 0 / 0.04);
+  --lab-sombra-3: 0 28px 70px -20px rgb(0 0 0 / 0.32), 0 4px 14px rgb(0 0 0 / 0.08);
+
+  /* Movimento: o mesmo ritmo do `movimento.ts`, para as transições feitas em CSS. */
+  --lab-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --lab-dur-rapida: 150ms;
+  --lab-dur: 250ms;
+  --lab-dur-lenta: 450ms;
+
+  /* Medidas do layout. */
+  --lab-largura-menu: 16rem;
+  --lab-altura-topo: 4rem;
+
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, "Segoe UI",
+    system-ui, sans-serif;
+  color: rgb(var(--lab-tinta));
+  background-color: rgb(var(--lab-fundo));
+  font-feature-settings:
+    "cv11" 1,
+    "ss01" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.lab ::selection {
+  background: rgb(var(--lab-destaque) / 0.18);
+  color: rgb(var(--lab-tinta));
+}
+
+/* Foco visível para quem navega pelo teclado: um anel suave da cor de destaque. */
+.lab :focus-visible {
+  outline: 2px solid rgb(var(--lab-destaque));
+  outline-offset: 2px;
+}
+
+/* Números de indicadores alinham em coluna. */
+.lab .tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* O <main> do shell não mostra anel ao receber o foco do "Ir para o conteúdo". */
+.lab main:focus-visible {
+  outline: none;
+}
+
+/* Rolagem fina e discreta nas áreas internas. */
+.lab .rolagem-fina {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--lab-linha-forte)) transparent;
+}
+
+/* React Flow (mapa de decisões): controles no mesmo vocabulário visual. */
+.lab .react-flow__controls {
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: var(--lab-sombra-2);
+  border: 1px solid rgb(var(--lab-linha));
+}
+.lab .react-flow__controls-button {
+  width: 30px;
+  height: 30px;
+  border-bottom: 1px solid rgb(var(--lab-linha));
+  background: rgb(var(--lab-superficie));
+  color: rgb(var(--lab-tinta-2));
+}
+.lab .react-flow__controls-button:hover {
+  background: rgb(var(--lab-superficie-3));
+}
+.lab .react-flow__attribution {
+  background: transparent;
+  font-size: 9px;
+}

@@ -1,6 +1,7 @@
 import type { LabPendencias } from "@my-flux/shared";
 import { NavLink } from "react-router-dom";
 import { cn } from "../../../lib/cn";
+import { CabecalhoDePagina, Revelar } from "../ui";
 import { usePendencias } from "../curadoria-hooks";
 
 type Aba = { para: string; rotulo: string; pendencias?: keyof LabPendencias };
@@ -22,22 +23,15 @@ const abas: readonly Aba[] = [
 export function LayoutDoAcompanhamento({ children }: { children: React.ReactNode }) {
   const pendencias = usePendencias().data;
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.13em] text-emerald-800">
-          MY FLUX · Desenvolvimento
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-950">
-          Acompanhamento do Leadership Lab
-        </h1>
-        <p className="mt-1 max-w-2xl text-sm text-slate-600">
-          Valide os resultados, acompanhe os alertas, responda às contestações e cadastre quem faz
-          os testes e as turmas que você acompanha.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <CabecalhoDePagina
+        eyebrow="MY FLUX · Desenvolvimento"
+        titulo="Acompanhamento do Leadership Lab"
+        descricao="Valide os resultados, acompanhe os alertas, responda às contestações e cadastre quem faz os testes e as turmas que você acompanha."
+      />
       <nav
         aria-label="Áreas do acompanhamento"
-        className="flex gap-1 overflow-x-auto border-b border-slate-200"
+        className="rolagem-fina -mx-1 flex gap-1 overflow-x-auto border-b border-lab-linha px-1"
       >
         {abas.map((aba) => {
           const quantidade = aba.pendencias ? pendencias?.[aba.pendencias] : undefined;
@@ -52,16 +46,16 @@ export function LayoutDoAcompanhamento({ children }: { children: React.ReactNode
                 : {})}
               className={({ isActive }) =>
                 cn(
-                  "-mb-px inline-flex h-10 shrink-0 items-center gap-1.5 border-b-2 px-3 text-sm font-medium transition",
+                  "relative -mb-px inline-flex h-11 shrink-0 items-center gap-2 border-b-2 px-3.5 text-lab-pequeno font-medium transition-colors duration-lab-rapida",
                   isActive
-                    ? "border-emerald-700 text-emerald-800"
-                    : "border-transparent text-slate-500 hover:text-slate-900"
+                    ? "border-lab-destaque text-lab-tinta"
+                    : "border-transparent text-lab-tinta-2 hover:text-lab-tinta"
                 )
               }
             >
               {aba.rotulo}
               {quantidade ? (
-                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-amber-100 px-1.5 text-xs font-semibold text-amber-900">
+                <span className="tabular inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-lab-aviso-suave px-1.5 text-lab-legenda font-semibold text-lab-aviso-texto ring-1 ring-inset ring-lab-aviso/20">
                   {quantidade}
                 </span>
               ) : null}
@@ -69,7 +63,8 @@ export function LayoutDoAcompanhamento({ children }: { children: React.ReactNode
           );
         })}
       </nav>
-      {children}
+      {/* Entre as abas só o conteúdo anima: o cabeçalho e as abas ficam parados. */}
+      <Revelar className="space-y-8">{children}</Revelar>
     </div>
   );
 }

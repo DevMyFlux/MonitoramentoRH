@@ -66,7 +66,9 @@ export async function fecharTeste(
       pontoForte: resposta.resultado.ponto_forte,
       pontoDesenvolvimento: resposta.resultado.ponto_desenvolvimento,
       sugestoes: resposta.resultado.sugestoes,
-      respostaIa: resposta as unknown as Prisma.InputJsonValue
+      respostaIa: resposta as unknown as Prisma.InputJsonValue,
+      // Basta uma situação sem fundamentação validada: o resultado não vale como oficial.
+      experimental: turnos.some((t) => t.fundamentacao !== "validada")
     }
   });
 

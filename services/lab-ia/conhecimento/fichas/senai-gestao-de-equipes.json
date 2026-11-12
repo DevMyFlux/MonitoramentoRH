@@ -1,0 +1,17 @@
+{
+  "id": "senai-gestao-de-equipes",
+  "titulo": "Gestão de Equipes",
+  "instituicao": "SENAI",
+  "tipo": "material_educacional",
+  "categoria": "Desenvolvimento gerencial",
+  "assunto": "gestão de equipes comunicação conflitos supervisão",
+  "competencias": [
+    "gestao-equipe",
+    "comunicacao-cliente"
+  ],
+  "cargos": [],
+  "conteudo_extraido": false,
+  "pontos_chave": [],
+  "validada": false,
+  "observacoes": "Indicado pelo negócio; título e URL a confirmar. Conteúdo ainda não ingerido."
+}

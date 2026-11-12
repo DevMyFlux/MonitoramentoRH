@@ -126,6 +126,14 @@ function erroDoCodigo(codigo: CodigoConhecido, mensagemDaApi: string): ErroDaTel
         "O resultado ainda não está disponível",
         "Ele aparece depois da última situação do teste."
       );
+    case "LAB_APRENDIZAGEM_BLOQUEADA":
+      return semNovaTentativa(
+        "geral",
+        "Termine o teste antes",
+        "Durante um teste em andamento o facilitador não ajuda. Conclua o teste e volte aqui."
+      );
+    case "LAB_CONVERSA_LIMITE":
+      return semNovaTentativa("geral", "Limite de mensagens atingido", mensagemDaApi);
     case "LAB_IA_INDISPONIVEL":
     case "LAB_IA_RESPOSTA_INVALIDA":
       return tentarDeNovo(
@@ -144,6 +152,7 @@ function erroDoCodigo(codigo: CodigoConhecido, mensagemDaApi: string): ErroDaTel
     case "LAB_MOLDE_SEM_TEMPO":
     case "LAB_CARGO_EM_OUTRO_MOLDE":
     case "LAB_CARGO_INEXISTENTE":
+    case "LAB_RESULTADO_EXPERIMENTAL":
     case "LAB_RESULTADO_JA_VALIDADO":
     case "LAB_JUSTIFICATIVA_OBRIGATORIA":
     case "LAB_AJUSTE_INVALIDO":

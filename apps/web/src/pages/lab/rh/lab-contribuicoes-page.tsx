@@ -1,7 +1,14 @@
 import type { LabContribuicaoDoCurador } from "@my-flux/shared";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Badge, Button, EmptyState, LoadingState, Select } from "../../../components/ui";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  LoadingState,
+  Select,
+  useNotificar
+} from "../../../features/leadership-lab/ui";
 import { Confirmacao } from "../../../features/leadership-lab/cadastro/confirmacao";
 import { LayoutDoAcompanhamento } from "../../../features/leadership-lab/cadastro/layout-do-acompanhamento";
 import {
@@ -29,6 +36,7 @@ export function LabContribuicoesPage() {
   const [status, setStatus] = useState("pendente");
   const contribuicoes = useContribuicoes(status);
   const decidir = useDecidirContribuicao();
+  const notificar = useNotificar();
   const [pendente, setPendente] = useState<{
     contribuicao: LabContribuicaoDoCurador;
     decisao: Decisao;
@@ -41,7 +49,7 @@ export function LabContribuicoesPage() {
 
   return (
     <LayoutDoAcompanhamento>
-      <p className="max-w-3xl text-sm text-slate-600">
+      <p className="max-w-3xl text-lab-pequeno text-lab-tinta-2">
         Ideias que os participantes deram durante o teste para melhorar o procedimento. O texto já
         passou pela proteção de dados. Aprovar ou rejeitar registra a sua decisão e não se desfaz.
       </p>
@@ -75,12 +83,12 @@ export function LabContribuicoesPage() {
           {contribuicoes.data.map((c) => (
             <li
               key={c.id}
-              className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+              className="space-y-3 rounded-lab-lg border border-lab-linha bg-lab-superficie p-4 shadow-lab-1"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="text-sm">
+                <div className="text-lab-pequeno">
                   <IdentificacaoDoParticipante {...c.participante} />
-                  <span className="mt-1 block text-xs text-slate-500">
+                  <span className="mt-1 block text-lab-legenda text-lab-tinta-2">
                     Situação {c.situacao} · {formatarDataEHora(c.criadoEm)}
                   </span>
                 </div>
@@ -89,7 +97,7 @@ export function LabContribuicoesPage() {
                   <SeloDeDecisao status={c.status} />
                 </span>
               </div>
-              <p className="text-sm leading-6 text-slate-800">{c.texto}</p>
+              <p className="text-lab-pequeno leading-6 text-lab-tinta">{c.texto}</p>
               {c.status === "pendente" ? (
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -109,7 +117,7 @@ export function LabContribuicoesPage() {
                   </Button>
                 </div>
               ) : (
-                <p className="text-xs text-slate-500">
+                <p className="text-lab-legenda text-lab-tinta-2">
                   {c.decididoPor ? `Decidida por ${c.decididoPor}` : "Decidida"}
                   {c.decididoEm ? ` em ${formatarDataEHora(c.decididoEm)}` : ""}
                 </p>
@@ -117,7 +125,7 @@ export function LabContribuicoesPage() {
               {c.testeConcluido && c.resultadoId ? (
                 <Link
                   to={`/lab/rh/revisao/${c.resultadoId}`}
-                  className="inline-block text-sm font-medium text-emerald-800 hover:underline"
+                  className="inline-block text-lab-pequeno font-medium text-lab-destaque-texto hover:underline"
                 >
                   Abrir o resultado
                 </Link>
@@ -147,7 +155,18 @@ export function LabContribuicoesPage() {
           if (pendente) {
             decidir.mutate(
               { id: pendente.contribuicao.id, decisao: pendente.decisao },
-              { onSuccess: fechar }
+              {
+                onSuccess: () => {
+                  notificar({
+                    tom: "sucesso",
+                    titulo:
+                      pendente.decisao === "aprovada"
+                        ? "Contribuição aprovada"
+                        : "Contribuição rejeitada"
+                  });
+                  fechar();
+                }
+              }
             );
           }
         }}
