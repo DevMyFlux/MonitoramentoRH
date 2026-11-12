@@ -53,9 +53,11 @@ describe.skipIf(!integrationEnabled)("motor do teste: conversa com o facilitador
     const corpo = JSON.parse(enviado) as Record<string, unknown>;
     expect(corpo.molde).toBe("supervisor");
     expect(corpo.mensagem).toBe("Como fui no geral?");
-    // Nada de identificação, de aderência nem de tempos.
+    // Nada de nota nem de tempo do participante. (A régua pública da rubrica, igual para todos, tem
+    // a palavra "aderencia" no contexto: por isso a nota é procurada só no resultado.)
+    expect(JSON.stringify(corpo.resultado).toLowerCase()).not.toContain("aderencia");
+    // Nada de identificação nem de tempos.
     for (const proibido of [
-      "aderencia",
       "tempo_resposta",
       "participante",
       "matricula",

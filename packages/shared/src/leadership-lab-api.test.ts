@@ -271,7 +271,11 @@ describe("contrato das respostas do Leadership Lab", () => {
 
   describe("resultado", () => {
     it("aceita o resultado completo", () => {
-      expect(labResultadoSchema.parse(resultado)).toEqual({ ...resultado, simulacao: null });
+      expect(labResultadoSchema.parse(resultado)).toEqual({
+        ...resultado,
+        experimental: false,
+        simulacao: null
+      });
     });
 
     it("aceita a omissão (sem escolha e sem tempo de resposta)", () => {

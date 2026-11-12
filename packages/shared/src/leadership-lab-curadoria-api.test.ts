@@ -216,6 +216,7 @@ describe("saídas da curadoria", () => {
       sessaoId: ID,
       concluidaEm: AGORA,
       statusValidacao: "aguardando_validacao",
+      experimental: true,
       participante,
       moldeNome: "Supervisor",
       aderenciaGeral: 76,

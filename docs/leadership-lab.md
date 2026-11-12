@@ -248,15 +248,17 @@ As pré-condições de início ficam num só lugar, `avaliarInicio` (`precondico
 
 ### Variáveis de ambiente
 
-| Variável                 | Obrigatória?                  | Para quê                                                                                       |
-| ------------------------ | ----------------------------- | ---------------------------------------------------------------------------------------------- |
-| `LAB_IA_URL`             | **É o interruptor do módulo** | Endereço do serviço de IA. Sem ela, o módulo fica desligado (rotas inexistentes, 404)          |
-| `LAB_IA_TOKEN`           | sim, se `LAB_IA_URL` existe   | Segredo enviado em `X-Servico-Token`. O mesmo valor de `TOKEN_SERVICO` do serviço de IA        |
-| `LAB_TOLERANCIA_TEMPO_S` | sim, se `LAB_IA_URL` existe   | **Sem valor padrão.** Segundos de latência de rede descontados do tempo de resposta (0 = nada) |
-| `LAB_LIMITE_TESTES_DIA`  | não                           | Testes por participante por dia. Sem ela, sem limite                                           |
-| `LAB_IA_TIMEOUT_MS`      | não                           | Tempo máximo de cada chamada à IA. Padrão 25 000; fica abaixo dos 30 s do cliente web          |
-| `LAB_MODO_DEMO`          | não                           | `true` liga o **modo demonstração** (veja a seção própria). Só vale sem `LAB_IA_URL`           |
-| `LAB_IA_AUTENTICACAO`    | não                           | `cloud-run`: cada chamada leva o ID token da conta de serviço do site (serviço de IA privado)  |
+| Variável                    | Obrigatória?                  | Para quê                                                                                       |
+| --------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------- |
+| `LAB_IA_URL`                | **É o interruptor do módulo** | Endereço do serviço de IA. Sem ela, o módulo fica desligado (rotas inexistentes, 404)          |
+| `LAB_IA_TOKEN`              | sim, se `LAB_IA_URL` existe   | Segredo enviado em `X-Servico-Token`. O mesmo valor de `TOKEN_SERVICO` do serviço de IA        |
+| `LAB_TOLERANCIA_TEMPO_S`    | sim, se `LAB_IA_URL` existe   | **Sem valor padrão.** Segundos de latência de rede descontados do tempo de resposta (0 = nada) |
+| `LAB_LIMITE_TESTES_DIA`     | não                           | Testes por participante por dia. Sem ela, sem limite                                           |
+| `LAB_IA_TIMEOUT_MS`         | não                           | Tempo máximo de cada chamada à IA. Padrão 25 000; fica abaixo dos 30 s do cliente web          |
+| `LAB_MODO_DEMO`             | não                           | `true` liga o **modo demonstração** (veja a seção própria). Só vale sem `LAB_IA_URL`           |
+| `LAB_IA_AUTENTICACAO`       | não                           | `cloud-run`: cada chamada leva o ID token da conta de serviço do site (serviço de IA privado)  |
+| `LAB_EXIGE_BASE_VALIDADA`   | não                           | `true`: resultado experimental (situação sem base validada) não pode ser validado como oficial |
+| `LAB_LIMITE_CONVERSAS_HORA` | não                           | Mensagens por participante por hora no espaço de aprendizagem. Padrão 30                       |
 
 Ligado e mal configurado, o servidor **não sobe** e diz o que falta, em vez de começar a falhar na frente do participante. Desligado, o resto do sistema sobe exatamente como antes.
 
@@ -598,3 +600,66 @@ Diferente de ADMIN (só administrador), o perfil **DEV** acumula todos os papéi
 - **Implementações**: `ClienteIaHttp.conversar` (produção), `IaFalsa` (testes), `IaDemonstracao` (responde por regras, sem IA: `demonstracao/facilitador-demonstracao.ts`) e o agente real no serviço Python (`services/lab-ia`, rota `POST /agentes/facilitador`: Gemini com saída JSON, instrução `INSTRUCAO_FACILITADOR`, sem estado, sem guardar a conversa).
 - **Proteções no agente**: o pedido é validado por um modelo Pydantic estrito que espelha `conversaIaRequestSchema` (campo extra, aderência, mensagem longa ou histórico acima de 6 = 422, sem chamar o modelo); mensagem e histórico vão ao modelo dentro de `<dado>...</dado>` e a instrução manda tratá-los como dado, nunca como ordem; a resposta é conferida (vazia, JSON ou acima de 2000 caracteres é refeita; duas falhas = 502) e a falha do próprio modelo vira 502 sem vazar o motivo.
 - **Como testar o serviço** (sem Gemini, com modelo falso): `pip install -r services/lab-ia/requirements.txt` e `python services/lab-ia/tests/simular_facilitador.py`. Os arquivos de `services/lab-ia/tests/fixtures/` são lidos também por `ia-contrato.test.ts`: se o formato mudar de um lado, o teste do outro reprova. **Ainda não foi exercitado com o modelo real** (precisa das credenciais do Vertex AI): vale revisar a instrução com respostas de verdade antes de liberar.
+
+## Inteligência artificial do Lab: agentes, base de conhecimento e personalização
+
+Princípio que não muda: **a IA propõe; o backend valida, calcula e decide.** Nenhuma nota, nível ou "validado" nasce no modelo.
+
+### Agentes e responsabilidades
+
+| Agente                     | Papel                                                                                                                                             | O que decide / não decide                                                                                                                                                                                                       |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agente_lab` (treinamento) | Cria e conduz as situações do teste, no nível do cargo. Recebe o enquadramento do cargo, a rubrica, o perfil resumido e as fontes recuperadas.    | Propõe texto, opções e `base` (competências, fontes usadas). O **serviço** define a dificuldade (situações 1–2 na base do participante, depois +1, teto 3) e a fundamentação; o **backend** calcula aderência, níveis e estilo. |
+| `guarda`                   | Filtra todo texto livre do participante (comentário do teste, mensagem e histórico da conversa).                                                  | Falha fechada: sem a liberação dele, o texto não segue.                                                                                                                                                                         |
+| `facilitador`              | Mentor individual. **Debriefing** (depois do teste, com o resultado que o participante já viu) e **aprendizagem** (fora do teste, sem resultado). | Explica, orienta, cita fontes recuperadas. Não revela avaliação das opções não escolhidas nem dá pista numa situação cronometrada.                                                                                              |
+| `autor`, `analista`        | Reservados em `labAgentesIa`; **não implementados**.                                                                                              | —                                                                                                                                                                                                                               |
+
+### Fluxo
+
+1. `POST /sessoes` → o backend monta o `contexto` (cargo, rubrica, perfil resumido) e abre a sessão no serviço, que recupera fontes e gera a situação 1.
+2. Cada resposta → o backend avalia e pede a próxima; guarda `rubrica_versao`, `dificuldade` na sessão e `base_pedagogica` + `fundamentacao` por situação.
+3. Fim do teste → o resultado nasce `experimental` se alguma situação não tinha base validada. O RH vê o aviso na ficha; com `LAB_EXIGE_BASE_VALIDADA=true` ele **não pode** ser validado como oficial (409 `LAB_RESULTADO_EXPERIMENTAL`).
+4. Facilitador: `POST /sessoes/:id/conversa` (debriefing) e `POST /aprendizagem/conversa` (aprendizagem). Esta recusa com 409 `LAB_APRENDIZAGEM_BLOQUEADA` enquanto há teste em andamento, tem teto por participante por hora (`LAB_LIMITE_CONVERSAS_HORA`, padrão 30, 429) e passa pela Guarda como a outra.
+
+### Personalização (`contexto`, `contextoPedagogicoIaSchema`)
+
+- **Por cargo** (`packages/shared/src/leadership-lab-pedagogia.ts`, `labEnquadramentoPorMolde`): responsabilidades, competências em foco, profundidade técnica por skill (`nocao` | `aplicacao` | `dominio`) e `limiteTecnico`. Encarregado, supervisor e coordenador diferem (ex.: coordenador tem NR/POP e gestão de OS em `nocao`: cobra acompanhar e decidir, não executar). Esse enquadramento nunca é inferido pelo modelo.
+- **Por histórico** (`personalizacao/perfil-resumido.ts`): só o resumo por skill (nível que vale, tendência, nº de testes, se provisório, escolhas fracas e se é recorrente), no máximo 5 skills. Nunca o histórico completo, texto de resposta, tempos, nome ou id. A consulta é sempre filtrada pelo id do participante (teste de isolamento) e, se falhar, o teste segue sem personalização.
+- **Rubrica versionada** (`labRubrica`, versão `2026-11-1`, `validada: false`): quatro níveis (100/70/40/10) e o que observar por competência. Enquanto não for validada pelo RH, toda situação é `experimental`.
+
+### Base de conhecimento (RAG) — `services/lab-ia/conhecimento`
+
+- Fichas JSON em `fichas/`, uma por fonte, validadas por `ficha.py`: título, instituição, tipo (`legislacao`, `norma_tecnica`, `recomendacao`, `material_educacional`), competências, cargos, assunto, **pontos-chave curtos** (≤ 6, ≤ 280 caracteres cada: limite de direito autoral; nunca o documento) e `url`.
+- Busca lexical (BM25, sem acento e sem stopwords), com filtro por cargo/tipo, reforço de legislação e de fontes validadas e piso de relevância; até 5 trechos (padrão 3). Falha de carregamento = base vazia = situações experimentais (o teste não para).
+- `conteudo_extraido=false` = **ponteiro de estudo**: o facilitador pode indicar a norma, mas **não pode afirmar o que ela exige** (a instrução proíbe e o prompt marca `situacao="ponteiro"`).
+- Segurança: as fontes entram no prompt como `<fonte>` (dado, não instrução; `<` e `>` removidos), assim como a mensagem e o histórico do participante em `<dado>`. As citações devolvidas são **filtradas** pelas fontes realmente recuperadas; a `fundamentacao` é calculada pelo serviço a partir das fichas, não pelo modelo.
+
+| Fonte                                                                            | Estado hoje                                                      |
+| -------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| NR-01, 06, 10, 12, 13, 17, 32 (Ministério do Trabalho)                           | Ponteiro de estudo, não validada                                 |
+| RDC 509/2021 (ANVISA)                                                            | Ponteiro de estudo, não validada                                 |
+| ENAP, SENAI (Gestão de Pessoas e de Equipes), Fundacentro (riscos psicossociais) | Ponteiro de estudo, não validada                                 |
+| Sebrae (escuta ativa; capacitar equipes para decidir)                            | Pontos-chave a partir de resumos públicos de busca; não validada |
+
+**Pendente:** o ambiente de desenvolvimento não alcançou os sites oficiais (gov.br, in.gov.br, sebrae, enap). Para uma ficha virar `validada` é preciso ler a fonte, preencher `pontos_chave`, `url` e `verificado_em` e marcar `conteudo_extraido` e `validada` (a ficha recusa `validada` sem os três).
+
+### Controle, custo e privacidade
+
+- Nada pessoal vai ao modelo (lista fechada de campos; teste de contrato recusa nome, e-mail, matrícula, ids, nota, tempos). Conversa não é guardada; `log_ia` guarda só agente, versão da instrução, modelo, tokens, latência, sucesso e código de erro.
+- Custo: contexto resumido em toda chamada (nunca o histórico inteiro), no máximo 3 fontes por chamada, histórico da conversa limitado a 6 mensagens, 30 mensagens por teste (debriefing) e por hora (aprendizagem).
+- Sem Gemini ou sem base: o modo demonstração responde por regras (`IaDemonstracao`, `facilitador-demonstracao.ts`), sem citar fontes nem explicar normas; no serviço, base vazia ou falha na busca só tornam a situação experimental.
+
+### Como testar
+
+```bash
+# serviço (Python): conhecimento, agentes com modelo falso, contrato
+python -m pytest services/lab-ia/tests
+python services/lab-ia/tests/simular.py /tmp/saida.json
+python services/lab-ia/tests/simular_facilitador.py
+# backend e front
+pnpm --filter @my-flux/shared test
+LAB_TEST_DATABASE_URL=... LAB_E2E=1 pnpm --filter @my-flux/api exec vitest run src/modules/leadership-lab --no-file-parallelism
+pnpm --filter @my-flux/web test
+```
+
+Os arquivos de `services/lab-ia/tests/fixtures/` (`conversa-*`, `iniciar-pedido.json`) são lidos pelos dois lados: `iniciar-pedido.json` é igual ao que o construtor do backend gera, então mudar o formato de um lado reprova o teste do outro.

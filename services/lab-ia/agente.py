@@ -489,10 +489,15 @@ def consulta_de_conversa(corpo: dict[str, Any]) -> tuple[str, list[str]]:
     return corpo["mensagem"], list(dict.fromkeys([*fracas, *foco]))
 
 
+def _dado(texto: str) -> str:
+    """Texto de usuário dentro de <dado>: sem `<` nem `>`, para não fechar o bloco e escapar dele."""
+    return f"<dado>{texto.replace('<', '').replace('>', '')}</dado>"
+
+
 def pedido_de_conversa(corpo: dict[str, Any], fontes: str = "(nenhuma fonte recuperada)") -> str:
     """O contexto da conversa. O que veio do usuário (mensagem e histórico) vai entre <dado>...</dado>."""
     historico = "\n".join(
-        f"[{h['papel']}] <dado>{h['texto']}</dado>" for h in corpo["historico"]
+        f"[{h['papel']}] {_dado(h['texto'])}" for h in corpo["historico"]
     ) or "(início da conversa)"
     partes = [
         f"MODO: {corpo['modo'].upper()}.",
@@ -507,6 +512,6 @@ def pedido_de_conversa(corpo: dict[str, Any], fontes: str = "(nenhuma fonte recu
         "HISTORICO (do mais antigo ao mais novo):",
         historico,
         "MENSAGEM a responder:",
-        f"<dado>{corpo['mensagem']}</dado>",
+        _dado(corpo["mensagem"]),
     ]
     return "\n".join(partes)
