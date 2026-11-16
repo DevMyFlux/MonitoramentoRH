@@ -83,7 +83,8 @@ const podem: Record<LabAcao, NomeDoAtor[]> = {
   "participante:atualizar": curadores,
   "agregados:ler": gestores,
   "config-moldes:ler": administradores,
-  "config-moldes:atualizar": administradores
+  "config-moldes:atualizar": administradores,
+  "config-consumo-ia:ler": administradores
 };
 
 describe("matriz de permissões do Leadership Lab", () => {

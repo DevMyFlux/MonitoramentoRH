@@ -1,0 +1,19 @@
+{
+  "id": "nr-23",
+  "titulo": "NR-23 — Proteção contra incêndios",
+  "instituicao": "Ministério do Trabalho e Emprego",
+  "tipo": "legislacao",
+  "categoria": "Sistemas de detecção e combate a incêndio",
+  "assunto": "incêndio proteção contra incêndios detecção alarme de incêndio combate extintores hidrantes saídas de emergência brigada",
+  "url": "https://www.gov.br/trabalho-e-emprego/pt-br/acesso-a-informacao/participacao-social/conselhos-e-orgaos-colegiados/comissao-tripartite-partitaria-permanente/normas-regulamentadora/normas-regulamentadoras-vigentes",
+  "verificado_em": "2026-11-16",
+  "competencias": [
+    "aplicacao-nr-pop",
+    "contingencia"
+  ],
+  "cargos": [],
+  "conteudo_extraido": false,
+  "pontos_chave": [],
+  "validada": false,
+  "observacoes": "Ponteiro de estudo: endereço oficial conferido em 2026-11-16; o conteúdo ainda não foi lido para a base nem validado pelo negócio. Não sustenta afirmação técnica."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "cdc-controle-ambiental-hospitalar",
+  "titulo": "Guidelines for Environmental Infection Control in Health-Care Facilities",
+  "instituicao": "CDC",
+  "tipo": "recomendacao",
+  "categoria": "Controle ambiental hospitalar",
+  "assunto": "controle ambiental hospitalar infecção ar água ventilação obras poeira interrupção de sistemas de água estabelecimentos de saúde",
+  "url": "https://www.cdc.gov/infection-control/hcp/environmental-control/index.html",
+  "versao": "2003, atualizado em 2019",
+  "verificado_em": "2026-11-16",
+  "competencias": [
+    "aplicacao-nr-pop",
+    "contingencia"
+  ],
+  "cargos": [],
+  "conteudo_extraido": false,
+  "pontos_chave": [],
+  "validada": false,
+  "observacoes": "Ponteiro de estudo: endereço oficial conferido em 2026-11-16; o conteúdo ainda não foi lido para a base nem validado pelo negócio. Não sustenta afirmação técnica."
+}

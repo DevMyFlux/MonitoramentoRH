@@ -1,0 +1,20 @@
+{
+  "id": "nhs-htm-02-01-parte-b",
+  "titulo": "HTM 02-01 Parte B — Sistemas de tubulação de gases medicinais: gestão operacional",
+  "instituicao": "NHS England",
+  "tipo": "recomendacao",
+  "categoria": "Gases medicinais e sistemas de alarme",
+  "assunto": "gases medicinais oxigênio rede de gases central de gases cilindros alarmes de gases gestão operacional permissão de trabalho",
+  "url": "https://www.england.nhs.uk/wp-content/uploads/2021/05/HTM_02-01_Part_B.pdf",
+  "verificado_em": "2026-11-16",
+  "competencias": [
+    "aplicacao-nr-pop",
+    "gestao-os",
+    "contingencia"
+  ],
+  "cargos": [],
+  "conteudo_extraido": false,
+  "pontos_chave": [],
+  "validada": false,
+  "observacoes": "Ponteiro de estudo: endereço oficial conferido em 2026-11-16; o conteúdo ainda não foi lido para a base nem validado pelo negócio. Não sustenta afirmação técnica."
+}

@@ -1,0 +1,19 @@
+{
+  "id": "nhs-htm-04-01",
+  "titulo": "HTM 04-01 — Água segura em estabelecimentos de saúde",
+  "instituicao": "NHS England",
+  "tipo": "recomendacao",
+  "categoria": "Reservatórios e sistemas de abastecimento de água",
+  "assunto": "reservatórios caixa d'água abastecimento de água sistemas de água água segura instalações hidráulicas hospitalares gestão operacional",
+  "url": "https://www.england.nhs.uk/publication/safe-water-in-healthcare-premises-htm-04-01/",
+  "verificado_em": "2026-11-16",
+  "competencias": [
+    "aplicacao-nr-pop",
+    "contingencia"
+  ],
+  "cargos": [],
+  "conteudo_extraido": false,
+  "pontos_chave": [],
+  "validada": false,
+  "observacoes": "Ponteiro de estudo: endereço oficial conferido em 2026-11-16; o conteúdo ainda não foi lido para a base nem validado pelo negócio. Não sustenta afirmação técnica."
+}

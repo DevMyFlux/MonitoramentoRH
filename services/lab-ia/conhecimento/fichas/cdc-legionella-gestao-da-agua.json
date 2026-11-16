@@ -1,0 +1,19 @@
+{
+  "id": "cdc-legionella-gestao-da-agua",
+  "titulo": "Toolkit — Programa de gestão da água para reduzir Legionella em edificações",
+  "instituicao": "CDC",
+  "tipo": "recomendacao",
+  "categoria": "Reservatórios e sistemas de abastecimento de água",
+  "assunto": "segurança de sistemas de água Legionella programa de gestão da água reservatórios torres de resfriamento água quente estabelecimentos de saúde",
+  "url": "https://www.cdc.gov/control-legionella/php/toolkit/wmp-toolkit.html",
+  "verificado_em": "2026-11-16",
+  "competencias": [
+    "aplicacao-nr-pop",
+    "contingencia"
+  ],
+  "cargos": [],
+  "conteudo_extraido": false,
+  "pontos_chave": [],
+  "validada": false,
+  "observacoes": "Ponteiro de estudo: endereço oficial conferido em 2026-11-16; o conteúdo ainda não foi lido para a base nem validado pelo negócio. Não sustenta afirmação técnica."
+}

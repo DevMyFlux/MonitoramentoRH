@@ -53,9 +53,9 @@ const skill = z.enum(idsDeSkills);
 const dificuldade = z.literal([...labDificuldades]);
 
 /** Bloco `uso`: metadados de cada chamada, para o log_ia. Nunca conteúdo. PROPOSTA (campos). */
-function uso<A extends LabAgenteIa>(agente: A) {
+function uso<A extends LabAgenteIa>(...agentes: [A, ...A[]]) {
   return z.strictObject({
-    agente: z.literal(agente),
+    agente: z.literal(agentes),
     modelo: texto,
     versao_instrucao: texto,
     tokens_entrada: z.int().min(0).nullable(),
@@ -279,7 +279,9 @@ export const respostaTurnoIaSchema = z.discriminatedUnion("tipo", [
   z
     .strictObject({ ...formaDoTurnoDeSituacao, ...usoDoAgenteLab })
     .superRefine(regrasDoTurnoDeSituacao),
-  z.strictObject({ ...formaDoTurnoDeResultado, ...usoDoAgenteLab })
+  // O fechamento é do analista (interpreta o percurso). `agente_lab` segue aceito: é o que o
+  // modo demonstração e versões anteriores do serviço informam.
+  z.strictObject({ ...formaDoTurnoDeResultado, uso: uso("agente_lab", "analista") })
 ]);
 export type RespostaTurnoIa = z.infer<typeof respostaTurnoIaSchema>;
 

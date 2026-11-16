@@ -1,0 +1,21 @@
+{
+  "id": "oms-manutencao-de-equipamentos-medicos",
+  "titulo": "Medical equipment maintenance programme overview — WHO Medical Device Technical Series",
+  "instituicao": "Organização Mundial da Saúde",
+  "tipo": "recomendacao",
+  "categoria": "Equipamentos médico-hospitalares",
+  "assunto": "equipamentos médico-hospitalares manutenção de equipamentos médicos ventiladores monitores bombas de infusão programa de manutenção inventário engenharia clínica",
+  "url": "https://www.who.int/teams/health-product-policy-and-standards/assistive-and-medical-technology/medical-devices/management-use",
+  "versao": "2011",
+  "verificado_em": "2026-11-16",
+  "competencias": [
+    "aplicacao-nr-pop",
+    "gestao-os",
+    "contingencia"
+  ],
+  "cargos": [],
+  "conteudo_extraido": false,
+  "pontos_chave": [],
+  "validada": false,
+  "observacoes": "Ponteiro de estudo: endereço oficial conferido em 2026-11-16; o conteúdo ainda não foi lido para a base nem validado pelo negócio. Não sustenta afirmação técnica."
+}

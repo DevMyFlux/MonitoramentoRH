@@ -18,6 +18,7 @@ import {
   guardaIaRequestSchema,
   iniciarSessaoIaRequestSchema,
   proximoTurnoIaRequestSchema,
+  respostaTurnoIaSchema,
   turnoIaSchema,
   validarAberturaIa,
   validarConversaIa,
@@ -918,5 +919,24 @@ describe("paridade com o serviço Python (services/lab-ia/tests/fixtures)", () =
         campo
       ).toBe(false);
     }
+  });
+});
+
+describe("agente do fechamento", () => {
+  const fechamento = (agente: string) =>
+    respostaTurnoIaSchema.safeParse({ ...respostaFinalExemplo(), uso: usoExemplo(agente) }).success;
+
+  it("o resultado pode vir do analista ou do agente_lab", () => {
+    expect(fechamento("analista")).toBe(true);
+    expect(fechamento("agente_lab")).toBe(true);
+  });
+
+  it("guarda e facilitador não fecham um teste, e o analista não escreve situação", () => {
+    expect(fechamento("guarda")).toBe(false);
+    expect(fechamento("facilitador")).toBe(false);
+    expect(
+      respostaTurnoIaSchema.safeParse({ ...respostaTurnoExemplo(), uso: usoExemplo("analista") })
+        .success
+    ).toBe(false);
   });
 });

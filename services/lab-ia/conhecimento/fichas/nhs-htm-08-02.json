@@ -1,0 +1,20 @@
+{
+  "id": "nhs-htm-08-02",
+  "titulo": "HTM 08-02 — Elevadores: projeto e manutenção no setor de saúde",
+  "instituicao": "NHS England",
+  "tipo": "recomendacao",
+  "categoria": "Elevadores hospitalares",
+  "assunto": "elevadores hospitalares elevador de macas transporte vertical manutenção de elevadores operação resgate",
+  "url": "https://www.england.nhs.uk/publication/design-and-maintenance-of-lifts-in-the-health-sector-htm-08-02/",
+  "versao": "2010",
+  "verificado_em": "2026-11-16",
+  "competencias": [
+    "aplicacao-nr-pop",
+    "contingencia"
+  ],
+  "cargos": [],
+  "conteudo_extraido": false,
+  "pontos_chave": [],
+  "validada": false,
+  "observacoes": "Ponteiro de estudo: endereço oficial conferido em 2026-11-16; o conteúdo ainda não foi lido para a base nem validado pelo negócio. Não sustenta afirmação técnica."
+}

@@ -262,7 +262,11 @@ def _fechamento(estado: dict[str, Any], texto_livre: str | None, uso: Uso):
     pedido = agente.pedido_de_resultado(estado, texto_livre)
 
     def gerar(texto: str):
-        bruto = agente.gerar_json(agente.INSTRUCAO_LAB, agente.ESQUEMA_RESULTADO, texto, uso, temperatura=0.5)
+        # O analista interpreta o percurso: instrução própria e curta, na mesma chamada única que
+        # já fechava o teste (nenhuma chamada a mais).
+        bruto = agente.gerar_json(
+            agente.INSTRUCAO_ANALISTA, agente.ESQUEMA_RESULTADO, texto, uso, temperatura=0.5, agente="analista"
+        )
         # Contribuição do último turno só existe se o gestor escreveu algo.
         contribuicao = _texto_ou_nulo(bruto.get("contribuicao")) if texto_livre else None
         contribuicoes = [c for c in estado.get("contribuicoes", []) if c] + ([contribuicao] if contribuicao else [])
@@ -332,6 +336,7 @@ def proximo_turno(corpo: ProximoTurno, x_servico_token: str | None = Header(defa
     if corpo.numero < estado["total"]:
         nova, consequencia, contribuicao = _nova_situacao(estado, corpo.numero + 1, pendente, texto_livre, uso)
         contribuicao = contribuicao if texto_livre else None
+        pendente["consequencia"] = consequencia  # o analista lê o percurso com as consequências
         avaliacao = avaliacao_da_escolha(corpo.numero, corpo.escolha, pendente["gabarito"], contribuicao)
         estado["historico"].append({"situacao": nova["publica"], "gabarito": nova["gabarito"], "rota": nova["rota"], "respondida": False, "base": nova["publica"].get("base")})
         resposta = turno_de_situacao(avaliacao, consequencia, nova["publica"], uso.bloco("agente_lab"))
@@ -339,7 +344,7 @@ def proximo_turno(corpo: ProximoTurno, x_servico_token: str | None = Header(defa
         resultado, consequencia, contribuicao = _fechamento(estado, texto_livre, uso)
         avaliacao = avaliacao_da_escolha(corpo.numero, corpo.escolha, pendente["gabarito"], contribuicao)
         estado["concluida"] = True
-        resposta = turno_de_resultado(avaliacao, consequencia, resultado, uso.bloco("agente_lab"))
+        resposta = turno_de_resultado(avaliacao, consequencia, resultado, uso.bloco("analista"))
 
     if avaliacao["contribuicao"]:
         estado["contribuicoes"].append(avaliacao["contribuicao"])
@@ -354,7 +359,8 @@ def guarda(corpo: Guarda, x_servico_token: str | None = Header(default=None)) ->
     uso = Uso()
     try:
         bruto = agente.gerar_json(
-            agente.INSTRUCAO_GUARDA, agente.ESQUEMA_GUARDA, corpo.texto, uso, temperatura=0.0, raciocinio="MINIMAL"
+            agente.INSTRUCAO_GUARDA, agente.ESQUEMA_GUARDA, corpo.texto, uso, temperatura=0.0, raciocinio="MINIMAL",
+            agente="guarda",
         )
         decisao, texto = normalizar_guarda(bruto, corpo.texto)
     except Exception as erro:  # o backend trata qualquer falha como bloqueio
@@ -377,7 +383,7 @@ def facilitador(corpo: Conversa, x_servico_token: str | None = Header(default=No
 
     def gerar(texto: str):
         bruto = agente.gerar_json(
-            agente.INSTRUCAO_FACILITADOR, agente.ESQUEMA_CONVERSA, texto, uso, temperatura=0.4
+            agente.INSTRUCAO_FACILITADOR, agente.ESQUEMA_CONVERSA, texto, uso, temperatura=0.4, agente="facilitador"
         )
         usadas = [i for i in (bruto.get("fontes_usadas") or []) if isinstance(i, str)]
         return normalizar_conversa(bruto), citacoes(achados, usadas)
