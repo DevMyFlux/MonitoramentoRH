@@ -94,7 +94,9 @@ const matriz = {
 
   // --- Administrador (GET e PUT /config/moldes)
   "config-moldes:ler": { administrador: "configuracao" },
-  "config-moldes:atualizar": { administrador: "configuracao" }
+  "config-moldes:atualizar": { administrador: "configuracao" },
+  // Consumo e custo da IA: só agregados do log técnico, sem dado de pessoa.
+  "config-consumo-ia:ler": { administrador: "configuracao" }
 } as const satisfies Record<string, LinhaDaMatriz>;
 
 export type LabAcao = keyof typeof matriz;

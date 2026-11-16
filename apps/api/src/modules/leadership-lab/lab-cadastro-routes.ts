@@ -23,6 +23,7 @@
 //   Administrador (ADMIN e DEV):
 //   GET    /config/moldes                           moldes, cargos e testes em andamento
 //   PUT    /config/moldes/:nivel                    tempo, liberação e cargos do molde
+//   GET    /config/consumo-ia                       chamadas, tokens, latência e custo estimado da IA
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { PrismaClient } from "@prisma/client";
 import {
@@ -35,6 +36,7 @@ import {
   labIncluirNaTurmaEntradaSchema
 } from "@my-flux/shared";
 import { authenticateRequest } from "../auth/auth-routes.js";
+import { ConsumoDeIa, lerPrecoDaIa } from "./cadastro/consumo-ia.js";
 import type { UserRepository } from "../users/user-repository.js";
 import { ConfigDosMoldes } from "./cadastro/moldes.js";
 import { ParticipantesDoLab } from "./cadastro/participantes.js";
@@ -57,6 +59,7 @@ export async function registrarRotasDoCadastro(
   const participantes = new ParticipantesDoLab(db);
   const turmas = new TurmasDoLab(db);
   const moldes = new ConfigDosMoldes(db);
+  const consumo = new ConsumoDeIa(db, lerPrecoDaIa(process.env));
 
   const contexto = async (request: FastifyRequest) => {
     const user = await authenticateRequest(request, users);
@@ -150,6 +153,11 @@ export async function registrarRotasDoCadastro(
   app.get("/config/moldes", async (request) => {
     const { ator } = await contexto(request);
     return { data: await moldes.ler(ator) };
+  });
+
+  app.get("/config/consumo-ia", async (request) => {
+    const { ator } = await contexto(request);
+    return { data: await consumo.ler(ator) };
   });
 
   app.put<{ Params: { nivel: string } }>(

@@ -201,3 +201,38 @@ def test_base_que_nao_carrega_vira_base_vazia_e_o_servico_segue(tmp_path, caplog
 def test_ids_repetidos_sao_recusados():
     with pytest.raises(BaseInvalida):
         Base([ficha(), ficha()])
+
+
+# As 12 categorias hospitalares do piloto: cada uma tem ao menos um documento oficial identificável
+# (instituição, endereço e data de conferência), achado por uma busca em linguagem do dia a dia.
+CATEGORIAS_HOSPITALARES = {
+    "Climatização e sistemas de ar-condicionado": "o ar-condicionado do centro cirúrgico parou",
+    "Gases medicinais e sistemas de alarme": "alarme da rede de gases medicinais e oxigênio",
+    "Compressores de ar e bombas de vácuo": "falha no compressor de ar medicinal e na bomba de vácuo",
+    "Quadros elétricos e distribuição de energia": "quadro elétrico de distribuição de energia desarmou",
+    "Geradores e transferência automática": "o gerador não assumiu na transferência automática",
+    "Autoclaves e equipamentos do CME": "autoclave do CME parada, esterilização atrasada",
+    "Sistemas de detecção e combate a incêndio": "central de alarme de incêndio com falha",
+    "Reservatórios e sistemas de abastecimento de água": "reservatório e abastecimento de água do hospital",
+    "Elevadores hospitalares": "elevador de macas parado",
+    "Refrigeradores e câmaras de conservação": "câmara de conservação de vacinas fora da temperatura",
+    "Tratamento de água para hemodiálise": "tratamento de água da hemodiálise",
+    "Equipamentos médico-hospitalares": "manutenção de ventiladores, monitores e bombas de infusão",
+}
+
+
+@pytest.mark.parametrize("categoria,consulta", CATEGORIAS_HOSPITALARES.items())
+def test_cada_categoria_hospitalar_tem_fonte_oficial_recuperavel(base, categoria, consulta):
+    da_categoria = [f for f in carregar_fichas() if f.categoria == categoria]
+    assert da_categoria, categoria
+    achados = base.buscar(consulta, cargo="supervisor", k=5)
+    assert any(a.ficha.categoria == categoria for a in achados), [a.ficha.id for a in achados]
+
+
+def test_fichas_hospitalares_sao_ponteiros_e_nao_sustentam_afirmacao_tecnica():
+    hospitalares = [f for f in carregar_fichas() if f.categoria in CATEGORIAS_HOSPITALARES]
+    assert len(hospitalares) >= 12
+    for f in hospitalares:
+        assert f.ponteiro and not f.validada, f.id  # ninguém leu nem validou: não vira norma citada
+        assert f.url is None or f.verificado_em, f.id  # endereço só entra com a data da conferência
+    assert sum(1 for f in carregar_fichas() if f.url) >= 20

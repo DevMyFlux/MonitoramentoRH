@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 contador = itertools.count(1)
 ruim_uma_vez = {"feito": False}
 
-def falso(instrucao, esquema, pedido, uso, temperatura=0.7, raciocinio=None):
+def falso(instrucao, esquema, pedido, uso, temperatura=0.7, raciocinio=None, **_):
     uso.chamadas += 1; uso.tokens_entrada += 100; uso.tokens_saida += 50
     n = next(contador)
     if esquema is agente.ESQUEMA_GUARDA:

@@ -19,7 +19,7 @@ chamadas: list[dict] = []
 roteiro: list = []  # o que o modelo falso devolve, em ordem; Exception vira falha do modelo
 
 
-def falso(instrucao, esquema, pedido, uso, temperatura=0.7, raciocinio=None):
+def falso(instrucao, esquema, pedido, uso, temperatura=0.7, raciocinio=None, **_):
     chamadas.append({"instrucao": instrucao, "esquema": esquema, "pedido": pedido, "temperatura": temperatura})
     uso.chamadas += 1; uso.tokens_entrada += 1200; uso.tokens_saida += 60
     item = roteiro.pop(0) if roteiro else {"resposta": MODELO_RESPOSTA["resposta"]}

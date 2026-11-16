@@ -1,0 +1,21 @@
+{
+  "id": "anvisa-rdc-15-2012",
+  "titulo": "RDC nº 15/2012 — Boas práticas para o processamento de produtos para saúde (CME)",
+  "instituicao": "ANVISA",
+  "tipo": "legislacao",
+  "categoria": "Autoclaves e equipamentos do CME",
+  "assunto": "autoclaves esterilização CME centro de material e esterilização processamento de produtos para saúde lavadoras termodesinfectoras",
+  "url": "https://bvsms.saude.gov.br/bvs/saudelegis/anvisa/2012/rdc0015_15_03_2012.html",
+  "versao": "2012",
+  "verificado_em": "2026-11-16",
+  "competencias": [
+    "aplicacao-nr-pop",
+    "gestao-os",
+    "contingencia"
+  ],
+  "cargos": [],
+  "conteudo_extraido": false,
+  "pontos_chave": [],
+  "validada": false,
+  "observacoes": "Ponteiro de estudo: endereço oficial conferido em 2026-11-16; o conteúdo ainda não foi lido para a base nem validado pelo negócio. Não sustenta afirmação técnica."
+}

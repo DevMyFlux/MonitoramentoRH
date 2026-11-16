@@ -883,7 +883,7 @@ export class MotorDoTeste {
           });
         }
         await tx.labLogIa.create({
-          data: this.dadosDoLog("agente_lab", desfecho, sessao.id, resposta.uso)
+          data: this.dadosDoLog(resposta.uso.agente, desfecho, sessao.id, resposta.uso)
         });
 
         if (resposta.tipo === "situacao") {
@@ -1069,7 +1069,7 @@ export class MotorDoTeste {
   // =========================================================================
 
   private dadosDoLog(
-    agente: "agente_lab" | "guarda" | "facilitador",
+    agente: "agente_lab" | "guarda" | "facilitador" | "analista",
     desfecho: { latenciaMs: number },
     sessaoId: string | null,
     uso: {

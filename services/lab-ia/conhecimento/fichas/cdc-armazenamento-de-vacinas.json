@@ -1,0 +1,21 @@
+{
+  "id": "cdc-armazenamento-de-vacinas",
+  "titulo": "Vaccine Storage and Handling Toolkit — armazenamento e conservação de vacinas",
+  "instituicao": "CDC",
+  "tipo": "recomendacao",
+  "categoria": "Refrigeradores e câmaras de conservação",
+  "assunto": "refrigeradores câmaras de conservação câmara fria cadeia de frio vacinas monitoramento de temperatura armazenamento conservação falha de refrigeração",
+  "url": "https://www.cdc.gov/vaccines/hcp/downloads/storage-handling-toolkit.pdf",
+  "versao": "2026-07",
+  "verificado_em": "2026-11-16",
+  "competencias": [
+    "aplicacao-nr-pop",
+    "gestao-os",
+    "contingencia"
+  ],
+  "cargos": [],
+  "conteudo_extraido": false,
+  "pontos_chave": [],
+  "validada": false,
+  "observacoes": "Ponteiro de estudo: endereço oficial conferido em 2026-11-16; o conteúdo ainda não foi lido para a base nem validado pelo negócio. Não sustenta afirmação técnica."
+}

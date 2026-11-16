@@ -21,7 +21,8 @@ export const chavesDoCadastro = {
   usuarios: (busca: string) => ["lab", "cadastro", "usuarios", busca] as const,
   turmas: ["lab", "cadastro", "turmas"] as const,
   turma: (id: string) => ["lab", "cadastro", "turma", id] as const,
-  moldes: ["lab", "cadastro", "moldes"] as const
+  moldes: ["lab", "cadastro", "moldes"] as const,
+  consumoDeIa: ["lab", "cadastro", "consumo-ia"] as const
 };
 
 /** Espera o valor parar de mudar por `ms` antes de devolvê-lo (para não buscar a cada tecla). */
@@ -153,6 +154,14 @@ export function useConfigDosMoldes() {
   return useQuery({
     queryKey: chavesDoCadastro.moldes,
     queryFn: labCadastroApi.configDosMoldes,
+    retry: repetirSoSeFalhaPassageira
+  });
+}
+
+export function useConsumoDeIa() {
+  return useQuery({
+    queryKey: chavesDoCadastro.consumoDeIa,
+    queryFn: labCadastroApi.consumoDeIa,
     retry: repetirSoSeFalhaPassageira
   });
 }

@@ -161,6 +161,29 @@ export const labConfigDosMoldesSchema = z.object({
 });
 export type LabConfigDosMoldes = z.infer<typeof labConfigDosMoldesSchema>;
 
+/** Consumo de IA dos últimos `dias`: só agregados do log técnico. Nenhum dado de pessoa. */
+export const labConsumoDeIaSchema = z.object({
+  dias: z.number().int().positive(),
+  agentes: z.array(
+    z.object({
+      agente: z.string(),
+      chamadas: z.number().int().min(0),
+      falhas: z.number().int().min(0),
+      tokensEntrada: z.number().int().min(0),
+      tokensSaida: z.number().int().min(0),
+      latenciaMediaMs: z.number().int().min(0)
+    })
+  ),
+  testesConcluidos: z.number().int().min(0),
+  /** Média de tokens (entrada + saída) por teste concluído; nulo sem teste no período. */
+  tokensPorTeste: z.number().int().min(0).nullable(),
+  /** Nulo enquanto o preço por milhão de tokens não for configurado no servidor. */
+  custoEstimadoUsd: z
+    .object({ total: z.number().min(0), porTeste: z.number().min(0).nullable() })
+    .nullable()
+});
+export type LabConsumoDeIa = z.infer<typeof labConsumoDeIaSchema>;
+
 /** Códigos de erro novos dos cadastros, além dos de labCodigosDeErro. */
 export const labCodigosDeErroDoCadastro = [
   "LAB_PARTICIPANTE_JA_CADASTRADO",

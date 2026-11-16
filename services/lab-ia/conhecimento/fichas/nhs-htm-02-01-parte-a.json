@@ -1,0 +1,19 @@
+{
+  "id": "nhs-htm-02-01-parte-a",
+  "titulo": "HTM 02-01 Parte A — Sistemas de tubulação de gases medicinais: projeto, instalação e validação",
+  "instituicao": "NHS England",
+  "tipo": "recomendacao",
+  "categoria": "Compressores de ar e bombas de vácuo",
+  "assunto": "compressores de ar medicinal bombas de vácuo clínico central de ar comprimido vácuo instalação validação gases medicinais",
+  "url": "https://www.england.nhs.uk/wp-content/uploads/2021/05/HTM_02-01_Part_A.pdf",
+  "verificado_em": "2026-11-16",
+  "competencias": [
+    "aplicacao-nr-pop",
+    "contingencia"
+  ],
+  "cargos": [],
+  "conteudo_extraido": false,
+  "pontos_chave": [],
+  "validada": false,
+  "observacoes": "Ponteiro de estudo: endereço oficial conferido em 2026-11-16; o conteúdo ainda não foi lido para a base nem validado pelo negócio. Não sustenta afirmação técnica."
+}

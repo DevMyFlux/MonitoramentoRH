@@ -1,0 +1,20 @@
+{
+  "id": "nhs-htm-06-01",
+  "titulo": "HTM 06-01 — Serviços elétricos: suprimento e distribuição de energia em estabelecimentos de saúde",
+  "instituicao": "NHS England",
+  "tipo": "recomendacao",
+  "categoria": "Quadros elétricos e distribuição de energia",
+  "assunto": "quadros elétricos painéis distribuição de energia elétrica instalações elétricas hospitalares suprimento resiliência",
+  "url": "https://www.england.nhs.uk/estates/health-technical-memoranda/",
+  "versao": "2017",
+  "verificado_em": "2026-11-16",
+  "competencias": [
+    "aplicacao-nr-pop",
+    "contingencia"
+  ],
+  "cargos": [],
+  "conteudo_extraido": false,
+  "pontos_chave": [],
+  "validada": false,
+  "observacoes": "Ponteiro de estudo: endereço oficial conferido em 2026-11-16; o conteúdo ainda não foi lido para a base nem validado pelo negócio. Não sustenta afirmação técnica."
+}
