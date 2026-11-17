@@ -123,7 +123,7 @@ export function NotificacoesDoCurador() {
         aria-expanded={aberto}
         aria-controls={aberto ? idDoPainel : undefined}
         onClick={() => setAberto((a) => !a)}
-        className="relative grid h-10 w-10 place-items-center rounded-full text-lab-tinta-2 outline-none transition-colors hover:bg-lab-tinta/5 hover:text-lab-tinta focus-visible:ring-2 focus-visible:ring-lab-destaque"
+        className="relative grid h-11 w-11 place-items-center rounded-full text-lab-tinta-2 outline-none transition-colors hover:bg-lab-tinta/5 hover:text-lab-tinta focus-visible:ring-2 focus-visible:ring-lab-destaque"
       >
         <Bell size={19} aria-hidden="true" />
         {naoLidas > 0 ? (

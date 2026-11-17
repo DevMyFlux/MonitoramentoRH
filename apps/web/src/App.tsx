@@ -124,7 +124,7 @@ export function App({
   return (
     // O Suspense é para o layout de um módulo carregado sob demanda (o do Leadership Lab).
     <>
-      <Suspense fallback={<div className="min-h-screen bg-[#f5f5f7]" />}>
+      <Suspense fallback={<div className="min-h-screen bg-mf-fundo" />}>
         <Layout breadcrumbs={breadcrumbs}>{children}</Layout>
       </Suspense>
       {/* O assistente de suporte: em todas as telas autenticadas, fora do layout de cada módulo. */}

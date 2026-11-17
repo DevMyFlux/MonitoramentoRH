@@ -1,6 +1,9 @@
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { type ReactNode, Suspense, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { Dock } from "../../../components/layout/dock";
+import { FundoAmbiente } from "../../../components/ui/fundo-ambiente";
+import { useSobreposicao } from "../../../components/ui/use-sobreposicao";
 import { LoadingState, NotificacoesProvider } from "../ui";
 import { transicao } from "../ui/movimento";
 import "../ui/tokens.css";
@@ -18,11 +21,16 @@ type LabShellProps = { breadcrumbs: string[]; children: ReactNode };
 export function LabShell({ breadcrumbs, children }: LabShellProps) {
   const [menuAberto, setMenuAberto] = useState(false);
   const { pathname } = useLocation();
+  // Durante o teste cronometrado nada se mexe nem distrai: fundo parado e sem a barra de navegação.
+  const emTeste = pathname === "/lab/teste" || pathname.startsWith("/lab/teste/");
+  // O menu aberto cobre a tela: o botão flutuante do assistente se recolhe.
+  useSobreposicao(menuAberto);
 
   return (
     <MotionConfig reducedMotion="user">
       <NotificacoesProvider>
-        <div className="lab min-h-screen">
+        <div className="lab relative isolate min-h-screen">
+          <FundoAmbiente parado={emTeste} />
           <a href="#main-content" className="skip-link">
             Ir para o conteúdo
           </a>
@@ -47,7 +55,7 @@ export function LabShell({ breadcrumbs, children }: LabShellProps) {
             <main
               id="main-content"
               tabIndex={-1}
-              className="mx-auto w-full max-w-[1240px] px-5 pb-20 pt-8 outline-none lg:px-10 lg:pt-10"
+              className="mx-auto w-full max-w-[1240px] px-5 pb-28 pt-8 outline-none lg:px-10 lg:pb-20 lg:pt-10"
             >
               {/* Só entrada: a página antiga sai na hora. Um "sair" animado a deixaria viva (e
                   reagindo a dados novos) por mais um instante, atrás da nova. */}
@@ -60,6 +68,7 @@ export function LabShell({ breadcrumbs, children }: LabShellProps) {
               </motion.div>
             </main>
           </div>
+          {emTeste ? null : <Dock />}
         </div>
       </NotificacoesProvider>
     </MotionConfig>

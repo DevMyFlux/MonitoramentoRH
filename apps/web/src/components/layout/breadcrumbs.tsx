@@ -18,7 +18,7 @@ export function Breadcrumbs({ items }: BreadcrumbsProps) {
         >
           <ChevronRight aria-hidden="true" size={14} />
           <span
-            className="truncate font-medium text-slate-700"
+            className="truncate font-display font-semibold text-mf-tinta"
             aria-current={index === items.length - 1 ? "page" : undefined}
           >
             {item === "MY FLUX" ? "MyFlux" : item}

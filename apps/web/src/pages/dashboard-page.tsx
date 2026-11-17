@@ -1,3 +1,7 @@
+// Painel inicial. Só apresentação: os indicadores, o endpoint e as rotas são os de sempre.
+// Layout em "bento" (blocos de tamanhos diferentes numa grade), inspirado na ideia do "Magic Bento"
+// do React Bits (reactbits.dev), mas feito do zero: cada bloco usa o CartaoSpotlight, os números
+// contam (Contador) e o único fundo animado da tela é o fundo ambiente do shell (CSS, sem WebGL).
 import type { CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -12,7 +16,15 @@ import {
   Users,
   Workflow
 } from "lucide-react";
-import { Button, ErrorState, LoadingState } from "../components/ui";
+import {
+  Button,
+  CartaoSpotlight,
+  Contador,
+  ErrorState,
+  Skeleton,
+  TituloDePagina
+} from "../components/ui";
+import { cn } from "../lib/cn";
 import { apiGet } from "../services/api-client";
 
 type DashboardSummaryResponse = {
@@ -43,6 +55,9 @@ const steps = [
   },
   { title: "Escalas", text: "Organize a próxima operação.", href: "/escalas", icon: CalendarDays }
 ];
+
+const inteiro = (n: number) => String(Math.round(n));
+
 export function DashboardPage() {
   const summary = useQuery({
     queryKey: ["dashboard-summary"],
@@ -52,46 +67,54 @@ export function DashboardPage() {
   const percent = Math.max(0, Math.min(100, data?.coveragePercent ?? 0));
   return (
     <div className="space-y-7">
-      <section className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <span className="eyebrow">VISÃO GERAL</span>
-          <h1 className="mt-2 text-3xl font-semibold text-slate-900">
-            Sua operação, em perspectiva.
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Acompanhe as pessoas, identifique prioridades e siga em frente.
-          </p>
-        </div>
-        <Button
-          variant="secondary"
-          icon={<RefreshCw size={15} className={summary.isFetching ? "animate-spin" : ""} />}
-          disabled={summary.isFetching}
-          onClick={() => void summary.refetch()}
-        >
-          Atualizar
-        </Button>
-      </section>
-      <section className="relative overflow-hidden rounded-2xl bg-[#123f36] p-6 text-white sm:p-8">
-        <div className="pointer-events-none absolute -right-16 -top-24 h-80 w-80 rounded-full border-[44px] border-white/[.03]" />
+      <TituloDePagina
+        etiqueta="Visão geral"
+        titulo="Sua operação, em perspectiva."
+        descricao="Acompanhe as pessoas, identifique prioridades e siga em frente."
+        acoes={
+          <Button
+            variant="secondary"
+            icon={<RefreshCw size={15} className={summary.isFetching ? "animate-spin" : ""} />}
+            disabled={summary.isFetching}
+            onClick={() => void summary.refetch()}
+          >
+            Atualizar
+          </Button>
+        }
+      />
+      <section className="relative overflow-hidden rounded-2xl bg-mf-primaria p-6 text-white sm:p-8">
+        <div className="pointer-events-none absolute -right-16 -top-24 h-80 w-80 rounded-full border-[44px] border-white/[.04]" />
         <div className="relative flex flex-wrap items-center justify-between gap-6">
           <div>
-            <p className="text-xs font-medium text-emerald-200">CADA ETAPA CONTA</p>
-            <h2 className="mt-3 text-2xl font-medium tracking-tight">
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-mf-realce">
+              Cada etapa conta
+            </p>
+            <h2 className="mt-3 font-display text-2xl font-bold tracking-tight">
               Planejar bem é cuidar de quem faz.
             </h2>
-            <p className="mt-2 max-w-lg text-sm leading-6 text-emerald-50/65">
+            <p className="mt-2 max-w-lg text-sm leading-6 text-mf-realce-suave/80">
               Conecte as necessidades da operação às pessoas certas, do QLP à escala.
             </p>
           </div>
           <Link
             to="/qlp"
-            className="flex items-center gap-3 rounded-lg bg-emerald-100 px-5 py-3 text-sm font-semibold text-emerald-950 hover:bg-white"
+            className="flex min-h-11 items-center gap-3 rounded-xl bg-mf-realce px-5 py-3 text-sm font-semibold text-mf-primaria transition hover:bg-white focus-visible:outline-white"
           >
             Ver planejamento <ArrowRight size={17} />
           </Link>
         </div>
       </section>
-      {summary.isLoading && <LoadingState />}
+      {summary.isLoading && (
+        <div
+          role="status"
+          aria-label="Carregando indicadores"
+          className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        >
+          {[0, 1, 2, 3].map((n) => (
+            <Skeleton key={n} className="h-36 rounded-2xl" />
+          ))}
+        </div>
+      )}
       {summary.isError && (
         <ErrorState
           title="Não foi possível atualizar os indicadores"
@@ -102,7 +125,7 @@ export function DashboardPage() {
         <>
           <section
             aria-label="Indicadores operacionais"
-            className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+            className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"
           >
             {[
               {
@@ -111,7 +134,7 @@ export function DashboardPage() {
                 value: data.qlp,
                 hint: "Planejamento aprovado",
                 href: "/qlp",
-                tone: "bg-emerald-50 text-emerald-700"
+                tone: "bg-mf-realce-suave text-mf-primaria"
               },
               {
                 icon: Users,
@@ -119,7 +142,7 @@ export function DashboardPage() {
                 value: data.occupied,
                 hint: "Pessoas vinculadas",
                 href: "/colaboradores",
-                tone: "bg-blue-50 text-blue-700"
+                tone: "bg-mf-azul-suave text-mf-azul"
               },
               {
                 icon: ClipboardList,
@@ -127,7 +150,7 @@ export function DashboardPage() {
                 value: data.vacancies,
                 hint: "Oportunidades para preencher",
                 href: "/recrutamento",
-                tone: "bg-amber-50 text-amber-700"
+                tone: "bg-mf-alerta-suave text-mf-alerta"
               },
               {
                 icon: FileWarning,
@@ -135,38 +158,47 @@ export function DashboardPage() {
                 value: data.criticalDocuments,
                 hint: "Requisitos que pedem atenção",
                 href: "/documentos",
-                tone: "bg-rose-50 text-rose-700"
+                tone: "bg-mf-perigo-suave text-mf-perigo"
               }
             ].map((metric) => (
-              <Link
-                key={metric.label}
-                to={metric.href}
-                className="panel group p-5 transition hover:border-emerald-200 hover:shadow-md"
-              >
-                <div className="flex items-center justify-between">
-                  <span className={`grid h-10 w-10 place-items-center rounded-xl ${metric.tone}`}>
-                    <metric.icon size={19} strokeWidth={1.8} />
-                  </span>
-                  <ArrowUpRight size={16} className="text-slate-300 group-hover:text-emerald-700" />
-                </div>
-                <p className="mt-5 text-xs font-medium text-slate-500">{metric.label}</p>
-                <p className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">
-                  {new Intl.NumberFormat("pt-BR").format(metric.value)}
-                </p>
-                <p className="mt-2 text-[11px] text-slate-400">{metric.hint}</p>
-              </Link>
+              <CartaoSpotlight key={metric.label} className="group">
+                <Link
+                  to={metric.href}
+                  className="block h-full min-h-11 p-4 outline-none focus-visible:ring-[3px] focus-visible:ring-mf-azul sm:p-5"
+                >
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={cn("grid h-10 w-10 place-items-center rounded-xl", metric.tone)}
+                    >
+                      <metric.icon size={19} strokeWidth={1.8} aria-hidden="true" />
+                    </span>
+                    <ArrowUpRight
+                      size={16}
+                      aria-hidden="true"
+                      className="text-mf-texto-3 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-mf-primaria motion-reduce:transition-none"
+                    />
+                  </div>
+                  <p className="mt-5 text-xs font-medium text-mf-texto-2">{metric.label}</p>
+                  <p className="mt-1 font-display text-4xl font-bold leading-none tracking-tight text-mf-tinta">
+                    <Contador valor={metric.value} formatar={inteiro} />
+                  </p>
+                  <p className="mt-2 text-[11px] text-mf-texto-3">{metric.hint}</p>
+                </Link>
+              </CartaoSpotlight>
             ))}
           </section>
-          <div className="grid gap-5 xl:grid-cols-[1.05fr_1fr]">
-            <section className="panel p-6">
+          <div className="grid gap-4 sm:gap-5 xl:grid-cols-[1.05fr_1fr]">
+            <CartaoSpotlight className="p-5 sm:p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="text-base font-semibold text-slate-900">Cobertura da operação</h2>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <h2 className="font-display text-lg font-bold text-mf-tinta">
+                    Cobertura da operação
+                  </h2>
+                  <p className="mt-1 text-xs text-mf-texto-2">
                     Ocupação em relação ao quadro previsto.
                   </p>
                 </div>
-                <Gauge size={18} className="text-slate-400" />
+                <Gauge size={18} aria-hidden="true" className="text-mf-texto-3" />
               </div>
               <div className="mt-7 flex flex-wrap items-center gap-7">
                 <div
@@ -175,39 +207,43 @@ export function DashboardPage() {
                   className="grid h-36 w-36 shrink-0 place-items-center rounded-full"
                   style={
                     {
-                      background: `conic-gradient(#168268 ${percent}%, #edf2ef 0)`
+                      background: `conic-gradient(rgb(var(--mf-brilho)) ${percent}%, rgb(var(--mf-realce-suave)) 0)`
                     } as CSSProperties
                   }
                 >
                   <div className="grid h-[120px] w-[120px] place-content-center rounded-full bg-white text-center">
-                    <strong className="text-3xl font-semibold tracking-tight text-slate-900">
-                      {data.coveragePercent.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%
+                    <strong className="font-display text-3xl font-bold tracking-tight text-mf-tinta">
+                      <Contador
+                        valor={data.coveragePercent}
+                        formatar={(n) => n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+                      />
+                      %
                     </strong>
-                    <span className="mt-1 text-[11px] text-slate-500">de cobertura</span>
+                    <span className="mt-1 text-[11px] text-mf-texto-2">de cobertura</span>
                   </div>
                 </div>
                 <div className="min-w-[160px] flex-1 space-y-4">
                   <p className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Ocupadas</span>
-                    <strong className="text-emerald-700">{data.occupied}</strong>
+                    <span className="text-mf-texto-2">Ocupadas</span>
+                    <strong className="text-mf-primaria">{data.occupied}</strong>
                   </p>
                   <p className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Em aberto</span>
-                    <strong className="text-amber-700">{data.vacancies}</strong>
+                    <span className="text-mf-texto-2">Em aberto</span>
+                    <strong className="text-mf-alerta">{data.vacancies}</strong>
                   </p>
                   <Link
                     to="/qlp"
-                    className="flex items-center justify-between border-t border-slate-100 pt-4 text-xs font-medium text-emerald-800"
+                    className="flex min-h-11 items-center justify-between border-t border-mf-linha pt-4 text-xs font-medium text-mf-primaria"
                   >
-                    Consultar QLP <ArrowRight size={15} />
+                    Consultar QLP <ArrowRight size={15} aria-hidden="true" />
                   </Link>
                 </div>
               </div>
-            </section>
-            <section className="panel p-6">
-              <h2 className="text-base font-semibold text-slate-900">No seu radar</h2>
-              <p className="mt-1 text-xs text-slate-500">Pontos para acompanhar no dia a dia.</p>
-              <div className="mt-5 divide-y divide-slate-100">
+            </CartaoSpotlight>
+            <CartaoSpotlight className="p-5 sm:p-6">
+              <h2 className="font-display text-lg font-bold text-mf-tinta">No seu radar</h2>
+              <p className="mt-1 text-xs text-mf-texto-2">Pontos para acompanhar no dia a dia.</p>
+              <div className="mt-5 divide-y divide-mf-linha">
                 {[
                   {
                     label: "Pendências operacionais",
@@ -231,54 +267,68 @@ export function DashboardPage() {
                   <Link
                     key={item.label}
                     to={item.href}
-                    className="group flex items-center gap-3 py-3"
+                    className="group flex min-h-14 items-center gap-3 py-3"
                   >
                     <span
-                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-sm font-semibold ${item.value > 0 ? "bg-amber-50 text-amber-800" : "bg-slate-50 text-slate-600"}`}
+                      className={cn(
+                        "grid h-9 w-9 shrink-0 place-items-center rounded-lg text-sm font-semibold",
+                        item.value > 0
+                          ? "bg-mf-alerta-suave text-mf-alerta"
+                          : "bg-slate-50 text-mf-texto-2"
+                      )}
                     >
                       {item.value}
                     </span>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-700">{item.label}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-400">{item.text}</p>
+                      <p className="text-sm font-medium text-mf-texto">{item.label}</p>
+                      <p className="mt-0.5 text-[11px] text-mf-texto-3">{item.text}</p>
                     </div>
                     <ArrowUpRight
                       size={15}
-                      className="text-slate-300 group-hover:text-emerald-700"
+                      aria-hidden="true"
+                      className="text-mf-texto-3 group-hover:text-mf-primaria"
                     />
                   </Link>
                 ))}
               </div>
-            </section>
+            </CartaoSpotlight>
           </div>
         </>
       )}
       <section>
         <div className="mb-4 flex items-center gap-2">
-          <Workflow size={17} className="text-emerald-700" />
-          <h2 className="text-base font-semibold text-slate-900">O próximo passo está aqui</h2>
+          <Workflow size={17} aria-hidden="true" className="text-mf-primaria" />
+          <h2 className="font-display text-lg font-bold text-mf-tinta">
+            O próximo passo está aqui
+          </h2>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {steps.map((step, index) => (
             <Link
               key={step.href}
               to={step.href}
-              className="group rounded-xl border border-slate-200 bg-white p-4 transition hover:border-emerald-300"
+              className="group min-h-11 rounded-2xl border border-mf-linha bg-mf-cartao p-4 transition hover:border-mf-brilho/50 hover:shadow-sm"
             >
               <div className="flex items-center justify-between">
-                <step.icon size={18} className="text-emerald-700" />
-                <span className="text-[10px] font-medium text-slate-400">0{index + 1}</span>
+                <step.icon size={18} aria-hidden="true" className="text-mf-primaria" />
+                <span className="font-mono text-[10px] font-medium text-mf-texto-3">
+                  0{index + 1}
+                </span>
               </div>
-              <p className="mt-4 flex items-center justify-between text-sm font-semibold text-slate-800">
+              <p className="mt-4 flex items-center justify-between text-sm font-semibold text-mf-tinta">
                 {step.title}
-                <ArrowRight size={14} className="text-slate-400 group-hover:text-emerald-700" />
+                <ArrowRight
+                  size={14}
+                  aria-hidden="true"
+                  className="text-mf-texto-3 group-hover:text-mf-primaria"
+                />
               </p>
-              <p className="mt-1 text-xs leading-5 text-slate-500">{step.text}</p>
+              <p className="mt-1 text-xs leading-5 text-mf-texto-2">{step.text}</p>
             </Link>
           ))}
         </div>
       </section>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-mf-texto-2">
         Indicadores dos registros disponíveis para o seu perfil de acesso.
       </p>
     </div>

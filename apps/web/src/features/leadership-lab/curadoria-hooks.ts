@@ -3,6 +3,7 @@
 // Cada ação invalida só o que ela muda. Decidir algo muda também os números das abas (pendências).
 import type { LabCriarContestacaoEntrada, LabValidarResultadoEntrada } from "@my-flux/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { centroDoFoco, faisca } from "../../components/ui/faisca";
 import { labCuradoriaApi } from "./curadoria-api";
 import { repetirSoSeFalhaPassageira } from "./hooks";
 
@@ -20,6 +21,12 @@ export const chavesDaCuradoria = {
   todasAsContestacoes: ["lab", "curadoria", "contestacoes"] as const,
   minhasContestacoes: (resultadoId: string) => ["lab", "contestacoes", resultadoId] as const
 };
+
+/**
+ * Guarda onde a pessoa clicou ANTES de esperar a resposta: se a decisão der certo, uma faísca sai
+ * dali (o botão pode já ter sumido quando a resposta chegar).
+ */
+const antesDeDecidir = () => ({ origem: centroDoFoco() });
 
 /** Os números das abas. Se falhar, as abas só ficam sem número: nada depende deles. */
 export function usePendencias() {
@@ -78,7 +85,9 @@ export function useValidar(resultadoId: string) {
   return useMutation({
     mutationFn: (entrada: LabValidarResultadoEntrada) =>
       labCuradoriaApi.validar(resultadoId, entrada),
-    onSuccess: (ficha) => {
+    onMutate: antesDeDecidir,
+    onSuccess: (ficha, _entrada, contexto) => {
+      faisca(contexto?.origem ?? null);
       cliente.setQueryData(chavesDaCuradoria.ficha(resultadoId), ficha);
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.todasAsRevisoes });
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.pendencias });
@@ -100,7 +109,9 @@ export function useTratarAlerta() {
   return useMutation({
     mutationFn: ({ id, nota }: { id: string; nota: string }) =>
       labCuradoriaApi.tratarAlerta(id, nota),
-    onSuccess: () => {
+    onMutate: antesDeDecidir,
+    onSuccess: (_alerta, _entrada, contexto) => {
+      faisca(contexto?.origem ?? null);
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.todosOsAlertas });
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.todasAsRevisoes });
       void cliente.invalidateQueries({ queryKey: ["lab", "curadoria", "ficha"] });
@@ -123,7 +134,9 @@ export function useDecidirContribuicao() {
   return useMutation({
     mutationFn: ({ id, decisao }: { id: string; decisao: "aprovada" | "rejeitada" }) =>
       labCuradoriaApi.decidirContribuicao(id, decisao),
-    onSuccess: () => {
+    onMutate: antesDeDecidir,
+    onSuccess: (_contribuicao, _entrada, contexto) => {
+      faisca(contexto?.origem ?? null);
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.todasAsContribuicoes });
       void cliente.invalidateQueries({ queryKey: ["lab", "curadoria", "ficha"] });
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.pendencias });
@@ -152,7 +165,9 @@ export function useDecidirContestacao() {
       decisao: "aceita" | "rejeitada";
       nota: string;
     }) => labCuradoriaApi.decidirContestacao(id, decisao, nota),
-    onSuccess: () => {
+    onMutate: antesDeDecidir,
+    onSuccess: (_contestacao, _entrada, contexto) => {
+      faisca(contexto?.origem ?? null);
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.todasAsContestacoes });
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.todasAsRevisoes });
       void cliente.invalidateQueries({ queryKey: ["lab", "curadoria", "ficha"] });

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "../../../lib/cn";
+import { seguirPonteiro } from "../../../components/ui/seguir-ponteiro";
 import { AnelDeProgresso, classeDaSuperficie, type TomDeProgresso, Revelar } from "../ui";
 
 type CartaoProps = {
@@ -62,7 +63,7 @@ export function Estatistica({ rotulo, valor, detalhe, href, para, anel }: Estati
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
         <p className="text-lab-pequeno font-medium text-lab-tinta-2">{rotulo}</p>
-        <p className="tabular mt-3 text-[2.25rem] font-semibold leading-none tracking-[-0.03em] text-lab-tinta">
+        <p className="tabular fonte-display mt-3 text-[2.25rem] font-bold leading-none tracking-[-0.03em] text-lab-tinta">
           {valor}
         </p>
         {detalhe ? (
@@ -89,22 +90,24 @@ export function Estatistica({ rotulo, valor, detalhe, href, para, anel }: Estati
   const base = cn(classeDaSuperficie, "block p-5");
   const classeDoAtalho = cn(
     base,
-    "group/atalho h-full",
+    "spotlight group/atalho h-full",
     "transition duration-lab ease-lab hover:-translate-y-0.5 hover:border-lab-linha-forte hover:shadow-lab-2 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
   );
   return para ? (
     <Revelar className="h-full">
-      <Link to={para} className={classeDoAtalho}>
+      <Link to={para} onPointerMove={seguirPonteiro} className={classeDoAtalho}>
         {corpo}
       </Link>
     </Revelar>
   ) : href ? (
     <Revelar className="h-full">
-      <a href={href} className={classeDoAtalho}>
+      <a href={href} onPointerMove={seguirPonteiro} className={classeDoAtalho}>
         {corpo}
       </a>
     </Revelar>
   ) : (
-    <Revelar className={base}>{corpo}</Revelar>
+    <Revelar className={cn(base, "spotlight")} onPointerMove={seguirPonteiro}>
+      {corpo}
+    </Revelar>
   );
 }

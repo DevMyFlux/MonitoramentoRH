@@ -58,7 +58,7 @@ describe("configuração dos moldes", () => {
         "45"
       );
       expect(
-        (supervisor.getByRole("checkbox", { name: /Teste liberado/ }) as HTMLInputElement).checked
+        (supervisor.getByRole("switch", { name: /Teste liberado/ }) as HTMLInputElement).checked
       ).toBe(true);
       expect(
         (supervisor.getByRole("checkbox", { name: /Supervisor de campo/ }) as HTMLInputElement)
@@ -78,7 +78,8 @@ describe("configuração dos moldes", () => {
       for (const nome of ["Encarregado", "Supervisor", "Coordenador"]) {
         const campo = cartao(nome).getByLabelText(/Tempo por situação/) as HTMLInputElement;
         expect(campo.value).toBe("");
-        expect(campo.placeholder).toBe("");
+        // O rótulo flutuante usa um espaço como placeholder: não sugere valor nenhum.
+        expect(campo.placeholder.trim()).toBe("");
       }
       expect(screen.getAllByText(/Decisão do negócio: o sistema não sugere um valor/)).toHaveLength(
         3
@@ -140,7 +141,7 @@ describe("configuração dos moldes", () => {
       const supervisor = cartao("Supervisor");
 
       await usuario.type(supervisor.getByLabelText(/Tempo por situação/), "45");
-      await usuario.click(supervisor.getByRole("checkbox", { name: /Teste liberado/ }));
+      await usuario.click(supervisor.getByRole("switch", { name: /Teste liberado/ }));
       await usuario.click(supervisor.getByRole("checkbox", { name: /Supervisor de campo/ }));
       await usuario.click(supervisor.getByRole("checkbox", { name: /Supervisor de turno/ }));
       expect(supervisor.getByText("2 cargos selecionados")).toBeTruthy();
@@ -194,7 +195,7 @@ describe("configuração dos moldes", () => {
       abrir();
       await screen.findByRole("form", { name: "Molde Supervisor" });
       const supervisor = cartao("Supervisor");
-      await usuario.click(supervisor.getByRole("checkbox", { name: /Teste liberado/ }));
+      await usuario.click(supervisor.getByRole("switch", { name: /Teste liberado/ }));
       await usuario.click(supervisor.getByRole("button", { name: "Salvar Supervisor" }));
       expect((await supervisor.findByRole("alert")).textContent).toBe(
         "Defina o tempo por situação para liberar o teste."

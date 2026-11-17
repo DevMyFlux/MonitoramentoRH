@@ -74,7 +74,7 @@ describe("participantes do Leadership Lab (RH)", () => {
       abrir();
 
       const linhaAna = (await screen.findByText("Ana Souza")).closest("tr")!;
-      expect(within(linhaAna).getByText("Matrícula MAT-001")).toBeTruthy();
+      expect(linhaAna.textContent).toContain("Matrícula MAT-001");
       expect(within(linhaAna).getByText("Supervisor de campo")).toBeTruthy();
       expect(within(linhaAna).getByText("Operação Norte")).toBeTruthy();
       expect(within(linhaAna).getByText("Liberado")).toBeTruthy();
@@ -262,7 +262,7 @@ describe("participantes do Leadership Lab (RH)", () => {
         })
       );
       await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-      await screen.findByText("Matrícula MAT-001");
+      await waitFor(() => expect(document.body.textContent).toContain("Matrícula MAT-001"));
     });
 
     it("mostra o teste do cargo de cada colaborador, para o RH saber se ele vai poder fazer", async () => {

@@ -8,6 +8,7 @@ import { useLocation } from "react-router-dom";
 import { LifeBuoy, Loader2, RotateCcw, SendHorizontal, X } from "lucide-react";
 import { type SuporteMensagem, type SuporteResposta, suporteLimites } from "@my-flux/shared";
 import { request } from "../my-flux/client";
+import { Magnet } from "../../components/ui/magnet";
 import { cn } from "../../lib/cn";
 import { assistenteVisivelEm, contextoDaPagina } from "./contexto-da-pagina";
 import { LIMITE_DA_CHAMADA_MS, mensagemDoErro } from "./erros-do-suporte";
@@ -123,7 +124,8 @@ export function AssistenteDeSuporte() {
 
   return (
     <div
-      className="pointer-events-none fixed bottom-4 right-4 z-40 flex flex-col items-end gap-3 print:hidden sm:bottom-5 sm:right-5"
+      className="assistente-suporte pointer-events-none fixed right-4 z-40 flex flex-col items-end gap-3 print:hidden sm:right-5"
+      style={{ bottom: "calc(1.25rem + var(--mf-dock-h, 0px))" }}
       onKeyDown={(e) => {
         if (e.key === "Escape" && aberto) fechar();
       }}
@@ -133,7 +135,7 @@ export function AssistenteDeSuporte() {
           id={idDoPainel}
           role="dialog"
           aria-label="Assistente de suporte"
-          className="pointer-events-auto flex h-[min(34rem,calc(100dvh-6.5rem))] w-[min(23rem,calc(100vw-2rem))] origin-bottom-right animate-[suporte-entrar_180ms_cubic-bezier(0.22,1,0.36,1)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-[0_24px_60px_-20px_rgb(15_23_42/0.35),0_4px_14px_rgb(15_23_42/0.08)]"
+          className="pointer-events-auto flex h-[min(34rem,calc(100dvh-6.5rem-var(--mf-dock-h,0px)))] w-[min(23rem,calc(100vw-2rem))] origin-bottom-right animate-[suporte-entrar_180ms_cubic-bezier(0.22,1,0.36,1)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-[0_24px_60px_-20px_rgb(15_23_42/0.35),0_4px_14px_rgb(15_23_42/0.08)]"
         >
           <header className="flex items-start gap-3 border-b border-slate-100 px-4 py-3">
             <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-50 text-emerald-700">
@@ -264,22 +266,24 @@ export function AssistenteDeSuporte() {
         </section>
       ) : null}
 
-      <button
-        ref={botaoRef}
-        type="button"
-        onClick={() => (aberto ? fechar() : setAberto(true))}
-        aria-expanded={aberto}
-        aria-controls={aberto ? idDoPainel : undefined}
-        aria-label={aberto ? "Fechar assistente de suporte" : "Abrir assistente de suporte"}
-        title={aberto ? undefined : "Precisa de ajuda?"}
-        className="group pointer-events-auto grid h-12 w-12 place-items-center rounded-full bg-emerald-700 text-white shadow-[0_10px_30px_-8px_rgb(4_120_87/0.55),0_2px_6px_rgb(15_23_42/0.12)] ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:bg-emerald-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-      >
-        {aberto ? (
-          <X size={20} aria-hidden="true" />
-        ) : (
-          <LifeBuoy size={21} aria-hidden="true" className="transition group-hover:rotate-12" />
-        )}
-      </button>
+      <Magnet className="pointer-events-auto">
+        <button
+          ref={botaoRef}
+          type="button"
+          onClick={() => (aberto ? fechar() : setAberto(true))}
+          aria-expanded={aberto}
+          aria-controls={aberto ? idDoPainel : undefined}
+          aria-label={aberto ? "Fechar assistente de suporte" : "Abrir assistente de suporte"}
+          title={aberto ? undefined : "Precisa de ajuda?"}
+          className="group pointer-events-auto grid h-12 w-12 place-items-center rounded-full bg-mf-primaria text-white shadow-[0_10px_30px_-8px_rgb(var(--mf-primaria)/0.55),0_2px_6px_rgb(var(--mf-tinta)/0.12)] ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:bg-mf-brilho focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-mf-azul motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+        >
+          {aberto ? (
+            <X size={20} aria-hidden="true" />
+          ) : (
+            <LifeBuoy size={21} aria-hidden="true" className="transition group-hover:rotate-12" />
+          )}
+        </button>
+      </Magnet>
     </div>
   );
 }

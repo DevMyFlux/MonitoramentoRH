@@ -25,6 +25,7 @@ import {
 } from "../../../features/leadership-lab/cadastro-hooks";
 import { ErroDaTelaDoLab } from "../../../features/leadership-lab/componentes/erro-da-tela";
 import { descreverErroDoCadastro } from "../../../features/leadership-lab/erros";
+import { Avatar } from "../../../components/ui/avatar";
 
 export function LabParticipantesPage() {
   const participantes = useParticipantes();
@@ -96,9 +97,14 @@ function TabelaDeParticipantes({ participantes }: { participantes: LabParticipan
           {participantes.map((p) => (
             <TableRow key={p.id}>
               <TableCell>
-                <span className="block font-medium text-lab-tinta">{p.colaborador.nome}</span>
-                <span className="block text-lab-legenda text-lab-tinta-2">
-                  Matrícula {p.colaborador.identificador}
+                <span className="flex items-center gap-3">
+                  <Avatar nome={p.colaborador.nome} tom={p.ativo ? "ativo" : "neutro"} compacto />
+                  <span className="min-w-0">
+                    <span className="block font-medium text-lab-tinta">{p.colaborador.nome}</span>
+                    <span className="block text-lab-legenda text-lab-tinta-2">
+                      Matrícula <span className="fonte-mono">{p.colaborador.identificador}</span>
+                    </span>
+                  </span>
                 </span>
               </TableCell>
               <TableCell>{p.colaborador.cargo ?? "—"}</TableCell>

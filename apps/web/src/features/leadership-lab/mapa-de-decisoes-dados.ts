@@ -104,7 +104,7 @@ export function montarMapaDeDecisoes(situacoes: readonly LabSituacaoDoResultado[
         type: "smoothstep",
         className: escolhida ? "caminho-escolhido" : "alternativa",
         style: escolhida
-          ? { stroke: "#047857", strokeWidth: 3 }
+          ? { stroke: "#065f46", strokeWidth: 3 }
           : { stroke: "#cbd5e1", strokeWidth: 1.5, strokeDasharray: "5 4" }
       });
       y += altura + ESPACO_VERTICAL;
@@ -144,7 +144,7 @@ export function montarMapaDeDecisoes(situacoes: readonly LabSituacaoDoResultado[
         type: "smoothstep",
         animated: true,
         className: "caminho-escolhido",
-        style: { stroke: semResposta ? "#b45309" : "#047857", strokeWidth: 3 }
+        style: { stroke: semResposta ? "#b45309" : "#065f46", strokeWidth: 3 }
       });
     }
   });

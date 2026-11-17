@@ -11,36 +11,41 @@ export function Input({ className, error, helperText, id, label, ...props }: Inp
   const generatedId = useId();
   const inputId = id ?? props.name ?? generatedId;
 
+  // A mensagem de erro/ajuda fica FORA do <label>: dentro, ela entrava no nome acessível do campo
+  // ("E-mail Informe seu e-mail.") e o leitor de tela lia tudo junto com o rótulo.
   return (
-    <label className="grid gap-2 text-sm font-medium text-slate-700" htmlFor={inputId}>
-      <span>
-        {label}
-        {props.required && (
-          <span aria-hidden="true" className="ml-1 text-emerald-700">
-            *
-          </span>
-        )}
-      </span>
-      <input
-        id={inputId}
-        aria-invalid={Boolean(error)}
-        aria-describedby={error || helperText ? `${inputId}-hint` : undefined}
-        className={cn(
-          "h-12 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3.5 text-sm font-normal text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10",
-          error && "border-red-500 focus:border-red-600 focus:ring-red-100",
-          className
-        )}
-        {...props}
-      />
+    <div className="grid gap-2">
+      <label className="grid gap-2 text-sm font-medium text-mf-texto" htmlFor={inputId}>
+        <span>
+          {label}
+          {props.required && (
+            <span aria-hidden="true" className="ml-1 text-mf-perigo">
+              *
+            </span>
+          )}
+        </span>
+        <input
+          id={inputId}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error || helperText ? `${inputId}-hint` : undefined}
+          className={cn(
+            "h-12 w-full min-w-0 rounded-xl border border-mf-linha bg-white px-3.5 text-sm font-normal text-mf-tinta outline-none transition-[border-color,box-shadow] placeholder:text-mf-texto-3 hover:border-mf-texto-3/50 focus:border-mf-brilho focus:shadow-[0_0_0_3px_rgb(var(--mf-brilho)/0.22)]",
+            error &&
+              "border-mf-perigo focus:border-mf-perigo focus:shadow-[0_0_0_3px_rgb(var(--mf-perigo)/0.18)]",
+            className
+          )}
+          {...props}
+        />
+      </label>
       {error ? (
-        <span id={`${inputId}-hint`} className="text-xs font-normal text-red-700">
+        <span id={`${inputId}-hint`} role="alert" className="text-xs font-normal text-mf-perigo">
           {error}
         </span>
       ) : helperText ? (
-        <span id={`${inputId}-hint`} className="text-xs font-normal text-slate-500">
+        <span id={`${inputId}-hint`} className="text-xs font-normal text-mf-texto-2">
           {helperText}
         </span>
       ) : null}
-    </label>
+    </div>
   );
 }

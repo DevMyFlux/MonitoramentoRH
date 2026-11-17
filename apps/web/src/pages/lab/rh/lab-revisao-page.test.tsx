@@ -51,9 +51,7 @@ describe("revisão dos resultados (fila)", () => {
     ]);
     abrir();
     const linha = (await screen.findByText("Ana Souza")).closest("tr")!;
-    expect(
-      within(linha).getByText(/Matrícula MAT-001 · Supervisor de campo · Operação Norte/)
-    ).toBeTruthy();
+    expect(linha.textContent).toMatch(/Matrícula MAT-001 · Supervisor de campo · Operação Norte/);
     expect(within(linha).getByText("Supervisor")).toBeTruthy();
     expect(within(linha).getByText("76%")).toBeTruthy();
     expect(within(linha).getByText("88,3%")).toBeTruthy();
