@@ -43,7 +43,8 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
       <div
         role="region"
         aria-label="Notificações"
-        className="pointer-events-none fixed bottom-20 right-4 z-[60] sm:bottom-[5.25rem] sm:right-5 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2"
+        style={{ bottom: "calc(5.25rem + var(--mf-dock-h, 0px))" }}
+        className="pointer-events-none fixed right-4 z-[60] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2 sm:right-5"
       >
         <AnimatePresence initial={false}>
           {itens.map((item) => (

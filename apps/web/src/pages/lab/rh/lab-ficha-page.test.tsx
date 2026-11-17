@@ -43,9 +43,9 @@ describe("ficha de revisão do resultado", () => {
       abrir();
       await screen.findByText("Ana Souza");
       expect(api.ficha).toHaveBeenCalledWith("resultado-1");
-      expect(
-        screen.getByText(/Matrícula MAT-001 · Supervisor de campo · Operação Norte/)
-      ).toBeTruthy();
+      expect(document.body.textContent).toMatch(
+        /Matrícula MAT-001 · Supervisor de campo · Operação Norte/
+      );
       expect(screen.getByText(/Teste Supervisor · concluído em/)).toBeTruthy();
       expect(screen.getByText("76%")).toBeTruthy();
       expect(screen.getByText("88,3%")).toBeTruthy();

@@ -186,7 +186,7 @@ export function AvatarFacilitador({ estado, tamanho = 96, className }: AvatarFac
         <path d="M54 86h12" stroke="#7f1d1d" strokeWidth="2.5" strokeLinecap="round" />
       )}
       {estado === "refletindo" ? (
-        <g fill="#047857">
+        <g fill="#065f46">
           <circle cx="100" cy="30" r="2" />
           <circle cx="107" cy="22" r="3" />
           <circle cx="116" cy="12" r="4.5" />

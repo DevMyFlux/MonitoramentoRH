@@ -14,11 +14,12 @@ const variants: Record<ButtonVariant, string> = {
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "h-9 px-4 text-lab-pequeno",
+  // No toque (pointer: coarse) os alvos sobem para 44 px; com mouse, ficam compactos.
+  sm: "h-9 px-4 text-lab-pequeno [@media(pointer:coarse)]:min-h-11",
   md: "min-h-11 px-5 py-2 text-lab-pequeno",
   lg: "min-h-12 px-7 py-2.5 text-lab-corpo",
   // Botão quadrado só com ícone (sem padding, para o ícone não ser espremido).
-  icon: "h-10 w-10 p-0"
+  icon: "h-10 w-10 p-0 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11"
 };
 
 /** As classes de um botão, para o que parece botão mas é link (BotaoLink). */

@@ -23,6 +23,7 @@ import {
 } from "../../features/leadership-lab/cadastro-hooks";
 import { descreverErroDoCadastro } from "../../features/leadership-lab/erros";
 import { cn } from "../../lib/cn";
+import { Interruptor } from "../../components/ui/interruptor";
 
 export function LabConfigPage() {
   const config = useConfigDosMoldes();
@@ -168,15 +169,17 @@ function CartaoDoMolde({
         }
       />
 
-      <label className="flex items-start gap-3 text-lab-pequeno text-lab-tinta">
-        <Marcacao className="mt-0.5" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} />
-        <span>
-          <span className="font-medium">Teste liberado</span>
-          <span className="block text-lab-legenda text-lab-tinta-2">
-            Só os participantes dos cargos abaixo conseguem iniciar. Exige o tempo definido.
-          </span>
-        </span>
-      </label>
+      <div>
+        <Interruptor
+          rotulo="Teste liberado"
+          checked={ativo}
+          onChange={(e) => setAtivo(e.target.checked)}
+          className="font-medium text-lab-tinta"
+        />
+        <p className="-mt-1.5 pl-14 text-lab-legenda text-lab-tinta-2">
+          Só os participantes dos cargos abaixo conseguem iniciar. Exige o tempo definido.
+        </p>
+      </div>
 
       <fieldset className="space-y-2">
         <legend className="text-lab-pequeno font-medium text-lab-tinta">

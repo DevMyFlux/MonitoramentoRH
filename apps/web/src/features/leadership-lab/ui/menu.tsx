@@ -91,7 +91,7 @@ export function MenuDeAcoes({ gatilho, rotulo, itens, cabecalho, className }: Me
         aria-controls={aberto ? idDoMenu : undefined}
         onClick={() => setAberto((a) => !a)}
         onKeyDown={aoTeclarNoGatilho}
-        className="flex items-center gap-2 rounded-full p-1 pr-2.5 text-lab-tinta transition-colors hover:bg-lab-tinta/5"
+        className="flex min-h-11 items-center gap-2 rounded-full p-1 pr-2.5 text-lab-tinta transition-colors hover:bg-lab-tinta/5"
       >
         {gatilho}
       </button>

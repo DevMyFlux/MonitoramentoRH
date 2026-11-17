@@ -22,9 +22,11 @@ export function CabecalhoDePagina({
     <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
       <div className="min-w-0">
         {eyebrow ? (
-          <p className="text-lab-legenda font-medium tracking-wide text-lab-destaque">{eyebrow}</p>
+          <p className="texto-brilho text-lab-legenda font-semibold uppercase tracking-[0.14em]">
+            {eyebrow}
+          </p>
         ) : null}
-        <h1 className="mt-1.5 text-lab-h1 text-lab-tinta">{titulo}</h1>
+        <h1 className="texto-gradiente mt-1.5 text-lab-h1">{titulo}</h1>
         {descricao ? (
           <p className="mt-2 max-w-2xl text-lab-corpo text-lab-tinta-2">{descricao}</p>
         ) : null}

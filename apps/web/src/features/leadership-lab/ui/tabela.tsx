@@ -26,7 +26,10 @@ export function TableBody(props: HTMLAttributes<HTMLTableSectionElement>) {
 
 export function TableRow(props: HTMLAttributes<HTMLTableRowElement>) {
   return (
-    <tr className="transition-colors duration-lab-rapida hover:bg-lab-superficie-2" {...props} />
+    <tr
+      className="linha-brilho transition-colors duration-lab-rapida hover:bg-lab-superficie-2"
+      {...props}
+    />
   );
 }
 

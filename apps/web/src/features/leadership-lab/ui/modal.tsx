@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { motion } from "motion/react";
 import { type ReactNode, useId } from "react";
+import { useSobreposicao } from "../../../components/ui/use-sobreposicao";
 import { useArmadilhaDeFoco } from "./armadilha-de-foco";
 import { Button } from "./botao";
 import { mola, transicao } from "./movimento";
@@ -50,6 +51,8 @@ function ModalAberto({
   onClose,
   title
 }: Omit<ModalProps, "isOpen"> & { closable: boolean }) {
+  // Janela aberta: o botão flutuante do assistente se recolhe (ficaria sobre o rodapé da janela).
+  useSobreposicao(true);
   const idDoTitulo = useId();
   const idDaDescricao = useId();
   const painel = useArmadilhaDeFoco<HTMLElement>(true, () => {

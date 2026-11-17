@@ -4,6 +4,7 @@
 // com transparência, nunca esconde conteúdo, e no toque (sem ponteiro) simplesmente não aparece.
 import { type HTMLAttributes, type PointerEvent, forwardRef } from "react";
 import { cn } from "../../lib/cn";
+import { seguirPonteiro } from "./seguir-ponteiro";
 
 type Props = HTMLAttributes<HTMLDivElement> & {
   /** A cor da luz: verde (padrão) ou azul. Só as duas da paleta. */
@@ -15,9 +16,7 @@ export const CartaoSpotlight = forwardRef<HTMLDivElement, Props>(function Cartao
   ref
 ) {
   function seguir(e: PointerEvent<HTMLDivElement>) {
-    const r = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty("--x", `${e.clientX - r.left}px`);
-    e.currentTarget.style.setProperty("--y", `${e.clientY - r.top}px`);
+    seguirPonteiro(e);
     onPointerMove?.(e);
   }
   return (

@@ -1,11 +1,11 @@
 // Leadership Lab — as cores usadas dentro de SVG (Recharts), que não herdam as classes do Tailwind.
 // Espelham os tokens de tokens.css; `cores.test.ts` falha se os dois divergirem.
 export const cores = {
-  tinta: "#1d1d1f",
-  tinta2: "#636369",
-  linha: "#e8e8ed",
-  destaque: "#047857",
-  destaqueSuave: "#ecf7f2",
+  tinta: "#020617",
+  tinta2: "#475569",
+  linha: "#e2e8f0",
+  destaque: "#065f46",
+  destaqueSuave: "#ecfdf5",
   info: "#1d4ed8",
   aviso: "#b45309",
   perigo: "#b91c1c"

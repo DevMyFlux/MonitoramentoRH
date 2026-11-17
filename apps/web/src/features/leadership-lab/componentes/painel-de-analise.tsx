@@ -99,7 +99,7 @@ function useFiltrosNaUrl() {
 // ---------------------------------------------------------------------------
 
 const classeDoSeletor =
-  "h-9 min-w-0 max-w-[11rem] cursor-pointer rounded-full border border-lab-linha bg-lab-superficie px-3.5 text-lab-pequeno text-lab-tinta outline-none transition-colors hover:border-lab-linha-forte focus-visible:border-lab-destaque data-[ativo=true]:border-lab-destaque/40 data-[ativo=true]:bg-lab-destaque-suave data-[ativo=true]:text-lab-destaque-texto";
+  "h-9 min-w-0 max-w-[11rem] cursor-pointer [@media(pointer:coarse)]:h-11 rounded-full border border-lab-linha bg-lab-superficie px-3.5 text-lab-pequeno text-lab-tinta outline-none transition-colors hover:border-lab-linha-forte focus-visible:border-lab-destaque data-[ativo=true]:border-lab-destaque/40 data-[ativo=true]:bg-lab-destaque-suave data-[ativo=true]:text-lab-destaque-texto";
 
 function Seletor({
   rotulo,
@@ -269,7 +269,7 @@ export function PainelDeAnalise({ itens }: { itens: LabItemDaRevisao[] }) {
                 aria-pressed={efetivos.periodo === p}
                 onClick={() => mudarFiltro({ periodo: p })}
                 className={cn(
-                  "h-8 rounded-full px-3.5 text-lab-pequeno font-medium transition-colors",
+                  "h-8 rounded-full px-3.5 text-lab-pequeno font-medium transition-colors [@media(pointer:coarse)]:h-11",
                   efetivos.periodo === p
                     ? "bg-lab-tinta text-white"
                     : "text-lab-tinta-2 hover:text-lab-tinta"

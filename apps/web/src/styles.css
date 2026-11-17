@@ -64,7 +64,7 @@ button {
   outline-offset: 2px;
 }
 input[type="checkbox"] {
-  accent-color: #047857;
+  accent-color: rgb(var(--mf-primaria));
 }
 @layer base {
   select,
@@ -84,7 +84,7 @@ input[type="checkbox"] {
     font-size: 10px;
     font-weight: 650;
     letter-spacing: 0.16em;
-    color: #047857;
+    color: rgb(var(--mf-primaria));
   }
   .panel {
     border: 1px solid #e2e8f0;
