@@ -7,6 +7,8 @@
 //
 //   Curador (perfil RH), só participantes das turmas ativas dele:
 //   GET  /pendencias                      quanto espera uma decisão (os números das abas)
+//   GET  /notificacoes                   o que espera decisão, como notificações (com a leitura)
+//   POST /notificacoes/leitura           marca como lidas (chaves, ou todas)
 //   GET  /revisao?status=                 a fila de resultados de testes concluídos
 //   GET  /revisao/:resultadoId            a ficha de um resultado
 //   POST /resultados/:id/validacao        valida, com ajustes de nível opcionais
@@ -33,6 +35,7 @@ import type { UserRepository } from "../users/user-repository.js";
 import { AlertasDoLab } from "./curadoria/alertas.js";
 import { ContestacoesDoLab } from "./curadoria/contestacoes.js";
 import { ContribuicoesDoLab } from "./curadoria/contribuicoes.js";
+import { NotificacoesDoLab } from "./curadoria/notificacoes.js";
 import { RevisaoDoLab } from "./curadoria/revisao.js";
 import { idValido } from "./ids.js";
 import { carregarAtorLab } from "./lab-actor.js";
@@ -52,6 +55,7 @@ export async function registrarRotasDaCuradoria(
   const alertas = new AlertasDoLab(db);
   const contribuicoes = new ContribuicoesDoLab(db);
   const contestacoes = new ContestacoesDoLab(db);
+  const notificacoes = new NotificacoesDoLab(db);
 
   const contexto = async (request: FastifyRequest) => {
     const user = await authenticateRequest(request, users);
@@ -61,6 +65,16 @@ export async function registrarRotasDaCuradoria(
   app.get("/pendencias", async (request) => {
     const { user, ator } = await contexto(request);
     return { data: await revisao.pendencias(user, ator) };
+  });
+
+  app.get("/notificacoes", async (request) => {
+    const { user, ator } = await contexto(request);
+    return { data: await notificacoes.listar(user, ator) };
+  });
+
+  app.post("/notificacoes/leitura", { bodyLimit: LIMITE_DO_CORPO_BYTES }, async (request) => {
+    const { user, ator } = await contexto(request);
+    return { data: await notificacoes.marcarComoLidas(user, ator, request.body) };
   });
 
   app.get("/revisao", async (request) => {

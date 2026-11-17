@@ -140,6 +140,7 @@ model User {
   /// Leadership Lab: relações inversas (campos virtuais do Prisma, sem coluna em "User").
   labParticipante      LabParticipante?
   labPermissoes        LabPermissaoUsuario[]
+  labNotificacoesLidas LabNotificacaoLeitura[]
   labTurmas            LabTurma[]
   @@schema("public")
 }
@@ -1481,5 +1482,16 @@ model LabLogIa {
   @@index([criadoEm])
   @@index([sessaoId])
   @@map("log_ia")
+  @@schema("leadership_lab")
+}
+
+model LabNotificacaoLeitura {
+  userId String   @map("user_id") @db.Uuid
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chave  String
+  lidaEm DateTime @default(now()) @map("lida_em") @db.Timestamptz(3)
+
+  @@id([userId, chave])
+  @@map("notificacao_leitura")
   @@schema("leadership_lab")
 }

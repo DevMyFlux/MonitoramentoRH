@@ -5,6 +5,7 @@
 // packages/shared; aqui só se monta a chamada.
 import {
   type LabCriarContestacaoEntrada,
+  type LabMarcarLeituraEntrada,
   type LabValidarResultadoEntrada,
   labAlertaDoCuradorSchema,
   labContestacaoDoCuradorSchema,
@@ -12,6 +13,7 @@ import {
   labContribuicaoDoCuradorSchema,
   labFichaDeRevisaoSchema,
   labItemDaRevisaoSchema,
+  labNotificacoesSchema,
   labPendenciasSchema
 } from "@my-flux/shared";
 import { z } from "zod";
@@ -22,6 +24,10 @@ const comStatus = (status: string) => `?status=${encodeURIComponent(status)}`;
 
 export const labCuradoriaApi = {
   pendencias: () => chamar(labPendenciasSchema, "GET", "/pendencias"),
+
+  notificacoes: () => chamar(labNotificacoesSchema, "GET", "/notificacoes"),
+  marcarLeitura: (entrada: LabMarcarLeituraEntrada) =>
+    chamar(labNotificacoesSchema, "POST", "/notificacoes/leitura", entrada),
 
   revisao: (status: string) =>
     chamar(z.array(labItemDaRevisaoSchema), "GET", `/revisao${comStatus(status)}`),

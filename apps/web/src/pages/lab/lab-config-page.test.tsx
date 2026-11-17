@@ -9,7 +9,7 @@ import { renderizar } from "../../test/render";
 import { LabConfigPage } from "./lab-config-page";
 
 vi.mock("../../features/leadership-lab/cadastro-api", () => ({
-  labCadastroApi: { configDosMoldes: vi.fn(), atualizarMolde: vi.fn(), consumoDeIa: vi.fn() }
+  labCadastroApi: { configDosMoldes: vi.fn(), atualizarMolde: vi.fn() }
 }));
 
 const api = vi.mocked(labCadastroApi);
@@ -24,49 +24,13 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-describe("consumo de IA", () => {
-  const consumo = {
-    dias: 30,
-    agentes: [
-      {
-        agente: "analista",
-        chamadas: 4,
-        falhas: 1,
-        tokensEntrada: 12000,
-        tokensSaida: 3000,
-        latenciaMediaMs: 5200
-      }
-    ],
-    testesConcluidos: 4,
-    tokensPorTeste: 45000
-  };
-
-  it("mostra o consumo por agente e avisa quando o preço não foi configurado", async () => {
+describe("configuração do Lab", () => {
+  it("não oferece o painel de consumo de IA e não consulta o consumo", async () => {
     api.configDosMoldes.mockResolvedValue(configDosMoldes());
-    api.consumoDeIa.mockResolvedValue({ ...consumo, custoEstimadoUsd: null });
     abrir();
-    const secao = within(await screen.findByRole("region", { name: "Consumo de IA" }));
-    expect(await secao.findByText("Analista (debriefing)")).toBeTruthy();
-    expect(secao.getByText("12.000")).toBeTruthy();
-    expect(secao.getByText("45.000")).toBeTruthy();
-    expect(secao.getByText(/preço por milhão de tokens ainda não foi configurado/)).toBeTruthy();
-  });
-
-  it("com preço, mostra o custo por teste; se a leitura falhar, a tela dos moldes segue de pé", async () => {
-    api.configDosMoldes.mockResolvedValue(configDosMoldes());
-    api.consumoDeIa.mockResolvedValue({
-      ...consumo,
-      custoEstimadoUsd: { total: 1.5, porTeste: 0.08 }
-    });
-    const { unmount } = abrir();
-    const secao = within(await screen.findByRole("region", { name: "Consumo de IA" }));
-    expect(await secao.findByText(/0,08/)).toBeTruthy();
-    unmount();
-
-    api.consumoDeIa.mockRejectedValue(new ApiError("Proibido.", 403, "LAB_FORBIDDEN"));
-    abrir();
-    expect(await screen.findByText("Não foi possível carregar o consumo agora.")).toBeTruthy();
-    expect(screen.getAllByRole("form").length).toBeGreaterThan(0);
+    await screen.findAllByRole("form");
+    expect(screen.queryByRole("region", { name: "Consumo de IA" })).toBeNull();
+    expect(screen.queryByText(/Consumo de IA/i)).toBeNull();
   });
 });
 

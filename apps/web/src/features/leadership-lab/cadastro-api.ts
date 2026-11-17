@@ -11,7 +11,6 @@ import {
   type LabCriarTurmaEntrada,
   labColaboradorDoCadastroSchema,
   labConfigDosMoldesSchema,
-  labConsumoDeIaSchema,
   labParticipanteDoCadastroSchema,
   labTurmaDetalheSchema,
   labTurmaResumoSchema,
@@ -54,7 +53,6 @@ export const labCadastroApi = {
     ),
 
   configDosMoldes: () => chamar(labConfigDosMoldesSchema, "GET", "/config/moldes"),
-  consumoDeIa: () => chamar(labConsumoDeIaSchema, "GET", "/config/consumo-ia"),
   atualizarMolde: (nivel: string, entrada: LabAtualizarMoldeEntrada) =>
     chamar(labConfigDosMoldesSchema, "PUT", `/config/moldes/${comId(nivel)}`, entrada)
 };

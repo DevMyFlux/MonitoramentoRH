@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "../../../lib/cn";
 import { AnelDeProgresso, classeDaSuperficie, type TomDeProgresso, Revelar } from "../ui";
@@ -68,6 +69,13 @@ export function Estatistica({ rotulo, valor, detalhe, href, para, anel }: Estati
           <p className="mt-3 text-lab-legenda leading-4 text-lab-tinta-2">{detalhe}</p>
         ) : null}
       </div>
+      {para || href ? (
+        <ArrowUpRight
+          size={16}
+          aria-hidden="true"
+          className="shrink-0 text-lab-tinta-3 opacity-0 transition duration-lab ease-lab group-hover/atalho:translate-x-0.5 group-hover/atalho:-translate-y-0.5 group-hover/atalho:opacity-100 group-focus-visible/atalho:opacity-100 motion-reduce:transition-none"
+        />
+      ) : null}
       {anel ? (
         <AnelDeProgresso
           valor={anel.valor}
@@ -81,7 +89,7 @@ export function Estatistica({ rotulo, valor, detalhe, href, para, anel }: Estati
   const base = cn(classeDaSuperficie, "block p-5");
   const classeDoAtalho = cn(
     base,
-    "h-full",
+    "group/atalho h-full",
     "transition duration-lab ease-lab hover:-translate-y-0.5 hover:border-lab-linha-forte hover:shadow-lab-2 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
   );
   return para ? (

@@ -8,6 +8,7 @@ import { repetirSoSeFalhaPassageira } from "./hooks";
 
 export const chavesDaCuradoria = {
   pendencias: ["lab", "curadoria", "pendencias"] as const,
+  notificacoes: ["lab", "curadoria", "notificacoes"] as const,
   revisao: (status: string) => ["lab", "curadoria", "revisao", status] as const,
   todasAsRevisoes: ["lab", "curadoria", "revisao"] as const,
   ficha: (resultadoId: string) => ["lab", "curadoria", "ficha", resultadoId] as const,
@@ -27,6 +28,31 @@ export function usePendencias() {
     queryFn: labCuradoriaApi.pendencias,
     retry: false,
     staleTime: 15_000
+  });
+}
+
+/**
+ * As notificações do curador. Só pergunta quando `ativo` (o sino só existe para quem acompanha o Lab)
+ * e se refaz sozinha a cada minuto, enquanto a aba está à vista, e ao voltar para ela.
+ */
+export function useNotificacoes(ativo: boolean) {
+  return useQuery({
+    queryKey: chavesDaCuradoria.notificacoes,
+    queryFn: labCuradoriaApi.notificacoes,
+    enabled: ativo,
+    retry: false,
+    staleTime: 20_000,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false
+  });
+}
+
+/** A resposta já é a lista atualizada: vai direto ao cache. */
+export function useMarcarNotificacoes() {
+  const cliente = useQueryClient();
+  return useMutation({
+    mutationFn: labCuradoriaApi.marcarLeitura,
+    onSuccess: (lista) => cliente.setQueryData(chavesDaCuradoria.notificacoes, lista)
   });
 }
 
@@ -56,6 +82,7 @@ export function useValidar(resultadoId: string) {
       cliente.setQueryData(chavesDaCuradoria.ficha(resultadoId), ficha);
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.todasAsRevisoes });
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.pendencias });
+      void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.notificacoes });
     }
   });
 }
@@ -78,6 +105,7 @@ export function useTratarAlerta() {
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.todasAsRevisoes });
       void cliente.invalidateQueries({ queryKey: ["lab", "curadoria", "ficha"] });
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.pendencias });
+      void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.notificacoes });
     }
   });
 }
@@ -99,6 +127,7 @@ export function useDecidirContribuicao() {
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.todasAsContribuicoes });
       void cliente.invalidateQueries({ queryKey: ["lab", "curadoria", "ficha"] });
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.pendencias });
+      void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.notificacoes });
     }
   });
 }
@@ -128,6 +157,7 @@ export function useDecidirContestacao() {
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.todasAsRevisoes });
       void cliente.invalidateQueries({ queryKey: ["lab", "curadoria", "ficha"] });
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.pendencias });
+      void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.notificacoes });
     }
   });
 }

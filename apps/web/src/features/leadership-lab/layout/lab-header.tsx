@@ -5,6 +5,7 @@ import { clearSession } from "../../my-flux/client";
 import { useUsuarioAtual } from "../../auth/use-usuario-atual";
 import { Badge, Button, MenuDeAcoes } from "../ui";
 import { iniciais } from "./navegacao";
+import { NotificacoesDoCurador } from "./notificacoes-do-curador";
 
 type LabHeaderProps = { breadcrumbs: string[]; aoAbrirMenu: () => void };
 
@@ -73,6 +74,8 @@ export function LabHeader({ breadcrumbs, aoAbrirMenu }: LabHeaderProps) {
               year: "numeric"
             }).format(new Date())}
           </span>
+          {/* O sino é de quem acompanha o Lab (curador). O servidor só entrega ao RH e ao DEV. */}
+          {usuario?.role === "RH" || usuario?.role === "DEV" ? <NotificacoesDoCurador /> : null}
           <MenuDeAcoes
             rotulo="Menu da conta"
             gatilho={
