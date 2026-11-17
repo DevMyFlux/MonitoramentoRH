@@ -14,6 +14,11 @@ import { MonthlySchedulePage } from "./pages/monthly-schedule-page";
 import { UsersPage } from "./pages/users-page";
 import { EmployeesPage } from "./pages/employees-page";
 import { HomeRedirect } from "./pages/home-redirect";
+// Fontes auto-hospedadas (@fontsource, licença OFL): Inter no corpo, Bricolage Grotesque nos títulos
+// e nos números grandes, JetBrains Mono em matrículas e códigos. Sem CDN.
+import "@fontsource-variable/inter";
+import "@fontsource-variable/bricolage-grotesque";
+import "@fontsource-variable/jetbrains-mono";
 import "./styles.css";
 
 // Leadership Lab: páginas carregadas sob demanda (o painel traz a biblioteca de gráficos).

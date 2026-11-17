@@ -65,7 +65,7 @@ export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
           </button>
         )}
       </div>
-      <nav className="min-h-0 flex-1 space-y-6 overflow-y-auto px-3 pb-5">
+      <nav aria-label="Módulos" className="min-h-0 flex-1 space-y-6 overflow-y-auto px-3 pb-5">
         {groups.map((group) => (
           <section key={group.label}>
             <h2 className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.13em] text-slate-400">
@@ -100,7 +100,7 @@ export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
           </p>
         )}
       </nav>
-      <div className="m-3 rounded-xl bg-[#123f36] p-4 text-white">
+      <div className="m-3 rounded-xl bg-mf-primaria p-4 text-white">
         <p className="text-xs font-medium text-emerald-100">Da necessidade à escala.</p>
         <Link
           to="/escalas"

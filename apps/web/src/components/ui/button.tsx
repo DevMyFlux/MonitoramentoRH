@@ -11,16 +11,15 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variants: Record<ButtonVariant, string> = {
-  primary:
-    "border border-emerald-800 bg-emerald-800 text-white shadow-sm hover:bg-emerald-900 focus-visible:ring-emerald-600",
-  secondary:
-    "border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:ring-emerald-600",
-  ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-emerald-600",
-  danger: "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 focus-visible:ring-red-700"
+  primary: "border border-mf-primaria bg-mf-primaria text-white shadow-sm hover:bg-mf-primaria/90",
+  secondary: "border border-mf-linha bg-white text-mf-texto shadow-sm hover:bg-slate-50",
+  ghost: "text-mf-texto-2 hover:bg-slate-100 hover:text-mf-tinta",
+  danger: "border border-mf-perigo/25 bg-mf-perigo-suave text-mf-perigo hover:bg-mf-perigo/10"
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "h-9 px-3 text-sm",
+  // No toque (pointer: coarse) o alvo sobe para 44 px; com mouse, fica compacto.
+  sm: "h-9 px-3 text-sm [@media(pointer:coarse)]:min-h-11",
   md: "min-h-11 px-4 py-2 text-sm"
 };
 
@@ -36,7 +35,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 active:translate-y-px motion-reduce:transform-none",
+        "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg font-medium transition focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-mf-azul focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 active:translate-y-px motion-reduce:transform-none",
         variants[variant],
         sizes[size],
         className

@@ -3,10 +3,25 @@ import type { Config } from "tailwindcss";
 /** Cor do design system do Lab: o canal RGB vem de uma variável CSS (tokens.css), com opacidade. */
 const lab = (nome: string) => `rgb(var(--lab-${nome}) / <alpha-value>)`;
 
+/** Cor do MY FLUX: o canal RGB vem de uma variável CSS (styles.css), com opacidade. */
+const mf = (nome: string) => `rgb(var(--mf-${nome}) / <alpha-value>)`;
+
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      // Fontes do MY FLUX (carregadas em main.tsx). `sans` é o corpo; `display`, títulos e números
+      // grandes; `mono`, matrículas e códigos.
+      fontFamily: {
+        sans: ['"Inter Variable"', "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: [
+          '"Bricolage Grotesque Variable"',
+          '"Inter Variable"',
+          "ui-sans-serif",
+          "sans-serif"
+        ],
+        mono: ['"JetBrains Mono Variable"', "ui-monospace", "SFMono-Regular", "Menlo", "monospace"]
+      },
       borderRadius: {
         DEFAULT: "0.75rem",
         "lab-sm": "0.5rem",
@@ -16,6 +31,27 @@ export default {
       },
       // Design system do Leadership Lab. Os valores moram em features/leadership-lab/ui/tokens.css.
       colors: {
+        // Paleta do MY FLUX (tokens em styles.css). Só estas cores; efeitos usam as mesmas com
+        // transparência (bg-mf-brilho/10).
+        mf: {
+          primaria: mf("primaria"),
+          brilho: mf("brilho"),
+          realce: mf("realce"),
+          "realce-suave": mf("realce-suave"),
+          azul: mf("azul"),
+          "azul-suave": mf("azul-suave"),
+          tinta: mf("tinta"),
+          texto: mf("texto"),
+          "texto-2": mf("texto-2"),
+          "texto-3": mf("texto-3"),
+          linha: mf("linha"),
+          fundo: mf("fundo"),
+          cartao: mf("cartao"),
+          perigo: mf("perigo"),
+          "perigo-suave": mf("perigo-suave"),
+          alerta: mf("alerta"),
+          "alerta-suave": mf("alerta-suave")
+        },
         navy: {
           900: "#0f172a",
           800: "#1e293b"

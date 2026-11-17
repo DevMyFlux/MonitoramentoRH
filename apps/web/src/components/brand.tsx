@@ -7,7 +7,7 @@ export function Brand({ light = false }: { light?: boolean }) {
       >
         <Layers2 size={23} strokeWidth={1.8} aria-hidden="true" />
       </span>
-      <span className="text-2xl font-semibold tracking-tight">
+      <span className="font-display text-2xl font-bold tracking-tight">
         My<span className={light ? "text-emerald-200" : "text-emerald-700"}>Flux</span>
         <span className="ml-1 text-emerald-400">.</span>
       </span>

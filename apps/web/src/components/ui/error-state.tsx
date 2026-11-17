@@ -7,14 +7,15 @@ type ErrorStateProps = {
   onRetry?: () => void;
 };
 
+/** Erro com a causa em linguagem simples e, quando dá, a nova tentativa. Vermelho, sem enfeite. */
 export function ErrorState({ description, onRetry, title }: ErrorStateProps) {
   return (
-    <section className="rounded border border-red-200 bg-red-50 p-5">
+    <section role="alert" className="rounded-2xl border border-mf-perigo/20 bg-mf-perigo-suave p-5">
       <div className="flex gap-3">
-        <TriangleAlert className="mt-0.5 text-red-700" aria-hidden="true" size={20} />
+        <TriangleAlert className="mt-0.5 shrink-0 text-mf-perigo" aria-hidden="true" size={20} />
         <div>
-          <h2 className="font-semibold text-red-950">{title}</h2>
-          <p className="mt-1 text-sm leading-6 text-red-800">{description}</p>
+          <h2 className="font-semibold text-mf-perigo">{title}</h2>
+          <p className="mt-1 text-sm leading-6 text-mf-perigo">{description}</p>
           {onRetry ? (
             <Button className="mt-4" onClick={onRetry} size="sm" variant="secondary">
               Tentar novamente

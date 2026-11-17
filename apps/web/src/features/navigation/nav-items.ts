@@ -23,6 +23,8 @@ export type NavigationItem = {
   label: string;
   href: string;
   icon: LucideIcon;
+  /** Nome curto, para a barra de navegação inferior do celular (sem ele, usa `label`). */
+  curto?: string;
   /** Temporarily hidden from the sidebar without removing the route/page/API behind it. */
   hidden?: boolean;
   /**
@@ -60,8 +62,8 @@ export const navigationGroups: NavigationGroup[] = [
     items: [
       { label: "QLP", href: "/qlp", icon: Gauge, hidden: true },
       { label: "Recrutamento", href: "/recrutamento", icon: Users, hidden: true },
-      { label: "Colaboradores", href: "/colaboradores", icon: Users },
-      { label: "Escalas", href: "/escalas", icon: CalendarDays }
+      { label: "Colaboradores", href: "/colaboradores", icon: Users, curto: "Pessoas" },
+      { label: "Escalas", href: "/escalas", icon: CalendarDays, curto: "Escalas" }
     ]
   },
   {
@@ -70,17 +72,25 @@ export const navigationGroups: NavigationGroup[] = [
     // é o COMUM, quem acompanha é o RH e quem configura os moldes é ADMIN ou DEV. O DEV vê as três
     // áreas (acesso total ao módulo, para testar e dar suporte sem trocar de conta).
     items: [
-      { label: "Leadership Lab", href: "/lab", icon: Compass, roles: ["COMUM", "DEV"] },
+      {
+        label: "Leadership Lab",
+        href: "/lab",
+        icon: Compass,
+        curto: "Lab",
+        roles: ["COMUM", "DEV"]
+      },
       {
         label: "Acompanhamento do Lab",
         href: "/lab/rh",
         icon: ClipboardList,
+        curto: "Gestão",
         roles: ["RH", "DEV"]
       },
       {
         label: "Configuração do Lab",
         href: "/lab/config",
         icon: SlidersHorizontal,
+        curto: "Config.",
         roles: ["ADMIN", "DEV"]
       }
     ]
@@ -136,4 +146,12 @@ export function itemVisivelPara(
   if (modoDeTeste) return true;
   if (item.roles === undefined) return true;
   return perfil !== undefined && item.roles.includes(perfil);
+}
+
+/** Os itens da barra de navegação inferior (celular): os mesmos do menu, na mesma ordem. */
+export function itensDoDock(perfil: Role | undefined, modoDeTeste = false): NavigationItem[] {
+  return navigationGroups
+    .filter((grupo) => !grupo.hidden)
+    .flatMap((grupo) => grupo.items)
+    .filter((item) => !item.hidden && itemVisivelPara(item, perfil, modoDeTeste));
 }

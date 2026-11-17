@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { FundoAmbiente } from "../ui/fundo-ambiente";
+import { Dock } from "./dock";
 import { Header } from "./header";
 import { Sidebar } from "./sidebar";
 
@@ -44,7 +46,8 @@ export function AppShell({ breadcrumbs, children }: AppShellProps) {
   }, [isSidebarOpen]);
 
   return (
-    <div className="min-h-screen bg-[#f6f8fa]">
+    <div className="relative isolate min-h-screen bg-mf-fundo">
+      <FundoAmbiente />
       <a href="#main-content" className="skip-link">
         Ir para o conteúdo
       </a>
@@ -62,11 +65,12 @@ export function AppShell({ breadcrumbs, children }: AppShellProps) {
         <main
           id="main-content"
           tabIndex={-1}
-          className="workspace mx-auto max-w-[1560px] p-5 outline-none lg:p-8"
+          className="workspace mx-auto max-w-[1560px] p-5 pb-28 outline-none lg:p-8"
         >
           {children}
         </main>
       </div>
+      <Dock />
     </div>
   );
 }

@@ -14,7 +14,7 @@ export function Header({ breadcrumbs, onOpenMenu }: HeaderProps) {
     navigate("/login", { replace: true });
   }
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 vidro border-b border-mf-linha/70">
       <div className="flex min-h-[76px] items-center justify-between gap-3 px-4 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
           <Button

@@ -13,7 +13,26 @@ import {
   X
 } from "lucide-react";
 import { holidaysOfMonth, scheduleCodes } from "@my-flux/shared";
-import { Badge, Button } from "../components/ui";
+import {
+  AvisoTemporario,
+  Badge,
+  BotaoEstrela,
+  Button,
+  CampoDeSelecao,
+  CampoDeTexto,
+  CartaoSpotlight,
+  Contador,
+  EquipesPorTurno,
+  Interruptor,
+  ListaDePendencias,
+  ProgressoDoFluxo,
+  Skeleton,
+  TituloDePagina,
+  centroDoFoco,
+  faisca,
+  useSobreposicao
+} from "../components/ui";
+import { cn } from "../lib/cn";
 import { download, request, text, date, type Row } from "../features/my-flux/client";
 import { labels } from "../features/my-flux/resources";
 
@@ -79,7 +98,9 @@ function getMetrics(version: Row | null): Metrics | null {
   return ((version?.generatedResult as Row | undefined)?.metrics as Metrics | undefined) ?? null;
 }
 function getPendencies(version: Row | null): Pendency[] {
-  return ((version?.generatedResult as Row | undefined)?.pendencies as Pendency[] | undefined) ?? [];
+  return (
+    ((version?.generatedResult as Row | undefined)?.pendencies as Pendency[] | undefined) ?? []
+  );
 }
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -106,6 +127,8 @@ export function MonthlySchedulePage() {
   const [month, setMonth] = useState("2026-10");
   const [showHistory, setShowHistory] = useState(false);
   const [notice, setNotice] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [overridesIndex, setOverridesIndex] = useState<Map<string, Row>>(new Map());
   const [cell, setCell] = useState<SelectedCell | null>(null);
@@ -132,6 +155,7 @@ export function MonthlySchedulePage() {
   const unitName = text(operations.find((o) => o.id === operationId)?.name ?? "—");
 
   async function load() {
+    setLoadError("");
     try {
       const [s, o] = await Promise.all([
         request<Row[]>("/schedules"),
@@ -141,7 +165,9 @@ export function MonthlySchedulePage() {
       setOperations(o);
       if (o.length && !o.some((x) => x.id === operationId)) setOperationId(o.at(0)?.id ?? demoOp);
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Falha ao carregar escalas.");
+      setLoadError(e instanceof Error ? e.message : "Falha ao carregar escalas.");
+    } finally {
+      setLoading(false);
     }
   }
   useEffect(() => {
@@ -195,25 +221,34 @@ export function MonthlySchedulePage() {
   }
 
   async function generate() {
+    const origem = centroDoFoco();
     try {
-      const row = await request<Row>("/employee-schedules/generate", "POST", { operationId, month });
+      const row = await request<Row>("/employee-schedules/generate", "POST", {
+        operationId,
+        month
+      });
+      faisca(origem);
       setSchedules((s) => [row, ...s]);
       setSelectedId(row.id);
       void loadOverrides(row);
       setNotice("Escala gerada a partir dos colaboradores ativos desta unidade.");
     } catch (e) {
       setNotice(
-        e instanceof Error ? e.message : "Geração bloqueada; verifique os colaboradores desta unidade."
+        e instanceof Error
+          ? e.message
+          : "Geração bloqueada; verifique os colaboradores desta unidade."
       );
     }
   }
 
   async function status(id: string, next: string) {
+    const origem = centroDoFoco();
     try {
       const row = await request<Row>(`/schedules/${id}/status`, "PATCH", {
         status: next,
         reason: `Fluxo manual: ${next}`
       });
+      faisca(origem);
       setSchedules((s) => s.map((x) => (x.id === id ? { ...x, ...row } : x)));
       setNotice(`Escala ${labels[next] ?? next}.`);
     } catch (e) {
@@ -272,6 +307,8 @@ export function MonthlySchedulePage() {
     setEditReason("");
   }
 
+  useSobreposicao(cell !== null);
+
   const existingOverride = cell ? overridesIndex.get(`${cell.employeeId}|${cell.date}`) : undefined;
 
   async function saveOverride() {
@@ -300,7 +337,10 @@ export function MonthlySchedulePage() {
                   rows: section.rows.map((row, ri) =>
                     ri !== cell.rowIndex
                       ? row
-                      : { ...row, days: row.days.map((d, di) => (di === cell.dayIndex ? editCode : d)) }
+                      : {
+                          ...row,
+                          days: row.days.map((d, di) => (di === cell.dayIndex ? editCode : d))
+                        }
                   )
                 }
           );
@@ -332,10 +372,7 @@ export function MonthlySchedulePage() {
     }
   }
 
-  const codeColors = useMemo(
-    () => new Map(scheduleCodes.map((c) => [c.code, c.color])),
-    []
-  );
+  const codeColors = useMemo(() => new Map(scheduleCodes.map((c) => [c.code, c.color])), []);
 
   // Workflow buttons — unchanged meaning, identical for the latest card and the
   // history rows.
@@ -343,7 +380,11 @@ export function MonthlySchedulePage() {
     return (
       <>
         {text(s.status) === "DRAFT" && (
-          <Button size="sm" icon={<Check size={14} />} onClick={() => void status(s.id, "IN_REVIEW")}>
+          <Button
+            size="sm"
+            icon={<Check size={14} />}
+            onClick={() => void status(s.id, "IN_REVIEW")}
+          >
             Enviar
           </Button>
         )}
@@ -381,23 +422,56 @@ export function MonthlySchedulePage() {
 
   function metricsRow(s: Row) {
     const m = getMetrics(s);
+    const cobertura = Math.max(0, Math.min(100, m?.coverage ?? 0));
+    const cartoes = [
+      { rotulo: "Necessário", valor: m?.required, dica: "pessoa-dia que o rodízio escala" },
+      { rotulo: "Coberto", valor: m?.covered, dica: "pessoa-dia com trabalho" }
+    ];
     return (
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <div className="rounded bg-slate-50 p-3 text-sm">
-          Necessário
-          <br />
-          <b>{m?.required ?? "—"}</b>
-        </div>
-        <div className="rounded bg-emerald-50 p-3 text-sm text-emerald-800">
-          Coberto
-          <br />
-          <b>{m?.covered ?? "—"}</b>
-        </div>
-        <div className="rounded bg-amber-50 p-3 text-sm text-amber-900">
-          Cobertura
-          <br />
-          <b>{m?.coverage ?? "—"}%</b>
-        </div>
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {cartoes.map((c) => (
+          <CartaoSpotlight key={c.rotulo} className="p-3.5">
+            <p className="text-xs font-medium text-mf-texto-2">{c.rotulo}</p>
+            <p className="mt-1.5 font-display text-3xl font-bold leading-none text-mf-tinta">
+              {c.valor === undefined ? (
+                "—"
+              ) : (
+                <Contador valor={c.valor} formatar={(n) => String(Math.round(n))} />
+              )}
+            </p>
+            <p className="mt-1.5 text-[11px] text-mf-texto-3">{c.dica}</p>
+          </CartaoSpotlight>
+        ))}
+        <CartaoSpotlight className="col-span-2 p-3.5 sm:col-span-1">
+          <p className="text-xs font-medium text-mf-texto-2">Cobertura</p>
+          <p
+            className={cn(
+              "mt-1.5 font-display text-3xl font-bold leading-none",
+              cobertura < 100 ? "text-mf-alerta" : "text-mf-primaria"
+            )}
+          >
+            {m?.coverage === undefined ? (
+              "—"
+            ) : (
+              <>
+                <Contador valor={m.coverage} formatar={(n) => String(Math.round(n))} />%
+              </>
+            )}
+          </p>
+          <div
+            role="img"
+            aria-label={`Cobertura de ${m?.coverage ?? 0}%`}
+            className="mt-2 h-1.5 overflow-hidden rounded-full bg-mf-linha"
+          >
+            <div
+              className={cn(
+                "h-full rounded-full transition-[width] duration-700",
+                cobertura < 100 ? "bg-mf-alerta" : "bg-mf-brilho"
+              )}
+              style={{ width: `${cobertura}%` }}
+            />
+          </div>
+        </CartaoSpotlight>
       </div>
     );
   }
@@ -415,10 +489,19 @@ export function MonthlySchedulePage() {
     // Older versions were saved without the holiday list: the calendar is fixed, so derive it.
     const unitCode = text(operations.find((o) => o.id === s.operationId)?.code ?? "");
     const holidayByDay = new Map(
-      (grid.holidays ?? holidaysOfMonth(grid.year, grid.month, unitCode)).map((holiday) => [holiday.day, holiday.name])
+      (grid.holidays ?? holidaysOfMonth(grid.year, grid.month, unitCode)).map((holiday) => [
+        holiday.day,
+        holiday.name
+      ])
     );
     return (
-      <div className="mt-5 space-y-4 border-t border-slate-100 pt-4">
+      <div className="mt-5 space-y-4 border-t border-mf-linha pt-4">
+        <EquipesPorTurno
+          equipes={grid.sections.map((section) => ({
+            nome: section.label,
+            pessoas: section.rows.length
+          }))}
+        />
         <div className="flex flex-wrap gap-3 text-xs text-slate-500">
           {scheduleCodes
             .filter((c) => c.color)
@@ -439,7 +522,10 @@ export function MonthlySchedulePage() {
           </span>
           {holidayByDay.size > 0 && (
             <span className="inline-flex items-center gap-1">
-              <span className="inline-block h-3 w-3 rounded" style={{ backgroundColor: "#B4C6E7" }} />
+              <span
+                className="inline-block h-3 w-3 rounded"
+                style={{ backgroundColor: "#B4C6E7" }}
+              />
               Feriado:{" "}
               {[...holidayByDay]
                 .map(([day, name]) => `${pad(day)}/${pad(grid.month)} ${name}`)
@@ -458,8 +544,14 @@ export function MonthlySchedulePage() {
                   <th
                     className="px-1 py-2 text-center"
                     key={i}
-                    title={holidayByDay.get(i + 1) ? `Feriado: ${holidayByDay.get(i + 1)}` : undefined}
-                    style={holidayByDay.has(i + 1) ? { backgroundColor: "#B4C6E7", color: "#1F3A63" } : undefined}
+                    title={
+                      holidayByDay.get(i + 1) ? `Feriado: ${holidayByDay.get(i + 1)}` : undefined
+                    }
+                    style={
+                      holidayByDay.has(i + 1)
+                        ? { backgroundColor: "#B4C6E7", color: "#1F3A63" }
+                        : undefined
+                    }
                   >
                     {i + 1}
                   </th>
@@ -495,8 +587,15 @@ export function MonthlySchedulePage() {
                             key={dayIndex}
                             role="button"
                             tabIndex={0}
+                            aria-label={`${row.employeeName}, dia ${dayIndex + 1}: ${code || "vazio"}. Ajustar`}
                             onClick={() => openCell(sectionIndex, rowIndex, dayIndex)}
-                            className="w-7 cursor-pointer px-0.5 py-1.5 text-center hover:bg-emerald-50"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                openCell(sectionIndex, rowIndex, dayIndex);
+                              }
+                            }}
+                            className="w-7 cursor-pointer px-0.5 py-1.5 text-center hover:bg-mf-realce-suave focus-visible:relative focus-visible:z-10 [@media(pointer:coarse)]:min-w-11"
                             style={{
                               color: color ? `#${color.font}` : undefined,
                               fontWeight: color?.bold ? 700 : 400,
@@ -528,102 +627,93 @@ export function MonthlySchedulePage() {
           </table>
         </div>
 
-        {pendencies.length > 0 && (
-          <div className="rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-            <p className="mb-1 font-semibold">Pendências ({pendencies.length})</p>
-            <ul className="space-y-0.5">
-              {pendencies.slice(0, 20).map((p, i) => (
-                <li key={i}>
-                  {p.employeeName} · {p.date} · {p.reasonCodes.join(", ")}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <ListaDePendencias
+          itens={pendencies.map((p, i) => ({
+            id: `${p.employeeId}-${p.date}-${i}`,
+            pessoa: p.employeeName,
+            data: p.date,
+            motivos: p.reasonCodes
+          }))}
+        />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase text-blue-700">Escalar</p>
-          <h1 className="mt-2 text-2xl font-semibold">Escalas mensais</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Geração automática por colaborador, com edição manual célula a célula por cima do
-            resultado.
-          </p>
-        </div>
-        <Button variant="ghost" icon={<RefreshCw size={16} />} onClick={() => void load()}>
-          Atualizar
-        </Button>
-      </div>
-      {notice && (
-        <div className="rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-          {notice}
-        </div>
-      )}
-      <section className="rounded border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-4 md:grid-cols-3">
-          <label className="text-sm">
-            Operação
-            <select
-              className="mt-1 w-full rounded border p-2"
-              value={operationId}
-              onChange={(e) => {
-                setUnitTouched(true);
-                setOperationId(e.target.value);
-              }}
-            >
-              {operations.length ? (
-                operations.map((o) => (
-                  <option value={o.id} key={o.id}>
-                    {text(o.name)}
-                  </option>
-                ))
+      <TituloDePagina
+        etiqueta="Escalar"
+        titulo="Escalas mensais"
+        descricao="Geração automática por colaborador, com edição manual célula a célula por cima do resultado."
+        acoes={
+          <Button
+            variant="ghost"
+            icon={
+              loading ? (
+                <span className="carregador" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </span>
               ) : (
-                <option value={demoOp}>Operação Demonstrativa</option>
-              )}
-            </select>
-          </label>
-          <label className="text-sm">
-            Mês
-            <input
-              className="mt-1 w-full rounded border p-2"
-              type="month"
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-            />
-          </label>
-          <div className="flex items-end">
-            <Button icon={<CalendarDays size={16} />} onClick={() => void generate()}>
-              Gerar escala
-            </Button>
-          </div>
+                <RefreshCw size={16} />
+              )
+            }
+            onClick={() => void load()}
+            disabled={loading}
+            aria-busy={loading}
+          >
+            Atualizar
+          </Button>
+        }
+      />
+      <AvisoTemporario mensagem={notice} aoFechar={() => setNotice("")} />
+      <section
+        aria-label="Gerar escala"
+        className="vidro rounded-2xl border border-white/70 p-4 shadow-sm ring-1 ring-mf-linha/60 sm:p-5"
+      >
+        <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-start">
+          <CampoDeSelecao
+            rotulo="Operação"
+            valor={operationId}
+            aoMudar={(v) => {
+              setUnitTouched(true);
+              setOperationId(v);
+            }}
+            opcoes={
+              operations.length
+                ? operations.map((o) => ({ value: o.id, label: text(o.name) }))
+                : [{ value: demoOp, label: "Operação Demonstrativa" }]
+            }
+          />
+          <CampoDeTexto rotulo="Mês" tipo="month" valor={month} aoMudar={setMonth} />
+          <BotaoEstrela
+            className="h-[3.25rem] w-full"
+            icon={<CalendarDays size={16} />}
+            onClick={() => void generate()}
+          >
+            Gerar escala
+          </BotaoEstrela>
         </div>
       </section>
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-mf-texto-2">
             Última escala gerada · {unitName}
           </h2>
-          <label className="flex items-center gap-2 text-sm text-slate-600">
-            <input
-              type="checkbox"
-              checked={showHistory}
-              onChange={(e) => setShowHistory(e.target.checked)}
-            />
-            Histórico
-            {unitSchedules.length > 1 && (
-              <span className="text-xs text-slate-400">({unitSchedules.length} escalas)</span>
-            )}
-          </label>
+          <Interruptor
+            rotulo={`Histórico${unitSchedules.length > 1 ? ` (${unitSchedules.length} escalas)` : ""}`}
+            checked={showHistory}
+            onChange={(e) => setShowHistory(e.target.checked)}
+          />
         </div>
 
         {latest && (
-          <article className="rounded border border-slate-200 bg-white p-5 shadow-sm" key={latest.id}>
+          <article
+            className="rounded-2xl border border-mf-linha bg-mf-cartao p-4 shadow-[0_1px_2px_rgb(var(--mf-tinta)/0.04)] sm:p-5"
+            key={latest.id}
+          >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="font-semibold">
@@ -649,15 +739,57 @@ export function MonthlySchedulePage() {
                 {statusActions(latest)}
               </div>
             </div>
+            <div className="mt-4">
+              <ProgressoDoFluxo status={text(latest.status)} />
+            </div>
             {metricsRow(latest)}
             {scheduleViewer(latest)}
           </article>
         )}
-        {!latest && (
-          <div className="rounded border border-slate-200 bg-white p-8 text-sm text-slate-500">
-            {schedules.length
-              ? `Nenhuma escala gerada para ${unitName} ainda.`
-              : "Nenhuma escala gerada ainda."}
+        {loading && !schedules.length && !loadError && (
+          <div
+            role="status"
+            aria-label="Carregando escalas"
+            className="space-y-3 rounded-2xl border border-mf-linha bg-mf-cartao p-5"
+          >
+            <Skeleton className="h-5 w-1/3" />
+            <Skeleton className="h-3.5 w-1/2" />
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              <Skeleton className="h-20" />
+              <Skeleton className="h-20" />
+              <Skeleton className="h-20" />
+            </div>
+          </div>
+        )}
+        {loadError && (
+          <div
+            role="alert"
+            className="rounded-2xl border border-mf-perigo/20 bg-mf-perigo-suave p-4 text-sm text-mf-perigo"
+          >
+            <p className="font-medium">Não foi possível carregar as escalas.</p>
+            <p className="mt-1">{loadError}</p>
+            <Button className="mt-3" variant="secondary" size="sm" onClick={() => void load()}>
+              Tentar novamente
+            </Button>
+          </div>
+        )}
+        {!latest && !loading && !loadError && (
+          <div className="rounded-2xl border border-dashed border-mf-linha bg-mf-cartao px-6 py-10 text-center">
+            <span
+              aria-hidden="true"
+              className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-mf-realce-suave text-mf-primaria"
+            >
+              <CalendarDays size={22} />
+            </span>
+            <p className="mt-4 font-display text-lg font-bold text-mf-tinta">
+              {schedules.length
+                ? `Nenhuma escala de ${unitName} ainda`
+                : "Nenhuma escala por aqui ainda"}
+            </p>
+            <p className="mx-auto mt-1 max-w-sm text-sm text-mf-texto-2">
+              Escolha a operação e o mês acima e toque em “Gerar escala”: ela nasce como rascunho, e
+              você ajusta o que precisar.
+            </p>
           </div>
         )}
 
@@ -667,13 +799,13 @@ export function MonthlySchedulePage() {
               Histórico de escalas · {unitName}
             </h2>
             {unitSchedules.length === 0 ? (
-              <div className="rounded border border-slate-200 bg-white p-6 text-sm text-slate-500">
+              <div className="rounded-2xl border border-dashed border-mf-linha bg-mf-cartao p-6 text-center text-sm text-mf-texto-2">
                 Nenhuma escala no histórico desta unidade.
               </div>
             ) : (
               unitSchedules.map((s, index) => (
                 <article
-                  className="rounded border border-slate-200 bg-white p-4 shadow-sm"
+                  className="rounded-2xl border border-mf-linha bg-mf-cartao p-4 shadow-[0_1px_2px_rgb(var(--mf-tinta)/0.04)]"
                   key={s.id}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -723,43 +855,57 @@ export function MonthlySchedulePage() {
       </section>
 
       {cell && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-          <div className="w-full max-w-sm rounded bg-white p-5 shadow-2xl">
+        <div
+          className="gaveta-fundo fixed inset-0 z-50 flex items-center justify-center bg-mf-tinta/50 p-4 backdrop-blur-[2px]"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setCell(null);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Ajustar dia"
+            className="gaveta-painel w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl"
+          >
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Ajustar dia</h3>
-              <button type="button" onClick={() => setCell(null)} aria-label="Fechar">
+              <h3 className="font-display text-lg font-bold text-mf-tinta">Ajustar dia</h3>
+              <button
+                type="button"
+                onClick={() => setCell(null)}
+                aria-label="Fechar"
+                className="grid h-11 w-11 place-items-center rounded-lg text-mf-texto-3 hover:bg-slate-100"
+              >
                 <X size={18} />
               </button>
             </div>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-mf-texto-2">
               {cell.employeeName} · {date(cell.date)}
             </p>
-            <label className="mt-4 block text-sm">
-              Código
-              <select
-                className="mt-1 w-full rounded border p-2"
-                value={editCode}
-                onChange={(e) => setEditCode(e.target.value)}
-              >
-                {scheduleCodes.map((c) => (
-                  <option value={c.code} key={c.code}>
-                    {c.code} — {c.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="mt-3 block text-sm">
-              Motivo (opcional)
-              <input
-                className="mt-1 w-full rounded border p-2"
-                value={editReason}
-                onChange={(e) => setEditReason(e.target.value)}
-                placeholder="Ex.: cobertura pontual combinada com o supervisor"
+            <div className="mt-4 space-y-3">
+              <CampoDeSelecao
+                rotulo="Código"
+                valor={editCode}
+                aoMudar={setEditCode}
+                opcoes={scheduleCodes.map((c) => ({
+                  value: c.code,
+                  label: `${c.code} — ${c.label}`
+                }))}
               />
-            </label>
+              <CampoDeTexto
+                rotulo="Motivo (opcional)"
+                valor={editReason}
+                aoMudar={setEditReason}
+                ajuda="Ex.: cobertura pontual combinada com o supervisor"
+              />
+            </div>
             <div className="mt-5 flex justify-between gap-2">
               {existingOverride ? (
-                <Button variant="danger" size="sm" onClick={() => void removeOverride()} disabled={saving}>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => void removeOverride()}
+                  disabled={saving}
+                >
                   Remover ajuste
                 </Button>
               ) : (

@@ -2,8 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Tokens do MY FLUX. A paleta é travada: estes valores e nenhum outro. Canais RGB (como os tokens do
+ * Lab) para o Tailwind e os efeitos comporem a transparência: rgb(var(--mf-brilho) / 0.12).
+ */
 :root {
+  --mf-primaria: 6 95 70; /* esmeralda 800  #065F46 */
+  --mf-brilho: 5 150 105; /* esmeralda 600  #059669 */
+  --mf-realce: 209 250 229; /* esmeralda 100  #D1FAE5 */
+  --mf-realce-suave: 236 253 245; /* esmeralda 50   #ECFDF5 */
+  --mf-azul: 29 78 216; /* azul 700       #1D4ED8 */
+  --mf-azul-suave: 219 234 254; /* azul 100       #DBEAFE */
+  --mf-tinta: 2 6 23; /* tinta          #020617 */
+  --mf-texto: 30 41 59; /* slate 800      #1E293B */
+  --mf-texto-2: 71 85 105; /* slate 600      #475569 */
+  --mf-texto-3: 100 116 139; /* slate 500      #64748B */
+  --mf-linha: 226 232 240; /* slate 200      #E2E8F0 */
+  --mf-fundo: 246 248 250; /* fundo          #F6F8FA */
+  --mf-cartao: 255 255 255; /* cartão         #FFFFFF */
+  --mf-perigo: 185 28 28; /* perigo         #B91C1C (sobre #FEF2F2) */
+  --mf-perigo-suave: 254 242 242;
+  --mf-alerta: 180 83 9; /* alerta         #B45309 (sobre #FFFBEB) */
+  --mf-alerta-suave: 255 251 235;
+  /* A altura da barra de navegação inferior (celular); quem flutua no canto a respeita. */
+  --mf-dock-h: 0px;
+
   font-family:
+    "Inter Variable",
     Inter,
     ui-sans-serif,
     system-ui,
@@ -35,8 +60,8 @@ button {
   color: #123f36;
 }
 :focus-visible {
-  outline: 2px solid #047857;
-  outline-offset: 3px;
+  outline: 3px solid rgb(var(--mf-azul));
+  outline-offset: 2px;
 }
 input[type="checkbox"] {
   accent-color: #047857;
@@ -86,7 +111,7 @@ input[type="checkbox"] {
   display: grid;
   grid-template-columns: 1fr 1fr;
   padding: 16px;
-  background: #fafbf9;
+  background: rgb(var(--mf-fundo));
 }
 .login-story {
   position: relative;
@@ -97,7 +122,9 @@ input[type="checkbox"] {
   border-radius: 22px;
   padding: clamp(32px, 4.5vw, 76px);
   color: white;
-  background: radial-gradient(ellipse at 90% 90%, #245e48 0%, transparent 55%), #103e35;
+  background:
+    radial-gradient(ellipse at 90% 90%, rgb(var(--mf-brilho) / 0.32) 0%, transparent 55%),
+    rgb(var(--mf-primaria));
 }
 .login-story::before,
 .login-story::after {
@@ -107,13 +134,13 @@ input[type="checkbox"] {
   height: 620px;
   right: -370px;
   top: -280px;
-  border: 1px solid #c1e4c81c;
+  border: 1px solid rgb(var(--mf-realce) / 0.11);
   border-radius: 50%;
   z-index: -1;
   box-shadow:
-    0 0 0 60px #c1e4c805,
-    0 0 0 120px #c1e4c805,
-    0 0 0 180px #c1e4c805;
+    0 0 0 60px rgb(var(--mf-realce) / 0.02),
+    0 0 0 120px rgb(var(--mf-realce) / 0.02),
+    0 0 0 180px rgb(var(--mf-realce) / 0.02);
 }
 .login-story::after {
   top: auto;
@@ -139,7 +166,7 @@ input[type="checkbox"] {
   top: 22px;
   left: 20px;
   right: 55px;
-  border-top: 1px dashed #a4d4ba50;
+  border-top: 1px dashed rgb(var(--mf-realce) / 0.3);
 }
 .workspace > div {
   animation: enter-workspace 0.25s ease-out;
@@ -155,15 +182,13 @@ input[type="checkbox"] {
   padding-bottom: 16px;
 }
 .workspace table tbody tr:hover {
-  background: #f4faf7;
+  background-color: rgb(var(--mf-realce-suave) / 0.7);
 }
-.workspace select:focus,
-.workspace textarea:focus {
-  outline: 2px solid #059669;
+.workspace select:focus-visible,
+.workspace textarea:focus-visible,
+.workspace input:not([type="checkbox"]):focus-visible {
+  outline: 3px solid rgb(var(--mf-azul));
   outline-offset: 2px;
-}
-.workspace input:not([type="checkbox"]):focus {
-  outline-color: #059669;
 }
 dialog.flux-dialog {
   border: 0;
@@ -205,7 +230,6 @@ dialog.flux-dialog::backdrop {
   *::before,
   *::after {
     animation: none !important;
-    transition: none !important;
     scroll-behavior: auto !important;
   }
 }
@@ -224,5 +248,433 @@ dialog.flux-dialog::backdrop {
 @media (prefers-reduced-motion: reduce) {
   [class*="suporte-entrar"] {
     animation: none !important;
+  }
+}
+
+/* Títulos das páginas do shell do sistema: Bricolage Grotesque. O Lab tem a tipografia dele. */
+.workspace h1 {
+  font-family: "Bricolage Grotesque Variable", "Inter Variable", ui-sans-serif, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: rgb(var(--mf-tinta));
+}
+
+/*
+ * Fundo ambiente (components/ui/fundo-ambiente.tsx): pontos em verde translúcido que somem para baixo
+ * e uma aurora verde e azul bem suave, que só se move devagar. Em CSS puro: sem WebGL, sem custo de
+ * script, atrás só do fundo (os cartões e as tabelas são opacos).
+ */
+.fundo-ambiente {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.fundo-ambiente::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgb(var(--mf-brilho) / 0.2) 1px, transparent 1.3px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 20%, transparent 78%);
+  mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 20%, transparent 78%);
+}
+.fundo-ambiente > span {
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 9999px;
+  will-change: transform;
+  animation: fundo-deriva 32s ease-in-out infinite alternate;
+}
+.fundo-ambiente > span:nth-child(1) {
+  top: -34vmax;
+  left: -18vmax;
+  background: radial-gradient(closest-side, rgb(var(--mf-brilho) / 0.13), transparent);
+}
+.fundo-ambiente > span:nth-child(2) {
+  top: -38vmax;
+  right: -22vmax;
+  background: radial-gradient(closest-side, rgb(var(--mf-azul) / 0.09), transparent);
+  animation-duration: 40s;
+  animation-direction: alternate-reverse;
+}
+@keyframes fundo-deriva {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(6vmax, 4vmax, 0) scale(1.08);
+  }
+}
+
+/* Vidro: barras e filtros. Sem suporte a backdrop-filter, o fundo fica opaco (legível do mesmo jeito). */
+.vidro {
+  background: rgb(var(--mf-cartao) / 0.96);
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .vidro {
+    background: rgb(var(--mf-cartao) / 0.66);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    backdrop-filter: blur(16px) saturate(1.4);
+  }
+}
+
+/* Quem pede menos movimento: nada se mexe sozinho. As transições curtas (hover, foco) continuam. */
+@media (prefers-reduced-motion: reduce) {
+  .fundo-ambiente > span {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Efeitos do MY FLUX (cada um tem uma razão de ser; os componentes explicam no topo do arquivo).
+ * Todos usam só as cores da paleta (tokens --mf-*) e param com prefers-reduced-motion.
+ * ------------------------------------------------------------------------------------------- */
+
+/*
+ * Etiqueta com brilho: um reflexo (esmeralda escuro) passa devagar sobre o azul. O degradê é azul nas
+ * duas pontas e a janela só anda de 100% a 0%, então o texto nunca fica sem cor. Só tons escuros (AA).
+ */
+.texto-brilho {
+  background: linear-gradient(
+      110deg,
+      rgb(var(--mf-azul)) 38%,
+      rgb(var(--mf-primaria)) 50%,
+      rgb(var(--mf-azul)) 62%
+    )
+    100% 0 / 260% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: brilho-passa 6s ease-in-out infinite;
+}
+@keyframes brilho-passa {
+  0%,
+  35% {
+    background-position: 100% 0;
+  }
+  75%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+/* Título em degradê: tinta > esmeralda > azul. */
+.workspace h1.titulo-gradiente {
+  background: linear-gradient(
+    100deg,
+    rgb(var(--mf-tinta)) 0%,
+    rgb(var(--mf-primaria)) 55%,
+    rgb(var(--mf-azul)) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Cartão com luz que segue o mouse (components/ui/cartao-spotlight.tsx). */
+.spotlight {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    240px circle at var(--x, 50%) var(--y, 50%),
+    rgb(var(--spot, var(--mf-brilho)) / 0.15),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+.spotlight:hover::before {
+  opacity: 1;
+}
+.spotlight > * {
+  position: relative;
+}
+
+/* Botão principal com borda de luz giratória (components/ui/botao-estrela.tsx). */
+.borda-estrela {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  padding: 2px;
+  background: rgb(var(--mf-primaria));
+}
+.borda-estrela::before {
+  content: "";
+  position: absolute;
+  inset: -150%;
+  z-index: -1;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0 62%,
+    rgb(var(--mf-realce)) 78%,
+    rgb(var(--mf-azul)) 90%,
+    rgb(var(--mf-brilho)) 100%
+  );
+  animation: borda-gira 4.5s linear infinite;
+}
+.borda-estrela[data-desativado]::before {
+  animation: none;
+  opacity: 0.35;
+}
+@keyframes borda-gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Reflexo que atravessa a linha da tabela ao passar o mouse; sem esconder nada. */
+.linha-brilho {
+  background-image: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgb(var(--mf-brilho) / 0.09) 50%,
+    transparent 62%
+  );
+  background-size: 260% 100%;
+  background-position: 130% 0;
+  background-repeat: no-repeat;
+  transition: background-position 0.7s ease;
+}
+.linha-brilho:hover {
+  background-position: -30% 0;
+}
+
+/* Ponto "vivo" do status Ativo: um anel que se expande devagar. */
+.ponto-vivo {
+  position: relative;
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: rgb(var(--mf-brilho));
+}
+.ponto-vivo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgb(var(--mf-brilho));
+  animation: ponto-pulsa 2.2s ease-out infinite;
+}
+@keyframes ponto-pulsa {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* Carregador do botão Atualizar: três pontos que sobem em sequência. */
+.carregador {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 16px;
+}
+.carregador i {
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: carregador-pula 0.9s ease-in-out infinite;
+}
+.carregador i:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.carregador i:nth-child(3) {
+  animation-delay: 0.24s;
+}
+@keyframes carregador-pula {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  35% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .texto-brilho {
+    animation: none;
+    background-position: 0 0;
+  }
+  .borda-estrela::before,
+  .ponto-vivo::after,
+  .carregador i {
+    animation: none;
+  }
+  .linha-brilho,
+  .spotlight::before {
+    transition: none;
+  }
+}
+
+/* Gaveta (components/ui/drawer.tsx): o painel desliza da direita e o fundo escurece sem pular. */
+@keyframes gaveta-entra {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes gaveta-fundo {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.gaveta-fundo {
+  animation: gaveta-fundo 0.2s ease-out;
+}
+.gaveta-painel {
+  animation: gaveta-entra 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * Borda de urgência (ficha > documentos): ASO ou NR vencidos. É vermelho, sobre vermelho: o halo
+ * pulsa devagar só para o documento que deixa a pessoa fora da escala. Parado com prefers-reduced-motion
+ * (a borda vermelha continua).
+ */
+.borda-eletrica {
+  border-width: 1.5px;
+  border-color: rgb(var(--mf-perigo) / 0.75);
+  animation: borda-eletrica 2.6s ease-in-out infinite;
+}
+@keyframes borda-eletrica {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--mf-perigo) / 0);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgb(var(--mf-perigo) / 0.16);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gaveta-fundo,
+  .gaveta-painel,
+  .borda-eletrica {
+    animation: none;
+  }
+}
+
+/* Gaveta ou janela aberta: o assistente flutuante se recolhe para não cobrir os botões do rodapé. */
+html[data-sobreposicao] .assistente-suporte {
+  display: none;
+}
+
+/* Texto em degradê tinta > esmeralda > azul para títulos fora do shell (login). */
+.texto-gradiente {
+  background: linear-gradient(
+    100deg,
+    rgb(var(--mf-tinta)) 0%,
+    rgb(var(--mf-primaria)) 55%,
+    rgb(var(--mf-azul)) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/*
+ * Raios de luz (login): feixes finos de esmeralda claro que saem do canto e balançam devagar. É o
+ * único fundo animado da tela de entrada. CSS puro, sem WebGL; parado com prefers-reduced-motion.
+ */
+.raios-de-luz {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.raios-de-luz::before {
+  content: "";
+  position: absolute;
+  left: -20%;
+  top: -45%;
+  width: 140%;
+  height: 140%;
+  transform-origin: 78% 0%;
+  background: repeating-conic-gradient(
+    from 195deg at 78% 0%,
+    transparent 0deg 5deg,
+    rgb(var(--mf-realce) / 0.17) 6deg 7.5deg,
+    transparent 9deg 14deg
+  );
+  -webkit-mask-image: radial-gradient(ellipse 70% 70% at 78% 0%, #000 0%, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 70% at 78% 0%, #000 0%, transparent 75%);
+  animation: raios-balancam 14s ease-in-out infinite alternate;
+}
+@keyframes raios-balancam {
+  from {
+    transform: rotate(-3deg);
+  }
+  to {
+    transform: rotate(3deg);
+  }
+}
+
+/* Fundo ambiente parado (telas que já têm outro fundo animado). */
+.fundo-ambiente.fundo-parado > span {
+  animation: none;
+}
+/* No login o fundo cobre só o lado do formulário. */
+.login-entry > .fundo-ambiente {
+  position: absolute;
+  z-index: -1;
+  border-radius: 22px;
+}
+
+/* Aviso temporário (toast): acima do botão do assistente e da barra inferior no celular. */
+.aviso-temporario {
+  position: fixed;
+  z-index: 60;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  bottom: calc(5.25rem + var(--mf-dock-h, 0px));
+  width: min(28rem, calc(100vw - 1.5rem));
+  animation: aviso-entra 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes aviso-entra {
+  from {
+    opacity: 0;
+    margin-bottom: -8px;
+  }
+  to {
+    opacity: 1;
+    margin-bottom: 0;
+  }
+}
+@media (min-width: 1024px) {
+  .aviso-temporario {
+    bottom: 1.25rem;
   }
 }
