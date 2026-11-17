@@ -7,9 +7,10 @@ import { type FormEvent, type KeyboardEvent, useEffect, useId, useRef, useState 
 import { useLocation } from "react-router-dom";
 import { LifeBuoy, Loader2, RotateCcw, SendHorizontal, X } from "lucide-react";
 import { type SuporteMensagem, type SuporteResposta, suporteLimites } from "@my-flux/shared";
-import { ApiError, request } from "../my-flux/client";
+import { request } from "../my-flux/client";
 import { cn } from "../../lib/cn";
 import { assistenteVisivelEm, contextoDaPagina } from "./contexto-da-pagina";
+import { LIMITE_DA_CHAMADA_MS, mensagemDoErro } from "./erros-do-suporte";
 
 const CHAVE_CONVERSA = "flux.suporte.conversa";
 const CHAVE_ABERTO = "flux.suporte.aberto";
@@ -31,15 +32,6 @@ function gravar(chave: string, valor: unknown): void {
   } catch {
     // Sem armazenamento (aba privada, bloqueio): a conversa só não sobrevive à troca de tela.
   }
-}
-
-function mensagemDoErro(erro: unknown): string {
-  if (erro instanceof ApiError) {
-    if (erro.code === "SUPORTE_INDISPONIVEL")
-      return "O assistente não está disponível neste ambiente no momento.";
-    if (erro.status === 409 || erro.status === 429 || erro.status === 400) return erro.message;
-  }
-  return "Não consegui responder agora. Tente de novo em instantes.";
 }
 
 export function AssistenteDeSuporte() {
@@ -90,11 +82,17 @@ export function AssistenteDeSuporte() {
     );
     setEnviando(true);
     try {
-      const resposta = await request<SuporteResposta>("/suporte/conversa", "POST", {
-        mensagem,
-        historico,
-        pagina: { caminho: pathname.slice(0, suporteLimites.pagina), titulo: contexto.titulo }
-      });
+      const resposta = await request<SuporteResposta>(
+        "/suporte/conversa",
+        "POST",
+        {
+          mensagem,
+          historico,
+          pagina: { caminho: pathname.slice(0, suporteLimites.pagina), titulo: contexto.titulo }
+        },
+        false,
+        LIMITE_DA_CHAMADA_MS
+      );
       setMensagens((atuais) =>
         [...atuais, { papel: "assistente" as const, texto: resposta.resposta }].slice(
           -MAXIMO_NA_TELA

@@ -31,6 +31,12 @@ export function resumoDosResultados(itens: readonly LabItemDaRevisao[]): ResumoD
 export type FaixaDeAderencia = { faixa: string; resultados: number };
 
 const LARGURA_DA_FAIXA = 20;
+const N_FAIXAS = 100 / LARGURA_DA_FAIXA;
+
+/** A faixa (0 a 4) de uma aderência: de 20 em 20 pontos, e o 100 fica na última. */
+export function indiceDaFaixa(aderencia: number): number {
+  return Math.min(N_FAIXAS - 1, Math.max(0, Math.floor(aderencia / LARGURA_DA_FAIXA)));
+}
 
 /** Quantos resultados caem em cada faixa de 20 pontos de aderência (a última inclui o 100). */
 export function distribuicaoDaAderencia(itens: readonly LabItemDaRevisao[]): FaixaDeAderencia[] {
@@ -40,11 +46,7 @@ export function distribuicaoDaAderencia(itens: readonly LabItemDaRevisao[]): Fai
     return { faixa: `${inicio}–${fim === 100 ? 100 : fim - 1}%`, resultados: 0 };
   });
   for (const item of itens) {
-    const indice = Math.min(
-      faixas.length - 1,
-      Math.max(0, Math.floor(item.aderenciaGeral / LARGURA_DA_FAIXA))
-    );
-    const faixa = faixas[indice];
+    const faixa = faixas[indiceDaFaixa(item.aderenciaGeral)];
     if (faixa) faixa.resultados += 1;
   }
   return faixas;

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError, request } from "../my-flux/client";
 import { renderizar } from "../../test/render";
 import { AssistenteDeSuporte } from "./assistente-de-suporte";
+import { LIMITE_DA_CHAMADA_MS, mensagemDoErro } from "./erros-do-suporte";
 import { assistenteVisivelEm, contextoDaPagina } from "./contexto-da-pagina";
 
 vi.mock("../my-flux/client", async (importOriginal) => {
@@ -56,11 +57,17 @@ describe("assistente de suporte", () => {
     expect(screen.getByRole("dialog", { name: "Assistente de suporte" })).toBeTruthy();
     await userEvent.click(screen.getByRole("button", { name: "Como gero a escala do mês?" }));
     expect(await screen.findByText("1. Escolha o mês.")).toBeTruthy();
-    expect(pedir).toHaveBeenCalledWith("/suporte/conversa", "POST", {
-      mensagem: "Como gero a escala do mês?",
-      historico: [],
-      pagina: { caminho: "/escalas", titulo: "Escalas" }
-    });
+    expect(pedir).toHaveBeenCalledWith(
+      "/suporte/conversa",
+      "POST",
+      {
+        mensagem: "Como gero a escala do mês?",
+        historico: [],
+        pagina: { caminho: "/escalas", titulo: "Escalas" }
+      },
+      false,
+      LIMITE_DA_CHAMADA_MS
+    );
   });
 
   it("manda o histórico recente na pergunta seguinte", async () => {
@@ -99,5 +106,26 @@ describe("assistente de suporte", () => {
     await userEvent.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(document.activeElement?.getAttribute("aria-label")).toBe("Abrir assistente de suporte");
+  });
+});
+
+describe("mensagem de erro do assistente", () => {
+  it("diz a causa sem expor detalhe interno", () => {
+    expect(mensagemDoErro(new ApiError("x", 404, "NOT_FOUND"))).toMatch(/nesta versão/);
+    expect(mensagemDoErro(new ApiError("detalhe interno", 502, "LAB_IA_INDISPONIVEL"))).toBe(
+      "O serviço de IA não respondeu agora. Tente de novo em instantes."
+    );
+    expect(mensagemDoErro(new ApiError("Há um teste em andamento.", 409, "SUPORTE_DURANTE_O_TESTE"))).toBe(
+      "Há um teste em andamento."
+    );
+    expect(mensagemDoErro(new DOMException("t", "TimeoutError"))).toMatch(/demorou/);
+    expect(mensagemDoErro(new TypeError("Failed to fetch"))).toMatch(/Sem conexão/);
+    expect(mensagemDoErro(new Error("segredo"))).toBe(
+      "Não consegui responder agora. Tente de novo em instantes."
+    );
+  });
+
+  it("o limite da tela é maior que a soma da Guarda e da IA no servidor (25 s + 25 s)", () => {
+    expect(LIMITE_DA_CHAMADA_MS).toBeGreaterThan(50_000);
   });
 });

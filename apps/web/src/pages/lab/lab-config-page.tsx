@@ -16,7 +16,6 @@ import {
   MensagemDeErro,
   Revelar
 } from "../../features/leadership-lab/ui";
-import { ConsumoDeIa } from "../../features/leadership-lab/componentes/consumo-de-ia";
 import { ErroDaTelaDoLab } from "../../features/leadership-lab/componentes/erro-da-tela";
 import {
   useAtualizarMolde,
@@ -52,10 +51,6 @@ export function LabConfigPage() {
           ))}
         </div>
       )}
-
-      <Revelar>
-        <ConsumoDeIa />
-      </Revelar>
     </Escalonar>
   );
 }

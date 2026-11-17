@@ -21,8 +21,7 @@ export const chavesDoCadastro = {
   usuarios: (busca: string) => ["lab", "cadastro", "usuarios", busca] as const,
   turmas: ["lab", "cadastro", "turmas"] as const,
   turma: (id: string) => ["lab", "cadastro", "turma", id] as const,
-  moldes: ["lab", "cadastro", "moldes"] as const,
-  consumoDeIa: ["lab", "cadastro", "consumo-ia"] as const
+  moldes: ["lab", "cadastro", "moldes"] as const
 };
 
 /** Espera o valor parar de mudar por `ms` antes de devolvê-lo (para não buscar a cada tecla). */
@@ -108,6 +107,16 @@ export function useTurma(id: string) {
   });
 }
 
+/** A turma só é consultada quando há uma escolhida (o filtro da visão geral). */
+export function useTurmaEscolhida(id: string | null) {
+  return useQuery({
+    queryKey: chavesDoCadastro.turma(id ?? ""),
+    queryFn: () => labCadastroApi.turma(id ?? ""),
+    enabled: id !== null,
+    retry: repetirSoSeFalhaPassageira
+  });
+}
+
 export function useCriarTurma() {
   const cliente = useQueryClient();
   return useMutation({
@@ -154,14 +163,6 @@ export function useConfigDosMoldes() {
   return useQuery({
     queryKey: chavesDoCadastro.moldes,
     queryFn: labCadastroApi.configDosMoldes,
-    retry: repetirSoSeFalhaPassageira
-  });
-}
-
-export function useConsumoDeIa() {
-  return useQuery({
-    queryKey: chavesDoCadastro.consumoDeIa,
-    queryFn: labCadastroApi.consumoDeIa,
     retry: repetirSoSeFalhaPassageira
   });
 }

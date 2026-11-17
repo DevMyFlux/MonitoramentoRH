@@ -7,6 +7,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ComposedChart,
   Line,
   PolarAngleAxis,
@@ -29,6 +30,7 @@ import {
 import { cores } from "../ui/cores";
 import { descricaoDaDistribuicao, type FaixaDeAderencia } from "../visao-geral-dados";
 import { useAnimacaoReduzida } from "../ui/movimento";
+import type { PontoDaTendencia } from "../visao-geral-filtros";
 
 type PropsDoRotulo = {
   x?: number | string;
@@ -226,7 +228,17 @@ export function GraficoDeEvolucao({ pontos }: { pontos: readonly LabPontoDaEvolu
 }
 
 /** Quantos resultados em cada faixa de aderência (visão geral do RH). */
-export function DistribuicaoDeAderencia({ faixas }: { faixas: readonly FaixaDeAderencia[] }) {
+export function DistribuicaoDeAderencia({
+  faixas,
+  selecionada = null,
+  aoSelecionar
+}: {
+  faixas: readonly FaixaDeAderencia[];
+  /** O índice da faixa em destaque (a que o detalhamento mostra). */
+  selecionada?: number | null;
+  /** Clicar numa barra escolhe a faixa; clicar na já escolhida a desmarca. */
+  aoSelecionar?: (indice: number) => void;
+}) {
   const reduzida = useAnimacaoReduzida();
   return (
     <div
@@ -260,8 +272,133 @@ export function DistribuicaoDeAderencia({ faixas }: { faixas: readonly FaixaDeAd
             maxBarSize={56}
             isAnimationActive={!reduzida}
             animationDuration={700}
-          />
+            style={{ cursor: aoSelecionar ? "pointer" : "default" }}
+            onClick={(_dados, indice) => aoSelecionar?.(indice)}
+          >
+            {faixas.map((f, i) => (
+              <Cell
+                key={f.faixa}
+                fill={cores.destaque}
+                fillOpacity={selecionada === null || selecionada === i ? 1 : 0.35}
+              />
+            ))}
+          </Bar>
         </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/**
+ * A tendência das médias ao longo do tempo (visão geral do RH). Clicar num ponto escolhe o intervalo,
+ * que o detalhamento abaixo lista; os mesmos intervalos também são botões na página (alternativa
+ * para teclado e leitor de tela).
+ */
+export function TendenciaDosResultados({
+  pontos,
+  selecionada = null,
+  aoSelecionar
+}: {
+  pontos: readonly PontoDaTendencia[];
+  selecionada?: string | null;
+  aoSelecionar?: (chave: string) => void;
+}) {
+  const reduzida = useAnimacaoReduzida();
+  const descricao = pontos
+    .map((p) => `${p.rotulo}: aderência ${p.aderencia}%, agilidade ${p.agilidade}%`)
+    .join("; ");
+  return (
+    <div role="img" aria-label={`Tendência das médias. ${descricao}`} className="h-64 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart
+          data={[...pontos]}
+          margin={{ top: 12, right: 12, bottom: 0, left: -12 }}
+          style={{ cursor: aoSelecionar ? "pointer" : "default" }}
+          onClick={(estado) => {
+            const i = Number(estado?.activeIndex);
+            const ponto = Number.isInteger(i) ? pontos[i] : undefined;
+            if (ponto) aoSelecionar?.(ponto.chave);
+          }}
+        >
+          <defs>
+            <linearGradient id="lab-degrade-tendencia" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={cores.destaque} stopOpacity={0.2} />
+              <stop offset="100%" stopColor={cores.destaque} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} stroke={cores.linha} />
+          <XAxis
+            dataKey="rotulo"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={10}
+            tick={{ fontSize: 11, fill: cores.tinta2 }}
+          />
+          <YAxis
+            domain={[0, 100]}
+            tickLine={false}
+            axisLine={false}
+            tickMargin={6}
+            tick={{ fontSize: 11, fill: cores.tinta2 }}
+          />
+          <Tooltip
+            content={<DicaDoGrafico sufixo="%" />}
+            cursor={{ stroke: cores.linha, strokeWidth: 1 }}
+          />
+          <Area
+            type="monotone"
+            dataKey="aderencia"
+            name="Aderência"
+            stroke="none"
+            fill="url(#lab-degrade-tendencia)"
+            legendType="none"
+            tooltipType="none"
+            isAnimationActive={!reduzida}
+            animationDuration={800}
+          />
+          <Line
+            type="monotone"
+            dataKey="aderencia"
+            name="Aderência"
+            stroke={cores.destaque}
+            strokeWidth={2.5}
+            dot={(p) => {
+              const { cx, cy, payload, index } = p as {
+                cx: number;
+                cy: number;
+                payload: PontoDaTendencia;
+                index: number;
+              };
+              const escolhido = payload.chave === selecionada;
+              return (
+                <circle
+                  key={index}
+                  cx={cx}
+                  cy={cy}
+                  r={escolhido ? 6 : 3.5}
+                  strokeWidth={2}
+                  stroke={cores.destaque}
+                  fill={escolhido ? cores.destaque : "#fff"}
+                />
+              );
+            }}
+            activeDot={{ r: 5.5, strokeWidth: 2, fill: "#fff" }}
+            isAnimationActive={!reduzida}
+            animationDuration={800}
+          />
+          <Line
+            type="monotone"
+            dataKey="agilidade"
+            name="Agilidade"
+            stroke={cores.info}
+            strokeWidth={2}
+            strokeDasharray="5 4"
+            dot={false}
+            activeDot={{ r: 5, strokeWidth: 2, fill: "#fff" }}
+            isAnimationActive={!reduzida}
+            animationDuration={800}
+          />
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );

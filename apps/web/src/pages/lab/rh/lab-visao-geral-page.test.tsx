@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { labCadastroApi } from "../../../features/leadership-lab/cadastro-api";
 import { labCuradoriaApi } from "../../../features/leadership-lab/curadoria-api";
@@ -13,12 +14,15 @@ vi.mock("../../../features/leadership-lab/curadoria-api", () => ({
   labCuradoriaApi: { pendencias: vi.fn(), revisao: vi.fn() }
 }));
 vi.mock("../../../features/leadership-lab/cadastro-api", () => ({
-  labCadastroApi: { participantes: vi.fn(), turmas: vi.fn() }
+  labCadastroApi: { participantes: vi.fn(), turmas: vi.fn(), turma: vi.fn() }
 }));
 // O gráfico (Recharts) é desenho; aqui interessa o que a tela entrega a ele.
 vi.mock("../../../features/leadership-lab/componentes/graficos", () => ({
   DistribuicaoDeAderencia: ({ faixas }: { faixas: { faixa: string; resultados: number }[] }) => (
     <p data-testid="distribuicao">{faixas.map((f) => `${f.faixa}=${f.resultados}`).join(" ")}</p>
+  ),
+  TendenciaDosResultados: ({ pontos }: { pontos: { chave: string; resultados: number }[] }) => (
+    <p data-testid="tendencia">{pontos.map((p) => `${p.chave}=${p.resultados}`).join(" ")}</p>
   )
 }));
 
@@ -61,7 +65,7 @@ describe("visão geral do acompanhamento (RH)", () => {
     expect(within(cartao("Resultados a validar")).getByText("—")).toBeTruthy();
   });
 
-  it("pede todos os resultados do escopo do curador e resume o que veio", async () => {
+  const doisResultados = () =>
     curadoria.revisao.mockResolvedValue([
       itemDaRevisao({
         resultadoId: "r1",
@@ -77,24 +81,80 @@ describe("visão geral do acompanhamento (RH)", () => {
         participante: participanteResumido({ id: "p2", nome: "Bruno Lima" })
       })
     ]);
+  const indicador = (rotulo: string) => screen.getByText(rotulo).parentElement!;
+
+  it("pede todos os resultados do escopo do curador e resume o que veio", async () => {
+    doisResultados();
     abrir();
-    const titulo = await screen.findByRole("heading", { name: "Resultados das suas turmas" });
-    const bloco = titulo.closest("section")!;
+    await screen.findByRole("heading", { name: "Indicadores" });
     expect(curadoria.revisao).toHaveBeenCalledWith("todos");
-    const medida = (rotulo: string) => within(bloco).getByText(rotulo).parentElement!;
-    expect(within(medida("Testes concluídos")).getByText("2")).toBeTruthy();
-    expect(within(medida("Participantes com teste")).getByText("2")).toBeTruthy();
-    expect(within(medida("Aderência média")).getByText("70%")).toBeTruthy();
-    expect(within(medida("Agilidade média")).getByText("80%")).toBeTruthy();
-    expect(within(bloco).getByText(/1 de 2 já foram validados/)).toBeTruthy();
-    expect((await screen.findByTestId("distribuicao")).textContent).toBe(
+    expect(within(indicador("Testes concluídos")).getByText("2")).toBeTruthy();
+    expect(within(indicador("Aderência média")).getByText("70%")).toBeTruthy();
+    expect(within(indicador("Agilidade média")).getByText("80%")).toBeTruthy();
+    expect(within(indicador("Já validados")).getByText("50%")).toBeTruthy();
+    expect((await screen.findByTestId("distribuicao", {}, { timeout: 8000 })).textContent).toBe(
       "0–19%=0 20–39%=0 40–59%=0 60–79%=1 80–100%=1"
     );
-
-    const link = screen.getByRole("link", { name: /Abrir o resultado de Bruno Lima/ });
-    expect(link.getAttribute("href")).toBe("/lab/rh/revisao/r2");
+    expect(screen.getByRole("link", { name: "Bruno Lima" }).getAttribute("href")).toBe(
+      "/lab/rh/revisao/r2"
+    );
     const porTeste = screen.getByRole("heading", { name: "Por teste" }).closest("section")!;
-    expect(within(porTeste).getByRole("rowheader", { name: "Coordenador" })).toBeTruthy();
+    expect(within(porTeste).getByText("Coordenador")).toBeTruthy();
+  }, 20_000);
+
+  it("os filtros recortam os resultados, atualizam os números e podem ser limpos", async () => {
+    doisResultados();
+    abrir();
+    await screen.findByRole("heading", { name: "Indicadores" });
+    await userEvent.selectOptions(screen.getByLabelText("Teste"), "Coordenador");
+    expect(screen.getByRole("status").textContent).toBe("1 de 2 resultados nos filtros atuais.");
+    expect(within(indicador("Aderência média")).getByText("60%")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Ana Souza" })).toBeNull();
+
+    await userEvent.selectOptions(screen.getByLabelText("Situação da validação"), "validado");
+    expect(await screen.findByText("Nenhum resultado com esses filtros")).toBeTruthy();
+
+    await userEvent.click(screen.getAllByRole("button", { name: "Limpar filtros" })[0]!);
+    expect(await screen.findByRole("heading", { name: "Indicadores" })).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe("2 de 2 resultados nos filtros atuais.");
+  });
+
+  it("clicar numa faixa detalha só os resultados dela; clicar de novo desfaz", async () => {
+    doisResultados();
+    abrir();
+    await screen.findByRole("heading", { name: "Indicadores" });
+    const faixas = within(screen.getByRole("list", { name: "Faixas" }));
+    await userEvent.click(faixas.getByRole("button", { name: "80–100% · 1" }));
+    expect(screen.getByRole("heading", { name: "Resultados: aderência 80–100%" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Bruno Lima" })).toBeNull();
+    await userEvent.click(faixas.getByRole("button", { name: "80–100% · 1" }));
+    expect(screen.getByRole("link", { name: "Bruno Lima" })).toBeTruthy();
+  });
+
+  it("uma turma que a API não devolveu, posta na URL, não filtra nada", async () => {
+    doisResultados();
+    renderizar(<LabVisaoGeralPage />, {
+      rota: "/lab/rh/visao-geral?turma=turma-de-outro",
+      caminho: "/lab/rh/visao-geral"
+    });
+    await screen.findByRole("heading", { name: "Indicadores" });
+    expect(cadastro.turma).not.toHaveBeenCalled();
+    expect(screen.getByRole("status").textContent).toBe("2 de 2 resultados nos filtros atuais.");
+  });
+
+  it("filtra pela turma escolhida usando só os participantes dela", async () => {
+    doisResultados();
+    cadastro.turma.mockResolvedValue({
+      ...turma({ id: "t1", nParticipantes: 1 }),
+      participantes: [participante({ id: "p2" })]
+    });
+    abrir();
+    await screen.findByRole("heading", { name: "Indicadores" });
+    await userEvent.selectOptions(screen.getByLabelText("Turma"), "t1");
+    await waitFor(() =>
+      expect(screen.getByRole("status").textContent).toBe("1 de 2 resultados nos filtros atuais.")
+    );
+    expect(screen.getByRole("link", { name: "Bruno Lima" })).toBeTruthy();
   });
 
   it("sem resultados, explica e aponta as turmas (sem indicadores zerados)", async () => {

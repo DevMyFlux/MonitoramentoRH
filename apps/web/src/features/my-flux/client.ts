@@ -40,7 +40,8 @@ export async function request<T>(
   path: string,
   method = "GET",
   body?: unknown,
-  retried = false
+  retried = false,
+  timeoutMs = 30000
 ): Promise<T> {
   const response = await fetch(`${base}${path}`, {
     method,
@@ -52,7 +53,7 @@ export async function request<T>(
       ...(session() ? { Authorization: `Bearer ${session()}` } : {})
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    signal: AbortSignal.timeout(30000)
+    signal: AbortSignal.timeout(timeoutMs)
   });
   if (response.status === 401 && !path.startsWith("/auth/") && !retried) {
     if (!refreshing)
@@ -69,7 +70,7 @@ export async function request<T>(
         });
     try {
       await refreshing;
-      return request<T>(path, method, body, true);
+      return request<T>(path, method, body, true, timeoutMs);
     } catch {
       clearSession();
       window.dispatchEvent(new Event("flux-session-expired"));
