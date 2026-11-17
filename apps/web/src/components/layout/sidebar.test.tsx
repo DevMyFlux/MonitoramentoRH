@@ -48,7 +48,7 @@ describe("menu lateral", () => {
     expect(lab()?.getAttribute("href")).toBe("/lab");
   });
 
-  it.each(["RH", "ADMIN", "DEV"])(
+  it.each(["RH", "ADMIN"])(
     "%s não vê o Leadership Lab, e o resto do menu segue igual",
     (perfil) => {
       montar(perfil);
@@ -58,18 +58,23 @@ describe("menu lateral", () => {
     }
   );
 
-  it("cada perfil vê a sua parte do Lab: RH acompanha, ADMIN e DEV configuram, COMUM participa", () => {
+  it("o DEV vê o Lab inteiro: painel do participante, acompanhamento e configuração", () => {
+    montar("DEV");
+    expect(lab()?.getAttribute("href")).toBe("/lab");
+    expect(acompanhamento()?.getAttribute("href")).toBe("/lab/rh");
+    expect(configuracao()?.getAttribute("href")).toBe("/lab/config");
+  });
+
+  it("cada perfil vê a sua parte do Lab: RH acompanha, ADMIN configura, COMUM participa", () => {
     montar("RH");
     expect(acompanhamento()?.getAttribute("href")).toBe("/lab/rh");
     expect(configuracao()).toBeNull();
     cleanup();
 
-    for (const perfil of ["ADMIN", "DEV"]) {
-      montar(perfil);
-      expect(configuracao()?.getAttribute("href")).toBe("/lab/config");
-      expect(acompanhamento()).toBeNull();
-      cleanup();
-    }
+    montar("ADMIN");
+    expect(configuracao()?.getAttribute("href")).toBe("/lab/config");
+    expect(acompanhamento()).toBeNull();
+    cleanup();
 
     montar("COMUM");
     expect(acompanhamento()).toBeNull();

@@ -25,7 +25,7 @@ VERSAO_INSTRUCAO = "lab-ia-2026-11-16.1"
 # Teto de saída por agente (inclui o raciocínio do modelo). Configurável: LAB_IA_SAIDA_<AGENTE>.
 LIMITE_DE_SAIDA = {
     nome: int(os.environ.get(f"LAB_IA_SAIDA_{nome.upper()}", padrao))
-    for nome, padrao in {"agente_lab": 4096, "analista": 3072, "facilitador": 2048, "guarda": 1024}.items()
+    for nome, padrao in {"agente_lab": 4096, "analista": 3072, "facilitador": 2048, "guarda": 1024, "suporte": 2048}.items()
 }
 # Tempo máximo de uma chamada ao modelo: abaixo dos 25 s que o backend espera pelo serviço.
 TIMEOUT_DO_MODELO_MS = int(os.environ.get("LAB_IA_TIMEOUT_MODELO_MS", "20000"))

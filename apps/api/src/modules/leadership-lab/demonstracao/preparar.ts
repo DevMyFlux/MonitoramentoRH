@@ -65,29 +65,78 @@ export async function prepararDemonstracao(
 }
 
 /**
- * Dá à conta de administração as permissões do módulo (lab_gestao e lab_especialista). Só essas duas
- * permissões, só a essa conta, e só se ela existir: a matriz de papéis não muda (o perfil DEV
- * continua administrador e não vira participante nem curador). Repetir não faz nada.
+ * Acesso total do perfil DEV ao Leadership Lab, com IA real ou de demonstração. Chamado em toda subida
+ * do servidor com o Lab ligado. A matriz já dá ao DEV todos os papéis; o que falta para ele usar o
+ * módulo inteiro sem trocar de conta é o que vem do BANCO:
+ *   - as permissões lab_gestao e lab_especialista;
+ *   - um vínculo de participante (colaborador fictício, no cargo fictício ligado ao molde
+ *     "supervisor"), para fazer o teste e usar a aprendizagem.
+ * Não liga nem altera molde nenhum: com a IA real, liberar o teste continua sendo decisão da
+ * configuração. Seguro e repetível, como a demonstração; nunca derruba o servidor.
+ */
+export async function prepararAcessoTotalDoDev(
+  db: PrismaClient,
+  logger?: LoggerDaDemonstracao
+): Promise<void> {
+  await db.$transaction(
+    async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${CHAVE_DO_LOCK_DA_DEMONSTRACAO}::bigint)`;
+      await concederPermissoesAoAdmin(tx);
+      const molde = await tx.labMolde.findFirst({ where: { nivel: "supervisor" } });
+      if (!molde) {
+        logger?.warn(
+          'Leadership Lab: sem o molde "supervisor", o DEV fica sem vínculo de participante.'
+        );
+        return;
+      }
+      const operacaoId = await garantirOperacaoDeDemonstracao(tx);
+      await garantirCargoDeDemonstracao(tx, operacaoId, molde.id);
+      await prepararParticipanteDoAdmin(tx);
+    },
+    { timeout: 30_000 }
+  );
+  logger?.info(
+    "Leadership Lab: perfil DEV com acesso total (participante, curador, gestão e configuração)."
+  );
+}
+
+/**
+ * As contas que recebem o acesso total: a conta de administração do seed e toda conta ATIVA de
+ * perfil DEV. Nenhum outro perfil é tocado.
+ */
+async function contasComAcessoTotal(
+  db: Prisma.TransactionClient
+): Promise<{ id: string; email: string }[]> {
+  return db.user.findMany({
+    where: {
+      OR: [{ email: EMAIL_DO_ADMIN_DE_DEMONSTRACAO }, { role: { name: "DEV" }, status: "ACTIVE" }]
+    },
+    select: { id: true, email: true },
+    orderBy: { createdAt: "asc" }
+  });
+}
+
+/**
+ * Dá às contas de acesso total as permissões do módulo (lab_gestao e lab_especialista). Só essas duas
+ * permissões, só a essas contas: a matriz de papéis não muda. Repetir não faz nada.
  */
 async function concederPermissoesAoAdmin(db: Prisma.TransactionClient): Promise<void> {
-  const admin = await db.user.findUnique({ where: { email: EMAIL_DO_ADMIN_DE_DEMONSTRACAO } });
-  if (!admin) return;
-  for (const permissao of PERMISSOES_DO_ADMIN_DE_DEMONSTRACAO) {
-    await db.labPermissaoUsuario.upsert({
-      where: { userId_permissao: { userId: admin.id, permissao } },
-      update: {},
-      create: { userId: admin.id, permissao }
-    });
+  for (const conta of await contasComAcessoTotal(db)) {
+    for (const permissao of PERMISSOES_DO_ADMIN_DE_DEMONSTRACAO) {
+      await db.labPermissaoUsuario.upsert({
+        where: { userId_permissao: { userId: conta.id, permissao } },
+        update: {},
+        create: { userId: conta.id, permissao }
+      });
+    }
   }
 }
 
 /**
- * O perfil DEV também faz o teste: liga a conta de administração a um segundo colaborador fictício
- * do mesmo cargo de demonstração. Nada é alterado se a conta já estiver ligada a um colaborador.
+ * O perfil DEV também faz o teste: liga cada conta de acesso total a um colaborador fictício próprio,
+ * do mesmo cargo de demonstração. Uma conta já ligada a um colaborador é respeitada.
  */
 async function prepararParticipanteDoAdmin(db: Prisma.TransactionClient): Promise<void> {
-  const admin = await db.user.findUnique({ where: { email: EMAIL_DO_ADMIN_DE_DEMONSTRACAO } });
-  if (!admin || (await db.labParticipante.findUnique({ where: { userId: admin.id } }))) return;
   const operacao = await db.operation.findFirst({
     where: { name: NOME_DA_OPERACAO_DE_DEMONSTRACAO }
   });
@@ -97,20 +146,49 @@ async function prepararParticipanteDoAdmin(db: Prisma.TransactionClient): Promis
       })
     : null;
   if (!operacao || !cargo) return;
-  const colaborador = await db.employee.upsert({
-    where: {
-      operationId_identifier: { operationId: operacao.id, identifier: "DEMO-LAB-ADMIN" }
-    },
-    update: { functionId: cargo.id },
-    create: {
-      operationId: operacao.id,
-      functionId: cargo.id,
-      name: "Administrador de demonstração",
-      identifier: "DEMO-LAB-ADMIN",
-      notes: NOTA_DO_REGISTRO_FICTICIO
-    }
+  for (const conta of await contasComAcessoTotal(db)) {
+    if (await db.labParticipante.findUnique({ where: { userId: conta.id } })) continue;
+    const daContaDoSeed = conta.email === EMAIL_DO_ADMIN_DE_DEMONSTRACAO;
+    const identificador = daContaDoSeed ? "DEMO-LAB-ADMIN" : `DEMO-LAB-DEV-${conta.id.slice(0, 8)}`;
+    const colaborador = await db.employee.upsert({
+      where: { operationId_identifier: { operationId: operacao.id, identifier: identificador } },
+      update: { functionId: cargo.id },
+      create: {
+        operationId: operacao.id,
+        functionId: cargo.id,
+        name: daContaDoSeed ? "Administrador de demonstração" : `Conta DEV (${conta.email})`,
+        identifier: identificador,
+        notes: NOTA_DO_REGISTRO_FICTICIO
+      }
+    });
+    if (await db.labParticipante.findUnique({ where: { employeeId: colaborador.id } })) continue;
+    await db.labParticipante.create({ data: { userId: conta.id, employeeId: colaborador.id } });
+  }
+}
+
+/** O cargo fictício da demonstração, ligado ao molde. Só cria o que falta. */
+async function garantirCargoDeDemonstracao(
+  db: Prisma.TransactionClient,
+  operacaoId: string,
+  moldeId: string
+): Promise<{ id: string }> {
+  const cargo =
+    (await db.jobFunction.findFirst({
+      where: { name: NOME_DO_CARGO_DE_DEMONSTRACAO, operationId: operacaoId }
+    })) ??
+    (await db.jobFunction.create({
+      data: {
+        name: NOME_DO_CARGO_DE_DEMONSTRACAO,
+        operationId: operacaoId,
+        description: NOTA_DO_REGISTRO_FICTICIO
+      }
+    }));
+  await db.labMoldeCargo.upsert({
+    where: { jobFunctionId: cargo.id },
+    update: {},
+    create: { jobFunctionId: cargo.id, moldeId }
   });
-  await db.labParticipante.create({ data: { userId: admin.id, employeeId: colaborador.id } });
+  return cargo;
 }
 
 async function preparar(db: Prisma.TransactionClient): Promise<ResultadoDaPreparacao> {
@@ -157,22 +235,7 @@ async function preparar(db: Prisma.TransactionClient): Promise<ResultadoDaPrepar
   // 2 a 4. Operação, cargo, colaborador e participante fictícios.
   const operacaoId = await garantirOperacaoDeDemonstracao(db);
 
-  const cargo =
-    (await db.jobFunction.findFirst({
-      where: { name: NOME_DO_CARGO_DE_DEMONSTRACAO, operationId: operacaoId }
-    })) ??
-    (await db.jobFunction.create({
-      data: {
-        name: NOME_DO_CARGO_DE_DEMONSTRACAO,
-        operationId: operacaoId,
-        description: NOTA_DO_REGISTRO_FICTICIO
-      }
-    }));
-  await db.labMoldeCargo.upsert({
-    where: { jobFunctionId: cargo.id },
-    update: {},
-    create: { jobFunctionId: cargo.id, moldeId: molde.id }
-  });
+  const cargo = await garantirCargoDeDemonstracao(db, operacaoId, molde.id);
 
   const chaveDoColaborador = {
     operationId_identifier: {

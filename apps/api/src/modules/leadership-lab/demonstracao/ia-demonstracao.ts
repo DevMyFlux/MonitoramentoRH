@@ -18,8 +18,10 @@ import {
   conversaIaRequestSchema,
   guardaIaRequestSchema,
   iniciarSessaoIaRequestSchema,
-  proximoTurnoIaRequestSchema
+  proximoTurnoIaRequestSchema,
+  suporteIaRequestSchema
 } from "../ia/ia-contrato.js";
+import { responderComoSuporte } from "./suporte-demonstracao.js";
 import type { ClienteIa } from "../motor/cliente-ia.js";
 import { responderComoFacilitador } from "./facilitador-demonstracao.js";
 import { cenarioDe, idsDasCategorias } from "../simulador/catalogo.js";
@@ -70,7 +72,7 @@ function conteudoDa(numero: number): SituacaoDeDemonstracao {
   return conteudo;
 }
 
-const uso = (agente: "agente_lab" | "guarda" | "facilitador"): Json => ({
+const uso = (agente: "agente_lab" | "guarda" | "facilitador" | "suporte"): Json => ({
   agente,
   modelo: "demonstracao",
   versao_instrucao: "demo-1",
@@ -252,6 +254,11 @@ export class IaDemonstracao implements ClienteIa {
       resposta: responderComoFacilitador(pedido),
       uso: uso("facilitador")
     };
+  }
+
+  async suporte(corpo: unknown): Promise<unknown> {
+    const pedido = suporteIaRequestSchema.parse(corpo);
+    return { resposta: responderComoSuporte(pedido), uso: uso("suporte") };
   }
 
   async guarda(corpo: unknown): Promise<unknown> {

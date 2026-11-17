@@ -19,6 +19,7 @@ import {
   NOME_DA_OPERACAO_DE_DEMONSTRACAO,
   NOME_DO_CARGO_DE_DEMONSTRACAO,
   TEMPO_DA_DEMONSTRACAO_S,
+  prepararAcessoTotalDoDev,
   prepararDemonstracao
 } from "./preparar.js";
 import { IaDemonstracao } from "./ia-demonstracao.js";
@@ -504,5 +505,54 @@ describe.skipIf(!integrationEnabled)("modo demonstração", () => {
       id
     ]);
     expect(vinculo).toHaveLength(1);
+  });
+
+  it("com a IA real, toda conta DEV ativa ganha permissões e vínculo, sem ligar molde nem tocar em outros perfis", async () => {
+    const roleDev = await inserir(banco.db.client, '"Role"', {
+      id: crypto.randomUUID(),
+      name: "DEV",
+      level: 4,
+      description: "Teste",
+      updatedAt: new Date().toISOString()
+    }).catch(async () => {
+      const linhas = await consulta(`SELECT id FROM "Role" WHERE name = 'DEV'`);
+      return linhas[0].id as string;
+    });
+    const dev = await inserir(banco.db.client, '"User"', {
+      id: crypto.randomUUID(),
+      email: `dev-${crypto.randomUUID()}@exemplo.local`,
+      name: "Outra conta DEV",
+      passwordHash: "x",
+      roleId: roleDev,
+      updatedAt: new Date().toISOString()
+    });
+    const comum = await criarUsuario(banco.db.client, banco.base, {});
+    const moldeAntes = await consulta(
+      "SELECT ativo, tempo_limite_s FROM leadership_lab.molde WHERE nivel = 'supervisor'"
+    );
+
+    await prepararAcessoTotalDoDev(banco.prisma);
+    await prepararAcessoTotalDoDev(banco.prisma);
+
+    const permissoes = (u: string) =>
+      consulta(
+        "SELECT permissao FROM leadership_lab.permissao_usuario WHERE user_id = $1 ORDER BY 1",
+        [u]
+      );
+    expect(await permissoes(dev)).toEqual([
+      { permissao: "lab_especialista" },
+      { permissao: "lab_gestao" }
+    ]);
+    expect(await permissoes(comum)).toEqual([]);
+    const vinculos = (u: string) =>
+      consulta("SELECT 1 FROM leadership_lab.participante WHERE user_id = $1", [u]);
+    expect(await vinculos(dev)).toHaveLength(1);
+    expect(await vinculos(comum)).toHaveLength(0);
+    // Liberar o teste continua sendo decisão da configuração.
+    expect(
+      await consulta(
+        "SELECT ativo, tempo_limite_s FROM leadership_lab.molde WHERE nivel = 'supervisor'"
+      )
+    ).toEqual(moldeAntes);
   });
 });

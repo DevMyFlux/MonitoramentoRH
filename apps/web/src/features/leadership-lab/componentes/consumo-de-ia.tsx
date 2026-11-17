@@ -17,7 +17,8 @@ const NOMES: Record<string, string> = {
   agente_lab: "Treinamento (situações)",
   analista: "Analista (debriefing)",
   facilitador: "Facilitador (conversa)",
-  guarda: "Guarda (texto livre)"
+  guarda: "Guarda (texto livre)",
+  suporte: "Assistente de suporte"
 };
 
 const inteiro = (n: number) => n.toLocaleString("pt-BR");

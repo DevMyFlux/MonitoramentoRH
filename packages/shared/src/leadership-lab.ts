@@ -106,7 +106,9 @@ export const labAgentesIa = [
   "autor",
   "analista",
   "agente_forms",
-  "facilitador"
+  "facilitador",
+  // O assistente de suporte do MY FLUX (todas as telas). Registra só metadados, como os demais.
+  "suporte"
 ] as const;
 export type LabAgenteIa = (typeof labAgentesIa)[number];
 

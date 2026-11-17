@@ -10,7 +10,8 @@ import type {
   GuardaIaRequest,
   IniciarSessaoIaRequest,
   ProximoTurnoIaRequest,
-  ResultadoDaValidacao
+  ResultadoDaValidacao,
+  SuporteIaRequest
 } from "../ia/ia-contrato.js";
 
 export interface ClienteIa {
@@ -22,6 +23,8 @@ export interface ClienteIa {
   guarda(corpo: GuardaIaRequest): Promise<unknown>;
   /** POST /agentes/facilitador */
   conversar(corpo: ConversaIaRequest): Promise<unknown>;
+  /** POST /agentes/suporte (o assistente de suporte do MY FLUX, em todas as telas) */
+  suporte(corpo: SuporteIaRequest): Promise<unknown>;
 }
 
 /** Falha ao falar com o serviço (rede, status de erro, resposta que não é JSON). */

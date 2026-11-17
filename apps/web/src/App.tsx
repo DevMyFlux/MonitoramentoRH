@@ -2,6 +2,7 @@ import { type ComponentType, Suspense, useEffect, useState, type ReactNode } fro
 import { useLocation, useNavigate } from "react-router-dom";
 import { AppShell } from "./components/layout";
 import { clearSession, request, saveSession, session } from "./features/my-flux/client";
+import { AssistenteDeSuporte } from "./features/suporte/assistente-de-suporte";
 
 // TEST MODE (temporary, at the system owner's request): no login screen, every visitor is signed
 // in as the seeded DEV user (apps/api/prisma/seed.ts), in production too, and the demo credentials
@@ -122,8 +123,12 @@ export function App({
 
   return (
     // O Suspense é para o layout de um módulo carregado sob demanda (o do Leadership Lab).
-    <Suspense fallback={<div className="min-h-screen bg-[#f5f5f7]" />}>
-      <Layout breadcrumbs={breadcrumbs}>{children}</Layout>
-    </Suspense>
+    <>
+      <Suspense fallback={<div className="min-h-screen bg-[#f5f5f7]" />}>
+        <Layout breadcrumbs={breadcrumbs}>{children}</Layout>
+      </Suspense>
+      {/* O assistente de suporte: em todas as telas autenticadas, fora do layout de cada módulo. */}
+      <AssistenteDeSuporte />
+    </>
   );
 }
