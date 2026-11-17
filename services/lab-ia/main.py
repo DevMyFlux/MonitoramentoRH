@@ -5,6 +5,7 @@ Rotas do contrato (docs/leadership-lab.md, "Contrato com o serviço de IA"):
   POST /teste/turnos    {sessao_id, numero, escolha, tempo_esgotado, texto_livre} -> {...turno, uso}
   POST /agentes/guarda  {texto} -> {decisao, texto, uso}
   POST /agentes/facilitador  {molde, mensagem, historico, resultado} -> {resposta, uso}
+  POST /agentes/suporte      {mensagem, historico, perfil, pagina} -> {resposta, uso}
 
 Toda chamada exige o cabeçalho X-Servico-Token igual a TOKEN_SERVICO (o LAB_IA_TOKEN do site).
 """
@@ -39,6 +40,7 @@ from contrato import (
 from conhecimento import carregar_base, citacoes, formatar_para_prompt, fundamentacao
 from contrato import dificuldade_alvo, normalizar_base
 from estado import criar_repositorio
+import suporte as agente_suporte
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
 log = logging.getLogger("lab-ia")
@@ -198,6 +200,24 @@ class Conversa(Estrito):
         if self.modo == "aprendizagem" and (self.resultado is not None or self.contexto is None):
             raise ValueError("a aprendizagem exige o contexto e não tem resultado")
         return self
+
+
+# O assistente de suporte: espelha suporteIaRequestSchema (apps/api/.../ia/ia-contrato.ts).
+class MensagemDoSuporte(Estrito):
+    papel: Literal["usuario", "assistente"]
+    texto: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1500)]
+
+
+class PaginaDoSuporte(Estrito):
+    caminho: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+    titulo: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+
+
+class Suporte(Estrito):
+    mensagem: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=600)]
+    historico: list[MensagemDoSuporte] = Field(max_length=6)
+    perfil: Literal["DEV", "ADMIN", "RH", "COMUM"]
+    pagina: PaginaDoSuporte
 
 
 # ---------------------------------------------------------------------------
@@ -390,6 +410,26 @@ def facilitador(corpo: Conversa, x_servico_token: str | None = Header(default=No
 
     resposta, fontes = _com_retentativa(gerar, pedido, uso)
     return {"resposta": resposta, "fontes": fontes, "uso": uso.bloco("facilitador")}
+
+
+@app.post("/agentes/suporte")
+def suporte(corpo: Suporte, x_servico_token: str | None = Header(default=None)) -> dict[str, Any]:
+    """Ajuda de uso do MY FLUX, em qualquer tela. Sem estado e sem dados do sistema."""
+    exigir_token(x_servico_token)
+    uso = Uso()
+    pedido = agente_suporte.pedido_de_suporte(corpo.model_dump())
+
+    def gerar(texto: str):
+        bruto = agente.gerar_json(
+            agente_suporte.INSTRUCAO_SUPORTE, agente_suporte.ESQUEMA_SUPORTE, texto, uso,
+            temperatura=0.3, raciocinio="LOW", agente="suporte",
+        )
+        return agente_suporte.normalizar_suporte(bruto)
+
+    resposta = _com_retentativa(gerar, pedido, uso)
+    bloco = uso.bloco("suporte")
+    bloco["versao_instrucao"] = agente_suporte.VERSAO_SUPORTE
+    return {"resposta": resposta, "uso": bloco}
 
 
 __all__ = ["app", "NIVEIS"]

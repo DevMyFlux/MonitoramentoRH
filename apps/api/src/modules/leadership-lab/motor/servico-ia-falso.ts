@@ -12,6 +12,7 @@ export type IaPorHttp = {
   proximoTurno(corpo: unknown): Promise<unknown>;
   guarda(corpo: unknown): Promise<unknown>;
   conversar(corpo: unknown): Promise<unknown>;
+  suporte?(corpo: unknown): Promise<unknown>;
 };
 
 export type RequisicaoRecebida = {
@@ -59,6 +60,8 @@ export async function subirServicoIaFalso(ia: IaPorHttp, token: string): Promise
           if (caminho === "/teste/turnos") return responder(200, await ia.proximoTurno(corpo));
           if (caminho === "/agentes/guarda") return responder(200, await ia.guarda(corpo));
           if (caminho === "/agentes/facilitador") return responder(200, await ia.conversar(corpo));
+          if (caminho === "/agentes/suporte" && ia.suporte)
+            return responder(200, await ia.suporte(corpo));
           return responder(404, { erro: "rota desconhecida" });
         } catch {
           return responder(503, { erro: "serviço indisponível" });

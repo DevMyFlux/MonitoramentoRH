@@ -108,6 +108,10 @@ export class ClienteIaHttp implements ClienteIa {
     return this.postar("agentes/facilitador", corpo);
   }
 
+  suporte(corpo: unknown): Promise<unknown> {
+    return this.postar("agentes/suporte", corpo);
+  }
+
   private async postar(caminho: string, corpo: unknown): Promise<unknown> {
     const cabecalhos: Record<string, string> = {
       "Content-Type": "application/json",

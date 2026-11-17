@@ -14,7 +14,8 @@ import {
   conversaIaRequestSchema,
   guardaIaRequestSchema,
   iniciarSessaoIaRequestSchema,
-  proximoTurnoIaRequestSchema
+  proximoTurnoIaRequestSchema,
+  suporteIaRequestSchema
 } from "../ia/ia-contrato.js";
 import type { ClienteIa } from "./cliente-ia.js";
 
@@ -47,11 +48,11 @@ export const roteiroPadrao: Roteiro = {
 };
 
 export type TipoDeFalha = "erro" | "timeout" | "invalida";
-export type AlvoDaFalha = "abrir" | "turno" | "guarda" | "conversa";
+export type AlvoDaFalha = "abrir" | "turno" | "guarda" | "conversa" | "suporte";
 export type DecisaoDaGuardaFalsa = "seguir" | "mascarar" | "bloquear" | "invalida" | "erro";
 
 export class IaFalsa implements ClienteIa {
-  readonly chamadas = { abrir: 0, turno: 0, guarda: 0, conversa: 0 };
+  readonly chamadas = { abrir: 0, turno: 0, guarda: 0, conversa: 0, suporte: 0 };
   /** O corpo, em JSON, de cada requisição recebida. */
   readonly corpos: string[] = [];
   /** O mesmo, separado por tipo de chamada. */
@@ -59,8 +60,11 @@ export class IaFalsa implements ClienteIa {
     abrir: [],
     turno: [],
     guarda: [],
-    conversa: []
+    conversa: [],
+    suporte: []
   };
+  /** O que o assistente de suporte falso responde. */
+  respostaDoSuporte = "Resposta do suporte falso.";
   /** O que o facilitador falso responde. */
   respostaDaConversa = "Resposta do facilitador falso.";
   /** As fontes que o facilitador falso cita. */
@@ -245,6 +249,19 @@ export class IaFalsa implements ClienteIa {
       fontes: this.fontesDaConversa,
       uso: this.uso("facilitador")
     };
+  }
+
+  async suporte(corpo: unknown): Promise<unknown> {
+    this.chamadas.suporte++;
+    this.registrar("suporte", corpo);
+    suporteIaRequestSchema.parse(corpo);
+
+    const falha = this.falhaPendente("suporte");
+    if (falha) {
+      this.lancar(falha);
+      return { lixo: true };
+    }
+    return { resposta: this.respostaDoSuporte, uso: this.uso("suporte") };
   }
 
   private uso(agente: string): Json {

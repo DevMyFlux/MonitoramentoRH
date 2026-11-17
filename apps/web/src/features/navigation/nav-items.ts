@@ -67,14 +67,15 @@ export const navigationGroups: NavigationGroup[] = [
   {
     label: "Desenvolvimento",
     // Cada perfil vê a sua parte do Leadership Lab (a matriz de permissões do módulo): o participante
-    // é o COMUM, quem acompanha é o RH e quem configura os moldes é ADMIN ou DEV.
+    // é o COMUM, quem acompanha é o RH e quem configura os moldes é ADMIN ou DEV. O DEV vê as três
+    // áreas (acesso total ao módulo, para testar e dar suporte sem trocar de conta).
     items: [
-      { label: "Leadership Lab", href: "/lab", icon: Compass, roles: ["COMUM"] },
+      { label: "Leadership Lab", href: "/lab", icon: Compass, roles: ["COMUM", "DEV"] },
       {
         label: "Acompanhamento do Lab",
         href: "/lab/rh",
         icon: ClipboardList,
-        roles: ["RH"]
+        roles: ["RH", "DEV"]
       },
       {
         label: "Configuração do Lab",

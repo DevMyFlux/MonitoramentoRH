@@ -37,7 +37,11 @@ import { ScheduleRepository } from "./modules/scheduling/schedule-repository.js"
 import { registerScheduleRoutes } from "./modules/scheduling/schedule-routes.js";
 import { registerEmployeeScheduleRoutes } from "./modules/scheduling/employee-schedule-routes.js";
 import { UserRepository } from "./modules/users/user-repository.js";
-import { prepararDemonstracao } from "./modules/leadership-lab/demonstracao/preparar.js";
+import { registrarRotasDoSuporte } from "./modules/suporte/suporte-routes.js";
+import {
+  prepararAcessoTotalDoDev,
+  prepararDemonstracao
+} from "./modules/leadership-lab/demonstracao/preparar.js";
 import {
   criarMotorDoLab,
   type InjecaoDoLab,
@@ -267,10 +271,28 @@ export async function buildApp(opcoes: { lab?: InjecaoDoLab } = {}): Promise<Fas
       } catch (erro) {
         app.log.error({ erro }, "Leadership Lab (demonstração): falha ao preparar o participante.");
       }
+    } else if (!opcoes.lab) {
+      // Com a IA real: o perfil DEV usa o módulo inteiro (participante, curador, gestão e
+      // configuração) sem trocar de conta. Nunca derruba a subida do servidor.
+      try {
+        await prepararAcessoTotalDoDev(prisma, {
+          info: (mensagem) => app.log.info(mensagem),
+          warn: (mensagem) => app.log.warn(mensagem)
+        });
+      } catch (erro) {
+        app.log.error({ erro }, "Leadership Lab: falha ao preparar o acesso total do DEV.");
+      }
     }
   } else {
     app.log.info("Leadership Lab desativado: LAB_IA_URL não definida.");
   }
+
+  // Assistente de suporte (todas as telas, todos os perfis). Usa a IA do Lab; sem ela, responde 503.
+  await app.register(
+    async (versionedApp) =>
+      registrarRotasDoSuporte(versionedApp, userRepository, { db: prisma, motor: motorDoLab }),
+    { prefix: `${apiPrefix}/suporte` }
+  );
 
   // Production deploy serves the built web app (apps/web/dist, copied to
   // dist/public alongside this bundled server — see scripts/bundle.mjs) from

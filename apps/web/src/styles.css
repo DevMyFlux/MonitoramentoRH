@@ -209,3 +209,20 @@ dialog.flux-dialog::backdrop {
     scroll-behavior: auto !important;
   }
 }
+
+/* Assistente de suporte (features/suporte): o painel cresce do botão, sem chamar atenção. */
+@keyframes suporte-entrar {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [class*="suporte-entrar"] {
+    animation: none !important;
+  }
+}

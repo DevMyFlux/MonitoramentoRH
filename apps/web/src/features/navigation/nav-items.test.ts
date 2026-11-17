@@ -17,15 +17,16 @@ describe("navigation groups", () => {
     const item = navigationGroups.flatMap((g) => g.items).find((i) => i.label === "Leadership Lab");
 
     it("está no menu e aponta para o painel do participante", () => {
-      expect(item).toMatchObject({ href: "/lab", roles: ["COMUM"] });
+      expect(item).toMatchObject({ href: "/lab", roles: ["COMUM", "DEV"] });
       const grupo = navigationGroups.find((g) => g.items.includes(item!));
       expect(grupo?.hidden).toBeUndefined();
       expect(item?.hidden).toBeUndefined();
     });
 
-    it("só o perfil COMUM (o participante) o vê", () => {
+    it("o participante (COMUM) e o DEV (acesso total) o veem", () => {
       expect(itemVisivelPara(item!, "COMUM")).toBe(true);
-      for (const perfil of ["DEV", "ADMIN", "RH"] as const) {
+      expect(itemVisivelPara(item!, "DEV")).toBe(true);
+      for (const perfil of ["ADMIN", "RH"] as const) {
         expect(itemVisivelPara(item!, perfil)).toBe(false);
       }
     });
@@ -41,7 +42,7 @@ describe("navigation groups", () => {
     const configuracao = itens.find((i) => i.label === "Configuração do Lab");
 
     it("estão no menu e apontam para as telas certas", () => {
-      expect(acompanhamento).toMatchObject({ href: "/lab/rh", roles: ["RH"] });
+      expect(acompanhamento).toMatchObject({ href: "/lab/rh", roles: ["RH", "DEV"] });
       expect(configuracao).toMatchObject({ href: "/lab/config", roles: ["ADMIN", "DEV"] });
       for (const item of [acompanhamento, configuracao]) {
         expect(item?.hidden).toBeUndefined();
@@ -49,10 +50,10 @@ describe("navigation groups", () => {
       }
     });
 
-    it("o acompanhamento é só do RH, e a configuração, só de ADMIN e DEV", () => {
+    it("o acompanhamento é do RH e do DEV, e a configuração, de ADMIN e DEV", () => {
       for (const perfil of ["DEV", "ADMIN", "RH", "COMUM", undefined] as const) {
         expect(itemVisivelPara(acompanhamento!, perfil), `acompanhamento ${perfil}`).toBe(
-          perfil === "RH"
+          perfil === "RH" || perfil === "DEV"
         );
         expect(itemVisivelPara(configuracao!, perfil), `configuração ${perfil}`).toBe(
           perfil === "ADMIN" || perfil === "DEV"
@@ -60,11 +61,11 @@ describe("navigation groups", () => {
       }
     });
 
-    it("cada perfil vê exatamente uma entrada do Leadership Lab", () => {
+    it("cada perfil vê uma entrada do Leadership Lab, e o DEV vê as três", () => {
       const doLab = ["/lab", "/lab/rh", "/lab/config"];
       for (const perfil of ["DEV", "ADMIN", "RH", "COMUM"] as const) {
         const visiveis = itens.filter((i) => doLab.includes(i.href) && itemVisivelPara(i, perfil));
-        expect(visiveis, perfil).toHaveLength(1);
+        expect(visiveis, perfil).toHaveLength(perfil === "DEV" ? 3 : 1);
       }
     });
 

@@ -24,7 +24,9 @@ import {
   labConversaEntradaSchema,
   labConversaLimites,
   labMoldeNiveis,
-  medirResposta
+  medirResposta,
+  type SuporteResposta,
+  suporteEntradaSchema
 } from "@my-flux/shared";
 import {
   Prisma,
@@ -34,6 +36,7 @@ import {
   type PrismaClient
 } from "@prisma/client";
 import { z } from "zod";
+import { HttpError } from "../../../lib/http-error.js";
 import { assertAcesso } from "../lab-access.js";
 import { carregarParticipantesDasTurmas } from "../lab-actor.js";
 import { consultarPainel } from "../painel/consulta.js";
@@ -45,8 +48,10 @@ import {
   guardaIaRequestSchema,
   iniciarSessaoIaRequestSchema,
   proximoTurnoIaRequestSchema,
+  suporteIaRequestSchema,
   validarAberturaIa,
   validarConversaIa,
+  validarSuporteIa,
   validarTurnoIa
 } from "../ia/ia-contrato.js";
 import { type ClienteIa, type DesfechoDaChamada, chamarIa } from "./cliente-ia.js";
@@ -132,6 +137,10 @@ function ehViolacaoDeUnicidade(erro: unknown): boolean {
   return erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002";
 }
 
+/** O que o assistente responde quando a Guarda segura a mensagem. */
+export const RESPOSTA_DO_SUPORTE_BLOQUEADA =
+  "Sua mensagem parece ter dados pessoais ou sensíveis (nome, CPF, telefone, dados de saúde...), e por isso não foi enviada. Reescreva a dúvida sem esses dados que eu ajudo.";
+
 export class MotorDoTeste {
   private readonly db: PrismaClient;
   private readonly ia: ClienteIa;
@@ -140,6 +149,7 @@ export class MotorDoTeste {
   private readonly logger: LoggerDoMotor | undefined;
   private readonly temasDeSimulacao: ReadonlySet<string> | undefined;
   private readonly mensagensDeAprendizagem = new Map<string, number[]>();
+  private readonly mensagensDeSuporte = new Map<string, number[]>();
 
   constructor(dependencias: DependenciasDoMotor) {
     this.temasDeSimulacao = dependencias.temasDeSimulacao;
@@ -538,6 +548,76 @@ export class MotorDoTeste {
       entrada,
       resultado: null
     });
+  }
+
+  /**
+   * Assistente de suporte do MY FLUX: tira dúvidas de uso de qualquer módulo, em qualquer tela, para
+   * qualquer perfil. Não lê nem altera dados do sistema. Cada mensagem da pessoa passa pela Guarda
+   * (falha fechada), como no facilitador. Durante um teste do Lab em andamento o assistente não
+   * responde: ele nunca ajuda numa situação cronometrada. Nada da conversa é gravado; só os
+   * metadados da chamada (consumo e custo).
+   */
+  async suporte(ator: LabAtor, entradaBruta: unknown): Promise<SuporteResposta> {
+    const entrada = suporteEntradaSchema.parse(entradaBruta);
+    if (ator.participanteId !== null && (await buscarSessaoAtiva(this.db, ator.participanteId))) {
+      // Erro do assistente, não das telas do Lab: fica fora da tabela `erros` (e de labCodigosDeErro).
+      throw new HttpError(
+        409,
+        "SUPORTE_DURANTE_O_TESTE",
+        "Você tem um teste do Leadership Lab em andamento. O assistente volta a responder quando você concluir o teste."
+      );
+    }
+    this.reservarMensagemDeSuporte(ator.userId);
+
+    const daPessoa = entrada.historico.filter((m) => m.papel === "usuario");
+    const [nova, ...antigas] = await Promise.all(
+      [entrada.mensagem, ...daPessoa.map((m) => m.texto)].map((texto) =>
+        this.filtrarTextoLivre(null, texto)
+      )
+    );
+    if (nova === undefined || nova.decisao === "bloquear") {
+      return { desfecho: "bloqueada", resposta: RESPOSTA_DO_SUPORTE_BLOQUEADA };
+    }
+    const mensagem = nova.decisao === "mascarar" ? (nova.texto ?? "") : entrada.mensagem;
+    let i = 0;
+    const historico = entrada.historico.flatMap((m) => {
+      if (m.papel === "assistente") return [m];
+      const filtrada = antigas[i++];
+      if (!filtrada || filtrada.decisao === "bloquear") return [];
+      const texto = filtrada.decisao === "mascarar" ? (filtrada.texto ?? "") : m.texto;
+      return texto.trim() ? [{ papel: m.papel, texto }] : [];
+    });
+
+    const corpo = suporteIaRequestSchema.parse({
+      mensagem,
+      historico,
+      perfil: ator.role,
+      pagina: entrada.pagina
+    });
+    const desfecho = await chamarIa(() => this.ia.suporte(corpo), validarSuporteIa);
+    if (!desfecho.ok) {
+      await this.registrarFalha("suporte", desfecho, null);
+      throw erros.ia(desfecho.codigo);
+    }
+    await this.db.labLogIa
+      .create({ data: this.dadosDoLog("suporte", desfecho, null, desfecho.valor.uso) })
+      .catch((erro: unknown) => this.logger?.warn({ erro }, "falha ao registrar o log do suporte"));
+    return { desfecho: "respondida", resposta: desfecho.valor.resposta };
+  }
+
+  /** Teto por hora, por usuário, em memória (por instância): freio de custo, como na aprendizagem. */
+  private reservarMensagemDeSuporte(userId: string): void {
+    const limite = this.config.limiteConversasHora ?? LIMITE_CONVERSAS_HORA_PADRAO;
+    const agora = this.relogio().getTime();
+    const recentes = (this.mensagensDeSuporte.get(userId) ?? []).filter(
+      (t) => agora - t < 3_600_000
+    );
+    if (recentes.length >= limite) {
+      this.mensagensDeSuporte.set(userId, recentes);
+      throw erros.limiteDaAprendizagem(limite);
+    }
+    recentes.push(agora);
+    this.mensagensDeSuporte.set(userId, recentes);
   }
 
   /** Teto por hora, por participante, em memória (por instância): é freio de custo, não cota. */
@@ -1069,7 +1149,7 @@ export class MotorDoTeste {
   // =========================================================================
 
   private dadosDoLog(
-    agente: "agente_lab" | "guarda" | "facilitador" | "analista",
+    agente: "agente_lab" | "guarda" | "facilitador" | "analista" | "suporte",
     desfecho: { latenciaMs: number },
     sessaoId: string | null,
     uso: {
@@ -1093,7 +1173,7 @@ export class MotorDoTeste {
 
   /** Registra uma chamada que falhou. Nunca lança: o erro original é o que importa. */
   private async registrarFalha(
-    agente: "agente_lab" | "guarda" | "facilitador",
+    agente: "agente_lab" | "guarda" | "facilitador" | "suporte",
     desfecho: Extract<DesfechoDaChamada<unknown>, { ok: false }>,
     sessaoId: string | null
   ): Promise<void> {

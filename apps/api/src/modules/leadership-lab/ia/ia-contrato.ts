@@ -23,6 +23,8 @@ import {
   labEscolhas,
   labConversaLimites,
   labDificuldades,
+  suporteLimites,
+  suportePapeis,
   labEstilos,
   labMoldeNiveis,
   labPapeisDaConversa,
@@ -511,6 +513,36 @@ export const respostaConversaIaSchema = z.strictObject({
 export type RespostaConversaIa = z.infer<typeof respostaConversaIaSchema>;
 
 // ---------------------------------------------------------------------------
+// Assistente de suporte (POST /agentes/suporte): ajuda sobre o uso do MY FLUX, em todas as telas.
+// Lista fechada de campos: a mensagem (já pela Guarda), o histórico recente, o perfil e a tela.
+// Nenhum dado do sistema (colaborador, escala, resultado de teste) vai junto.
+// ---------------------------------------------------------------------------
+
+export const suporteIaRequestSchema = z.strictObject({
+  mensagem: z.string().trim().min(1).max(suporteLimites.mensagem),
+  historico: z
+    .array(
+      z.strictObject({
+        papel: z.enum(suportePapeis),
+        texto: z.string().trim().min(1).max(suporteLimites.textoDoHistorico)
+      })
+    )
+    .max(suporteLimites.historico),
+  perfil: z.enum(["DEV", "ADMIN", "RH", "COMUM"]),
+  pagina: z.strictObject({
+    caminho: z.string().trim().min(1).max(suporteLimites.pagina),
+    titulo: z.string().trim().min(1).max(suporteLimites.pagina)
+  })
+});
+export type SuporteIaRequest = z.infer<typeof suporteIaRequestSchema>;
+
+export const respostaSuporteIaSchema = z.strictObject({
+  resposta: z.string().trim().min(1).max(2500),
+  uso: uso("suporte")
+});
+export type RespostaSuporteIa = z.infer<typeof respostaSuporteIaSchema>;
+
+// ---------------------------------------------------------------------------
 // Validação
 // ---------------------------------------------------------------------------
 
@@ -681,6 +713,13 @@ export function aplicarGuarda(original: string, bruto: unknown): AplicacaoDaGuar
 /** Valida a resposta de POST /agentes/facilitador. Nunca lança. */
 export function validarConversaIa(bruto: unknown): ResultadoDaValidacao<RespostaConversaIa> {
   const lido = respostaConversaIaSchema.safeParse(bruto);
+  if (!lido.success) return { ok: false, problemas: descreverProblemas(lido.error) };
+  return { ok: true, valor: lido.data, avisos: [] };
+}
+
+/** Valida a resposta de POST /agentes/suporte. Nunca lança. */
+export function validarSuporteIa(bruto: unknown): ResultadoDaValidacao<RespostaSuporteIa> {
+  const lido = respostaSuporteIaSchema.safeParse(bruto);
   if (!lido.success) return { ok: false, problemas: descreverProblemas(lido.error) };
   return { ok: true, valor: lido.data, avisos: [] };
 }

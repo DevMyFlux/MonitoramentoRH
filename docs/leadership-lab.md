@@ -586,7 +586,7 @@ Com `LAB_MODO_DEMO=true` e sem `LAB_IA_URL`, o Lab roda uma **biblioteca local d
 
 ## Exceção: o perfil DEV vê o módulo inteiro
 
-Diferente de ADMIN (só administrador), o perfil **DEV** acumula todos os papéis do Lab: participante, curador, gestão e especialista (`papeisLab` em `packages/shared/src/leadership-lab-acesso.ts`). No escopo de dados, o DEV alcança todos os participantes e todas as turmas (não só as dele). Existe para testar e dar suporte; vale para toda conta DEV (no modo de teste sem login, todo visitante entra como DEV). Para fazer o teste, o DEV precisa estar ligado a um colaborador: no modo demonstração, `dev@myflux.local` é ligado a um colaborador fictício e recebe `lab_gestao` e `lab_especialista`. ADMIN, RH e COMUM seguem a matriz de papéis separados.
+Diferente de ADMIN (só administrador), o perfil **DEV** acumula todos os papéis do Lab: participante, curador, gestão e especialista (`papeisLab` em `packages/shared/src/leadership-lab-acesso.ts`). No escopo de dados, o DEV alcança todos os participantes e todas as turmas (não só as dele). Existe para testar e dar suporte; vale para toda conta DEV (no modo de teste sem login, todo visitante entra como DEV). Para fazer o teste, o DEV precisa estar ligado a um colaborador: em toda subida do servidor com o Lab ligado (IA real ou demonstração), `prepararAcessoTotalDoDev` (`demonstracao/preparar.ts`) liga `dev@myflux.local` e toda conta DEV ativa a um colaborador fictício próprio (operação e cargo "de demonstração", cargo ligado ao molde "supervisor") e dá a elas `lab_gestao` e `lab_especialista`. Não liga nem altera molde: com a IA real, liberar o teste continua sendo da configuração. No menu, o DEV vê as três entradas do Lab (painel, acompanhamento e configuração). ADMIN, RH e COMUM seguem a matriz de papéis separados.
 
 ## Conversa com o facilitador (Fase 3)
 
@@ -679,3 +679,11 @@ pnpm --filter @my-flux/web test
 ```
 
 Os arquivos de `services/lab-ia/tests/fixtures/` (`conversa-*`, `iniciar-pedido.json`) são lidos pelos dois lados: `iniciar-pedido.json` é igual ao que o construtor do backend gera, então mudar o formato de um lado reprova o teste do outro.
+
+## Assistente de suporte do MY FLUX
+
+Um agente de ajuda em **todas as telas autenticadas**, para **qualquer perfil**: botão discreto no canto inferior direito (`apps/web/src/features/suporte/`), que abre um painel de conversa com sugestões da tela atual. Explica telas, fluxos, erros e o que o perfil pode fazer; não lê nem altera dados do sistema.
+
+- **Rota:** `POST /api/v1/suporte/conversa` `{ mensagem, historico, pagina: { caminho, titulo } }` → `{ desfecho, resposta }` (`apps/api/src/modules/suporte/`). O servidor acrescenta o perfil. Sem o Lab ligado (sem `LAB_IA_URL` e sem modo demonstração), responde **503** `SUPORTE_INDISPONIVEL` e o painel avisa.
+- **IA:** o mesmo serviço do Lab, agente `suporte` (`POST /agentes/suporte`, `services/lab-ia/suporte.py`). O guia dos módulos está no próprio prompt (`GUIA_DO_SISTEMA`): mudou uma tela, atualize o guia e `VERSAO_SUPORTE`. No modo demonstração, respostas prontas por palavra-chave (`demonstracao/suporte-demonstracao.ts`).
+- **Proteções:** cada mensagem passa pela Guarda (falha fechada, como no facilitador); teto de mensagens por hora por usuário (`LAB_LIMITE_CONVERSAS_HORA`); **durante um teste em andamento o assistente some da tela e o servidor recusa** (409 `SUPORTE_DURANTE_O_TESTE`), para nunca ajudar numa situação cronometrada. Nada da conversa é gravado no servidor: só os metadados da chamada em `log_ia` (agente `suporte`, migração `0020`), que entram no consumo e custo da IA da configuração. Na tela, a conversa fica na aba (`sessionStorage`).
