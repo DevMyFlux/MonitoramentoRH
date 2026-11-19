@@ -36,6 +36,12 @@ import {
   type PrismaClient
 } from "@prisma/client";
 import { z } from "zod";
+import type { AuthenticatedUser } from "@my-flux/types";
+import {
+  MENSAGEM_DE_LIMITACAO,
+  consultarDados,
+  podeConsultarDados
+} from "../../suporte/suporte-dados.js";
 import { HttpError } from "../../../lib/http-error.js";
 import { assertAcesso } from "../lab-access.js";
 import { carregarParticipantesDasTurmas } from "../lab-actor.js";
@@ -48,6 +54,7 @@ import {
   guardaIaRequestSchema,
   iniciarSessaoIaRequestSchema,
   proximoTurnoIaRequestSchema,
+  type SuporteIaRequest,
   suporteIaRequestSchema,
   validarAberturaIa,
   validarConversaIa,
@@ -102,7 +109,10 @@ export type MoldeVisivel = {
   doMeuCargo: boolean;
 };
 
-export type LoggerDoMotor = { warn(dados: object, mensagem: string): void };
+export type LoggerDoMotor = {
+  warn(dados: object, mensagem: string): void;
+  info?(dados: object, mensagem: string): void;
+};
 
 export type DependenciasDoMotor = {
   db: PrismaClient;
@@ -557,7 +567,11 @@ export class MotorDoTeste {
    * responde: ele nunca ajuda numa situação cronometrada. Nada da conversa é gravado; só os
    * metadados da chamada (consumo e custo).
    */
-  async suporte(ator: LabAtor, entradaBruta: unknown): Promise<SuporteResposta> {
+  async suporte(
+    ator: LabAtor,
+    user: AuthenticatedUser,
+    entradaBruta: unknown
+  ): Promise<SuporteResposta> {
     const entrada = suporteEntradaSchema.parse(entradaBruta);
     if (ator.participanteId !== null && (await buscarSessaoAtiva(this.db, ator.participanteId))) {
       // Erro do assistente, não das telas do Lab: fica fora da tabela `erros` (e de labCodigosDeErro).
@@ -594,15 +608,108 @@ export class MotorDoTeste {
       perfil: ator.role,
       pagina: entrada.pagina
     });
+
+    // 1º envio: a IA responde, ou pede uma consulta de dados (só o NOME da consulta).
+    const primeira = await this.chamarSuporte(corpo, user);
+    if ("resposta" in primeira) return { desfecho: "respondida", resposta: primeira.resposta };
+
+    // Dados de pessoas: a PERMISSÃO é conferida aqui, no servidor, antes de qualquer consulta. Sem
+    // permissão, a consulta nem roda e a IA nunca vê o dado.
+    const pedido = primeira.consulta;
+    if (!podeConsultarDados(user.role)) {
+      this.logger?.info?.(
+        { userId: user.id, perfil: user.role, consulta: pedido.nome },
+        "suporte: consulta de dados negada pelo perfil"
+      );
+      return { desfecho: "restrita", resposta: MENSAGEM_DE_LIMITACAO };
+    }
+
+    let corpoComDados: SuporteIaRequest;
+    try {
+      const resultado = await consultarDados(this.db, user, pedido.nome, pedido.limite);
+      corpoComDados = suporteIaRequestSchema.parse({
+        ...corpo,
+        dados: { consulta: pedido.nome, resultado }
+      });
+    } catch (erro) {
+      this.logger?.warn({ erro, consulta: pedido.nome }, "falha ao consultar os dados do suporte");
+      return {
+        desfecho: "respondida",
+        resposta: "Não consegui consultar esses dados agora. Tente de novo em instantes."
+      };
+    }
+    // Rastro de quem consultou o quê (sem o conteúdo): serve para auditar o acesso a dados de pessoas.
+    this.logger?.info?.(
+      { userId: user.id, perfil: user.role, consulta: pedido.nome },
+      "suporte: consulta de dados"
+    );
+
+    // 2º envio: a IA redige a resposta a partir dos dados autorizados.
+    const segunda = await this.chamarSuporte(corpoComDados, user);
+    return {
+      desfecho: "respondida",
+      resposta:
+        "resposta" in segunda
+          ? segunda.resposta
+          : "Não consegui montar a resposta com esses dados. Tente reformular a pergunta."
+    };
+  }
+
+  /**
+   * Uma chamada ao agente de suporte. Falha da IA vira 502; para administradores e DEV o erro leva o
+   * MOTIVO técnico (ex.: "a IA respondeu HTTP 404" = serviço de IA desatualizado), para diagnosticar
+   * sem abrir o log. Os demais perfis só veem a mensagem comum.
+   */
+  private async chamarSuporte(corpo: SuporteIaRequest, user: AuthenticatedUser) {
     const desfecho = await chamarIa(() => this.ia.suporte(corpo), validarSuporteIa);
     if (!desfecho.ok) {
       await this.registrarFalha("suporte", desfecho, null);
-      throw erros.ia(desfecho.codigo);
+      const tecnico = user.role === "DEV" || user.role === "ADMIN";
+      throw new HttpError(
+        502,
+        desfecho.codigo === "CONTRATO" ? "SUPORTE_IA_RESPOSTA_INVALIDA" : "SUPORTE_IA_INDISPONIVEL",
+        "O serviço de IA não respondeu agora. Tente de novo em instantes.",
+        tecnico
+          ? { motivo: desfecho.problemas.join("; ").slice(0, 240), falha: desfecho.codigo }
+          : undefined
+      );
     }
     await this.db.labLogIa
       .create({ data: this.dadosDoLog("suporte", desfecho, null, desfecho.valor.uso) })
       .catch((erro: unknown) => this.logger?.warn({ erro }, "falha ao registrar o log do suporte"));
-    return { desfecho: "respondida", resposta: desfecho.valor.resposta };
+    return desfecho.valor;
+  }
+
+  /**
+   * O estado do serviço de IA para o assistente (GET /suporte/status, só ADMIN e DEV): "ok",
+   * "desatualizado" (o serviço responde, mas ainda não tem o agente de suporte: falta reimplantar) ou
+   * "indisponivel" (não responde).
+   */
+  async estadoDoSuporte(): Promise<{
+    estado: "ok" | "desatualizado" | "indisponivel";
+    versao: string | null;
+    detalhe: string | null;
+  }> {
+    if (!this.ia.saude) return { estado: "ok", versao: "demonstracao", detalhe: null };
+    try {
+      const corpo = (await this.ia.saude()) as { versao_instrucao?: unknown; agentes?: unknown };
+      const agentes = Array.isArray(corpo.agentes) ? corpo.agentes : [];
+      const versao = typeof corpo.versao_instrucao === "string" ? corpo.versao_instrucao : null;
+      return agentes.includes("suporte")
+        ? { estado: "ok", versao, detalhe: null }
+        : {
+            estado: "desatualizado",
+            versao,
+            detalhe:
+              "O serviço de IA responde, mas não tem o agente de suporte. Reimplante o serviço lab-ia."
+          };
+    } catch (erro) {
+      return {
+        estado: "indisponivel",
+        versao: null,
+        detalhe: erro instanceof Error ? erro.message : "falha desconhecida"
+      };
+    }
   }
 
   /** Teto por hora, por usuário, em memória (por instância): freio de custo, como na aprendizagem. */

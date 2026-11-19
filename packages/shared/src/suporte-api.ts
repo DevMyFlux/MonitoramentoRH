@@ -38,7 +38,11 @@ export type SuporteEntrada = z.input<typeof suporteEntradaSchema>;
 
 export const suporteRespostaSchema = z.strictObject({
   /** "bloqueada": a mensagem tinha dado sensível e não foi enviada à IA. */
-  desfecho: z.enum(["respondida", "bloqueada"]),
+  /**
+   * "respondida"; "bloqueada" (a mensagem tinha dado sensível e não foi enviada à IA); "restrita" (a
+   * pergunta pede dados de pessoas e o perfil da conta não pode vê-los).
+   */
+  desfecho: z.enum(["respondida", "bloqueada", "restrita"]),
   resposta: z.string()
 });
 export type SuporteResposta = z.infer<typeof suporteRespostaSchema>;

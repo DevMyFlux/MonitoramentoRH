@@ -10,7 +10,8 @@ import { type SuporteMensagem, type SuporteResposta, suporteLimites } from "@my-
 import { request } from "../my-flux/client";
 import { Magnet } from "../../components/ui/magnet";
 import { cn } from "../../lib/cn";
-import { assistenteVisivelEm, contextoDaPagina } from "./contexto-da-pagina";
+import { useUsuarioAtual } from "../auth/use-usuario-atual";
+import { assistenteVisivelEm, contextoDaPagina, sugestoesDaPagina } from "./contexto-da-pagina";
 import { LIMITE_DA_CHAMADA_MS, mensagemDoErro } from "./erros-do-suporte";
 
 const CHAVE_CONVERSA = "flux.suporte.conversa";
@@ -38,6 +39,7 @@ function gravar(chave: string, valor: unknown): void {
 export function AssistenteDeSuporte() {
   const { pathname } = useLocation();
   const contexto = contextoDaPagina(pathname);
+  const perfil = useUsuarioAtual().data?.role;
   const idDoPainel = useId();
   const [aberto, setAberto] = useState<boolean>(() => ler(CHAVE_ABERTO, false));
   const [mensagens, setMensagens] = useState<SuporteMensagem[]>(() =>
@@ -184,7 +186,7 @@ export function AssistenteDeSuporte() {
                   que o seu perfil pode fazer. Como posso ajudar?
                 </p>
                 <div className="flex flex-col items-start gap-2">
-                  {contexto.sugestoes.map((sugestao) => (
+                  {sugestoesDaPagina(pathname, perfil).map((sugestao) => (
                     <button
                       key={sugestao}
                       type="button"

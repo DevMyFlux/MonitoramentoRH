@@ -93,6 +93,18 @@ const PADRAO: ContextoDaPagina = {
   ]
 };
 
+/** Perfis que podem perguntar sobre dados de colaboradores (o servidor confere de novo). */
+const PERFIS_COM_DADOS = ["DEV", "ADMIN", "RH"];
+
+const PERGUNTAS_DE_DADOS = ["Quantos colaboradores temos?", "Quem foi desligado recentemente?"];
+
+/** As sugestões da tela; quem pode ver dados de pessoas ganha também perguntas sobre os dados. */
+export function sugestoesDaPagina(caminho: string, perfil: string | undefined): readonly string[] {
+  const base = contextoDaPagina(caminho).sugestoes;
+  if (!perfil || !PERFIS_COM_DADOS.includes(perfil)) return base;
+  return [...PERGUNTAS_DE_DADOS, ...base].slice(0, 4);
+}
+
 export function contextoDaPagina(caminho: string): ContextoDaPagina {
   const achado = CONTEXTOS.find(
     (c) => caminho === c.prefixo || caminho.startsWith(`${c.prefixo}/`)

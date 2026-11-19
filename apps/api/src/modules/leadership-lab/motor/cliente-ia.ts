@@ -25,6 +25,8 @@ export interface ClienteIa {
   conversar(corpo: ConversaIaRequest): Promise<unknown>;
   /** POST /agentes/suporte (o assistente de suporte do MY FLUX, em todas as telas) */
   suporte(corpo: SuporteIaRequest): Promise<unknown>;
+  /** GET / do serviço (versão e agentes). Só o cliente HTTP real tem; as IAs de teste e demonstração não. */
+  saude?(): Promise<unknown>;
 }
 
 /** Falha ao falar com o serviço (rede, status de erro, resposta que não é JSON). */

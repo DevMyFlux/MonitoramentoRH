@@ -21,7 +21,7 @@ import {
   proximoTurnoIaRequestSchema,
   suporteIaRequestSchema
 } from "../ia/ia-contrato.js";
-import { responderComoSuporte } from "./suporte-demonstracao.js";
+import { consultaPedidaPela, responderComoSuporte } from "./suporte-demonstracao.js";
 import type { ClienteIa } from "../motor/cliente-ia.js";
 import { responderComoFacilitador } from "./facilitador-demonstracao.js";
 import { cenarioDe, idsDasCategorias } from "../simulador/catalogo.js";
@@ -258,6 +258,8 @@ export class IaDemonstracao implements ClienteIa {
 
   async suporte(corpo: unknown): Promise<unknown> {
     const pedido = suporteIaRequestSchema.parse(corpo);
+    const consulta = pedido.dados ? null : consultaPedidaPela(pedido.mensagem);
+    if (consulta) return { consulta: { nome: consulta, limite: null }, uso: uso("suporte") };
     return { resposta: responderComoSuporte(pedido), uso: uso("suporte") };
   }
 

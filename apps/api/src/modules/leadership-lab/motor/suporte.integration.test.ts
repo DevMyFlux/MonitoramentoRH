@@ -1,6 +1,7 @@
 // Assistente de suporte do MY FLUX (motor.suporte). PostgreSQL real; exige LAB_TEST_DATABASE_URL
 // (sem ela, é ignorado).
 import type { LabAtor } from "@my-flux/shared";
+import type { AuthenticatedUser } from "@my-flux/types";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { integrationEnabled } from "../db/test-database.js";
 import { type Banco, encerrarBanco, novoCenario, prepararBanco } from "./cenario-de-teste.js";
@@ -26,6 +27,16 @@ describe.skipIf(!integrationEnabled)("assistente de suporte", () => {
   const consulta = (sql: string, params: unknown[] = []) =>
     banco.db.client.query(sql, params).then((r) => r.rows);
 
+  /** O usuário autenticado correspondente ao ator (perfil e id), sem escopo: só o perfil importa aqui. */
+  const usuarioDe = (a: LabAtor) =>
+    ({
+      id: a.userId,
+      email: "a@b.c",
+      name: "Pessoa",
+      role: a.role,
+      scopes: []
+    }) as AuthenticatedUser;
+
   const semVinculo = (role: LabAtor["role"]): LabAtor => ({
     userId: crypto.randomUUID(),
     role,
@@ -36,10 +47,12 @@ describe.skipIf(!integrationEnabled)("assistente de suporte", () => {
   it("qualquer perfil usa, mesmo sem vínculo com o Lab; manda o perfil e a tela, e registra o consumo", async () => {
     const c = await novoCenario(banco);
     for (const role of ["RH", "ADMIN", "DEV", "COMUM"] as const) {
-      expect(await c.motor.suporte(semVinculo(role), ENTRADA)).toEqual({
-        desfecho: "respondida",
-        resposta: "Resposta do suporte falso."
-      });
+      expect(await c.motor.suporte(semVinculo(role), usuarioDe(semVinculo(role)), ENTRADA)).toEqual(
+        {
+          desfecho: "respondida",
+          resposta: "Resposta do suporte falso."
+        }
+      );
     }
     const ultimo = JSON.parse(c.ia.corposPorAlvo.suporte.at(-1)!);
     expect(ultimo).toEqual({
@@ -57,7 +70,7 @@ describe.skipIf(!integrationEnabled)("assistente de suporte", () => {
   it("a mensagem bloqueada pela Guarda não chega à IA", async () => {
     const c = await novoCenario(banco);
     c.ia.decisaoDaGuarda = "bloquear";
-    expect(await c.motor.suporte(semVinculo("RH"), ENTRADA)).toEqual({
+    expect(await c.motor.suporte(semVinculo("RH"), usuarioDe(semVinculo("RH")), ENTRADA)).toEqual({
       desfecho: "bloqueada",
       resposta: RESPOSTA_DO_SUPORTE_BLOQUEADA
     });
@@ -67,7 +80,7 @@ describe.skipIf(!integrationEnabled)("assistente de suporte", () => {
   it("com um teste em andamento, o participante não recebe ajuda", async () => {
     const c = await novoCenario(banco);
     await c.motor.iniciar(c.ator);
-    await expect(c.motor.suporte(c.ator, ENTRADA)).rejects.toMatchObject({
+    await expect(c.motor.suporte(c.ator, usuarioDe(c.ator), ENTRADA)).rejects.toMatchObject({
       statusCode: 409,
       code: "SUPORTE_DURANTE_O_TESTE"
     });
@@ -77,7 +90,9 @@ describe.skipIf(!integrationEnabled)("assistente de suporte", () => {
   it("falha da IA vira 502 e fica no log como falha", async () => {
     const c = await novoCenario(banco);
     c.ia.falharNa("suporte", "erro");
-    await expect(c.motor.suporte(semVinculo("RH"), ENTRADA)).rejects.toMatchObject({
+    await expect(
+      c.motor.suporte(semVinculo("RH"), usuarioDe(semVinculo("RH")), ENTRADA)
+    ).rejects.toMatchObject({
       statusCode: 502
     });
   });
@@ -85,10 +100,14 @@ describe.skipIf(!integrationEnabled)("assistente de suporte", () => {
   it("respeita o teto de mensagens por hora, por usuário", async () => {
     const c = await novoCenario(banco, { config: { limiteConversasHora: 2 } });
     const ator = semVinculo("RH");
-    await c.motor.suporte(ator, ENTRADA);
-    await c.motor.suporte(ator, ENTRADA);
-    await expect(c.motor.suporte(ator, ENTRADA)).rejects.toMatchObject({ statusCode: 429 });
+    await c.motor.suporte(ator, usuarioDe(ator), ENTRADA);
+    await c.motor.suporte(ator, usuarioDe(ator), ENTRADA);
+    await expect(c.motor.suporte(ator, usuarioDe(ator), ENTRADA)).rejects.toMatchObject({
+      statusCode: 429
+    });
     // Outro usuário tem a sua cota.
-    await expect(c.motor.suporte(semVinculo("RH"), ENTRADA)).resolves.toBeTruthy();
+    await expect(
+      c.motor.suporte(semVinculo("RH"), usuarioDe(semVinculo("RH")), ENTRADA)
+    ).resolves.toBeTruthy();
   });
 });
