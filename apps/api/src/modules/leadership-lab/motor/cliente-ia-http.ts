@@ -112,9 +112,18 @@ export class ClienteIaHttp implements ClienteIa {
     return this.postar("agentes/suporte", corpo);
   }
 
-  private async postar(caminho: string, corpo: unknown): Promise<unknown> {
+  /** GET / : o serviço diz quem é, a versão e quais agentes tem (o suporte, por exemplo). */
+  saude(): Promise<unknown> {
+    return this.postar("", undefined, "GET");
+  }
+
+  private async postar(
+    caminho: string,
+    corpo: unknown,
+    metodo: "POST" | "GET" = "POST"
+  ): Promise<unknown> {
     const cabecalhos: Record<string, string> = {
-      "Content-Type": "application/json",
+      ...(metodo === "POST" ? { "Content-Type": "application/json" } : {}),
       Accept: "application/json",
       "X-Servico-Token": this.token
     };
@@ -129,9 +138,9 @@ export class ClienteIaHttp implements ClienteIa {
     let resposta: Response;
     try {
       resposta = await this.buscar(new URL(caminho, this.base), {
-        method: "POST",
+        method: metodo,
         headers: cabecalhos,
-        body: JSON.stringify(corpo),
+        ...(metodo === "POST" ? { body: JSON.stringify(corpo) } : {}),
         signal: AbortSignal.timeout(this.timeoutMs),
         redirect: "error"
       });

@@ -15,7 +15,8 @@ import {
   guardaIaRequestSchema,
   iniciarSessaoIaRequestSchema,
   proximoTurnoIaRequestSchema,
-  suporteIaRequestSchema
+  suporteIaRequestSchema,
+  type ConsultaDoSuporte
 } from "../ia/ia-contrato.js";
 import type { ClienteIa } from "./cliente-ia.js";
 
@@ -65,6 +66,10 @@ export class IaFalsa implements ClienteIa {
   };
   /** O que o assistente de suporte falso responde. */
   respostaDoSuporte = "Resposta do suporte falso.";
+  /** Quando definida, o suporte falso PEDE essa consulta de dados no 1º envio (e responde no 2º). */
+  consultaDoSuporte: ConsultaDoSuporte | null = null;
+  /** Quando definida, o serviço falso responde ao GET / (a sonda de saúde do suporte). */
+  saude?: () => Promise<unknown>;
   /** O que o facilitador falso responde. */
   respostaDaConversa = "Resposta do facilitador falso.";
   /** As fontes que o facilitador falso cita. */
@@ -254,14 +259,22 @@ export class IaFalsa implements ClienteIa {
   async suporte(corpo: unknown): Promise<unknown> {
     this.chamadas.suporte++;
     this.registrar("suporte", corpo);
-    suporteIaRequestSchema.parse(corpo);
+    const pedido = suporteIaRequestSchema.parse(corpo);
 
     const falha = this.falhaPendente("suporte");
     if (falha) {
       this.lancar(falha);
       return { lixo: true };
     }
-    return { resposta: this.respostaDoSuporte, uso: this.uso("suporte") };
+    if (this.consultaDoSuporte !== null && pedido.dados === undefined) {
+      return {
+        consulta: { nome: this.consultaDoSuporte, limite: null },
+        uso: this.uso("suporte")
+      };
+    }
+    // Com dados, o texto leva o resultado: o teste confere que ele chegou à IA.
+    const complemento = pedido.dados ? ` | dados: ${JSON.stringify(pedido.dados.resultado)}` : "";
+    return { resposta: `${this.respostaDoSuporte}${complemento}`, uso: this.uso("suporte") };
   }
 
   private uso(agente: string): Json {

@@ -518,7 +518,30 @@ export type RespostaConversaIa = z.infer<typeof respostaConversaIaSchema>;
 // Nenhum dado do sistema (colaborador, escala, resultado de teste) vai junto.
 // ---------------------------------------------------------------------------
 
+/**
+ * As consultas de dados que o assistente pode pedir. A IA só escolhe o NOME: quem executa é a API,
+ * depois de conferir o perfil e o escopo de quem perguntou, e devolve só o que a pessoa pode ver.
+ */
+export const consultasDoSuporte = [
+  "resumo_colaboradores",
+  "desligados_recentes",
+  "admissoes_recentes",
+  "afastamentos_atuais",
+  "escalas_recentes"
+] as const;
+export type ConsultaDoSuporte = (typeof consultasDoSuporte)[number];
+
+/** O resultado de uma consulta, enviado de volta à IA para ela redigir a resposta. */
+const LIMITE_DOS_DADOS_DO_SUPORTE = 16_000;
+export const dadosDoSuporteSchema = z
+  .strictObject({ consulta: z.enum(consultasDoSuporte), resultado: z.json() })
+  .refine((d) => JSON.stringify(d.resultado).length <= LIMITE_DOS_DADOS_DO_SUPORTE, {
+    message: "o resultado da consulta passou do tamanho permitido"
+  });
+
 export const suporteIaRequestSchema = z.strictObject({
+  /** Só vai no SEGUNDO envio, depois de a API executar a consulta que a IA pediu. */
+  dados: dadosDoSuporteSchema.optional(),
   mensagem: z.string().trim().min(1).max(suporteLimites.mensagem),
   historico: z
     .array(
@@ -536,10 +559,17 @@ export const suporteIaRequestSchema = z.strictObject({
 });
 export type SuporteIaRequest = z.infer<typeof suporteIaRequestSchema>;
 
-export const respostaSuporteIaSchema = z.strictObject({
-  resposta: z.string().trim().min(1).max(2500),
-  uso: uso("suporte")
-});
+/** A IA responde com o texto, OU pede uma consulta de dados (nunca os dois). */
+export const respostaSuporteIaSchema = z.union([
+  z.strictObject({ resposta: z.string().trim().min(1).max(2500), uso: uso("suporte") }),
+  z.strictObject({
+    consulta: z.strictObject({
+      nome: z.enum(consultasDoSuporte),
+      limite: z.int().min(1).max(10).nullable()
+    }),
+    uso: uso("suporte")
+  })
+]);
 export type RespostaSuporteIa = z.infer<typeof respostaSuporteIaSchema>;
 
 // ---------------------------------------------------------------------------

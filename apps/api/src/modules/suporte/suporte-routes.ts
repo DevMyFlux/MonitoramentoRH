@@ -36,6 +36,21 @@ export async function registrarRotasDoSuporte(
       );
     }
     const ator = await carregarAtorLab(db, user);
-    return { data: await motor.suporte(ator, request.body) };
+    return { data: await motor.suporte(ator, user, request.body) };
+  });
+
+  // O serviço de IA do assistente está de pé e tem o agente de suporte? Só ADMIN e DEV: é diagnóstico
+  // de implantação (por exemplo, "desatualizado" = falta reimplantar o serviço lab-ia).
+  app.get("/status", async (request) => {
+    const user = await authenticateRequest(request, users);
+    if (user.role !== "ADMIN" && user.role !== "DEV") {
+      throw new HttpError(403, "FORBIDDEN", "Perfil sem permissão para esta ação.");
+    }
+    if (!motor) {
+      return {
+        data: { estado: "desligado", versao: null, detalhe: "LAB_IA_URL não está definida." }
+      };
+    }
+    return { data: await motor.estadoDoSuporte() };
   });
 }

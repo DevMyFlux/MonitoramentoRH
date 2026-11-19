@@ -15,12 +15,17 @@ export function mensagemDoErro(erro: unknown): string {
     if (erro.status === 409 || erro.status === 429 || erro.status === 400) return erro.message;
     if (erro.status === 404)
       return "O assistente ainda não está disponível nesta versão do sistema. Avise o administrador.";
-    if (erro.status === 502 || erro.status === 503 || erro.status === 504)
-      return "O serviço de IA não respondeu agora. Tente de novo em instantes.";
+    if (erro.status === 502 || erro.status === 503 || erro.status === 504) {
+      const base = "O serviço de IA não respondeu agora. Tente de novo em instantes.";
+      // O servidor só manda o motivo para administradores e DEV: ajuda a diagnosticar a implantação.
+      const motivo = erro.details["motivo"];
+      return typeof motivo === "string" && motivo ? `${base} Detalhe técnico: ${motivo}.` : base;
+    }
     return "Não consegui responder agora. Tente de novo em instantes.";
   }
   if (erro instanceof DOMException && (erro.name === "TimeoutError" || erro.name === "AbortError"))
     return "A resposta demorou mais que o esperado. Tente de novo.";
-  if (erro instanceof TypeError) return "Sem conexão com o servidor. Verifique a rede e tente de novo.";
+  if (erro instanceof TypeError)
+    return "Sem conexão com o servidor. Verifique a rede e tente de novo.";
   return "Não consegui responder agora. Tente de novo em instantes.";
 }

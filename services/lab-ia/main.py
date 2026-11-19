@@ -13,6 +13,7 @@ Toda chamada exige o cabeçalho X-Servico-Token igual a TOKEN_SERVICO (o LAB_IA_
 from __future__ import annotations
 
 import hmac
+import json
 import logging
 import os
 import uuid
@@ -213,7 +214,23 @@ class PaginaDoSuporte(Estrito):
     titulo: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
 
 
+class DadosDoSuporte(Estrito):
+    """O resultado de uma consulta que a API executou (e só se a conta podia): vai no 2º envio."""
+
+    consulta: Literal[
+        "resumo_colaboradores", "desligados_recentes", "admissoes_recentes", "afastamentos_atuais", "escalas_recentes"
+    ]
+    resultado: dict[str, Any]
+
+    @model_validator(mode="after")
+    def _tamanho(self) -> "DadosDoSuporte":
+        if len(json.dumps(self.resultado, ensure_ascii=False)) > 16_000:
+            raise ValueError("o resultado da consulta passou do tamanho permitido")
+        return self
+
+
 class Suporte(Estrito):
+    dados: DadosDoSuporte | None = None
     mensagem: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=600)]
     historico: list[MensagemDoSuporte] = Field(max_length=6)
     perfil: Literal["DEV", "ADMIN", "RH", "COMUM"]
@@ -303,8 +320,17 @@ def _fechamento(estado: dict[str, Any], texto_livre: str | None, uso: Uso):
 
 
 @app.get("/")
-def saude() -> dict[str, str]:
-    return {"servico": "lab-ia", "status": "ok", "modelo": agente.MODELO, "versao_instrucao": agente.VERSAO_INSTRUCAO}
+def saude() -> dict[str, Any]:
+    # `agentes`: o que este serviço sabe fazer. A API consulta aqui (GET /suporte/status) para dizer se o
+    # serviço implantado está desatualizado (um serviço antigo não tem "suporte" nesta lista).
+    return {
+        "servico": "lab-ia",
+        "status": "ok",
+        "modelo": agente.MODELO,
+        "versao_instrucao": agente.VERSAO_INSTRUCAO,
+        "agentes": ["agente_lab", "guarda", "facilitador", "analista", "suporte"],
+        "versao_suporte": agente_suporte.VERSAO_SUPORTE,
+    }
 
 
 @app.post("/teste/sessoes")
@@ -424,12 +450,12 @@ def suporte(corpo: Suporte, x_servico_token: str | None = Header(default=None)) 
             agente_suporte.INSTRUCAO_SUPORTE, agente_suporte.ESQUEMA_SUPORTE, texto, uso,
             temperatura=0.3, raciocinio="LOW", agente="suporte",
         )
-        return agente_suporte.normalizar_suporte(bruto)
+        return agente_suporte.normalizar_suporte(bruto, com_dados=corpo.dados is not None)
 
-    resposta = _com_retentativa(gerar, pedido, uso)
+    resultado = _com_retentativa(gerar, pedido, uso)
     bloco = uso.bloco("suporte")
     bloco["versao_instrucao"] = agente_suporte.VERSAO_SUPORTE
-    return {"resposta": resposta, "uso": bloco}
+    return {**resultado, "uso": bloco}
 
 
 __all__ = ["app", "NIVEIS"]

@@ -694,3 +694,21 @@ Um agente de ajuda em **todas as telas autenticadas**, para **qualquer perfil**:
 - **Notificações** (sino no topo do Lab, só para RH e DEV): `GET /api/v1/leadership-lab/notificacoes` e `POST /notificacoes/leitura` (`{ chaves }` ou `{ todas: true }`). Não há tabela de eventos: a lista é **derivada** do que já espera decisão (resultados aguardando validação, alertas abertos, contestações e contribuições pendentes), só dos participantes das turmas do curador (o DEV vê todos), com no máximo os 30 mais recentes. Cada item tem chave estável (`alerta:<id>`), o que impede duplicidade; tratar o item na sua tela o tira da lista. Só a **leitura** é gravada (`leadership_lab.notificacao_leitura`, migração `0021`, por usuário, inserção idempotente). Chave fora do que o usuário enxerga é ignorada. O sino se atualiza a cada minuto e ao voltar para a aba.
 - **Visão geral do RH** (`/lab/rh/visao-geral`): filtros por período, turma, teste, situação e participante (guardados na URL), indicadores com diferença para o período anterior, tendência e distribuição clicáveis, detalhamento do que foi escolhido e lista "Pede atenção". Tudo é calculado no navegador sobre a lista que a API já limita às turmas do curador; a turma do filtro só vale se a API a devolveu.
 - **Consumo de IA** saiu da tela de Configuração do Lab. A rota `GET /config/consumo-ia` e o log técnico (`log_ia`, inclusive o agente `suporte`) continuam existindo para monitoramento e auditoria.
+
+
+### Assistente com dados (consultas) e diagnóstico
+
+O assistente também responde perguntas sobre os dados da plataforma (quantos colaboradores temos, quem foi desligado ou admitido recentemente, quem está afastado ou de férias, situação das escalas), **só para ADMIN, RH e DEV**. Para os demais perfis ele responde: *"Não posso responder a essa pergunta devido às limitações da sua conta…"* (desfecho `restrita`).
+
+- **Como funciona (dois passos).** A IA não tem acesso ao banco. No 1º envio ela responde, ou **pede uma consulta pelo nome** (lista fechada em `consultasDoSuporte`, `ia-contrato.ts`): `resumo_colaboradores`, `desligados_recentes`, `admissoes_recentes`, `afastamentos_atuais`, `escalas_recentes`. A **API** confere o perfil (`podeConsultarDados`), executa a consulta (`modules/suporte/suporte-dados.ts`) e só então faz o 2º envio, com o resultado em `dados`, para a IA redigir a resposta. Sem permissão, a consulta nem roda e a IA nunca vê o dado: a regra mora no código, não no prompt, então uma instrução maliciosa na pergunta não a contorna.
+- **Escopo.** Toda consulta usa `operationWhere(user)`, a mesma regra do resto do sistema: o RH só enxerga as operações do escopo dele; o DEV, todas.
+- **O que sai.** Só nome, função, operação, datas e contagens, no máximo 10 itens por consulta e 16 mil caracteres de resultado. Nada de saúde, documentos, salário ou contato.
+- **Dado pessoal na IA.** Para listar desligados o resultado leva nomes de colaboradores ao Gemini (Vertex AI, no projeto da empresa). A decisão de aceitar isso é do negócio; se não for aceitável, troque `nome` por iniciais em `suporte-dados.ts`. O acesso é rastreado: cada consulta gera um log `suporte: consulta de dados` (usuário, perfil e nome da consulta, sem o conteúdo).
+- **Resultados do Lab.** O assistente explica como ler aderência, agilidade, níveis, estilo e flexibilidade (guia em `services/lab-ia/suporte.py`), mas não vê o resultado individual de ninguém.
+- **Demonstração.** Sem IA real (`LAB_MODO_DEMO`), um molde de palavras-chave faz o mesmo fluxo, com os dados reais do banco.
+
+**Diagnóstico quando aparece "O serviço de IA não respondeu agora".**
+
+1. `GET /api/v1/suporte/status` (ADMIN ou DEV) devolve `ok`, `desatualizado` (o serviço responde mas não tem o agente de suporte: falta **reimplantar o `lab-ia`**) ou `indisponivel` (não responde), com o detalhe.
+2. Para ADMIN e DEV, a própria mensagem do assistente traz o "Detalhe técnico" (por exemplo, `a IA respondeu HTTP 404`). Os demais perfis só veem a mensagem comum.
+3. Para o serviço novo valer, implante **os dois**: `gcloud run deploy lab-ia --source services/lab-ia --region southamerica-east1 --project gestao-rh-escalas` e o site/API (a migração `0020` e `0021` rodam no start).
