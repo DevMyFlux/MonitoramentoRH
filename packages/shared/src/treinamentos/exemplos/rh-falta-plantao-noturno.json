@@ -1,0 +1,404 @@
+{
+  "slug": "rh-falta-plantao-noturno",
+  "area": "rh",
+  "title": "Falta no plantão noturno",
+  "summary": "EXEMPLO para demonstração: uma falta avisada vinte minutos antes do plantão noturno e a escolha de um substituto. Regras trabalhistas e prazos a validar com o RH e o jurídico antes de qualquer uso real.",
+  "exemplo": true,
+  "scenePack": "hospital-escala",
+  "intro": {
+    "title": "Falta no plantão noturno",
+    "captions": [
+      "18:40. O plantão noturno começa às 19:00.",
+      "Uma técnica avisa que não vem hoje.",
+      "Você é quem responde pela escala desta unidade."
+    ]
+  },
+  "decisions": [
+    {
+      "id": "gerencia",
+      "label": "Alinhar com a gerência",
+      "procedure": "Avisar a gerência da falta e das opções de cobertura, e combinar quem decide a substituição."
+    },
+    {
+      "id": "habilitacoes",
+      "label": "Conferir as habilitações do substituto",
+      "procedure": "Conferir na ficha do substituto o ASO em dia e os treinamentos obrigatórios da função (a aptidão do sistema mostra cada item e o motivo)."
+    },
+    {
+      "id": "interjornada",
+      "label": "Respeitar o descanso entre jornadas",
+      "procedure": "Conferir no ponto o fim da última jornada do substituto e só escalá-lo se o descanso mínimo foi cumprido (EXEMPLO: 11 horas; confirmar a regra com o jurídico)."
+    },
+    {
+      "id": "registro",
+      "label": "Registrar a troca no sistema",
+      "procedure": "Registrar a ausência e a substituição no sistema antes do início do plantão, para a escala oficial refletir quem está de fato no posto."
+    },
+    {
+      "id": "equipe",
+      "label": "Confirmar com a equipe",
+      "procedure": "Confirmar com a liderança do plantão quem cobre o posto e garantir que a equipe saiba da troca na passagem de plantão."
+    }
+  ],
+  "questions": [
+    {
+      "id": "q1",
+      "decision": "gerencia",
+      "shot": "sala",
+      "time": "18:40",
+      "narration": "18:40 · Uma técnica do plantão noturno avisa que não vem hoje. O plantão começa às 19:00.",
+      "prompt": "Qual é o seu primeiro movimento?",
+      "alternatives": [
+        {
+          "text": "Resolvo sozinho e conto para a gerência amanhã.",
+          "taken": false,
+          "beat": {
+            "tone": "warn",
+            "title": "Gerência no escuro",
+            "text": "A falta pode até ser coberta, mas quem responde pela unidade não sabe o que aconteceu.",
+            "scene": { "painel": "alerta" }
+          }
+        },
+        {
+          "text": "Aviso a gerência agora, com a falta e as opções de cobertura.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Gerência a par",
+            "text": "A gerência sabe da falta e das opções. A decisão não fica só nas suas costas.",
+            "scene": { "painel": "ok" }
+          }
+        },
+        {
+          "text": "Deixo o plantão começar com uma pessoa a menos e vejo depois.",
+          "taken": false,
+          "beat": {
+            "tone": "bad",
+            "title": "Falta sem tratamento",
+            "text": "Ninguém foi avisado e o posto fica descoberto no início do plantão.",
+            "scene": { "painel": "alerta", "equipe": "duvida" }
+          }
+        },
+        {
+          "text": "Ligo para a coordenação e para a gerência e combino quem decide a substituição.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Decisão combinada",
+            "text": "Fica claro quem decide e quem executa a substituição.",
+            "scene": { "painel": "ok" }
+          }
+        }
+      ]
+    },
+    {
+      "id": "q2",
+      "decision": "habilitacoes",
+      "shot": "ficha",
+      "time": "18:44",
+      "narration": "18:44 · Um colaborador do diurno se oferece para ficar. A ficha dele abre na tela.",
+      "prompt": "Antes de aceitar, o que você confere?",
+      "alternatives": [
+        {
+          "text": "A aptidão no sistema e o motivo de cada item que não está verde.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Aptidão conferida",
+            "text": "ASO e treinamentos da função aparecem em dia. O substituto está apto para o posto.",
+            "scene": { "ficha": "ok" }
+          }
+        },
+        {
+          "text": "Nada; se ele trabalha no hospital, está apto.",
+          "taken": false,
+          "beat": {
+            "tone": "bad",
+            "title": "Aptidão não conferida",
+            "text": "Um documento vencido ou um treinamento faltando passaria despercebido.",
+            "scene": { "ficha": "pendente" }
+          }
+        },
+        {
+          "text": "Pergunto a ele se está com os documentos em dia.",
+          "taken": false,
+          "beat": {
+            "tone": "warn",
+            "title": "Só a palavra dele",
+            "text": "Ele acredita que está tudo certo, mas ninguém conferiu a ficha.",
+            "scene": { "ficha": "pendente" }
+          }
+        },
+        {
+          "text": "O ASO em dia e os treinamentos obrigatórios da função, na ficha do colaborador.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Ficha conferida",
+            "text": "Cada exigência da função foi verificada antes da troca.",
+            "scene": { "ficha": "ok" }
+          }
+        }
+      ]
+    },
+    {
+      "id": "q3",
+      "decision": "interjornada",
+      "shot": "relogio",
+      "time": "18:47",
+      "narration": "18:47 · O relógio de ponto mostra a última saída dele. O plantão noturno vai até as 07:00.",
+      "prompt": "Como você trata o descanso entre as jornadas?",
+      "alternatives": [
+        {
+          "text": "Ele disse que está descansado; isso basta.",
+          "taken": false,
+          "beat": {
+            "tone": "bad",
+            "title": "Descanso não conferido",
+            "text": "A regra de descanso não foi verificada. A escala pode ficar fora da lei.",
+            "scene": { "relogio": "curto" }
+          }
+        },
+        {
+          "text": "Confiro no ponto o fim da última jornada e só aceito se o descanso mínimo da regra foi cumprido.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Descanso respeitado",
+            "text": "O intervalo entre as jornadas fecha com a regra. A troca pode seguir.",
+            "scene": { "relogio": "ok" }
+          }
+        },
+        {
+          "text": "Se o descanso não fecha, procuro outra pessoa no banco de folguistas.",
+          "taken": true,
+          "beat": {
+            "tone": "warn",
+            "title": "Outra opção, mais tempo",
+            "text": "O descanso é respeitado, mas a busca toma minutos preciosos antes das 19:00.",
+            "scene": { "relogio": "ok" }
+          }
+        },
+        {
+          "text": "Confiro o ponto e, como faltam poucos minutos para o mínimo, aceito mesmo assim.",
+          "taken": false,
+          "beat": {
+            "tone": "bad",
+            "title": "Descanso abaixo do mínimo",
+            "text": "Poucos minutos ainda são menos que o mínimo. A escala fica fora da regra.",
+            "scene": { "relogio": "curto" }
+          }
+        }
+      ]
+    },
+    {
+      "id": "q4",
+      "decision": "registro",
+      "shot": "painel",
+      "time": "18:52",
+      "narration": "18:52 · A troca está combinada de boca. A escala publicada ainda mostra a técnica que faltou.",
+      "prompt": "O que você faz com a escala?",
+      "alternatives": [
+        {
+          "text": "Anoto a troca no quadro de avisos do posto.",
+          "taken": false,
+          "beat": {
+            "tone": "warn",
+            "title": "Registro fora do sistema",
+            "text": "Quem passa no posto vê o aviso, mas a escala oficial continua errada.",
+            "scene": { "escala": "errada" }
+          }
+        },
+        {
+          "text": "Registro a ausência e a substituição no sistema e confiro que a escala nova aparece para a equipe.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Escala atualizada",
+            "text": "A escala oficial mostra quem está de fato no posto esta noite.",
+            "scene": { "escala": "ok" }
+          }
+        },
+        {
+          "text": "Deixo como está; amanhã eu acerto.",
+          "taken": false,
+          "beat": {
+            "tone": "bad",
+            "title": "Escala oficial desatualizada",
+            "text": "Durante toda a noite, a escala aponta alguém que não está no hospital.",
+            "scene": { "escala": "errada" }
+          }
+        },
+        {
+          "text": "Registro a troca no sistema, com o motivo, antes do início do plantão.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Troca registrada",
+            "text": "A troca fica registrada com o motivo e o horário.",
+            "scene": { "escala": "ok" }
+          }
+        }
+      ]
+    },
+    {
+      "id": "q5",
+      "decision": "equipe",
+      "shot": "equipe",
+      "time": "18:56",
+      "narration": "18:56 · A equipe do noturno começa a chegar para a passagem de plantão.",
+      "prompt": "Como a equipe fica sabendo da troca?",
+      "alternatives": [
+        {
+          "text": "Confirmo com a líder do plantão quem cobre o posto e aviso a equipe na passagem de plantão.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Equipe alinhada",
+            "text": "Todos sabem quem está em cada posto antes de assumir os pacientes.",
+            "scene": { "equipe": "ok" }
+          }
+        },
+        {
+          "text": "Eles vão perceber quando ele chegar.",
+          "taken": false,
+          "beat": {
+            "tone": "warn",
+            "title": "Equipe descobre na hora",
+            "text": "A equipe descobre a troca no susto, no meio da passagem de plantão.",
+            "scene": { "equipe": "duvida" }
+          }
+        },
+        {
+          "text": "Mando a escala atualizada no canal oficial da equipe e confirmo o recebimento com a líder.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Confirmação recebida",
+            "text": "A líder confirma que recebeu a escala nova e repassa à equipe.",
+            "scene": { "equipe": "ok" }
+          }
+        },
+        {
+          "text": "Não aviso ninguém; a escala resolve.",
+          "taken": false,
+          "beat": {
+            "tone": "bad",
+            "title": "Ninguém confirmou",
+            "text": "Sem confirmação, ninguém sabe ao certo quem cobre o posto.",
+            "scene": { "equipe": "duvida" }
+          }
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "escala_fora_regras",
+      "label": "Escala fora das regras",
+      "tone": "bad",
+      "when": {
+        "any": [
+          { "decision": "habilitacoes", "is": false },
+          { "decision": "interjornada", "is": false }
+        ]
+      }
+    },
+    {
+      "id": "escala_desatualizada",
+      "label": "Escala oficial desatualizada",
+      "tone": "bad",
+      "when": { "all": [{ "decision": "registro", "is": false }] }
+    },
+    {
+      "id": "cobertura_duvidosa",
+      "label": "Turno sem cobertura clara",
+      "tone": "bad",
+      "when": {
+        "any": [
+          { "decision": "equipe", "is": false },
+          { "event": "escala_desatualizada", "is": true }
+        ]
+      }
+    },
+    {
+      "id": "gerencia_surpresa",
+      "label": "Gerência pega de surpresa",
+      "tone": "bad",
+      "when": { "all": [{ "decision": "gerencia", "is": false }] }
+    },
+    {
+      "id": "troca_regular",
+      "label": "Troca regular e registrada",
+      "tone": "good",
+      "when": {
+        "all": [
+          { "decision": "habilitacoes", "is": true },
+          { "decision": "interjornada", "is": true },
+          { "decision": "registro", "is": true }
+        ]
+      }
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "cobertura",
+      "label": "Cobertura do plantão",
+      "levels": {
+        "ok": "Plantão coberto e claro para todos",
+        "warn": "Plantão coberto com ressalvas",
+        "bad": "Plantão sem cobertura clara"
+      },
+      "when": {
+        "ok": {
+          "all": [
+            { "event": "cobertura_duvidosa", "is": false },
+            { "event": "escala_fora_regras", "is": false }
+          ]
+        },
+        "warn": { "all": [{ "event": "cobertura_duvidosa", "is": false }] }
+      }
+    },
+    {
+      "id": "conformidade",
+      "label": "Conformidade trabalhista",
+      "levels": {
+        "ok": "Escala dentro das regras",
+        "warn": "Dentro das regras, registro pendente",
+        "bad": "Escala fora das regras"
+      },
+      "when": {
+        "ok": {
+          "all": [
+            { "event": "escala_fora_regras", "is": false },
+            { "event": "escala_desatualizada", "is": false }
+          ]
+        },
+        "warn": { "all": [{ "event": "escala_fora_regras", "is": false }] }
+      }
+    },
+    {
+      "id": "transparencia",
+      "label": "Transparência com a gerência",
+      "levels": {
+        "ok": "Gerência informada e escala registrada",
+        "warn": "Informação parcial",
+        "bad": "Gerência sem informação"
+      },
+      "when": {
+        "ok": {
+          "all": [
+            { "decision": "gerencia", "is": true },
+            { "decision": "registro", "is": true }
+          ]
+        },
+        "warn": {
+          "any": [
+            { "decision": "gerencia", "is": true },
+            { "decision": "registro", "is": true }
+          ]
+        }
+      }
+    }
+  ]
+}

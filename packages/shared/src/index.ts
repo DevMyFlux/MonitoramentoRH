@@ -13,6 +13,8 @@ export * from "./schedule-codes.js";
 export * from "./schedule-templates.js";
 export * from "./shift-pattern.js";
 export * from "./suporte-api.js";
+export * from "./treinamento-schema.js";
+export * from "./treinamento-motor.js";
 
 export const roleRank = {
   DEV: 4,
