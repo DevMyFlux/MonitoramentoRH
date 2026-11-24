@@ -248,6 +248,13 @@ describe("peças de Escalas", () => {
     expect(screen.queryByRole("list")).toBeNull();
   });
 
+  it("cada etapa diz quem pode levar a escala até ela (só explicação; a API barra)", () => {
+    render(<ProgressoDoFluxo status="DRAFT" />);
+    expect(screen.getByLabelText("Enviar para aprovação: RH, Admin ou Dev")).toBeTruthy();
+    expect(screen.getByLabelText("Aprovar: Admin ou Dev")).toBeTruthy();
+    expect(screen.getByLabelText("Publicar: Admin ou Dev")).toBeTruthy();
+  });
+
   it("a lista de pendências mostra poucas e abre todas sob demanda", async () => {
     const itens = Array.from({ length: 9 }, (_, i) => ({
       id: String(i),

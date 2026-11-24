@@ -13,14 +13,17 @@ import { Check, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../../lib/cn";
 import { CartaoSpotlight } from "./cartao-spotlight";
+import { Dica } from "./dica";
 
 // ---- Andamento do fluxo ------------------------------------------------------------------------------
 
+// Quem pode levar a escala a cada etapa. Espelho de canTransitionSchedule
+// (apps/api/src/modules/scheduling/schedule-workflow.ts): aqui é só a explicação; quem barra é a API.
 const etapasDaEscala = [
-  { status: "DRAFT", rotulo: "Rascunho" },
-  { status: "IN_REVIEW", rotulo: "Em aprovação" },
-  { status: "APPROVED", rotulo: "Aprovado" },
-  { status: "PUBLISHED", rotulo: "Publicado" }
+  { status: "DRAFT", rotulo: "Rascunho", quem: "Rascunho: a escala nasce assim ao ser gerada" },
+  { status: "IN_REVIEW", rotulo: "Em aprovação", quem: "Enviar para aprovação: RH, Admin ou Dev" },
+  { status: "APPROVED", rotulo: "Aprovado", quem: "Aprovar: Admin ou Dev" },
+  { status: "PUBLISHED", rotulo: "Publicado", quem: "Publicar: Admin ou Dev" }
 ] as const;
 
 export function ProgressoDoFluxo({ status }: { status: string }) {
@@ -50,18 +53,20 @@ export function ProgressoDoFluxo({ status }: { status: string }) {
               agora ? "shrink-0" : "min-w-0 flex-1"
             )}
           >
-            <span
-              aria-hidden="true"
-              className={cn(
-                "grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold ring-2 transition-colors",
-                feito && "bg-mf-brilho text-white ring-mf-brilho",
-                agora &&
-                  "bg-white text-mf-primaria ring-mf-brilho shadow-[0_0_0_3px_rgb(var(--mf-brilho)/0.15)]",
-                !feito && !agora && "bg-white text-mf-texto-3 ring-mf-linha"
-              )}
-            >
-              {feito ? <Check size={13} /> : i + 1}
-            </span>
+            <Dica texto={e.quem} className="shrink-0 rounded-full no-underline">
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-bold ring-2 transition-colors",
+                  feito && "bg-mf-brilho text-white ring-mf-brilho",
+                  agora &&
+                    "bg-white text-mf-primaria ring-mf-brilho shadow-[0_0_0_3px_rgb(var(--mf-brilho)/0.15)]",
+                  !feito && !agora && "bg-white text-mf-texto-3 ring-mf-linha"
+                )}
+              >
+                {feito ? <Check size={13} /> : i + 1}
+              </span>
+            </Dica>
             <span
               className={cn(
                 "text-xs font-medium sm:truncate",

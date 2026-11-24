@@ -55,6 +55,12 @@ import {
 import { cn } from "../lib/cn";
 import { download, request, text, date, type Row } from "../features/my-flux/client";
 import { labels } from "../features/my-flux/resources";
+import { ChipDeAptidao } from "../features/colaboradores/chip-de-aptidao";
+import {
+  filtrarColaboradores,
+  filtrosAtivos,
+  type Rodizio
+} from "../features/colaboradores/filtros";
 
 const demoOp = "55555555-5555-4555-8555-555555555555";
 
@@ -262,6 +268,9 @@ export function EmployeesPage() {
   const [operationId, setOperationId] = useState(demoOp);
   const [query, setQuery] = useState("");
   const [showTerminated, setShowTerminated] = useState(false);
+  const [shiftFilter, setShiftFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [rotationFilter, setRotationFilter] = useState<Rodizio | "">("");
 
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -341,13 +350,53 @@ export function EmployeesPage() {
     setStepNotice("");
   }, [open]);
 
-  const visible = useMemo(() => {
-    const q = query.toLowerCase();
-    return employees
-      .filter((e) => e.operationId === operationId)
-      .filter((e) => showTerminated || text(e.status) !== "TERMINATED")
-      .filter((e) => !q || JSON.stringify(e).toLowerCase().includes(q));
-  }, [employees, operationId, query, showTerminated]);
+  const filtros = {
+    operationId,
+    busca: query,
+    mostrarDesligados: showTerminated,
+    turno: shiftFilter,
+    situacao: statusFilter,
+    rodizio: rotationFilter
+  };
+  const visible = useMemo(
+    () => filtrarColaboradores(employees, filtros, rotationOf),
+    [employees, operationId, query, showTerminated, shiftFilter, statusFilter, rotationFilter]
+  );
+  // Os turnos que existem na unidade escolhida, para o filtro não oferecer um turno vazio.
+  const shiftCodes = useMemo(
+    () =>
+      [
+        ...new Set(
+          employees
+            .filter((e) => e.operationId === operationId)
+            .map((e) => text(e.shift ?? ""))
+            .filter((code) => code && code !== "—")
+        )
+      ].sort(),
+    [employees, operationId]
+  );
+  function clearFilters() {
+    setQuery("");
+    setShiftFilter("");
+    setStatusFilter("");
+    setRotationFilter("");
+  }
+
+  /** O rodízio da pessoa neste mês: Par/Ímpar efetivo, 5x2 comercial ou nenhum. */
+  function rotationOf(row: Row): Rodizio {
+    if (row.parity) {
+      return effectiveParity(
+        text(row.parity) as ParityGroup,
+        text(row.parityReferenceMonth ?? "") || null,
+        currentMonthInSaoPaulo()
+      ) === "ODD"
+        ? "IMPAR"
+        : "PAR";
+    }
+    if (deriveScaleType(text(row.operationId), text(row.shift ?? ""), "") === "FIVE_BY_TWO")
+      return "5X2";
+    return "NENHUM";
+  }
 
   const employeeEvents = useMemo(
     () => (editingId ? events.filter((e) => e.employeeId === editingId) : []),
@@ -686,7 +735,8 @@ export function EmployeesPage() {
     const exigencia = (d.requirement ?? {}) as Row;
     const vencimento = d.expiresAt ? String(d.expiresAt).slice(0, 10) : null;
     const aviso = Number(exigencia.warningDays ?? 30);
-    const limite = new Date(Date.now() + aviso * 86_400_000).toLocaleDateString("en-CA");
+    // "Hoje" + dias de aviso, contado a partir da data de hoje que a tela já usa (sem relógio aqui).
+    const limite = new Date(Date.parse(hoje) + aviso * 86_400_000).toISOString().slice(0, 10);
     const situacao: DocumentoDaPasta["situacao"] = !vencimento
       ? "sem-validade"
       : vencimento < hoje
@@ -1170,7 +1220,7 @@ export function EmployeesPage() {
               Atualizar
             </Button>
             <Button
-              variant="secondary"
+              variant="primary"
               icon={<Download size={16} />}
               onClick={() => void exportXlsx()}
               disabled={exporting || !operations.length}
@@ -1219,7 +1269,12 @@ export function EmployeesPage() {
         ))}
       </section>
 
-      <div className="vidro flex flex-wrap items-end gap-x-4 gap-y-3 rounded-2xl border border-white/70 p-4 shadow-sm ring-1 ring-mf-linha/60">
+      {/* Filtros fixos no topo ao rolar, em telas largas (nas menores ocupariam metade da tela). */}
+      <div
+        role="search"
+        aria-label="Filtrar colaboradores"
+        className="vidro z-20 flex flex-wrap items-end gap-x-4 gap-y-3 rounded-mf-cartao border border-white/70 p-4 shadow-mf-1 ring-1 ring-mf-linha/60 xl:sticky xl:top-[88px]"
+      >
         <label className="w-full text-sm font-medium text-mf-texto sm:w-56">
           Unidade
           <select
@@ -1250,11 +1305,49 @@ export function EmployeesPage() {
             />
           </div>
         </label>
+        <FiltroDeLista
+          rotulo="Turno"
+          valor={shiftFilter}
+          aoMudar={setShiftFilter}
+          opcoes={shiftCodes.map((code) => ({
+            value: code,
+            label: shiftLabel({ id: code, operationId, shift: code })
+          }))}
+          todos="Todos os turnos"
+        />
+        <FiltroDeLista
+          rotulo="Situação"
+          valor={statusFilter}
+          aoMudar={setStatusFilter}
+          opcoes={statusOptions.map((s) => ({ value: s, label: labels[s] ?? s }))}
+          todos="Todas as situações"
+        />
+        <FiltroDeLista
+          rotulo="Rodízio"
+          valor={rotationFilter}
+          aoMudar={(valor) => setRotationFilter(valor as Rodizio | "")}
+          opcoes={[
+            { value: "IMPAR", label: "Ímpar" },
+            { value: "PAR", label: "Par" },
+            { value: "5X2", label: "5x2 comercial" },
+            { value: "NENHUM", label: "Sem rodízio" }
+          ]}
+          todos="Todos os rodízios"
+        />
         <Interruptor
           rotulo="Mostrar desligados"
           checked={showTerminated}
           onChange={(e) => setShowTerminated(e.target.checked)}
         />
+        {filtrosAtivos(filtros) > 0 ? (
+          <Button variant="ghost" onClick={clearFilters}>
+            Limpar filtros ({filtrosAtivos(filtros)})
+          </Button>
+        ) : null}
+        <p className="w-full text-xs text-mf-texto-3" aria-live="polite">
+          <span className="tabular-nums">{visible.length}</span>{" "}
+          {visible.length === 1 ? "pessoa na lista" : "pessoas na lista"}
+        </p>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-mf-linha bg-mf-cartao shadow-[0_1px_2px_rgb(var(--mf-tinta)/0.04)]">
@@ -1348,6 +1441,9 @@ export function EmployeesPage() {
                         <PilulaDeTurno rotulo={shiftLabel(row)} />
                         <span className="text-xs text-mf-texto-2">{rodizio(row)}</span>
                         <Situacao row={row} />
+                        {text(row.status) !== "TERMINATED" ? (
+                          <ChipDeAptidao employeeId={row.id} />
+                        ) : null}
                       </div>
                       <AvisoDeDesligamento row={row} />
                     </div>
@@ -1367,8 +1463,9 @@ export function EmployeesPage() {
                 <thead className="bg-slate-50 text-xs uppercase tracking-wide text-mf-texto-3">
                   <tr>
                     <th className="whitespace-nowrap px-2.5 py-3">Colaborador</th>
+                    <th className="whitespace-nowrap px-2.5 py-3">Aptidão</th>
                     <th className="whitespace-nowrap px-2.5 py-3">Matrícula</th>
-                    <th className="whitespace-nowrap px-2.5 py-3">Função</th>
+                    <th className="hidden whitespace-nowrap px-2.5 py-3 xl:table-cell">Função</th>
                     <th className="whitespace-nowrap px-2.5 py-3">Turno</th>
                     <th className="whitespace-nowrap px-2.5 py-3">Rodízio</th>
                     <th className="whitespace-nowrap px-2.5 py-3">Situação</th>
@@ -1398,10 +1495,17 @@ export function EmployeesPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap px-2.5 py-3 font-mono text-[13px] text-mf-texto-2">
+                      <td className="whitespace-nowrap px-2.5 py-3">
+                        {text(row.status) !== "TERMINATED" ? (
+                          <ChipDeAptidao employeeId={row.id} />
+                        ) : (
+                          <span className="text-xs text-mf-texto-3">—</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-2.5 py-3 font-mono text-[13px] tabular-nums text-mf-texto-2">
                         {text(row.identifier)}
                       </td>
-                      <td className="px-2.5 py-3 text-mf-texto-2">
+                      <td className="hidden px-2.5 py-3 text-mf-texto-2 xl:table-cell">
                         {text((row.function as Row | undefined)?.name ?? "—")}
                       </td>
                       <td className="whitespace-nowrap px-2.5 py-3">
@@ -1503,6 +1607,41 @@ export function EmployeesPage() {
 }
 
 /** Campo de texto do cadastro (rótulo flutuante). Mantém a assinatura de antes. */
+/** Um filtro de lista (select) da barra de filtros, com a opção "todos" no topo. */
+function FiltroDeLista({
+  rotulo,
+  valor,
+  aoMudar,
+  opcoes,
+  todos
+}: {
+  rotulo: string;
+  valor: string;
+  aoMudar: (valor: string) => void;
+  opcoes: { value: string; label: string }[];
+  todos: string;
+}) {
+  return (
+    // Nome acessível próprio ("Filtrar por turno"): o cadastro na gaveta também tem um campo "Turno".
+    <div className="w-[calc(50%-0.5rem)] text-sm font-medium text-mf-texto sm:w-44">
+      <span aria-hidden="true">{rotulo}</span>
+      <select
+        aria-label={`Filtrar por ${rotulo.toLowerCase()}`}
+        className="mt-1 block h-11 w-full rounded-mf-controle border border-mf-linha bg-white/80 px-3 text-sm font-normal"
+        value={valor}
+        onChange={(e) => aoMudar(e.target.value)}
+      >
+        <option value="">{todos}</option>
+        {opcoes.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function TextField({
   label,
   value,
