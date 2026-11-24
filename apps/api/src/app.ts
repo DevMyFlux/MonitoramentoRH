@@ -48,6 +48,12 @@ import {
   usaModoDemonstracao
 } from "./modules/leadership-lab/lab-modulo.js";
 import { registrarRotasDoLab } from "./modules/leadership-lab/lab-routes.js";
+import { registrarRotasDosTreinamentos } from "./modules/treinamentos/treinamentos-routes.js";
+import {
+  type ConfigDosTreinamentos,
+  configDoAmbiente as configDosTreinamentos,
+  ServicoDeTreinamentos
+} from "./modules/treinamentos/treinamentos-servico.js";
 
 const version = "0.0.0";
 
@@ -73,7 +79,13 @@ function getErrorMessage(error: unknown): string {
 
 // `lab` só existe para testes: injeta a IA e a configuração do Leadership Lab no lugar da leitura
 // do ambiente. Em produção, buildApp() é chamado sem argumentos.
-export async function buildApp(opcoes: { lab?: InjecaoDoLab } = {}): Promise<FastifyInstance> {
+// `treinamentos` também só existe para testes (configuração e relógio no lugar do ambiente).
+export async function buildApp(
+  opcoes: {
+    lab?: InjecaoDoLab;
+    treinamentos?: { config?: ConfigDosTreinamentos; agora?: () => Date };
+  } = {}
+): Promise<FastifyInstance> {
   const app = Fastify({
     logger: { redact: ["req.headers.authorization", "req.headers.cookie"] }
   });
@@ -292,6 +304,19 @@ export async function buildApp(opcoes: { lab?: InjecaoDoLab } = {}): Promise<Fas
     async (versionedApp) =>
       registrarRotasDoSuporte(versionedApp, userRepository, { db: prisma, motor: motorDoLab }),
     { prefix: `${apiPrefix}/suporte` }
+  );
+
+  // Treinamentos Interativos: sempre ligados (não usam IA nem o motor do Lab; só as turmas e os
+  // participantes dele, que estão no banco).
+  const servicoDeTreinamentos = new ServicoDeTreinamentos(
+    prisma,
+    opcoes.treinamentos?.config ?? configDosTreinamentos(process.env),
+    opcoes.treinamentos?.agora
+  );
+  await app.register(
+    async (versionedApp) =>
+      registrarRotasDosTreinamentos(versionedApp, userRepository, servicoDeTreinamentos),
+    { prefix: `${apiPrefix}/treinamentos` }
   );
 
   // Production deploy serves the built web app (apps/web/dist, copied to

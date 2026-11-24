@@ -37,6 +37,13 @@ describe("contexto da página", () => {
     expect(assistenteVisivelEm("/lab")).toBe(true);
     expect(assistenteVisivelEm("/colaboradores")).toBe(true);
   });
+
+  it("some no Palco dos Treinamentos (sessão e desfecho), mas não na lista", () => {
+    expect(assistenteVisivelEm("/treinamentos/abc/jogar")).toBe(false);
+    expect(assistenteVisivelEm("/treinamentos/resultado/xyz")).toBe(false);
+    expect(assistenteVisivelEm("/treinamentos")).toBe(true);
+    expect(assistenteVisivelEm("/treinamentos/rh")).toBe(true);
+  });
 });
 
 describe("assistente de suporte", () => {

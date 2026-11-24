@@ -13,6 +13,41 @@ describe("navigation groups", () => {
     expect(labels).toContain("Parâmetros");
   });
 
+  describe("Treinamentos", () => {
+    const item = navigationGroups.flatMap((g) => g.items).find((i) => i.label === "Treinamentos");
+
+    it("aparece para o participante (COMUM) e o DEV, e não para RH e ADMIN", () => {
+      expect(item).toMatchObject({ href: "/treinamentos", roles: ["COMUM", "DEV"] });
+      expect(item?.hidden).toBeUndefined();
+      expect(itemVisivelPara(item!, "COMUM")).toBe(true);
+      expect(itemVisivelPara(item!, "DEV")).toBe(true);
+      expect(itemVisivelPara(item!, "RH")).toBe(false);
+      expect(itemVisivelPara(item!, "ADMIN")).toBe(false);
+    });
+  });
+
+  describe("Acompanhamento e configuração de treinamentos", () => {
+    const todos = navigationGroups.flatMap((g) => g.items);
+    const rh = todos.find((i) => i.href === "/treinamentos/rh")!;
+    const config = todos.find((i) => i.href === "/treinamentos/config")!;
+
+    it("o RH acompanha, o ADMIN configura, o DEV vê os dois; o participante, nenhum", () => {
+      expect(itemVisivelPara(rh, "RH")).toBe(true);
+      expect(itemVisivelPara(rh, "ADMIN")).toBe(false);
+      expect(itemVisivelPara(config, "ADMIN")).toBe(true);
+      expect(itemVisivelPara(config, "RH")).toBe(false);
+      for (const item of [rh, config]) {
+        expect(itemVisivelPara(item, "DEV")).toBe(true);
+        expect(itemVisivelPara(item, "COMUM")).toBe(false);
+      }
+    });
+
+    it("ficam só no menu lateral, fora do dock do celular", () => {
+      expect(rh.foraDoDock).toBe(true);
+      expect(config.foraDoDock).toBe(true);
+    });
+  });
+
   describe("Leadership Lab", () => {
     const item = navigationGroups.flatMap((g) => g.items).find((i) => i.label === "Leadership Lab");
 

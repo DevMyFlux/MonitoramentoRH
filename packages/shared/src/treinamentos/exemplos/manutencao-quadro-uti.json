@@ -1,0 +1,565 @@
+{
+  "slug": "manutencao-quadro-uti",
+  "area": "manutencao",
+  "title": "Quadro elétrico da UTI",
+  "summary": "EXEMPLO para demonstração: intervenção num quadro elétrico que alimenta a UTI durante o plantão noturno. Conteúdo técnico a validar com a segurança do trabalho antes de qualquer uso real.",
+  "exemplo": true,
+  "scenePack": "hospital-energia",
+  "intro": {
+    "title": "Quadro elétrico da UTI",
+    "captions": [
+      "Plantão noturno. O hospital segue funcionando.",
+      "O quadro que alimenta a UTI está aquecendo.",
+      "Você é o técnico de manutenção de plantão."
+    ]
+  },
+  "decisions": [
+    {
+      "id": "avisar_uti",
+      "label": "Avisar a UTI",
+      "procedure": "Combinar com a equipe da UTI o horário da intervenção e confirmar que os equipamentos críticos têm alimentação alternativa antes de desligar."
+    },
+    {
+      "id": "apr",
+      "label": "Registrar a APR e a permissão de trabalho",
+      "procedure": "Analisar os riscos do serviço, registrar as medidas de controle na APR e obter a permissão de trabalho assinada antes de começar."
+    },
+    {
+      "id": "epi",
+      "label": "Vestir o EPI para risco elétrico",
+      "procedure": "Usar o EPI indicado na APR para o risco elétrico e de arco, conferindo a validade e o estado de cada item antes do uso."
+    },
+    {
+      "id": "bloqueio",
+      "label": "Bloquear e etiquetar",
+      "procedure": "Desligar, travar com cadeado pessoal e etiquetar o disjuntor, de modo que ninguém consiga religar durante o serviço."
+    },
+    {
+      "id": "medir",
+      "label": "Medir a ausência de tensão",
+      "procedure": "Testar o detector numa fonte conhecida, medir a ausência de tensão em todas as fases e testar o detector de novo antes de tocar nos condutores."
+    }
+  ],
+  "questions": [
+    {
+      "id": "q1",
+      "decision": "avisar_uti",
+      "shot": "icu",
+      "time": "22:04",
+      "narration": "22:04 · O quadro que alimenta a UTI está aquecendo. A ordem de serviço pede intervenção ainda neste plantão.",
+      "prompt": "Antes de mexer no quadro, o que você faz com a UTI?",
+      "alternatives": [
+        {
+          "text": "Entro direto no quadro; se a energia cair, a UTI percebe.",
+          "taken": false,
+          "beat": {
+            "tone": "bad",
+            "title": "UTI no escuro",
+            "text": "Ninguém na UTI sabe que o quadro vai ser desligado. Os equipamentos críticos não foram conferidos.",
+            "scene": {
+              "icu": "alert"
+            }
+          }
+        },
+        {
+          "text": "Ligo para a enfermeira responsável, combino o horário e confirmo que os equipamentos críticos têm energia alternativa.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "UTI preparada",
+            "text": "A equipe sabe o horário e confere a alimentação alternativa dos equipamentos antes do desligamento.",
+            "scene": {
+              "icu": "ok"
+            }
+          }
+        },
+        {
+          "text": "Mando uma mensagem no grupo da manutenção avisando que vou desligar.",
+          "taken": false,
+          "beat": {
+            "tone": "warn",
+            "title": "Aviso no lugar errado",
+            "text": "A manutenção ficou sabendo, mas quem cuida dos pacientes não foi avisado.",
+            "scene": {
+              "icu": "none"
+            }
+          }
+        },
+        {
+          "text": "Peço à supervisão que avise a UTI e só começo depois da confirmação de que estão prontos.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Aviso confirmado",
+            "text": "A UTI confirma que está pronta antes do desligamento. Você espera a confirmação para seguir.",
+            "scene": {
+              "icu": "ok"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "q2",
+      "decision": "apr",
+      "shot": "tech",
+      "time": "22:07",
+      "narration": "22:07 · A ordem de serviço está na sua mão. O supervisor pergunta se pode liberar o serviço.",
+      "prompt": "Como você registra o trabalho antes de começar?",
+      "alternatives": [
+        {
+          "text": "Uso a APR de um serviço parecido do mês passado.",
+          "taken": false,
+          "beat": {
+            "tone": "warn",
+            "title": "APR de outro serviço",
+            "text": "A análise não reflete este quadro nem as condições de hoje. Riscos novos podem ter ficado de fora.",
+            "scene": {
+              "tvt": "Quadro aquecendo"
+            }
+          }
+        },
+        {
+          "text": "Faço a APR junto com o eletricista de apoio e anexo à permissão de trabalho.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Análise em dupla",
+            "text": "Dois olhares sobre os riscos, com as medidas de controle anexadas à permissão de trabalho.",
+            "scene": {
+              "tvt": "Quadro aquecendo"
+            }
+          }
+        },
+        {
+          "text": "Começo agora e preencho a papelada no fim do plantão.",
+          "taken": false,
+          "beat": {
+            "tone": "bad",
+            "title": "Serviço sem análise de risco",
+            "text": "Os riscos não foram analisados antes do início e não há permissão de trabalho.",
+            "scene": {
+              "tvt": "Quadro aquecendo"
+            }
+          }
+        },
+        {
+          "text": "Preencho a APR com os riscos do quadro e peço a permissão de trabalho assinada.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "APR registrada",
+            "text": "Riscos, medidas e responsáveis ficam registrados antes do início do serviço.",
+            "scene": {
+              "tvt": "Quadro aquecendo"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "q3",
+      "decision": "epi",
+      "shot": "ppe",
+      "time": "22:10",
+      "narration": "22:10 · O armário de EPI fica no fim do corredor. O quadro está a poucos passos de você.",
+      "prompt": "O que você veste para trabalhar no quadro?",
+      "alternatives": [
+        {
+          "text": "Só as luvas; o protetor facial atrapalha a visão.",
+          "taken": false,
+          "beat": {
+            "tone": "warn",
+            "title": "Proteção pela metade",
+            "text": "As mãos estão protegidas; o rosto e o corpo, não.",
+            "scene": {
+              "epi": "0"
+            }
+          }
+        },
+        {
+          "text": "O EPI indicado na APR, depois de conferir a validade e o estado de cada item.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "EPI conforme a APR",
+            "text": "Cada item foi conferido antes do uso e corresponde ao risco analisado.",
+            "scene": {
+              "epi": "1"
+            }
+          }
+        },
+        {
+          "text": "Luvas isolantes, protetor facial e vestimenta para risco de arco, conferidos antes do uso.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "EPI completo",
+            "text": "Você está protegido para o risco elétrico e para um eventual arco.",
+            "scene": {
+              "epi": "1"
+            }
+          }
+        },
+        {
+          "text": "Nada por enquanto; vou só olhar o quadro primeiro.",
+          "taken": false,
+          "beat": {
+            "tone": "bad",
+            "title": "Sem proteção",
+            "text": "Você chega ao quadro energizado sem nenhum EPI.",
+            "scene": {
+              "epi": "0"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "q4",
+      "decision": "bloqueio",
+      "shot": "lever",
+      "time": "22:12",
+      "narration": "22:12 · Hora de abrir o disjuntor geral. A alavanca está a um braço de distância.",
+      "prompt": "Como você desliga e garante que ninguém religue?",
+      "alternatives": [
+        {
+          "text": "Faço o serviço com o disjuntor ligado, com muito cuidado.",
+          "taken": false,
+          "beat": {
+            "tone": "bad",
+            "title": "Quadro segue energizado",
+            "text": "Nada foi desligado. O quadro continua com tensão enquanto você trabalha.",
+            "scene": {
+              "lock": "0"
+            }
+          }
+        },
+        {
+          "text": "Desligo e travo com cadeado pessoal e etiqueta com nome e hora.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Disjuntor bloqueado",
+            "text": "Cadeado e etiqueta impedem o religamento. Só você tem a chave.",
+            "scene": {
+              "lock": "1"
+            }
+          }
+        },
+        {
+          "text": "Desligo, peço a alguém que vigie o quadro e sigo.",
+          "taken": false,
+          "beat": {
+            "tone": "warn",
+            "title": "Vigia não é bloqueio",
+            "text": "Alguém olhando não impede um religamento por outro setor. O bloqueio físico não foi feito.",
+            "scene": {
+              "lock": "0"
+            }
+          }
+        },
+        {
+          "text": "Desligo, aplico bloqueio e etiqueta e registro o bloqueio na permissão de trabalho.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Bloqueio e etiquetagem",
+            "text": "O bloqueio fica registrado na APR. Qualquer pessoa vê que o quadro está em manutenção.",
+            "scene": {
+              "lock": "1"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "q5",
+      "decision": "medir",
+      "shot": "cab",
+      "time": "22:15",
+      "narration": "22:15 · O disjuntor está aberto. Os barramentos parecem desligados.",
+      "prompt": "Antes de tocar nos barramentos, o que você faz?",
+      "alternatives": [
+        {
+          "text": "Testo o detector numa fonte conhecida, meço a ausência de tensão em todas as fases e testo o detector de novo.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Ausência de tensão confirmada",
+            "text": "O detector funciona e todas as fases estão sem tensão. Agora é seguro tocar.",
+            "scene": {
+              "led": "green",
+              "state": "safe"
+            }
+          }
+        },
+        {
+          "text": "Confio na lâmpada do painel, que está apagada.",
+          "taken": false,
+          "beat": {
+            "tone": "warn",
+            "title": "Sinal indireto",
+            "text": "Uma lâmpada apagada não garante a ausência de tensão. Pode haver retorno por outro circuito.",
+            "scene": {
+              "led": "amber"
+            }
+          }
+        },
+        {
+          "text": "Encosto as costas da mão para sentir se ainda tem tensão.",
+          "taken": false,
+          "beat": {
+            "tone": "bad",
+            "title": "Teste com o próprio corpo",
+            "text": "O corpo não é instrumento de medição. Se houver tensão, o choque vem antes da resposta.",
+            "scene": {
+              "led": "red"
+            }
+          }
+        },
+        {
+          "text": "Meço com o detector em todas as fases, depois de conferir que ele funciona.",
+          "taken": true,
+          "beat": {
+            "tone": "good",
+            "title": "Medição feita",
+            "text": "Com o detector conferido, a medição mostra o quadro sem tensão.",
+            "scene": {
+              "led": "green",
+              "state": "safe"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "arco",
+      "label": "Arco elétrico no quadro",
+      "tone": "bad",
+      "when": {
+        "any": [
+          {
+            "decision": "bloqueio",
+            "is": false
+          },
+          {
+            "decision": "medir",
+            "is": false
+          }
+        ]
+      },
+      "scene": {
+        "state": "arc",
+        "led": "red"
+      }
+    },
+    {
+      "id": "lesao",
+      "label": "Lesão por arco",
+      "tone": "bad",
+      "when": {
+        "all": [
+          {
+            "event": "arco",
+            "is": true
+          },
+          {
+            "decision": "epi",
+            "is": false
+          }
+        ]
+      },
+      "scene": {
+        "tech": "ferido"
+      }
+    },
+    {
+      "id": "arco_contido",
+      "label": "EPI contém o arco",
+      "tone": "good",
+      "when": {
+        "all": [
+          {
+            "event": "arco",
+            "is": true
+          },
+          {
+            "decision": "epi",
+            "is": true
+          }
+        ]
+      },
+      "scene": {
+        "tech": "protegido"
+      }
+    },
+    {
+      "id": "uti_surpresa",
+      "label": "UTI pega de surpresa",
+      "tone": "bad",
+      "when": {
+        "all": [
+          {
+            "decision": "avisar_uti",
+            "is": false
+          }
+        ]
+      },
+      "scene": {
+        "icu": "alert"
+      }
+    },
+    {
+      "id": "uti_preparada",
+      "label": "UTI preparada para o desligamento",
+      "tone": "good",
+      "when": {
+        "all": [
+          {
+            "decision": "avisar_uti",
+            "is": true
+          }
+        ]
+      },
+      "scene": {
+        "icu": "ok"
+      }
+    },
+    {
+      "id": "sem_registro",
+      "label": "Serviço sem registro de risco",
+      "tone": "bad",
+      "when": {
+        "all": [
+          {
+            "decision": "apr",
+            "is": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "desligamento_seguro",
+      "label": "Desligamento seguro",
+      "tone": "good",
+      "when": {
+        "all": [
+          {
+            "event": "arco",
+            "is": false
+          },
+          {
+            "decision": "apr",
+            "is": true
+          }
+        ]
+      },
+      "scene": {
+        "state": "safe",
+        "led": "green"
+      }
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "tecnico",
+      "label": "Integridade do técnico",
+      "levels": {
+        "ok": "Sem lesão",
+        "warn": "Incidente contido",
+        "bad": "Lesão grave"
+      },
+      "when": {
+        "ok": {
+          "all": [
+            {
+              "event": "arco",
+              "is": false
+            }
+          ]
+        },
+        "warn": {
+          "all": [
+            {
+              "event": "lesao",
+              "is": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uti",
+      "label": "Continuidade da UTI",
+      "levels": {
+        "ok": "Cuidado sem interrupção",
+        "warn": "UTI em contingência",
+        "bad": "UTI pega de surpresa"
+      },
+      "when": {
+        "ok": {
+          "all": [
+            {
+              "event": "uti_preparada",
+              "is": true
+            },
+            {
+              "event": "arco",
+              "is": false
+            }
+          ]
+        },
+        "warn": {
+          "all": [
+            {
+              "event": "uti_preparada",
+              "is": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "conformidade",
+      "label": "Conformidade do procedimento",
+      "levels": {
+        "ok": "Procedimento completo",
+        "warn": "Procedimento com falhas",
+        "bad": "Procedimento não seguido"
+      },
+      "when": {
+        "ok": {
+          "all": [
+            {
+              "decision": "apr",
+              "is": true
+            },
+            {
+              "decision": "epi",
+              "is": true
+            },
+            {
+              "decision": "bloqueio",
+              "is": true
+            },
+            {
+              "decision": "medir",
+              "is": true
+            }
+          ]
+        },
+        "warn": {
+          "all": [
+            {
+              "event": "sem_registro",
+              "is": false
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

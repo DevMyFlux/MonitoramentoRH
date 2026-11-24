@@ -12,6 +12,9 @@ import { QlpPage } from "./pages/qlp-page";
 import { RecruitmentPage } from "./pages/recruitment-page";
 import { MonthlySchedulePage } from "./pages/monthly-schedule-page";
 import { UsersPage } from "./pages/users-page";
+import { AuditPage } from "./pages/audit-page";
+import { ImportsPage } from "./pages/imports-page";
+import { EmptyState } from "./components/ui";
 import { EmployeesPage } from "./pages/employees-page";
 import { HomeRedirect } from "./pages/home-redirect";
 // Fontes auto-hospedadas (@fontsource, licença OFL): Inter no corpo, Bricolage Grotesque nos títulos
@@ -67,6 +70,25 @@ const LabConfigPage = lazy(() =>
 // O layout do Lab (menu, topo e transições do design system do módulo) também é sob demanda: o
 // Motion e os estilos dele não pesam nas outras áreas do sistema. A espera das páginas (Suspense)
 // fica dentro dele.
+// Treinamentos Interativos: páginas sob demanda (o Palco traz o SVG, o canvas e o CSS próprio).
+const TreinamentosPage = lazy(() =>
+  import("./pages/treinamentos/treinamentos-page").then((m) => ({ default: m.TreinamentosPage }))
+);
+const JogarTreinamentoPage = lazy(() =>
+  import("./pages/treinamentos/jogar-page").then((m) => ({ default: m.JogarPage }))
+);
+const ResultadoTreinamentoPage = lazy(() =>
+  import("./pages/treinamentos/resultado-page").then((m) => ({ default: m.ResultadoPage }))
+);
+const TreinamentosRhPage = lazy(() =>
+  import("./pages/treinamentos/rh-page").then((m) => ({ default: m.TreinamentosRhPage }))
+);
+const TreinamentosConfigPage = lazy(() =>
+  import("./pages/treinamentos/config-page").then((m) => ({ default: m.TreinamentosConfigPage }))
+);
+const LayoutDoPalco = lazy(() =>
+  import("./features/treinamentos/layout-do-palco").then((m) => ({ default: m.LayoutDoPalco }))
+);
 const LabShell = lazy(() =>
   import("./features/leadership-lab/layout/lab-shell").then((m) => ({ default: m.LabShell }))
 );
@@ -231,7 +253,18 @@ const router = createBrowserRouter([
     )
   },
   ...Object.keys(resources)
-    .filter((key) => !["qlp", "recrutamento", "escalas", "usuarios", "colaboradores"].includes(key))
+    .filter(
+      (key) =>
+        ![
+          "qlp",
+          "recrutamento",
+          "escalas",
+          "usuarios",
+          "colaboradores",
+          "auditoria",
+          "importacoes"
+        ].includes(key)
+    )
     .map((key) => ({
       path: `/${key}`,
       element: <Wrapped resourceKey={key} />
@@ -269,6 +302,62 @@ const router = createBrowserRouter([
     )
   },
   {
+    path: "/treinamentos",
+    element: (
+      <App breadcrumbs={["MY FLUX", "Treinamentos"]}>
+        <TreinamentosPage />
+      </App>
+    )
+  },
+  {
+    path: "/treinamentos/rh",
+    element: (
+      <App breadcrumbs={["MY FLUX", "Treinamentos", "Acompanhamento"]}>
+        <TreinamentosRhPage />
+      </App>
+    )
+  },
+  {
+    path: "/treinamentos/config",
+    element: (
+      <App breadcrumbs={["MY FLUX", "Treinamentos", "Configuração"]}>
+        <TreinamentosConfigPage />
+      </App>
+    )
+  },
+  {
+    path: "/treinamentos/:atribuicaoId/jogar",
+    element: (
+      <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Palco"]}>
+        <JogarTreinamentoPage />
+      </App>
+    )
+  },
+  {
+    path: "/treinamentos/resultado/:tentativaId",
+    element: (
+      <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Resultado"]}>
+        <ResultadoTreinamentoPage />
+      </App>
+    )
+  },
+  {
+    path: "/auditoria",
+    element: (
+      <App breadcrumbs={["MY FLUX", "Auditoria"]}>
+        <AuditPage />
+      </App>
+    )
+  },
+  {
+    path: "/importacoes",
+    element: (
+      <App breadcrumbs={["MY FLUX", "Importações"]}>
+        <ImportsPage />
+      </App>
+    )
+  },
+  {
     path: "/usuarios",
     element: (
       <App breadcrumbs={["MY FLUX", "Usuários"]}>
@@ -280,12 +369,18 @@ const router = createBrowserRouter([
     path: "*",
     element: (
       <App>
-        <div className="rounded bg-white p-8">
-          <h1 className="text-xl font-semibold">Página não encontrada</h1>
-          <Link className="mt-3 inline-block text-blue-700" to="/">
-            Voltar ao dashboard
-          </Link>
-        </div>
+        <EmptyState
+          title="Página não encontrada"
+          description="O endereço pode ter mudado ou estar incompleto. Use o menu ou volte ao início."
+          action={
+            <Link
+              className="inline-flex min-h-11 items-center rounded-mf-controle bg-mf-primaria px-4 text-sm font-semibold text-white"
+              to="/"
+            >
+              Voltar ao início
+            </Link>
+          }
+        />
       </App>
     )
   }

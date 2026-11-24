@@ -2,7 +2,15 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useEffect, useState, type FormEvent } from "react";
 import { CheckCircle2, RefreshCw, UserPlus } from "lucide-react";
-import { Button } from "../components/ui";
+import {
+  AvisoTemporario,
+  Button,
+  EmptyState,
+  ErrorState,
+  Skeleton,
+  TituloDePagina
+} from "../components/ui";
+import { LinhaDeEtapas } from "../components/ui/linha-de-etapas";
 import { request, text, date, type Row } from "../features/my-flux/client";
 import { labels } from "../features/my-flux/resources";
 
@@ -14,6 +22,31 @@ const nextStage: Record<string, string> = {
   MEDICAL_EXAM: "ADMISSION_SCHEDULED",
   ADMISSION_SCHEDULED: "ADMITTED"
 };
+/** As etapas do candidato, na ordem do fluxo (recruitment-workflow.ts decide o que pode avançar). */
+const stages = [
+  "REQUESTED",
+  "RECRUITING",
+  "SELECTED",
+  "DOCUMENTATION",
+  "MEDICAL_EXAM",
+  "ADMISSION_SCHEDULED",
+  "ADMITTED"
+] as const;
+const stageSteps = stages.map((id) => ({ id, rotulo: labels[id] ?? id }));
+
+const campo =
+  "mt-1 block h-11 w-full rounded-mf-controle border border-mf-linha bg-white px-3 text-sm font-normal";
+
+/** "Técnico de enfermagem · DIURNO · equipe A", a partir da posição da requisição. */
+function positionLabel(position: unknown): string {
+  if (!position || typeof position !== "object") return "Posição";
+  const p = position as Row;
+  const fn = (p.function as Row | undefined)?.name ?? p.functionId;
+  return [text(fn), text(p.shift), p.team ? `equipe ${text(p.team)}` : ""]
+    .filter((part) => part && part !== "—")
+    .join(" · ");
+}
+
 export function RecruitmentPage() {
   const [requests, setRequests] = useState<Row[]>([]);
   const [positions, setPositions] = useState<Row[]>([]);
@@ -23,7 +56,11 @@ export function RecruitmentPage() {
   const [candidateName, setCandidateName] = useState("");
   const [selectedRequest, setSelectedRequest] = useState("");
   const [notice, setNotice] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   async function load() {
+    setLoading(true);
+    setLoadError("");
     try {
       const [r, p] = await Promise.all([
         request<Row[]>("/recruitment/requests"),
@@ -33,7 +70,9 @@ export function RecruitmentPage() {
       setPositions(p);
       if (p.length && !p.some((x) => x.id === positionId)) setPositionId(p.at(0)?.id ?? "");
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Falha ao carregar recrutamento.");
+      setLoadError(e instanceof Error ? e.message : "Falha ao carregar recrutamento.");
+    } finally {
+      setLoading(false);
     }
   }
   useEffect(() => {
@@ -73,7 +112,7 @@ export function RecruitmentPage() {
       setNotice(e instanceof Error ? e.message : "Não foi possível registrar o candidato.");
     }
   }
-  async function advance(candidate: Row) {
+  async function advance(candidate: Row, requestRow: Row) {
     const stage = nextStage[text(candidate.stage)];
     if (!stage) return;
     const extra: Record<string, unknown> = {
@@ -94,6 +133,15 @@ export function RecruitmentPage() {
       extra.medicalCleared = true;
       extra.admissionDate = "2026-01-01T00:00:00.000Z";
       extra.identifier = `ADM-${candidate.id.slice(0, 6)}`;
+      // Admitir cria registros de verdade: mostra o resumo antes (o que a API vai criar).
+      const resumo =
+        `Admitir ${text(candidate.name)}?\n\n` +
+        `Será criado:\n` +
+        `• o colaborador, com a matrícula ${String(extra.identifier)};\n` +
+        `• a alocação na posição ${positionLabel(requestRow.position)};\n` +
+        `• o registro "Admitido" no histórico do colaborador.\n\n` +
+        `A requisição passa a "preenchida" e a ação fica na auditoria.`;
+      if (!window.confirm(resumo)) return;
     }
     try {
       const row = await request<Row>(
@@ -115,36 +163,55 @@ export function RecruitmentPage() {
       setNotice(e instanceof Error ? e.message : "Transição bloqueada; verifique os requisitos.");
     }
   }
+
+  // Quadro por etapa: quantos candidatos há em cada fase, somando todas as requisições.
+  const candidates = requests.flatMap((r) => (r.applications as Row[] | undefined) ?? []);
+  const board = stages.map((stage) => ({
+    stage,
+    total: candidates.filter((c) => text(c.stage) === stage).length
+  }));
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase text-blue-700">Prover</p>
-          <h1 className="mt-2 text-2xl font-semibold">Recrutamento e admissão</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Toda requisição nasce de uma posição do QLP aprovado.
-          </p>
-        </div>
-        <Button variant="ghost" icon={<RefreshCw size={16} />} onClick={() => void load()}>
-          Atualizar
-        </Button>
-      </div>
-      {notice && (
-        <div className="rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-          {notice}
-        </div>
-      )}
+      <TituloDePagina
+        etiqueta="MY FLUX · Prover"
+        titulo="Recrutamento e admissão"
+        descricao="Toda requisição nasce de uma posição do QLP aprovado. O candidato avança etapa por etapa até a admissão."
+        acoes={
+          <Button variant="ghost" icon={<RefreshCw size={16} />} onClick={() => void load()}>
+            Atualizar
+          </Button>
+        }
+      />
+      <AvisoTemporario mensagem={notice} aoFechar={() => setNotice("")} />
+
+      <section aria-label="Candidatos por etapa">
+        <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
+          {board.map((column) => (
+            <li
+              key={column.stage}
+              className="rounded-mf-controle border border-mf-linha bg-mf-cartao p-3 shadow-mf-1"
+            >
+              <p className="text-xs text-mf-texto-2">{labels[column.stage] ?? column.stage}</p>
+              <p className="mt-1 font-display text-2xl font-bold tabular-nums text-mf-tinta">
+                {column.total}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       <section className="grid gap-5 lg:grid-cols-2">
         <form
           onSubmit={createRequest}
-          className="rounded border border-slate-200 bg-white p-5 shadow-sm"
+          className="rounded-mf-cartao border border-mf-linha bg-mf-cartao p-5 shadow-mf-1"
         >
-          <h2 className="font-semibold">Nova requisição</h2>
+          <h2 className="font-display text-lg font-bold text-mf-tinta">Nova requisição</h2>
           <div className="mt-4 grid gap-3">
-            <label className="text-sm">
+            <label className="text-sm font-medium text-mf-texto">
               Posição
               <select
-                className="mt-1 w-full rounded border p-2"
+                className={campo}
                 value={positionId}
                 onChange={(e) => setPositionId(e.target.value)}
                 required
@@ -157,19 +224,19 @@ export function RecruitmentPage() {
                 ))}
               </select>
             </label>
-            <label className="text-sm">
+            <label className="text-sm font-medium text-mf-texto">
               Motivo
               <input
-                className="mt-1 w-full rounded border p-2"
+                className={campo}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 required
               />
             </label>
-            <label className="text-sm">
+            <label className="text-sm font-medium text-mf-texto">
               Data desejada
               <input
-                className="mt-1 w-full rounded border p-2"
+                className={campo}
                 type="datetime-local"
                 value={desiredDate}
                 onChange={(e) => setDesiredDate(e.target.value)}
@@ -183,14 +250,14 @@ export function RecruitmentPage() {
         </form>
         <form
           onSubmit={createCandidate}
-          className="rounded border border-slate-200 bg-white p-5 shadow-sm"
+          className="rounded-mf-cartao border border-mf-linha bg-mf-cartao p-5 shadow-mf-1"
         >
-          <h2 className="font-semibold">Novo candidato</h2>
+          <h2 className="font-display text-lg font-bold text-mf-tinta">Novo candidato</h2>
           <div className="mt-4 grid gap-3">
-            <label className="text-sm">
+            <label className="text-sm font-medium text-mf-texto">
               Requisição
               <select
-                className="mt-1 w-full rounded border p-2"
+                className={campo}
                 value={selectedRequest}
                 onChange={(e) => setSelectedRequest(e.target.value)}
                 required
@@ -205,10 +272,10 @@ export function RecruitmentPage() {
                   ))}
               </select>
             </label>
-            <label className="text-sm">
+            <label className="text-sm font-medium text-mf-texto">
               Nome
               <input
-                className="mt-1 w-full rounded border p-2"
+                className={campo}
                 value={candidateName}
                 onChange={(e) => setCandidateName(e.target.value)}
                 required
@@ -220,50 +287,89 @@ export function RecruitmentPage() {
           </div>
         </form>
       </section>
-      <section className="space-y-4">
-        {requests.map((r) => (
-          <article className="rounded border border-slate-200 bg-white p-5 shadow-sm" key={r.id}>
-            <div className="flex flex-wrap justify-between gap-2">
-              <div>
-                <h2 className="font-semibold">Requisição #{r.id.slice(0, 8)}</h2>
-                <p className="text-sm text-slate-500">
-                  {text(r.position)} · desejada em {date(r.desiredDate)}
-                </p>
-              </div>
-              <span className="rounded-full bg-slate-100 px-2 py-1 text-xs">
-                {labels[text(r.status)] ?? text(r.status)}
-              </span>
-            </div>
-            <div className="mt-4 space-y-2">
-              {((r.applications as Row[] | undefined) ?? []).map((c) => (
-                <div
-                  className="flex flex-wrap items-center justify-between gap-3 rounded border border-slate-100 p-3"
-                  key={c.id}
-                >
-                  <div>
-                    <p className="font-medium">{text(c.name)}</p>
-                    <p className="text-xs text-slate-500">
-                      {labels[text(c.stage)] ?? text(c.stage)} · revisão {text(c.revision)}
-                    </p>
-                  </div>
-                  {nextStage[text(c.stage)] && (
-                    <Button
-                      size="sm"
-                      icon={<CheckCircle2 size={14} />}
-                      onClick={() => void advance(c)}
-                    >
-                      Avançar
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </article>
-        ))}
-        {requests.length === 0 && (
-          <div className="rounded border border-slate-200 bg-white p-8 text-sm text-slate-500">
-            Aprove um QLP e materialize posições para iniciar o recrutamento.
+
+      <section aria-label="Requisições" className="space-y-4">
+        {loading ? (
+          <div role="status" aria-label="Carregando requisições" className="space-y-3">
+            {[0, 1].map((n) => (
+              <Skeleton key={n} className="h-28 rounded-mf-cartao" />
+            ))}
           </div>
+        ) : loadError ? (
+          <ErrorState
+            title="Não foi possível carregar o recrutamento"
+            description={loadError}
+            onRetry={() => void load()}
+          />
+        ) : requests.length === 0 ? (
+          <EmptyState
+            title="Nenhuma requisição aberta"
+            description="Aprove um QLP para gerar as posições e abra a primeira requisição no formulário acima."
+          />
+        ) : (
+          requests.map((r) => (
+            <article
+              className="rounded-mf-cartao border border-mf-linha bg-mf-cartao p-5 shadow-mf-1"
+              key={r.id}
+            >
+              <div className="flex flex-wrap justify-between gap-2">
+                <div>
+                  <h2 className="font-semibold text-mf-tinta">
+                    Requisição <span className="font-mono">#{r.id.slice(0, 8)}</span>
+                  </h2>
+                  <p className="text-sm text-mf-texto-2">
+                    {positionLabel(r.position)} · desejada em {date(r.desiredDate)}
+                  </p>
+                </div>
+                <span className="h-fit rounded-full bg-mf-fundo px-2.5 py-1 text-xs font-medium text-mf-texto-2">
+                  {labels[text(r.status)] ?? text(r.status)}
+                </span>
+              </div>
+              <div className="mt-4 space-y-3">
+                {((r.applications as Row[] | undefined) ?? []).length === 0 ? (
+                  <p className="text-sm text-mf-texto-3">
+                    Ainda sem candidatos. Cadastre o primeiro no formulário "Novo candidato".
+                  </p>
+                ) : null}
+                {((r.applications as Row[] | undefined) ?? []).map((c) => (
+                  <div className="rounded-mf-controle border border-mf-linha p-3" key={c.id}>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-mf-tinta">{text(c.name)}</p>
+                        <p className="text-xs text-mf-texto-3">
+                          {labels[text(c.stage)] ?? text(c.stage)} · revisão{" "}
+                          <span className="tabular-nums">{text(c.revision)}</span>
+                        </p>
+                      </div>
+                      {nextStage[text(c.stage)] && (
+                        <Button
+                          size="sm"
+                          icon={<CheckCircle2 size={14} />}
+                          onClick={() => void advance(c, r)}
+                        >
+                          {nextStage[text(c.stage)] === "ADMITTED"
+                            ? "Admitir"
+                            : `Avançar para ${labels[nextStage[text(c.stage)]!] ?? ""}`}
+                        </Button>
+                      )}
+                    </div>
+                    <div className="mt-3">
+                      <LinhaDeEtapas
+                        rotulo={`Etapas de ${text(c.name)}`}
+                        etapas={stageSteps}
+                        atual={
+                          text(c.stage) === "ADMITTED"
+                            ? stages.length
+                            : stages.indexOf(text(c.stage) as (typeof stages)[number])
+                        }
+                        soAtual
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ))
         )}
       </section>
     </div>

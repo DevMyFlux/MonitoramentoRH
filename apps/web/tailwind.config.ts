@@ -27,7 +27,11 @@ export default {
         "lab-sm": "0.5rem",
         "lab-md": "0.75rem",
         "lab-lg": "1.125rem",
-        "lab-xl": "1.5rem"
+        "lab-xl": "1.5rem",
+        // Escala do MY FLUX (tokens em styles.css).
+        "mf-controle": "var(--mf-raio-controle)",
+        "mf-cartao": "var(--mf-raio-cartao)",
+        "mf-conteiner": "var(--mf-raio-conteiner)"
       },
       // Design system do Leadership Lab. Os valores moram em features/leadership-lab/ui/tokens.css.
       colors: {
@@ -87,7 +91,10 @@ export default {
       boxShadow: {
         "lab-1": "var(--lab-sombra-1)",
         "lab-2": "var(--lab-sombra-2)",
-        "lab-3": "var(--lab-sombra-3)"
+        "lab-3": "var(--lab-sombra-3)",
+        "mf-1": "var(--mf-sombra-1)",
+        "mf-2": "var(--mf-sombra-2)",
+        "mf-3": "var(--mf-sombra-3)"
       },
       fontSize: {
         "lab-display": [

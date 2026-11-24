@@ -121,6 +121,46 @@ describe("colaboradores: lista", () => {
     expect(tabela().getByRole("button", { name: "Reativar" })).toBeTruthy();
   });
 
+  it("filtra por turno e situação, conta quem sobrou e limpa os filtros", async () => {
+    respostas();
+    abrir();
+    await screen.findByRole("table");
+    await userEvent.selectOptions(screen.getByLabelText("Filtrar por turno"), "NOTURNO");
+    expect(tabela().getByText("Bruno Lima")).toBeTruthy();
+    expect(tabela().queryByText("Ana Souza")).toBeNull();
+    expect(screen.getByText("pessoa na lista")).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Limpar filtros (1)" }));
+    await userEvent.selectOptions(screen.getByLabelText("Filtrar por situação"), "VACATION");
+    expect(tabela().getByText("Carla Dias")).toBeTruthy();
+    expect(tabela().queryByText("Bruno Lima")).toBeNull();
+  });
+
+  it("mostra a aptidão com ícone, palavra e o motivo na dica (vermelho = inapto)", async () => {
+    respostas(COLABORADORES, {
+      "/employees/e1/aptitude": {
+        employeeId: "e1",
+        status: "RED",
+        reasonCodes: ["DOCUMENT_EXPIRED"],
+        reasons: [
+          {
+            code: "DOCUMENT_EXPIRED",
+            message: "ASO ausente ou vencido.",
+            severity: "RED",
+            entityType: "DOCUMENT"
+          }
+        ]
+      }
+    });
+    abrir();
+    await screen.findByRole("table");
+    const linha = within(tabela().getByText("Ana Souza").closest("tr")!);
+    expect(await linha.findByText("Inapto")).toBeTruthy();
+    expect(linha.getByLabelText("Inapto: ASO ausente ou vencido.")).toBeTruthy();
+    // Resposta fora do formato (outras pessoas, neste teste) não vira um semáforo inventado.
+    const outra = within(tabela().getByText("Bruno Lima").closest("tr")!);
+    expect(outra.queryByText("Apto")).toBeNull();
+  });
+
   it("mostra o turno com ícone, a matrícula e a situação de cada pessoa", async () => {
     respostas();
     abrir();

@@ -102,6 +102,13 @@ function getPendencies(version: Row | null): Pendency[] {
     ((version?.generatedResult as Row | undefined)?.pendencies as Pendency[] | undefined) ?? []
   );
 }
+const letrasDaSemana = ["D", "S", "T", "Q", "Q", "S", "S"];
+const nomesDaSemana = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+/** Dia da semana (0 = domingo) de um dia do mês da escala; o mês vem de 1 a 12. */
+function weekdayOf(year: number, month: number, day: number): number {
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+}
+
 function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
@@ -540,22 +547,33 @@ export function MonthlySchedulePage() {
                 <th className="sticky left-0 z-10 bg-slate-50 px-2 py-2 text-left">Colaborador</th>
                 <th className="px-2 py-2 text-left">Escala</th>
                 <th className="px-2 py-2 text-left">Horário</th>
-                {Array.from({ length: grid.sections[0]?.rows[0]?.days.length ?? 0 }, (_, i) => (
-                  <th
-                    className="px-1 py-2 text-center"
-                    key={i}
-                    title={
-                      holidayByDay.get(i + 1) ? `Feriado: ${holidayByDay.get(i + 1)}` : undefined
-                    }
-                    style={
-                      holidayByDay.has(i + 1)
-                        ? { backgroundColor: "#B4C6E7", color: "#1F3A63" }
-                        : undefined
-                    }
-                  >
-                    {i + 1}
-                  </th>
-                ))}
+                {Array.from({ length: grid.sections[0]?.rows[0]?.days.length ?? 0 }, (_, i) => {
+                  const semana = weekdayOf(grid.year, grid.month, i + 1);
+                  const fimDeSemana = semana === 0 || semana === 6;
+                  return (
+                    <th
+                      className={cn(
+                        "px-1 py-1.5 text-center tabular-nums",
+                        fimDeSemana && !holidayByDay.has(i + 1) && "bg-slate-100 text-mf-texto-2"
+                      )}
+                      key={i}
+                      abbr={`${i + 1}, ${nomesDaSemana[semana]}`}
+                      title={
+                        holidayByDay.get(i + 1) ? `Feriado: ${holidayByDay.get(i + 1)}` : undefined
+                      }
+                      style={
+                        holidayByDay.has(i + 1)
+                          ? { backgroundColor: "#B4C6E7", color: "#1F3A63" }
+                          : undefined
+                      }
+                    >
+                      <span className="block">{i + 1}</span>
+                      <span aria-hidden="true" className="block text-[10px] font-normal opacity-70">
+                        {letrasDaSemana[semana]}
+                      </span>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -576,7 +594,9 @@ export function MonthlySchedulePage() {
                         <div className="text-slate-400">{row.initials}</div>
                       </td>
                       <td className="whitespace-nowrap px-2 py-1.5">{row.scheduleLabel}</td>
-                      <td className="whitespace-nowrap px-2 py-1.5">{row.hours}</td>
+                      <td className="whitespace-nowrap px-2 py-1.5 font-mono tabular-nums">
+                        {row.hours}
+                      </td>
                       {row.days.map((code, dayIndex) => {
                         const color = codeColors.get(code);
                         const hasOverride = overridesIndex.has(
@@ -605,7 +625,11 @@ export function MonthlySchedulePage() {
                                   ? "#ECFDF5"
                                   : holidayByDay.has(dayIndex + 1)
                                     ? "#DCE6F5"
-                                    : undefined
+                                    : [0, 6].includes(
+                                          weekdayOf(grid.year, grid.month, dayIndex + 1)
+                                        )
+                                      ? "#F1F5F9"
+                                      : undefined
                             }}
                             title={
                               hasOverride

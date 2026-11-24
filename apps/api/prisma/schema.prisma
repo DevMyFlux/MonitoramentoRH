@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  schemas  = ["public", "leadership_lab"]
+  schemas  = ["public", "leadership_lab", "treinamentos"]
 }
 
 enum RoleName {
@@ -1212,6 +1212,7 @@ model LabParticipante {
   termos     LabTermoAceite[]
   sessoes    LabSessao[]
   perfilSkills LabPerfilSkill[]
+  tentativasDeTreino TreinoTentativa[]
 
   @@map("participante")
   @@schema("leadership_lab")
@@ -1240,6 +1241,7 @@ model LabTurma {
   ativa         Boolean  @default(true)
   criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
   participantes LabTurmaParticipante[]
+  atribuicoesDeTreino TreinoAtribuicao[]
 
   @@index([curadorId])
   @@map("turma")
@@ -1494,4 +1496,108 @@ model LabNotificacaoLeitura {
   @@id([userId, chave])
   @@map("notificacao_leitura")
   @@schema("leadership_lab")
+}
+
+// ---------------------------------------------------------------------------
+// Treinamentos Interativos (schema "treinamentos"). Migração: 0022_treinamentos, que também tem as
+// regras que o Prisma não expressa (CHECK, índice único parcial, gatilhos de versão aprovada).
+// Turmas e participantes são os do Leadership Lab.
+// ---------------------------------------------------------------------------
+
+/// Um cenário (por slug) e a sua situação. O conteúdo mora nas versões.
+model TreinoCenario {
+  id          String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug        String                @unique
+  area        String
+  titulo      String
+  /// rascunho | em_revisao | aprovado | arquivado (CHECK no banco)
+  status      String                @default("rascunho")
+  criadoPor   String?               @map("criado_por") @db.Uuid
+  criadoEm    DateTime              @default(now()) @map("criado_em") @db.Timestamptz(3)
+  alteradoPor String?               @map("alterado_por") @db.Uuid
+  alteradoEm  DateTime              @default(now()) @map("alterado_em") @db.Timestamptz(3)
+  arquivadoEm DateTime?             @map("arquivado_em") @db.Timestamptz(3)
+  versoes     TreinoCenarioVersao[]
+
+  @@map("cenario")
+  @@schema("treinamentos")
+}
+
+/// Uma versão do conteúdo (JSON validado por treinoCenarioSchema). Imutável depois de aprovada.
+model TreinoCenarioVersao {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cenarioId   String             @map("cenario_id") @db.Uuid
+  cenario     TreinoCenario      @relation(fields: [cenarioId], references: [id])
+  numero      Int
+  conteudo    Json
+  scenePack   String             @map("scene_pack")
+  criadoPor   String?            @map("criado_por") @db.Uuid
+  criadoEm    DateTime           @default(now()) @map("criado_em") @db.Timestamptz(3)
+  aprovadoPor String?            @map("aprovado_por") @db.Uuid
+  aprovadoEm  DateTime?          @map("aprovado_em") @db.Timestamptz(3)
+  atribuicoes TreinoAtribuicao[]
+
+  @@unique([cenarioId, numero])
+  @@map("cenario_versao")
+  @@schema("treinamentos")
+}
+
+/// Uma versão aprovada atribuída a uma turma do Lab.
+model TreinoAtribuicao {
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cenarioVersaoId String              @map("cenario_versao_id") @db.Uuid
+  versao          TreinoCenarioVersao @relation(fields: [cenarioVersaoId], references: [id])
+  turmaId         String              @map("turma_id") @db.Uuid
+  turma           LabTurma            @relation(fields: [turmaId], references: [id])
+  prazo           DateTime?           @db.Timestamptz(3)
+  /// aberta | encerrada | arquivada (CHECK no banco)
+  status          String              @default("aberta")
+  criadoPor       String?             @map("criado_por") @db.Uuid
+  criadoEm        DateTime            @default(now()) @map("criado_em") @db.Timestamptz(3)
+  alteradoPor     String?             @map("alterado_por") @db.Uuid
+  alteradoEm      DateTime            @default(now()) @map("alterado_em") @db.Timestamptz(3)
+  tentativas      TreinoTentativa[]
+
+  @@index([turmaId])
+  @@index([cenarioVersaoId])
+  @@map("atribuicao")
+  @@schema("treinamentos")
+}
+
+/// Uma tentativa de um participante. Uma só em andamento por participante e atribuição.
+model TreinoTentativa {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  atribuicaoId   String           @map("atribuicao_id") @db.Uuid
+  atribuicao     TreinoAtribuicao @relation(fields: [atribuicaoId], references: [id])
+  participanteId String           @map("participante_id") @db.Uuid
+  participante   LabParticipante  @relation(fields: [participanteId], references: [id])
+  /// em_andamento | concluida | cancelada (CHECK no banco)
+  status         String           @default("em_andamento")
+  iniciadaEm     DateTime         @default(now()) @map("iniciada_em") @db.Timestamptz(3)
+  concluidaEm    DateTime?        @map("concluida_em") @db.Timestamptz(3)
+  decisoes       Json?
+  resultados     Json?
+  validadaPor    String?          @map("validada_por") @db.Uuid
+  validadaEm     DateTime?        @map("validada_em") @db.Timestamptz(3)
+  notaCurador    String?          @map("nota_curador")
+  alteradoEm     DateTime         @default(now()) @map("alterado_em") @db.Timestamptz(3)
+  respostas      TreinoResposta[]
+
+  @@index([atribuicaoId])
+  @@index([participanteId])
+  @@map("tentativa")
+  @@schema("treinamentos")
+}
+
+/// A alternativa (0 a 3) escolhida numa pergunta. Uma por pergunta e tentativa.
+model TreinoResposta {
+  tentativaId  String          @map("tentativa_id") @db.Uuid
+  tentativa    TreinoTentativa @relation(fields: [tentativaId], references: [id])
+  perguntaId   String          @map("pergunta_id")
+  alternativa  Int             @db.SmallInt
+  respondidaEm DateTime        @default(now()) @map("respondida_em") @db.Timestamptz(3)
+
+  @@id([tentativaId, perguntaId])
+  @@map("resposta")
+  @@schema("treinamentos")
 }

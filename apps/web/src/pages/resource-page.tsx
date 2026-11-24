@@ -1,8 +1,16 @@
 /* This generic CRUD page intentionally synchronizes remote resources in effects. */
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Plus, RefreshCw, Search, X } from "lucide-react";
-import { Button, Input } from "../components/ui";
+import { CircleCheck, Clock, OctagonAlert, Plus, RefreshCw, Search, X } from "lucide-react";
+import {
+  AvisoTemporario,
+  Button,
+  EmptyState,
+  ErrorState,
+  Input,
+  Skeleton,
+  TituloDePagina
+} from "../components/ui";
 import { request, text, date, type Row } from "../features/my-flux/client";
 import { labels, resources, type Field, type Resource } from "../features/my-flux/resources";
 
@@ -10,9 +18,10 @@ export function ResourcePage({ resourceKey }: { resourceKey: string }) {
   const resource = resources[resourceKey];
   if (!resource)
     return (
-      <div className="rounded border border-red-200 bg-red-50 p-6 text-red-700">
-        Módulo não encontrado.
-      </div>
+      <ErrorState
+        title="Módulo não encontrado"
+        description="Este endereço não corresponde a nenhum cadastro. Use o menu para chegar ao módulo."
+      />
     );
   return <ResourceContent resource={resource} />;
 }
@@ -127,67 +136,78 @@ function ResourceContent({ resource }: { resource: Resource }) {
   }
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="eyebrow">GESTÃO DA OPERAÇÃO</p>
-          <h1 className="mt-2 text-3xl font-semibold text-slate-950">{resource.title}</h1>
-          <p className="mt-1 max-w-2xl text-sm text-slate-600">{resource.subtitle}</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" icon={<RefreshCw size={16} />} onClick={() => void load()}>
-            Atualizar
-          </Button>
-          {resource.editable !== false && (
-            <Button icon={<Plus size={16} />} onClick={startCreate}>
-              Novo registro
+      <TituloDePagina
+        etiqueta="MY FLUX · Gestão"
+        titulo={resource.title}
+        descricao={resource.subtitle}
+        acoes={
+          <>
+            <Button variant="ghost" icon={<RefreshCw size={16} />} onClick={() => void load()}>
+              Atualizar
             </Button>
-          )}
-        </div>
-      </div>
-      {notice && (
-        <div
-          role="status"
-          className="rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
-        >
-          {notice}
-        </div>
-      )}
-      <div className="panel overflow-hidden">
-        <div className="flex items-center gap-3 border-b border-slate-100 p-4">
-          <Search size={17} className="text-slate-400" />
+            {resource.editable !== false && (
+              <Button icon={<Plus size={16} />} onClick={startCreate}>
+                Novo registro
+              </Button>
+            )}
+          </>
+        }
+      />
+      <AvisoTemporario mensagem={notice} aoFechar={() => setNotice("")} />
+      <div className="overflow-hidden rounded-mf-cartao border border-mf-linha bg-mf-cartao shadow-mf-1">
+        <div className="flex items-center gap-3 border-b border-mf-linha p-4">
+          <Search size={17} aria-hidden="true" className="text-mf-texto-3" />
           <input
             aria-label={`Buscar em ${resource.title}`}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar neste módulo..."
-            className="w-full bg-transparent text-sm outline-none"
+            className="min-h-11 w-full rounded-mf-controle bg-transparent px-1 text-sm outline-none"
           />
-          <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-500">
-            {filtered.length} registros
+          <span className="shrink-0 rounded-full bg-mf-fundo px-2.5 py-1 text-xs tabular-nums text-mf-texto-2">
+            {filtered.length} {filtered.length === 1 ? "registro" : "registros"}
           </span>
         </div>
         {loading ? (
-          <div className="p-8 text-sm text-slate-500">Carregando dados do servidor...</div>
+          <div role="status" aria-label={`Carregando ${resource.title}`} className="space-y-3 p-5">
+            {[0, 1, 2, 3].map((n) => (
+              <Skeleton key={n} className="h-9 w-full" />
+            ))}
+          </div>
         ) : error ? (
-          <div className="m-4 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {error}
+          <div className="p-4">
+            <ErrorState
+              title={`Não foi possível carregar ${resource.title}`}
+              description={error}
+              onRetry={() => void load()}
+            />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-10 text-center text-sm text-slate-500">
-            <Search className="mx-auto mb-3 text-slate-300" size={28} />
-            <p className="font-medium text-slate-700">
-              {query ? "Nenhum resultado para esta busca" : "Ainda não há registros por aqui"}
-            </p>
-            <p className="mt-2 text-xs">
-              {query
-                ? "Tente outro termo ou limpe o campo de busca."
-                : "Os registros disponíveis para o seu acesso aparecerão aqui."}
-            </p>
+          <div className="p-4">
+            <EmptyState
+              title={query ? "Nenhum resultado para esta busca" : "Ainda não há registros por aqui"}
+              description={
+                query
+                  ? "Tente outro termo ou limpe o campo de busca."
+                  : "Os registros disponíveis para o seu acesso aparecerão aqui."
+              }
+              action={
+                query ? (
+                  <Button variant="secondary" onClick={() => setQuery("")}>
+                    Limpar busca
+                  </Button>
+                ) : resource.editable !== false ? (
+                  <Button icon={<Plus size={16} />} onClick={startCreate}>
+                    Criar o primeiro registro
+                  </Button>
+                ) : undefined
+              }
+            />
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+              <thead className="bg-mf-fundo text-xs uppercase tracking-wide text-mf-texto-3">
                 <tr>
                   {resource.columns.map(([key, label]) => (
                     <th className="whitespace-nowrap px-4 py-3 font-semibold" key={key}>
@@ -199,11 +219,14 @@ function ResourceContent({ resource }: { resource: Resource }) {
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-mf-linha">
                 {filtered.map((row) => (
-                  <tr className="hover:bg-slate-50" key={row.id}>
+                  <tr className="linha-brilho" key={row.id}>
                     {resource.columns.map(([key]) => (
-                      <td className="whitespace-nowrap px-4 py-3 text-slate-700" key={key}>
+                      <td
+                        className="whitespace-nowrap px-4 py-3 tabular-nums text-mf-texto"
+                        key={key}
+                      >
                         {key === "status" ? (
                           <Status value={row[key]} />
                         ) : key.endsWith("At") ||
@@ -340,15 +363,22 @@ function serializeForm(
   );
 }
 
+/** Situação com ícone e palavra (nunca só a cor): ativa/concluída, problema ou em andamento. */
 function Status({ value }: { value: unknown }) {
   const v = text(value);
-  const tone = ["ACTIVE", "APPROVED", "PUBLISHED", "GREEN", "COMMITTED"].includes(v)
-    ? "bg-emerald-50 text-emerald-700"
-    : ["RED", "EXPIRED", "TERMINATED", "REJECTED"].includes(v)
-      ? "bg-red-50 text-red-700"
-      : "bg-amber-50 text-amber-800";
+  const bom = ["ACTIVE", "APPROVED", "PUBLISHED", "GREEN", "COMMITTED"].includes(v);
+  const ruim = ["RED", "EXPIRED", "TERMINATED", "REJECTED"].includes(v);
+  const Icone = bom ? CircleCheck : ruim ? OctagonAlert : Clock;
+  const tom = bom
+    ? "bg-mf-realce-suave text-mf-primaria"
+    : ruim
+      ? "bg-mf-perigo-suave text-mf-perigo"
+      : "bg-mf-alerta-suave text-mf-alerta";
   return (
-    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${tone}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${tom}`}
+    >
+      <Icone size={12} aria-hidden="true" />
       {labels[v] ?? v}
     </span>
   );

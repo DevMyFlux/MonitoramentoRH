@@ -15,7 +15,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "bundle": "node scripts/bundle.mjs",
-    "test:e2e": "LAB_E2E=1 vitest run src/modules/leadership-lab/e2e"
+    "test:e2e": "LAB_E2E=1 vitest run src/modules/leadership-lab/e2e src/modules/treinamentos/treinamentos.e2e.test.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",
