@@ -11,6 +11,7 @@
   --palco-brilho-2: 110 231 183; /* #6EE7B7 */
   --palco-atencao: 251 191 36; /* #FBBF24, só sobre o escuro */
   --palco-risco: 248 113 113; /* #F87171, só sobre o escuro */
+  --palco-neutro: 148 163 184; /* slate 400: ligação sem efeito */
   background: rgb(var(--palco-fundo));
   color: #f8fafc;
 }

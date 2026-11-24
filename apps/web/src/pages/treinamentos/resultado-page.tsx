@@ -12,6 +12,7 @@ import { cenaDoDesfecho } from "../../features/treinamentos/desfecho";
 import { pacoteDeCena } from "../../features/treinamentos/palco/pacotes";
 import { Palco } from "../../features/treinamentos/palco/palco";
 import { useTelaCheia } from "../../features/treinamentos/palco/use-tela-cheia";
+import { AnaliseInterativa } from "../../features/treinamentos/analise-interativa";
 
 const NIVEL: Record<TreinoNivel, { rotulo: string; Icone: typeof CircleCheck; cor: string }> = {
   ok: { rotulo: "Bom", Icone: CircleCheck, cor: "--palco-brilho" },
@@ -65,7 +66,12 @@ function Desfecho({ resultado }: { resultado: ResultadoDaTentativa }) {
   return (
     <div
       ref={modulo}
-      className={telaCheia.planoB ? "palco-tela-cheia overflow-y-auto bg-[#020617]" : ""}
+      // Em tela cheia o módulo inteiro (Palco e análise) rola por dentro.
+      className={
+        telaCheia.ativa
+          ? `${telaCheia.planoB ? "palco-tela-cheia " : ""}h-full overflow-y-auto bg-[#020617] p-2`
+          : ""
+      }
     >
       <h1 className="sr-only">Desfecho: {resultado.cenario.titulo}</h1>
       <Palco
@@ -177,8 +183,8 @@ function Desfecho({ resultado }: { resultado: ResultadoDaTentativa }) {
                 E agora?
               </h2>
               <p className="mt-1 text-sm text-slate-200">
-                Abaixo, cada decisão com o procedimento esperado. Você pode refazer as 5 perguntas
-                quando quiser.
+                Abaixo, a análise de causa e consequência: troque uma decisão e veja o que teria
+                acontecido. Você pode refazer as 5 perguntas quando quiser.
               </p>
               <div className="mt-3 flex flex-wrap justify-end gap-2">
                 <button
@@ -187,6 +193,17 @@ function Desfecho({ resultado }: { resultado: ResultadoDaTentativa }) {
                   className="min-h-11 rounded-mf-controle border border-white/25 px-4 text-sm text-white hover:bg-white/10"
                 >
                   Rever o desfecho
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const titulo = document.getElementById("analise-titulo");
+                    titulo?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    titulo?.focus({ preventScroll: true });
+                  }}
+                  className="min-h-11 rounded-mf-controle border border-white/25 px-4 text-sm text-white hover:bg-white/10"
+                >
+                  Ver a análise
                 </button>
                 {resultado.acesso === "dono" ? (
                   <Link
@@ -202,6 +219,8 @@ function Desfecho({ resultado }: { resultado: ResultadoDaTentativa }) {
           ) : null}
         </section>
       </Palco>
+
+      <AnaliseInterativa resultado={resultado} />
 
       <section
         aria-labelledby="decisoes-titulo"

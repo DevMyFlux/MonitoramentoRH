@@ -117,7 +117,8 @@ export function evaluate(cenario: TreinoCenario, decisoes: TreinoDecisoes): Trei
         label: resultado.label,
         nivel: "warn" as const,
         texto: resultado.levels.warn,
-        causas: warn.causas
+        // Atenção se explica pelos dois lados: o que impediu o "ok" e o que evitou o "ruim".
+        causas: [...ok.causas, ...warn.causas]
       };
     return {
       id: resultado.id,

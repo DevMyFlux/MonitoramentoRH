@@ -3,6 +3,7 @@
 // ignorado. Veja leadership-lab/db/test-database.ts.
 import { readFileSync } from "node:fs";
 import type { FastifyInstance } from "fastify";
+import { evaluate, treinoCenarioSchema } from "@my-flux/shared";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createAccessToken } from "../auth/token-service.js";
 import { integrationEnabled } from "../leadership-lab/db/test-database.js";
@@ -306,6 +307,22 @@ describe.skipIf(!integrationEnabled)("rotas dos Treinamentos Interativos", () =>
       decisoes: { medir: false }
     });
     expect(incompleta.json().code).toBe("TREINO_DECISOES_INVALIDAS");
+  });
+
+  it("o 'e se?' do servidor é o motor: as 32 combinações de decisões batem com evaluate()", async () => {
+    const [{ id: tentativa }] = await consulta(
+      `SELECT t.id FROM treinamentos.tentativa t JOIN leadership_lab.participante p ON p.id = t.participante_id
+        WHERE p.user_id = $1 AND t.status = 'concluida' LIMIT 1`,
+      [caio.id]
+    );
+    const cenario = treinoCenarioSchema.parse(quadro);
+    const ids = cenario.decisions.map((d) => d.id);
+    for (let mascara = 0; mascara < 2 ** ids.length; mascara++) {
+      const decisoes = Object.fromEntries(ids.map((id, i) => [id, Boolean(mascara & (1 << i))]));
+      const r = await chamar(caio, "POST", `/tentativas/${tentativa}/simular`, { decisoes });
+      expect(r.statusCode).toBe(200);
+      expect(r.json().data, JSON.stringify(decisoes)).toEqual(evaluate(cenario, decisoes));
+    }
   });
 
   it("404 uniforme: tentativa de outra pessoa, de fora da turma ou inexistente respondem igual", async () => {

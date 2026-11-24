@@ -237,12 +237,33 @@ describe.skipIf(!ligado)("Treinamentos Interativos no navegador", () => {
     await seguirPeloTeclado(page, "Ver o desfecho");
     await page.waitForURL("**/treinamentos/resultado/**");
     await page.getByRole("heading", { name: "O que aconteceu" }).waitFor();
-    expect(await page.getByText("Arco elétrico no quadro").count()).toBe(1);
-    expect(await page.getByText("EPI contém o arco").count()).toBe(1);
+    // Só o painel do desfecho (a análise, abaixo, também lista os acontecimentos).
+    const painelDoDesfecho = page.locator("section[aria-labelledby=desfecho-titulo]");
+    expect(await painelDoDesfecho.getByText("Arco elétrico no quadro").count()).toBe(1);
+    expect(await painelDoDesfecho.getByText("EPI contém o arco").count()).toBe(1);
     await capturar(page, "04-desfecho-desktop");
     await seguirPeloTeclado(page, "Ver os resultados");
-    expect(await page.getByText("Incidente contido").count()).toBe(1);
+    expect(await painelDoDesfecho.getByText("Incidente contido").count()).toBe(1);
     await capturar(page, "05-resultados-desktop");
+
+    // Análise: "e se eu tivesse medido?" pelo teclado; o desfecho novo vem do servidor.
+    await seguirPeloTeclado(page, "Continuar");
+    await seguirPeloTeclado(page, "Ver a análise");
+    const analise = page.locator("section[aria-labelledby=analise-titulo]");
+    const medir = analise.getByRole("button", {
+      name: /^Medir a ausência de tensão: não cumprida/
+    });
+    await medir.focus();
+    await page.keyboard.press("Enter");
+    const tecnico = analise.getByRole("button", { name: /Integridade do técnico/ });
+    await tecnico.getByText("Sem lesão").waitFor();
+    expect(await tecnico.getByText("mudou").count()).toBe(1);
+    await capturar(page, "09-analise-e-se-desktop");
+    await tecnico.focus();
+    await page.keyboard.press("Enter");
+    await analise.getByText("Por que “Integridade do técnico”?").waitFor();
+    await seguirPeloTeclado(page, "Voltar à minha escolha");
+    await tecnico.getByText("Incidente contido").waitFor();
 
     // O RH da turma vê; o RH de outra turma recebe o mesmo 404 de "não existe".
     const tentativaId = page.url().split("/").pop()!;
@@ -307,6 +328,31 @@ describe.skipIf(!ligado)("Treinamentos Interativos no navegador", () => {
     );
     expect(await semRolagem()).toBe(true);
     await capturar(page, "08-pergunta-celular");
+
+    // A análise no celular abre em lista (e o grafo continua a um toque), sem rolagem horizontal.
+    const tentativaDaAna = await banco.db.client.query(
+      `SELECT id FROM treinamentos.tentativa WHERE status = 'concluida' ORDER BY concluida_em LIMIT 1`
+    );
+    const ana = await banco.db.client.query(
+      `SELECT u.email FROM treinamentos.tentativa t JOIN leadership_lab.participante p ON p.id = t.participante_id
+        JOIN "User" u ON u.id = p.user_id WHERE t.id = $1`,
+      [tentativaDaAna.rows[0].id]
+    );
+    const outra = await contexto
+      .browser()!
+      .newContext({ viewport: { width: 375, height: 812 }, isMobile: true });
+    const celular = await outra.newPage();
+    await entrar(celular, ana.rows[0].email);
+    await celular.goto(`${url}/treinamentos/resultado/${tentativaDaAna.rows[0].id}`);
+    await celular.getByRole("button", { name: "Ver como grafo" }).waitFor();
+    expect(
+      await celular.evaluate<boolean>(
+        "document.documentElement.scrollWidth <= document.documentElement.clientWidth"
+      )
+    ).toBe(true);
+    await celular.locator("#analise-titulo").scrollIntoViewIfNeeded();
+    await capturar(celular, "10-analise-lista-celular");
+    await outra.close();
     await contexto.close();
   }, 120_000);
 });
