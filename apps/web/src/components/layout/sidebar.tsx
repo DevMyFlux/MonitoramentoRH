@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowUpRight, Search, X } from "lucide-react";
+import { motion } from "motion/react";
 import { Link, NavLink } from "react-router-dom";
 import { useUsuarioAtual } from "../../features/auth/use-usuario-atual";
 import { itemVisivelPara, navigationGroups } from "../../features/navigation/nav-items";
@@ -34,7 +35,7 @@ export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
       id="main-sidebar"
       aria-label="Menu principal"
       className={cn(
-        "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-mf-linha bg-mf-cartao transition-transform lg:translate-x-0",
         isOpen ? "translate-x-0" : "invisible -translate-x-full lg:visible"
       )}
     >
@@ -43,18 +44,19 @@ export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
           <Brand />
         </Link>
         <button
-          className="rounded-lg p-2 text-slate-500 lg:hidden"
+          className="grid min-h-[44px] min-w-[44px] place-items-center rounded-mf-controle text-mf-texto-3 lg:hidden"
           aria-label="Fechar menu"
           onClick={onNavigate}
         >
           <X size={20} />
         </button>
       </div>
-      <div className="mx-4 mb-5 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-slate-400">
-        <Search size={16} />
+      <div className="mx-4 mb-5 flex items-center gap-2 rounded-mf-controle border border-mf-linha bg-mf-fundo px-3 text-mf-texto-3 focus-within:outline focus-within:outline-[3px] focus-within:outline-offset-2 focus-within:outline-mf-azul">
+        <Search size={16} aria-hidden="true" />
         <input
+          id="busca-do-menu"
           aria-label="Buscar no menu"
-          className="h-10 w-full min-w-0 bg-transparent text-xs text-slate-700 outline-none"
+          className="h-11 w-full min-w-0 bg-transparent text-xs text-mf-texto outline-none focus-visible:outline-none"
           placeholder="Encontrar um módulo..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -68,7 +70,7 @@ export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
       <nav aria-label="Módulos" className="min-h-0 flex-1 space-y-6 overflow-y-auto px-3 pb-5">
         {groups.map((group) => (
           <section key={group.label}>
-            <h2 className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.13em] text-slate-400">
+            <h2 className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.13em] text-mf-texto-3">
               {group.label}
             </h2>
             <div className="space-y-0.5">
@@ -80,22 +82,42 @@ export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
                   onClick={onNavigate}
                   className={({ isActive }) =>
                     cn(
-                      "group flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition",
+                      "group relative flex min-h-11 items-center gap-3 rounded-mf-controle px-3 py-2 text-[13px] font-medium transition-colors",
                       isActive
-                        ? "bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-100"
-                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                        ? "text-mf-primaria"
+                        : "text-mf-texto-2 hover:bg-mf-fundo hover:text-mf-tinta"
                     )
                   }
                 >
-                  <item.icon size={17} strokeWidth={1.7} aria-hidden="true" />
-                  <span>{item.label}</span>
+                  {({ isActive }) => (
+                    <>
+                      {/* Indicador do item ativo: desliza de um item para o outro (layoutId). */}
+                      {isActive ? (
+                        <motion.span
+                          layoutId="menu-ativo"
+                          aria-hidden="true"
+                          transition={{ type: "spring", stiffness: 460, damping: 36, mass: 0.7 }}
+                          className="absolute inset-0 rounded-mf-controle bg-mf-realce-suave ring-1 ring-inset ring-mf-realce"
+                        >
+                          <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-mf-brilho" />
+                        </motion.span>
+                      ) : null}
+                      <item.icon
+                        size={17}
+                        strokeWidth={isActive ? 2 : 1.7}
+                        aria-hidden="true"
+                        className="relative"
+                      />
+                      <span className="relative">{item.label}</span>
+                    </>
+                  )}
                 </NavLink>
               ))}
             </div>
           </section>
         ))}
         {!groups.length && (
-          <p className="px-3 text-xs leading-5 text-slate-500">
+          <p className="px-3 text-xs leading-5 text-mf-texto-3">
             Nenhum módulo encontrado. Tente outro nome.
           </p>
         )}
