@@ -2,7 +2,15 @@
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useEffect, useState, type FormEvent } from "react";
 import { Plus, RefreshCw, Send, CheckCircle2 } from "lucide-react";
-import { Button } from "../components/ui";
+import {
+  AvisoTemporario,
+  Button,
+  EmptyState,
+  ErrorState,
+  Skeleton,
+  TituloDePagina
+} from "../components/ui";
+import { LinhaDeEtapas } from "../components/ui/linha-de-etapas";
 import { request, date, text, type Row } from "../features/my-flux/client";
 import { labels } from "../features/my-flux/resources";
 
@@ -12,6 +20,15 @@ const demoFunctions = [
   { id: "88888888-8888-4888-8888-888888888888", name: "Auxiliar operacional" }
 ];
 const iso = (value: string) => new Date(value).toISOString();
+// Etapas de uma versão do QLP. Aprovar materializa as posições (a API decide quem pode).
+const versionSteps = [
+  { id: "DRAFT", rotulo: "Rascunho" },
+  { id: "IN_REVIEW", rotulo: "Em aprovação" },
+  { id: "APPROVED", rotulo: "Aprovado", dica: "Ao aprovar, as posições são criadas" }
+];
+const campo =
+  "mt-1 block h-11 w-full rounded-mf-controle border border-mf-linha bg-white px-3 text-sm font-normal";
+const campoDaLinha = "h-11 rounded-mf-controle border border-mf-linha bg-white px-3 text-sm";
 export function QlpPage() {
   const [versions, setVersions] = useState<Row[]>([]);
   const [positions, setPositions] = useState<Row[]>([]);
@@ -26,7 +43,11 @@ export function QlpPage() {
     { functionId: demoFunctions[1]!.id, shift: "DIURNO", team: "A", quantity: 1 }
   ]);
   const [notice, setNotice] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   async function load() {
+    setLoading(true);
+    setLoadError("");
     try {
       const [v, p, o, f] = await Promise.all([
         request<Row[]>("/qlp/versions"),
@@ -40,7 +61,9 @@ export function QlpPage() {
       if (f.length) setFunctions(f);
       if (o.length && !o.some((x) => x.id === operationId)) setOperationId(o.at(0)?.id ?? demoOp);
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "Não foi possível carregar o QLP.");
+      setLoadError(e instanceof Error ? e.message : "Não foi possível carregar o QLP.");
+    } finally {
+      setLoading(false);
     }
   }
   useEffect(() => {
@@ -78,29 +101,27 @@ export function QlpPage() {
   }
   return (
     <div className="space-y-6">
-      <div className="flex justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase text-blue-700">Dimensionar</p>
-          <h1 className="mt-2 text-2xl font-semibold">QLP e posições</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            O QLP aprovado gera as posições operacionais automaticamente.
-          </p>
-        </div>
-        <Button variant="ghost" icon={<RefreshCw size={16} />} onClick={() => void load()}>
-          Atualizar
-        </Button>
-      </div>
-      {notice && (
-        <div className="rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-          {notice}
-        </div>
-      )}
-      <form onSubmit={create} className="rounded border border-slate-200 bg-white p-5 shadow-sm">
+      <TituloDePagina
+        etiqueta="MY FLUX · Dimensionar"
+        titulo="QLP e posições"
+        descricao="O QLP aprovado gera as posições operacionais automaticamente: rascunho, aprovação e, ao aprovar, as posições."
+        acoes={
+          <Button variant="ghost" icon={<RefreshCw size={16} />} onClick={() => void load()}>
+            Atualizar
+          </Button>
+        }
+      />
+      <AvisoTemporario mensagem={notice} aoFechar={() => setNotice("")} />
+      <form
+        onSubmit={create}
+        aria-label="Novo QLP"
+        className="rounded-mf-cartao border border-mf-linha bg-mf-cartao p-5 shadow-mf-1"
+      >
         <div className="grid gap-4 md:grid-cols-4">
-          <label className="text-sm">
+          <label className="text-sm font-medium text-mf-texto">
             Operação
             <select
-              className="mt-1 w-full rounded border p-2"
+              className={campo}
               value={operationId}
               onChange={(e) => setOperationId(e.target.value)}
             >
@@ -115,31 +136,27 @@ export function QlpPage() {
               )}
             </select>
           </label>
-          <label className="text-sm">
+          <label className="text-sm font-medium text-mf-texto">
             Tipo
-            <select
-              className="mt-1 w-full rounded border p-2"
-              value={kind}
-              onChange={(e) => setKind(e.target.value)}
-            >
+            <select className={campo} value={kind} onChange={(e) => setKind(e.target.value)}>
               <option>OPERATIONAL</option>
               <option>CONTRACTUAL</option>
             </select>
           </label>
-          <label className="text-sm">
+          <label className="text-sm font-medium text-mf-texto">
             Vigência
             <input
-              className="mt-1 w-full rounded border p-2"
+              className={campo}
               type="datetime-local"
               value={validFrom}
               onChange={(e) => setValidFrom(e.target.value)}
               required
             />
           </label>
-          <label className="text-sm">
+          <label className="text-sm font-medium text-mf-texto">
             Motivo
             <input
-              className="mt-1 w-full rounded border p-2"
+              className={campo}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               required
@@ -148,7 +165,7 @@ export function QlpPage() {
         </div>
         <div className="mt-5 space-y-2">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium">Requisitos do quadro</h2>
+            <h2 className="font-display text-lg font-bold text-mf-tinta">Requisitos do quadro</h2>
             <Button
               type="button"
               size="sm"
@@ -172,7 +189,7 @@ export function QlpPage() {
           {requirements.map((r, i) => (
             <div className="grid gap-2 md:grid-cols-4" key={i}>
               <select
-                className="rounded border p-2 text-sm"
+                className={campoDaLinha}
                 value={r.functionId}
                 onChange={(e) =>
                   setRequirements((x) =>
@@ -187,7 +204,7 @@ export function QlpPage() {
                 ))}
               </select>
               <input
-                className="rounded border p-2 text-sm"
+                className={campoDaLinha}
                 value={r.shift}
                 placeholder="Turno"
                 onChange={(e) =>
@@ -197,7 +214,7 @@ export function QlpPage() {
                 }
               />
               <input
-                className="rounded border p-2 text-sm"
+                className={campoDaLinha}
                 value={r.team}
                 placeholder="Equipe"
                 onChange={(e) =>
@@ -207,7 +224,7 @@ export function QlpPage() {
                 }
               />
               <input
-                className="rounded border p-2 text-sm"
+                className={campoDaLinha}
                 type="number"
                 min="1"
                 value={r.quantity}
@@ -226,10 +243,23 @@ export function QlpPage() {
           </Button>
         </div>
       </form>
-      <section className="grid gap-6 lg:grid-cols-2">
-        <List title="Versões do QLP" rows={versions} version onTransition={transition} />
-        <List title="Posições materializadas" rows={positions} />
-      </section>
+      {loading ? (
+        <div role="status" aria-label="Carregando QLP" className="grid gap-6 lg:grid-cols-2">
+          <Skeleton className="h-48 rounded-mf-cartao" />
+          <Skeleton className="h-48 rounded-mf-cartao" />
+        </div>
+      ) : loadError ? (
+        <ErrorState
+          title="Não foi possível carregar o QLP"
+          description={loadError}
+          onRetry={() => void load()}
+        />
+      ) : (
+        <section className="grid gap-6 lg:grid-cols-2">
+          <List title="Versões do QLP" rows={versions} version onTransition={transition} />
+          <List title="Posições materializadas" rows={positions} />
+        </section>
+      )}
     </div>
   );
 }
@@ -245,56 +275,86 @@ function List({
   onTransition?: (id: string, status: string) => void;
 }) {
   return (
-    <div className="rounded border border-slate-200 bg-white shadow-sm">
-      <h2 className="border-b p-4 font-semibold">
-        {title} <span className="text-xs font-normal text-slate-500">{rows.length}</span>
+    <section
+      aria-label={title}
+      className="overflow-hidden rounded-mf-cartao border border-mf-linha bg-mf-cartao shadow-mf-1"
+    >
+      <h2 className="flex items-center gap-2 border-b border-mf-linha p-4 font-display text-lg font-bold text-mf-tinta">
+        {title}{" "}
+        <span className="rounded-full bg-mf-fundo px-2 py-0.5 text-xs font-medium tabular-nums text-mf-texto-2">
+          {rows.length}
+        </span>
       </h2>
-      <div className="divide-y">
+      <div className="divide-y divide-mf-linha">
         {rows.length ? (
           rows.map((r) => (
-            <div className="flex items-center justify-between gap-3 p-4 text-sm" key={r.id}>
-              <div>
-                <p className="font-medium">
-                  {version
-                    ? `Versão ${text(r.version)} · ${labels[text(r.kind)] ?? text(r.kind)}`
-                    : text(r.function ?? r.functionId)}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {text(r.shift)} · Equipe {text(r.team)} · {date(r.validFrom)}
-                </p>
-              </div>
-              {version && (
-                <div className="flex gap-2">
-                  <span className="rounded-full bg-slate-100 px-2 py-1 text-xs">
-                    {labels[text(r.status)] ?? text(r.status)}
-                  </span>
-                  {text(r.status) === "DRAFT" && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      icon={<Send size={14} />}
-                      onClick={() => onTransition?.(r.id, "IN_REVIEW")}
-                    >
-                      Enviar
-                    </Button>
-                  )}
-                  {text(r.status) === "IN_REVIEW" && (
-                    <Button
-                      size="sm"
-                      icon={<CheckCircle2 size={14} />}
-                      onClick={() => onTransition?.(r.id, "APPROVED")}
-                    >
-                      Aprovar
-                    </Button>
-                  )}
+            <div className="space-y-3 p-4 text-sm" key={r.id}>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-medium text-mf-tinta">
+                    {version
+                      ? `Versão ${text(r.version)} · ${labels[text(r.kind)] ?? text(r.kind)}`
+                      : text(r.function ?? r.functionId)}
+                  </p>
+                  <p className="text-xs text-mf-texto-3">
+                    {version
+                      ? `Vigência ${date(r.validFrom)}`
+                      : `${text(r.shift)} · Equipe ${text(r.team)}`}
+                  </p>
                 </div>
-              )}
+                {version && (
+                  <div className="flex gap-2">
+                    <span className="h-fit rounded-full bg-mf-fundo px-2.5 py-1 text-xs font-medium text-mf-texto-2">
+                      {labels[text(r.status)] ?? text(r.status)}
+                    </span>
+                    {text(r.status) === "DRAFT" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        icon={<Send size={14} />}
+                        onClick={() => onTransition?.(r.id, "IN_REVIEW")}
+                      >
+                        Enviar
+                      </Button>
+                    )}
+                    {text(r.status) === "IN_REVIEW" && (
+                      <Button
+                        size="sm"
+                        icon={<CheckCircle2 size={14} />}
+                        onClick={() => onTransition?.(r.id, "APPROVED")}
+                      >
+                        Aprovar
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+              {version ? (
+                <LinhaDeEtapas
+                  rotulo={`Etapas da versão ${text(r.version)}`}
+                  etapas={versionSteps}
+                  atual={
+                    text(r.status) === "APPROVED"
+                      ? versionSteps.length
+                      : versionSteps.findIndex((s) => s.id === text(r.status))
+                  }
+                />
+              ) : null}
             </div>
           ))
         ) : (
-          <p className="p-6 text-sm text-slate-500">Nenhum registro neste escopo.</p>
+          <div className="p-4">
+            <EmptyState
+              title={version ? "Nenhuma versão do QLP" : "Nenhuma posição ainda"}
+              description={
+                version
+                  ? "Crie a primeira versão no formulário acima; ela nasce como rascunho."
+                  : "As posições aparecem aqui quando uma versão do QLP é aprovada."
+              }
+            />
+          </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

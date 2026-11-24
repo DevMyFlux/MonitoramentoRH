@@ -1,8 +1,8 @@
 /* IDM local: criação, escopo e bloqueio de usuários respeitando a hierarquia. */
 /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Plus, RefreshCw, ShieldCheck, UserCog } from "lucide-react";
-import { Button } from "../components/ui";
+import { Ban, CircleCheck, Plus, RefreshCw, ShieldCheck, UserCog } from "lucide-react";
+import { AvisoTemporario, Button, EmptyState, ErrorState, TituloDePagina } from "../components/ui";
 import { request, text, type Row } from "../features/my-flux/client";
 
 const demoOperation = "55555555-5555-4555-8555-555555555555";
@@ -27,7 +27,10 @@ export function UsersPage() {
   const [error, setError] = useState("");
 
   const roles = useMemo(
-    () => allRoles.filter((candidate) => actor?.role === "DEV" || rankOf(actor?.role ?? "") > rankOf(candidate)),
+    () =>
+      allRoles.filter(
+        (candidate) => actor?.role === "DEV" || rankOf(actor?.role ?? "") > rankOf(candidate)
+      ),
     [actor?.role]
   );
 
@@ -56,13 +59,24 @@ export function UsersPage() {
     void load();
   }, []);
 
+  // A janela de criação fecha com Esc, como as demais do sistema.
+  useEffect(() => {
+    if (!open) return;
+    const aoTeclar = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", aoTeclar);
+    return () => document.removeEventListener("keydown", aoTeclar);
+  }, [open]);
+
   async function createUser(event: FormEvent) {
     event.preventDefault();
     setNotice("");
     try {
-      const scopes = role === "DEV" && global
-        ? [{ isGlobal: true, companyId: null, operationId: null, unitId: null }]
-        : [{ isGlobal: false, companyId: null, operationId, unitId: null }];
+      const scopes =
+        role === "DEV" && global
+          ? [{ isGlobal: true, companyId: null, operationId: null, unitId: null }]
+          : [{ isGlobal: false, companyId: null, operationId, unitId: null }];
       const result = await request<{ user: Row }>("/users", "POST", {
         name,
         email,
@@ -99,66 +113,212 @@ export function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">MY FLUX · IDM</p>
-          <h1 className="mt-2 text-2xl font-semibold text-slate-950">Usuários e perfis</h1>
-          <p className="mt-1 max-w-2xl text-sm text-slate-600">
-            {actor ? `Você está conectado como ${actor.role}.` : "Carregando seu perfil..."} A hierarquia e o escopo são validados pela API.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" icon={<RefreshCw size={16} />} onClick={() => void load()}>
-            Atualizar
-          </Button>
-          <Button icon={<Plus size={16} />} onClick={() => setOpen(true)} disabled={!roles.length}>
-            Novo usuário
-          </Button>
-        </div>
-      </div>
-      {notice && <div className="rounded border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">{notice}</div>}
-      {error && <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-      <div className="rounded border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center gap-3 border-b border-slate-100 p-4">
-          <ShieldCheck size={17} className="text-emerald-600" />
-          <span className="text-sm text-slate-600">DEV &gt; ADMIN &gt; RH &gt; COMUM</span>
-          <span className="ml-auto text-xs text-slate-400">{users.length} usuários</span>
+      <TituloDePagina
+        etiqueta="MY FLUX · Gestão"
+        titulo="Usuários e perfis"
+        descricao={`${actor ? `Você está conectado como ${actor.role}.` : "Carregando seu perfil..."} A hierarquia e o escopo são validados pela API.`}
+        acoes={
+          <>
+            <Button variant="ghost" icon={<RefreshCw size={16} />} onClick={() => void load()}>
+              Atualizar
+            </Button>
+            <Button
+              icon={<Plus size={16} />}
+              onClick={() => setOpen(true)}
+              disabled={!roles.length}
+            >
+              Novo usuário
+            </Button>
+          </>
+        }
+      />
+      <AvisoTemporario mensagem={notice} aoFechar={() => setNotice("")} />
+      {error && (
+        <ErrorState
+          title="Não foi possível carregar os usuários"
+          description={error}
+          onRetry={() => void load()}
+        />
+      )}
+      <div className="overflow-hidden rounded-mf-cartao border border-mf-linha bg-mf-cartao shadow-mf-1">
+        <div className="flex items-center gap-3 border-b border-mf-linha p-4">
+          <ShieldCheck size={17} aria-hidden="true" className="text-mf-primaria" />
+          <span className="text-sm text-mf-texto-2">
+            Hierarquia: DEV &gt; ADMIN &gt; RH &gt; COMUM
+          </span>
+          <span className="ml-auto text-xs tabular-nums text-mf-texto-3">
+            {users.length} {users.length === 1 ? "usuário" : "usuários"}
+          </span>
         </div>
         {users.length ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr><th className="px-4 py-3">Usuário</th><th className="px-4 py-3">Perfil</th><th className="px-4 py-3">Escopo</th><th className="px-4 py-3">Status</th><th className="px-4 py-3" /></tr>
+              <thead className="bg-mf-fundo text-xs uppercase tracking-wide text-mf-texto-3">
+                <tr>
+                  <th className="px-4 py-3">Usuário</th>
+                  <th className="px-4 py-3">Perfil</th>
+                  <th className="px-4 py-3">Escopo</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3" />
+                </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-mf-linha">
                 {users.map((user) => {
                   const scope = (user.scopes as Row[] | undefined)?.[0];
-                  return <tr key={user.id}>
-                    <td className="px-4 py-3"><div className="font-medium text-slate-800">{text(user.name)}</div><div className="text-xs text-slate-500">{text(user.email)}</div></td>
-                    <td className="px-4 py-3 font-semibold">{text((user.role as Row | undefined)?.name ?? user.role)}</td>
-                    <td className="px-4 py-3 text-xs text-slate-500">{scope?.isGlobal ? "Global" : text(scope?.operationId ?? "Sem escopo")}</td>
-                    <td className="px-4 py-3"><span className={`rounded-full px-2 py-1 text-xs ${user.isActive === true ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{user.isActive === true ? "Ativo" : "Bloqueado"}</span></td>
-                    <td className="px-4 py-3 text-right"><Button size="sm" variant="ghost" onClick={() => void toggle(user)}>{user.isActive === true ? "Bloquear" : "Reativar"}</Button></td>
-                  </tr>;
+                  return (
+                    <tr key={user.id}>
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-mf-tinta">{text(user.name)}</div>
+                        <div className="text-xs text-mf-texto-2">{text(user.email)}</div>
+                      </td>
+                      <td className="px-4 py-3 font-semibold">
+                        {text((user.role as Row | undefined)?.name ?? user.role)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-mf-texto-2">
+                        {scope?.isGlobal ? "Global" : text(scope?.operationId ?? "Sem escopo")}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${user.isActive === true ? "bg-mf-realce-suave text-mf-primaria" : "bg-mf-perigo-suave text-mf-perigo"}`}
+                        >
+                          {user.isActive === true ? (
+                            <CircleCheck size={12} aria-hidden="true" />
+                          ) : (
+                            <Ban size={12} aria-hidden="true" />
+                          )}
+                          {user.isActive === true ? "Ativo" : "Bloqueado"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Button size="sm" variant="ghost" onClick={() => void toggle(user)}>
+                          {user.isActive === true ? "Bloquear" : "Reativar"}
+                        </Button>
+                      </td>
+                    </tr>
+                  );
                 })}
               </tbody>
             </table>
           </div>
-        ) : <div className="p-8 text-sm text-slate-500">Nenhum usuário disponível neste escopo.</div>}
-      </div>
-      {open && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
-        <form onSubmit={createUser} className="w-full max-w-xl rounded bg-white p-6 shadow-2xl">
-          <div className="flex items-center gap-3"><UserCog className="text-emerald-600" /><div><h2 className="font-semibold">Criar usuário</h2><p className="text-sm text-slate-500">A API impede elevação de perfil e escopo.</p></div></div>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <label className="text-sm">Nome<input className="mt-1 w-full rounded border p-2" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} /></label>
-            <label className="text-sm">E-mail<input className="mt-1 w-full rounded border p-2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
-            <label className="text-sm">Perfil<select className="mt-1 w-full rounded border p-2" value={role} onChange={(e) => { setRole(e.target.value); setGlobal(e.target.value === "DEV"); }} required>{roles.map((candidate) => <option key={candidate}>{candidate}</option>)}</select></label>
-            <label className="text-sm">Senha inicial<input className="mt-1 w-full rounded border p-2" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} /></label>
-            {role === "DEV" ? <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" checked={global} onChange={(e) => setGlobal(e.target.checked)} /> Escopo global de DEV</label> : <label className="text-sm sm:col-span-2">Operação<select className="mt-1 w-full rounded border p-2" value={operationId} onChange={(e) => setOperationId(e.target.value)} required>{operations.map((operation) => <option value={operation.id} key={operation.id}>{text(operation.name)}</option>)}</select></label>}
+        ) : error ? null : (
+          <div className="p-4">
+            <EmptyState
+              title="Nenhum usuário neste escopo"
+              description="Os usuários que você pode administrar aparecem aqui. Crie o primeiro com Novo usuário."
+            />
           </div>
-          <div className="mt-6 flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button><Button type="submit">Criar e auditar</Button></div>
-        </form>
-      </div>}
+        )}
+      </div>
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-mf-tinta/40 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setOpen(false);
+          }}
+        >
+          <form
+            onSubmit={createUser}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-criar-usuario"
+            className="max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-mf-conteiner bg-mf-cartao p-6 shadow-mf-3"
+          >
+            <div className="flex items-center gap-3">
+              <UserCog aria-hidden="true" className="text-mf-primaria" />
+              <div>
+                <h2
+                  id="titulo-criar-usuario"
+                  className="font-display text-lg font-bold text-mf-tinta"
+                >
+                  Criar usuário
+                </h2>
+                <p className="text-sm text-mf-texto-2">A API impede elevação de perfil e escopo.</p>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <label className="text-sm font-medium text-mf-texto">
+                Nome
+                <input
+                  className="mt-1 block h-11 w-full rounded-mf-controle border border-mf-linha bg-white px-3"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  minLength={2}
+                />
+              </label>
+              <label className="text-sm font-medium text-mf-texto">
+                E-mail
+                <input
+                  className="mt-1 block h-11 w-full rounded-mf-controle border border-mf-linha bg-white px-3"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </label>
+              <label className="text-sm font-medium text-mf-texto">
+                Perfil
+                <select
+                  className="mt-1 block h-11 w-full rounded-mf-controle border border-mf-linha bg-white px-3"
+                  value={role}
+                  onChange={(e) => {
+                    setRole(e.target.value);
+                    setGlobal(e.target.value === "DEV");
+                  }}
+                  required
+                >
+                  {roles.map((candidate) => (
+                    <option key={candidate}>{candidate}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-sm font-medium text-mf-texto">
+                Senha inicial
+                <input
+                  className="mt-1 block h-11 w-full rounded-mf-controle border border-mf-linha bg-white px-3"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={8}
+                />
+              </label>
+              {role === "DEV" ? (
+                <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                  <input
+                    type="checkbox"
+                    checked={global}
+                    onChange={(e) => setGlobal(e.target.checked)}
+                  />{" "}
+                  Escopo global de DEV
+                </label>
+              ) : (
+                <label className="text-sm font-medium text-mf-texto sm:col-span-2">
+                  Operação
+                  <select
+                    className="mt-1 block h-11 w-full rounded-mf-controle border border-mf-linha bg-white px-3"
+                    value={operationId}
+                    onChange={(e) => setOperationId(e.target.value)}
+                    required
+                  >
+                    {operations.map((operation) => (
+                      <option value={operation.id} key={operation.id}>
+                        {text(operation.name)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">Criar e auditar</Button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
