@@ -7,6 +7,33 @@ export type ContextoDaPagina = { titulo: string; sugestoes: readonly string[] };
 
 const CONTEXTOS: ReadonlyArray<{ prefixo: string } & ContextoDaPagina> = [
   {
+    prefixo: "/treinamentos/rh",
+    titulo: "Treinamentos · Acompanhamento do RH",
+    sugestoes: [
+      "Como valido um treinamento?",
+      "Quem aparece nesta lista?",
+      "Como leio o resultado de um treinamento?"
+    ]
+  },
+  {
+    prefixo: "/treinamentos/config",
+    titulo: "Treinamentos · Configuração",
+    sugestoes: [
+      "Como cadastro um cenário de treinamento?",
+      "O que acontece quando aprovo uma versão?",
+      "Como atribuo um treinamento a uma turma?"
+    ]
+  },
+  {
+    prefixo: "/treinamentos",
+    titulo: "Treinamentos interativos",
+    sugestoes: [
+      "Como funciona um treinamento interativo?",
+      "Como leio o resultado de um treinamento?",
+      "Posso refazer um treinamento?"
+    ]
+  },
+  {
     prefixo: "/lab/rh",
     titulo: "Leadership Lab · Acompanhamento do RH",
     sugestoes: [

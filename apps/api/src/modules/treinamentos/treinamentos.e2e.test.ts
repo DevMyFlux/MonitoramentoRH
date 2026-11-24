@@ -33,6 +33,13 @@ const ligado = Boolean(process.env.LAB_E2E) && integrationEnabled;
 const pastaDeCapturas = process.env.LAB_E2E_SHOTS;
 const SENHA = "Senha-de-teste-1!";
 const raiz = fileURLToPath(new URL("../../../../../", import.meta.url));
+const textoDoPlantao = readFileSync(
+  join(raiz, "packages/shared/src/treinamentos/exemplos/rh-falta-plantao-noturno.json"),
+  "utf8"
+);
+const plantao = JSON.parse(textoDoPlantao) as {
+  questions: { alternatives: { taken: boolean }[] }[];
+};
 const quadro = JSON.parse(
   readFileSync(
     join(raiz, "packages/shared/src/treinamentos/exemplos/manutencao-quadro-uti.json"),
@@ -172,11 +179,13 @@ describe.skipIf(!ligado)("Treinamentos Interativos no navegador", () => {
   });
 
   let turmaA: string;
-  let curador: { token: string };
+  let curador: { token: string; email: string };
   let outroCurador: { token: string };
+  let administrador: { email: string };
 
   it("o ADMIN cadastra, aprova e atribui o cenário à turma", async () => {
     const admin = await pessoa("ADMIN");
+    administrador = admin;
     const rhA = await pessoa("RH");
     const rhB = await pessoa("RH");
     curador = rhA;
@@ -355,4 +364,81 @@ describe.skipIf(!ligado)("Treinamentos Interativos no navegador", () => {
     await outra.close();
     await contexto.close();
   }, 120_000);
+
+  it("o segundo cenário (RH) roda sem mudar código: cadastro pela tela, jogo pelo teclado, validação do RH", async () => {
+    // 1. O ADMIN cola o JSON, valida, salva, aprova e atribui à turma, pela tela.
+    const paginaDoAdmin = await navegador.newPage({ viewport: { width: 1280, height: 900 } });
+    paginaDoAdmin.on("dialog", (dialogo) => void dialogo.accept());
+    await entrar(paginaDoAdmin, administrador.email);
+    await paginaDoAdmin.goto(`${url}/treinamentos/config`);
+    await paginaDoAdmin.getByLabel("Conteúdo do cenário (JSON)").fill(textoDoPlantao);
+    await paginaDoAdmin.getByRole("button", { name: "Validar", exact: true }).click();
+    await paginaDoAdmin.getByText(/Cenário válido: Falta no plantão noturno/).waitFor();
+    await paginaDoAdmin
+      .getByRole("button", { name: "Pré-visualizar", exact: true })
+      .first()
+      .click();
+    await paginaDoAdmin.getByRole("tab", { name: "Pergunta 2" }).click();
+    await capturar(paginaDoAdmin, "11-configuracao-previa-rh");
+    await paginaDoAdmin.getByRole("button", { name: "Salvar", exact: true }).click();
+    const cartao = paginaDoAdmin.locator("article", { hasText: "Falta no plantão noturno" });
+    await cartao.getByRole("button", { name: "Aprovar" }).click();
+    await cartao.getByText(/Aprovada em/).waitFor();
+    await cartao.getByRole("button", { name: "Atribuir" }).click();
+    await cartao.getByLabel("Turma").selectOption(turmaA);
+    await cartao.getByRole("button", { name: "Atribuir", exact: true }).last().click();
+    await cartao.getByText("1 atribuição").waitFor();
+    await capturar(paginaDoAdmin, "12-configuracao-cenarios");
+    await paginaDoAdmin.close();
+
+    // 2. Um participante da turma faz o cenário de RH pelo teclado, cumprindo tudo.
+    const carla = await participante(turmaA);
+    const page = await navegador.newPage({ viewport: { width: 1280, height: 800 } });
+    await entrar(page, carla.email);
+    await page.goto(`${url}/treinamentos`);
+    const comecar = page
+      .locator("li", { hasText: "Falta no plantão noturno" })
+      .getByRole("link", { name: /Começar/ });
+    await comecar.focus();
+    await page.keyboard.press("Enter");
+    await seguirPeloTeclado(page, "Iniciar");
+    await seguirPeloTeclado(page, "Pular cena");
+    expect(await page.locator("svg[role=img]").getAttribute("aria-label")).toMatch(
+      /Sala de gestão da escala/
+    );
+    const certas = plantao.questions.map((q) => q.alternatives.findIndex((a) => a.taken));
+    for (const numero of [1, 2, 3, 4, 5]) {
+      await responderPeloTeclado(page, numero, certas[numero - 1]!);
+      if (numero === 4) await capturar(page, "13-rh-reacao-escala");
+      await seguirPeloTeclado(page, numero < 5 ? "Próxima pergunta" : "Seguir para o desfecho");
+    }
+    await seguirPeloTeclado(page, "Ver o desfecho");
+    await page.waitForURL("**/treinamentos/resultado/**");
+    await seguirPeloTeclado(page, "Ver os resultados");
+    const painel = page.locator("section[aria-labelledby=desfecho-titulo]");
+    await painel.getByText("Plantão coberto e claro para todos").waitFor();
+    expect(await painel.getByText("Escala dentro das regras").count()).toBe(1);
+    await capturar(page, "14-rh-resultados");
+    const resultadoDaCarla = page.url();
+
+    // 3. O RH da turma vê a tentativa, abre e valida com uma nota.
+    const paginaDoRh = await navegador.newPage({ viewport: { width: 1280, height: 900 } });
+    await entrar(paginaDoRh, curador.email);
+    await paginaDoRh.goto(`${url}/treinamentos/rh`);
+    const item = paginaDoRh.locator("li", { hasText: "Falta no plantão noturno" }).first();
+    await item.getByRole("button", { name: /^Validar/ }).click();
+    await item.getByLabel(/Nota para a pessoa/).fill("Troca bem conduzida.");
+    await item.getByRole("button", { name: "Confirmar validação" }).click();
+    await paginaDoRh
+      .getByText(/validada\./)
+      .first()
+      .waitFor();
+    await capturar(paginaDoRh, "15-rh-acompanhamento");
+    await paginaDoRh.close();
+
+    // 4. A pessoa vê a validação e a nota no resultado.
+    await page.goto(resultadoDaCarla);
+    await page.getByText(/Validado pelo RH: “Troca bem conduzida.”/).waitFor();
+    await page.close();
+  }, 240_000);
 });

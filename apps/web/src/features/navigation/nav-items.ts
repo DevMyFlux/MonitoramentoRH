@@ -3,6 +3,7 @@ import {
   Activity,
   CalendarDays,
   Clapperboard,
+  ClipboardCheck,
   Compass,
   ClipboardList,
   SlidersHorizontal,
@@ -13,6 +14,7 @@ import {
   LayoutDashboard,
   Network,
   Settings,
+  Settings2,
   ShieldCheck,
   UserCog,
   Users,
@@ -28,6 +30,8 @@ export type NavigationItem = {
   curto?: string;
   /** Temporarily hidden from the sidebar without removing the route/page/API behind it. */
   hidden?: boolean;
+  /** Fica só no menu lateral (não entra no dock do celular, para ele caber em 360 px). */
+  foraDoDock?: boolean;
   /**
    * Only these profiles see the item. Omitted = everyone, as before. This only tidies the menu:
    * the API still decides who may do what.
@@ -102,6 +106,20 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Clapperboard,
         curto: "Treinos",
         roles: ["COMUM", "DEV"]
+      },
+      {
+        label: "Acompanhamento de treinamentos",
+        href: "/treinamentos/rh",
+        icon: ClipboardCheck,
+        roles: ["RH", "DEV"],
+        foraDoDock: true
+      },
+      {
+        label: "Configuração de treinamentos",
+        href: "/treinamentos/config",
+        icon: Settings2,
+        roles: ["ADMIN", "DEV"],
+        foraDoDock: true
       }
     ]
   },
@@ -163,5 +181,7 @@ export function itensDoDock(perfil: Role | undefined, modoDeTeste = false): Navi
   return navigationGroups
     .filter((grupo) => !grupo.hidden)
     .flatMap((grupo) => grupo.items)
-    .filter((item) => !item.hidden && itemVisivelPara(item, perfil, modoDeTeste));
+    .filter(
+      (item) => !item.hidden && !item.foraDoDock && itemVisivelPara(item, perfil, modoDeTeste)
+    );
 }

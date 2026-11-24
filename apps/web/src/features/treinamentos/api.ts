@@ -80,6 +80,59 @@ export type ResultadoDaTentativa = {
   validacao: { validada: boolean; validadaEm: string | null; nota: string | null };
 };
 
+// --- Autoria (ADMIN, DEV) e curadoria (RH, DEV) ---
+
+export type VersaoDaLista = {
+  id: string;
+  numero: number;
+  scenePack: string;
+  criadoEm: string;
+  aprovadoEm: string | null;
+  atribuicoes: number;
+};
+export type CenarioDaLista = {
+  id: string;
+  slug: string;
+  area: string;
+  titulo: string;
+  status: string;
+  alteradoEm: string;
+  versoes: VersaoDaLista[];
+};
+export type ProblemaDeAutoria = { caminho: string; mensagem: string };
+export type ValidacaoDoCenario = {
+  valido: boolean;
+  problemas: ProblemaDeAutoria[];
+  resumo?: {
+    slug: string;
+    titulo: string;
+    area: string;
+    scenePack: string;
+    exemplo: boolean;
+    decisoes: number;
+    acontecimentos: number;
+    resultados: number;
+  };
+};
+export type TurmaParaAtribuir = {
+  id: string;
+  nome: string;
+  curador: string;
+  participantes: number;
+};
+export type TentativaDoRh = {
+  tentativaId: string;
+  atribuicaoId: string;
+  participante: string;
+  turma: string;
+  titulo: string;
+  area: string;
+  concluidaEm: string | null;
+  resultados: { id: string; label: string; nivel: TreinoNivel }[];
+  validada: boolean;
+};
+export type SituacaoDoRh = "pendentes" | "validadas" | "todas";
+
 const base = "/treinamentos";
 
 export const apiDosTreinamentos = {
@@ -97,5 +150,45 @@ export const apiDosTreinamentos = {
   resultado: (tentativaId: string) =>
     request<ResultadoDaTentativa>(`${base}/tentativas/${tentativaId}/resultado`),
   simular: (tentativaId: string, decisoes: Record<string, boolean>) =>
-    request<TreinoDesfecho>(`${base}/tentativas/${tentativaId}/simular`, "POST", { decisoes })
+    request<TreinoDesfecho>(`${base}/tentativas/${tentativaId}/simular`, "POST", { decisoes }),
+  // Autoria e configuração
+  cenarios: () => request<CenarioDaLista[]>(`${base}/cenarios`),
+  validarCenario: (conteudo: unknown) =>
+    request<ValidacaoDoCenario>(`${base}/cenarios/validar`, "POST", { conteudo }),
+  criarCenario: (conteudo: unknown) =>
+    request<{ id: string; slug: string; versaoId: string; numero: number }>(
+      `${base}/cenarios`,
+      "POST",
+      {
+        conteudo
+      }
+    ),
+  novaVersao: (cenarioId: string, conteudo: unknown) =>
+    request<{ id: string; versaoId: string; numero: number }>(
+      `${base}/cenarios/${cenarioId}/versoes`,
+      "POST",
+      { conteudo }
+    ),
+  lerVersao: (cenarioId: string, versaoId: string) =>
+    request<{ id: string; numero: number; aprovadoEm: string | null; conteudo: unknown }>(
+      `${base}/cenarios/${cenarioId}/versoes/${versaoId}`
+    ),
+  aprovar: (cenarioId: string, versaoId: string) =>
+    request<{ versaoId: string; numero: number; aprovadoEm: string }>(
+      `${base}/cenarios/${cenarioId}/aprovar`,
+      "POST",
+      { versaoId }
+    ),
+  turmas: () => request<TurmaParaAtribuir[]>(`${base}/turmas`),
+  atribuir: (versaoId: string, turmaId: string, prazo: string | null) =>
+    request<{ id: string }>(`${base}/atribuicoes`, "POST", { versaoId, turmaId, prazo }),
+  // Curadoria
+  tentativasDoRh: (situacao: SituacaoDoRh) =>
+    request<TentativaDoRh[]>(`${base}/rh/tentativas?situacao=${situacao}`),
+  validarTentativa: (tentativaId: string, nota: string) =>
+    request<{ tentativaId: string; validadaEm: string; nota: string | null }>(
+      `${base}/rh/tentativas/${tentativaId}/validar`,
+      "POST",
+      nota.trim() ? { nota } : {}
+    )
 };

@@ -89,8 +89,51 @@ export const generico: PacoteDeCena = {
   particulas: () => "poeira"
 };
 
+/**
+ * Sala de gestão da escala (cenários de RH): painel da escala (grade D/N/F), ficha do
+ * colaborador, relógio do descanso entre jornadas e a equipe do plantão.
+ */
+export const hospitalEscala: PacoteDeCena = {
+  id: "hospital-escala",
+  planos: {
+    sala: GERAL,
+    painel: { cx: 560, cy: 300, escala: 1.9 },
+    ficha: { cx: 1110, cy: 520, escala: 2.1 },
+    relogio: { cx: 1360, cy: 250, escala: 2.6 },
+    equipe: { cx: 300, cy: 600, escala: 2 }
+  },
+  estadoInicial: { painel: "alerta", ficha: "pendente", relogio: "", escala: "errada", equipe: "" },
+  descrever: (e) =>
+    [
+      "Sala de gestão da escala à noite: o painel da escala na parede, a ficha do colaborador na tela, o relógio e a equipe do plantão.",
+      e.painel === "ok"
+        ? "O painel da escala está em dia."
+        : "O painel da escala mostra um alerta de falta.",
+      e.escala === "ok"
+        ? "A escala do plantão mostra o substituto no posto."
+        : "A escala ainda aponta quem faltou.",
+      e.ficha === "ok"
+        ? "A ficha do substituto está com os documentos em dia."
+        : "A ficha do substituto tem itens pendentes.",
+      e.relogio === "ok"
+        ? "O relógio mostra o descanso entre jornadas cumprido."
+        : e.relogio === "curto"
+          ? "O relógio mostra descanso entre jornadas abaixo do mínimo."
+          : "",
+      e.equipe === "ok"
+        ? "A equipe confirmou quem cobre o posto."
+        : e.equipe === "duvida"
+          ? "A equipe está em dúvida sobre quem cobre o posto."
+          : ""
+    ]
+      .filter(Boolean)
+      .join(" "),
+  particulas: () => "poeira"
+};
+
 const pacotes: Readonly<Record<string, PacoteDeCena>> = {
-  [hospitalEnergia.id]: hospitalEnergia
+  [hospitalEnergia.id]: hospitalEnergia,
+  [hospitalEscala.id]: hospitalEscala
 };
 
 /** O pacote pelo id; desconhecido = genérico. */

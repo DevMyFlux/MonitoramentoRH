@@ -254,6 +254,216 @@ export function MundoHospitalEnergia({ estado, reduzido }: PropsDoMundo) {
   );
 }
 
+const CELULA: Record<string, { fundo: string; texto: string }> = {
+  D: { fundo: "#D1FAE5", texto: "#065F46" },
+  N: { fundo: "#DBEAFE", texto: "#1D4ED8" },
+  F: { fundo: "#334155", texto: "#CBD5E1" }
+};
+const GRADE = ["DNFDNFD", "NFDNFDN", "FDNFDNF", "DNFDNFD", "NFDNFDN"];
+
+/** Sala de gestão da escala (cenários de RH): painel, ficha, relógio e equipe. */
+export function MundoHospitalEscala({ estado, reduzido }: PropsDoMundo) {
+  const id = useId().replace(/:/g, "");
+  const alerta = estado.painel !== "ok";
+  const escalaCerta = estado.escala === "ok";
+  const fichaOk = estado.ficha === "ok";
+  const corDoAlerta = alerta ? "#F87171" : "#34D399";
+  return (
+    <g>
+      <defs>
+        <linearGradient id={`parede-e-${id}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#0b1324" />
+          <stop offset="1" stopColor="#111c2e" />
+        </linearGradient>
+        <radialGradient id={`brilho-e-${id}`}>
+          <stop offset="0" stopColor={corDoAlerta} stopOpacity="0.45" />
+          <stop offset="1" stopColor={corDoAlerta} stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      {/* Parede, piso e faixa da marca */}
+      <rect width="1600" height="900" fill={`url(#parede-e-${id})`} />
+      <polygon points="0,700 1600,700 1600,900 0,900" fill="#0a1120" />
+      <rect x="0" y="690" width="1600" height="10" fill="#065F46" opacity="0.6" />
+      <rect
+        x="560"
+        y="0"
+        width="480"
+        height="18"
+        rx="4"
+        fill="#E2E8F0"
+        opacity="0.7"
+        className={reduzido ? undefined : "palco-luminaria"}
+      />
+
+      {/* Painel da escala: grade D/N/F; a célula do posto mostra quem está nele */}
+      <ellipse cx="560" cy="300" rx="420" ry="260" fill={`url(#brilho-e-${id})`} />
+      <rect
+        x="250"
+        y="120"
+        width="620"
+        height="380"
+        rx="16"
+        fill="#0f172a"
+        stroke={corDoAlerta}
+        strokeWidth="5"
+      />
+      <text x="280" y="168" fill="#E2E8F0" fontSize="26" fontWeight="700">
+        Escala · Plantão noturno
+      </text>
+      {GRADE.map((linha, i) =>
+        linha.split("").map((codigo, j) => {
+          const destaque = i === 1 && j === 3;
+          const valor = destaque ? (escalaCerta ? "S" : "FA") : codigo;
+          const cor = destaque
+            ? escalaCerta
+              ? { fundo: "#34D399", texto: "#020617" }
+              : { fundo: "#FEF2F2", texto: "#B91C1C" }
+            : (CELULA[codigo] ?? { fundo: "#334155", texto: "#CBD5E1" });
+          return (
+            <g key={`${i}-${j}`}>
+              <rect
+                x={290 + j * 80}
+                y={200 + i * 56}
+                width="68"
+                height="44"
+                rx="6"
+                fill={cor.fundo}
+                stroke={destaque ? "#F8FAFC" : "none"}
+                strokeWidth="3"
+              />
+              <text
+                x={324 + j * 80}
+                y={230 + i * 56}
+                textAnchor="middle"
+                fill={cor.texto}
+                fontSize="20"
+                fontWeight="700"
+              >
+                {valor}
+              </text>
+            </g>
+          );
+        })
+      )}
+      {alerta ? (
+        <g>
+          <circle
+            cx="840"
+            cy="150"
+            r="22"
+            fill="#F87171"
+            className={reduzido ? undefined : "palco-led"}
+          />
+          <text x="840" y="158" textAnchor="middle" fill="#020617" fontSize="26" fontWeight="800">
+            !
+          </text>
+        </g>
+      ) : (
+        <circle cx="840" cy="150" r="16" fill="#34D399" />
+      )}
+
+      {/* Mesa com a ficha do colaborador */}
+      <rect x="900" y="640" width="520" height="24" rx="6" fill="#1e293b" />
+      <rect
+        x="960"
+        y="400"
+        width="300"
+        height="220"
+        rx="12"
+        fill="#0f172a"
+        stroke="#475569"
+        strokeWidth="4"
+      />
+      <rect x="1100" y="620" width="20" height="24" fill="#334155" />
+      <text x="980" y="440" fill="#E2E8F0" fontSize="20" fontWeight="700">
+        Ficha · Substituto
+      </text>
+      {["ASO", "Treinamentos", "Habilitações"].map((item, i) => {
+        const ok = fichaOk || i === 0;
+        return (
+          <g key={item}>
+            <circle cx="992" cy={478 + i * 44} r="11" fill={ok ? "#34D399" : "#FBBF24"} />
+            <text x="1012" y={485 + i * 44} fill="#CBD5E1" fontSize="18">
+              {item} · {ok ? "em dia" : "pendente"}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Relógio do descanso entre jornadas */}
+      <circle cx="1360" cy="250" r="90" fill="#0f172a" stroke="#475569" strokeWidth="6" />
+      {estado.relogio ? (
+        <path
+          d={
+            estado.relogio === "ok"
+              ? "M1360 175 A75 75 0 1 1 1290 285"
+              : "M1360 175 A75 75 0 0 1 1430 280"
+          }
+          fill="none"
+          stroke={estado.relogio === "ok" ? "#34D399" : "#F87171"}
+          strokeWidth="12"
+          strokeLinecap="round"
+        />
+      ) : null}
+      <line
+        x1="1360"
+        y1="250"
+        x2="1360"
+        y2="195"
+        stroke="#E2E8F0"
+        strokeWidth="6"
+        strokeLinecap="round"
+      />
+      <line
+        x1="1360"
+        y1="250"
+        x2="1400"
+        y2="265"
+        stroke="#E2E8F0"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+      <text x="1360" y="375" textAnchor="middle" fill="#CBD5E1" fontSize="18">
+        Descanso entre jornadas
+      </text>
+
+      {/* Equipe do plantão */}
+      {[180, 270, 360, 450].map((x, i) => (
+        <g key={x}>
+          <circle cx={x} cy={560 - (i % 2) * 10} r="28" fill="#CBD5E1" />
+          <path
+            d={`M${x - 40} 700 Q${x} ${590 - (i % 2) * 10} ${x + 40} 700 Z`}
+            fill="#1D4ED8"
+            opacity="0.85"
+          />
+        </g>
+      ))}
+      {estado.equipe === "duvida"
+        ? [230, 410].map((x) => (
+            <g key={x}>
+              <circle cx={x} cy="470" r="26" fill="#FBBF24" />
+              <text x={x} y="480" textAnchor="middle" fill="#020617" fontSize="28" fontWeight="800">
+                ?
+              </text>
+            </g>
+          ))
+        : null}
+      {estado.equipe === "ok" ? (
+        <g>
+          <circle cx="315" cy="460" r="28" fill="#34D399" />
+          <path
+            d="M302 460 l9 9 l17 -19"
+            fill="none"
+            stroke="#020617"
+            strokeWidth="6"
+            strokeLinecap="round"
+          />
+        </g>
+      ) : null}
+    </g>
+  );
+}
+
 /** Mundo genérico: fundo escuro com grade sutil. Serve a qualquer pacote desconhecido. */
 export function MundoGenerico() {
   const id = useId().replace(/:/g, "");
@@ -278,5 +488,7 @@ export function MundoGenerico() {
 export function MundoDoPacote({ pacote, estado, reduzido }: PropsDoMundo & { pacote: string }) {
   if (pacote === "hospital-energia")
     return <MundoHospitalEnergia estado={estado} reduzido={reduzido} />;
+  if (pacote === "hospital-escala")
+    return <MundoHospitalEscala estado={estado} reduzido={reduzido} />;
   return <MundoGenerico />;
 }

@@ -80,6 +80,12 @@ const JogarTreinamentoPage = lazy(() =>
 const ResultadoTreinamentoPage = lazy(() =>
   import("./pages/treinamentos/resultado-page").then((m) => ({ default: m.ResultadoPage }))
 );
+const TreinamentosRhPage = lazy(() =>
+  import("./pages/treinamentos/rh-page").then((m) => ({ default: m.TreinamentosRhPage }))
+);
+const TreinamentosConfigPage = lazy(() =>
+  import("./pages/treinamentos/config-page").then((m) => ({ default: m.TreinamentosConfigPage }))
+);
 const LayoutDoPalco = lazy(() =>
   import("./features/treinamentos/layout-do-palco").then((m) => ({ default: m.LayoutDoPalco }))
 );
@@ -300,6 +306,22 @@ const router = createBrowserRouter([
     element: (
       <App breadcrumbs={["MY FLUX", "Treinamentos"]}>
         <TreinamentosPage />
+      </App>
+    )
+  },
+  {
+    path: "/treinamentos/rh",
+    element: (
+      <App breadcrumbs={["MY FLUX", "Treinamentos", "Acompanhamento"]}>
+        <TreinamentosRhPage />
+      </App>
+    )
+  },
+  {
+    path: "/treinamentos/config",
+    element: (
+      <App breadcrumbs={["MY FLUX", "Treinamentos", "Configuração"]}>
+        <TreinamentosConfigPage />
       </App>
     )
   },
