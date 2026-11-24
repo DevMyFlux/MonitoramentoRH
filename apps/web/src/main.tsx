@@ -70,6 +70,19 @@ const LabConfigPage = lazy(() =>
 // O layout do Lab (menu, topo e transições do design system do módulo) também é sob demanda: o
 // Motion e os estilos dele não pesam nas outras áreas do sistema. A espera das páginas (Suspense)
 // fica dentro dele.
+// Treinamentos Interativos: páginas sob demanda (o Palco traz o SVG, o canvas e o CSS próprio).
+const TreinamentosPage = lazy(() =>
+  import("./pages/treinamentos/treinamentos-page").then((m) => ({ default: m.TreinamentosPage }))
+);
+const JogarTreinamentoPage = lazy(() =>
+  import("./pages/treinamentos/jogar-page").then((m) => ({ default: m.JogarPage }))
+);
+const ResultadoTreinamentoPage = lazy(() =>
+  import("./pages/treinamentos/resultado-page").then((m) => ({ default: m.ResultadoPage }))
+);
+const LayoutDoPalco = lazy(() =>
+  import("./features/treinamentos/layout-do-palco").then((m) => ({ default: m.LayoutDoPalco }))
+);
 const LabShell = lazy(() =>
   import("./features/leadership-lab/layout/lab-shell").then((m) => ({ default: m.LabShell }))
 );
@@ -279,6 +292,30 @@ const router = createBrowserRouter([
     element: (
       <App breadcrumbs={["MY FLUX", "Escalas"]}>
         <MonthlySchedulePage />
+      </App>
+    )
+  },
+  {
+    path: "/treinamentos",
+    element: (
+      <App breadcrumbs={["MY FLUX", "Treinamentos"]}>
+        <TreinamentosPage />
+      </App>
+    )
+  },
+  {
+    path: "/treinamentos/:atribuicaoId/jogar",
+    element: (
+      <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Palco"]}>
+        <JogarTreinamentoPage />
+      </App>
+    )
+  },
+  {
+    path: "/treinamentos/resultado/:tentativaId",
+    element: (
+      <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Resultado"]}>
+        <ResultadoTreinamentoPage />
       </App>
     )
   },

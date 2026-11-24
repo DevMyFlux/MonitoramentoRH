@@ -2,6 +2,7 @@ import type { Role } from "@my-flux/types";
 import {
   Activity,
   CalendarDays,
+  Clapperboard,
   Compass,
   ClipboardList,
   SlidersHorizontal,
@@ -92,6 +93,15 @@ export const navigationGroups: NavigationGroup[] = [
         icon: SlidersHorizontal,
         curto: "Config.",
         roles: ["ADMIN", "DEV"]
+      },
+      // Treinamentos Interativos: o participante (COMUM) e o DEV. Curadoria e configuração entram
+      // na Fase 8. Esconder é só arrumação: quem barra é a API.
+      {
+        label: "Treinamentos",
+        href: "/treinamentos",
+        icon: Clapperboard,
+        curto: "Treinos",
+        roles: ["COMUM", "DEV"]
       }
     ]
   },

@@ -82,7 +82,9 @@ const acontecimentoSchema = z.strictObject({
   id: slug,
   label: textoCurto,
   tone: z.enum(treinoTonsDeAcontecimento),
-  when: regraSchema
+  when: regraSchema,
+  /** Comandos de cena aplicados no desfecho quando o acontecimento ocorre (opcional). */
+  scene: cenaSchema.default({})
 });
 
 const resultadoSchema = z.strictObject({

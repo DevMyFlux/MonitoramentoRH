@@ -56,7 +56,9 @@
             "tone": "bad",
             "title": "UTI no escuro",
             "text": "Ninguém na UTI sabe que o quadro vai ser desligado. Os equipamentos críticos não foram conferidos.",
-            "scene": { "icu": "alert" }
+            "scene": {
+              "icu": "alert"
+            }
           }
         },
         {
@@ -66,7 +68,9 @@
             "tone": "good",
             "title": "UTI preparada",
             "text": "A equipe sabe o horário e confere a alimentação alternativa dos equipamentos antes do desligamento.",
-            "scene": { "icu": "ok" }
+            "scene": {
+              "icu": "ok"
+            }
           }
         },
         {
@@ -76,7 +80,9 @@
             "tone": "warn",
             "title": "Aviso no lugar errado",
             "text": "A manutenção ficou sabendo, mas quem cuida dos pacientes não foi avisado.",
-            "scene": { "icu": "none" }
+            "scene": {
+              "icu": "none"
+            }
           }
         },
         {
@@ -86,7 +92,9 @@
             "tone": "good",
             "title": "Aviso confirmado",
             "text": "A UTI confirma que está pronta antes do desligamento. Você espera a confirmação para seguir.",
-            "scene": { "icu": "ok" }
+            "scene": {
+              "icu": "ok"
+            }
           }
         }
       ]
@@ -106,7 +114,9 @@
             "tone": "warn",
             "title": "APR de outro serviço",
             "text": "A análise não reflete este quadro nem as condições de hoje. Riscos novos podem ter ficado de fora.",
-            "scene": { "tvt": "Quadro aquecendo" }
+            "scene": {
+              "tvt": "Quadro aquecendo"
+            }
           }
         },
         {
@@ -116,7 +126,9 @@
             "tone": "good",
             "title": "Análise em dupla",
             "text": "Dois olhares sobre os riscos, com as medidas de controle anexadas à permissão de trabalho.",
-            "scene": { "tvt": "Quadro aquecendo" }
+            "scene": {
+              "tvt": "Quadro aquecendo"
+            }
           }
         },
         {
@@ -126,7 +138,9 @@
             "tone": "bad",
             "title": "Serviço sem análise de risco",
             "text": "Os riscos não foram analisados antes do início e não há permissão de trabalho.",
-            "scene": { "tvt": "Quadro aquecendo" }
+            "scene": {
+              "tvt": "Quadro aquecendo"
+            }
           }
         },
         {
@@ -136,7 +150,9 @@
             "tone": "good",
             "title": "APR registrada",
             "text": "Riscos, medidas e responsáveis ficam registrados antes do início do serviço.",
-            "scene": { "tvt": "Quadro aquecendo" }
+            "scene": {
+              "tvt": "Quadro aquecendo"
+            }
           }
         }
       ]
@@ -156,7 +172,9 @@
             "tone": "warn",
             "title": "Proteção pela metade",
             "text": "As mãos estão protegidas; o rosto e o corpo, não.",
-            "scene": { "epi": "0" }
+            "scene": {
+              "epi": "0"
+            }
           }
         },
         {
@@ -166,7 +184,9 @@
             "tone": "good",
             "title": "EPI conforme a APR",
             "text": "Cada item foi conferido antes do uso e corresponde ao risco analisado.",
-            "scene": { "epi": "1" }
+            "scene": {
+              "epi": "1"
+            }
           }
         },
         {
@@ -176,7 +196,9 @@
             "tone": "good",
             "title": "EPI completo",
             "text": "Você está protegido para o risco elétrico e para um eventual arco.",
-            "scene": { "epi": "1" }
+            "scene": {
+              "epi": "1"
+            }
           }
         },
         {
@@ -186,7 +208,9 @@
             "tone": "bad",
             "title": "Sem proteção",
             "text": "Você chega ao quadro energizado sem nenhum EPI.",
-            "scene": { "epi": "0" }
+            "scene": {
+              "epi": "0"
+            }
           }
         }
       ]
@@ -206,7 +230,9 @@
             "tone": "bad",
             "title": "Quadro segue energizado",
             "text": "Nada foi desligado. O quadro continua com tensão enquanto você trabalha.",
-            "scene": { "lock": "0" }
+            "scene": {
+              "lock": "0"
+            }
           }
         },
         {
@@ -216,7 +242,9 @@
             "tone": "good",
             "title": "Disjuntor bloqueado",
             "text": "Cadeado e etiqueta impedem o religamento. Só você tem a chave.",
-            "scene": { "lock": "1" }
+            "scene": {
+              "lock": "1"
+            }
           }
         },
         {
@@ -226,7 +254,9 @@
             "tone": "warn",
             "title": "Vigia não é bloqueio",
             "text": "Alguém olhando não impede um religamento por outro setor. O bloqueio físico não foi feito.",
-            "scene": { "lock": "0" }
+            "scene": {
+              "lock": "0"
+            }
           }
         },
         {
@@ -236,7 +266,9 @@
             "tone": "good",
             "title": "Bloqueio e etiquetagem",
             "text": "O bloqueio fica registrado na APR. Qualquer pessoa vê que o quadro está em manutenção.",
-            "scene": { "lock": "1" }
+            "scene": {
+              "lock": "1"
+            }
           }
         }
       ]
@@ -256,7 +288,10 @@
             "tone": "good",
             "title": "Ausência de tensão confirmada",
             "text": "O detector funciona e todas as fases estão sem tensão. Agora é seguro tocar.",
-            "scene": { "led": "green", "state": "safe" }
+            "scene": {
+              "led": "green",
+              "state": "safe"
+            }
           }
         },
         {
@@ -266,7 +301,9 @@
             "tone": "warn",
             "title": "Sinal indireto",
             "text": "Uma lâmpada apagada não garante a ausência de tensão. Pode haver retorno por outro circuito.",
-            "scene": { "led": "amber" }
+            "scene": {
+              "led": "amber"
+            }
           }
         },
         {
@@ -276,7 +313,9 @@
             "tone": "bad",
             "title": "Teste com o próprio corpo",
             "text": "O corpo não é instrumento de medição. Se houver tensão, o choque vem antes da resposta.",
-            "scene": { "led": "red" }
+            "scene": {
+              "led": "red"
+            }
           }
         },
         {
@@ -286,7 +325,10 @@
             "tone": "good",
             "title": "Medição feita",
             "text": "Com o detector conferido, a medição mostra o quadro sem tensão.",
-            "scene": { "led": "green", "state": "safe" }
+            "scene": {
+              "led": "green",
+              "state": "safe"
+            }
           }
         }
       ]
@@ -299,9 +341,19 @@
       "tone": "bad",
       "when": {
         "any": [
-          { "decision": "bloqueio", "is": false },
-          { "decision": "medir", "is": false }
+          {
+            "decision": "bloqueio",
+            "is": false
+          },
+          {
+            "decision": "medir",
+            "is": false
+          }
         ]
+      },
+      "scene": {
+        "state": "arc",
+        "led": "red"
       }
     },
     {
@@ -310,9 +362,18 @@
       "tone": "bad",
       "when": {
         "all": [
-          { "event": "arco", "is": true },
-          { "decision": "epi", "is": false }
+          {
+            "event": "arco",
+            "is": true
+          },
+          {
+            "decision": "epi",
+            "is": false
+          }
         ]
+      },
+      "scene": {
+        "tech": "ferido"
       }
     },
     {
@@ -321,28 +382,64 @@
       "tone": "good",
       "when": {
         "all": [
-          { "event": "arco", "is": true },
-          { "decision": "epi", "is": true }
+          {
+            "event": "arco",
+            "is": true
+          },
+          {
+            "decision": "epi",
+            "is": true
+          }
         ]
+      },
+      "scene": {
+        "tech": "protegido"
       }
     },
     {
       "id": "uti_surpresa",
       "label": "UTI pega de surpresa",
       "tone": "bad",
-      "when": { "all": [{ "decision": "avisar_uti", "is": false }] }
+      "when": {
+        "all": [
+          {
+            "decision": "avisar_uti",
+            "is": false
+          }
+        ]
+      },
+      "scene": {
+        "icu": "alert"
+      }
     },
     {
       "id": "uti_preparada",
       "label": "UTI preparada para o desligamento",
       "tone": "good",
-      "when": { "all": [{ "decision": "avisar_uti", "is": true }] }
+      "when": {
+        "all": [
+          {
+            "decision": "avisar_uti",
+            "is": true
+          }
+        ]
+      },
+      "scene": {
+        "icu": "ok"
+      }
     },
     {
       "id": "sem_registro",
       "label": "Serviço sem registro de risco",
       "tone": "bad",
-      "when": { "all": [{ "decision": "apr", "is": false }] }
+      "when": {
+        "all": [
+          {
+            "decision": "apr",
+            "is": false
+          }
+        ]
+      }
     },
     {
       "id": "desligamento_seguro",
@@ -350,9 +447,19 @@
       "tone": "good",
       "when": {
         "all": [
-          { "event": "arco", "is": false },
-          { "decision": "apr", "is": true }
+          {
+            "event": "arco",
+            "is": false
+          },
+          {
+            "decision": "apr",
+            "is": true
+          }
         ]
+      },
+      "scene": {
+        "state": "safe",
+        "led": "green"
       }
     }
   ],
@@ -360,10 +467,28 @@
     {
       "id": "tecnico",
       "label": "Integridade do técnico",
-      "levels": { "ok": "Sem lesão", "warn": "Incidente contido", "bad": "Lesão grave" },
+      "levels": {
+        "ok": "Sem lesão",
+        "warn": "Incidente contido",
+        "bad": "Lesão grave"
+      },
       "when": {
-        "ok": { "all": [{ "event": "arco", "is": false }] },
-        "warn": { "all": [{ "event": "lesao", "is": false }] }
+        "ok": {
+          "all": [
+            {
+              "event": "arco",
+              "is": false
+            }
+          ]
+        },
+        "warn": {
+          "all": [
+            {
+              "event": "lesao",
+              "is": false
+            }
+          ]
+        }
       }
     },
     {
@@ -377,11 +502,24 @@
       "when": {
         "ok": {
           "all": [
-            { "event": "uti_preparada", "is": true },
-            { "event": "arco", "is": false }
+            {
+              "event": "uti_preparada",
+              "is": true
+            },
+            {
+              "event": "arco",
+              "is": false
+            }
           ]
         },
-        "warn": { "all": [{ "event": "uti_preparada", "is": true }] }
+        "warn": {
+          "all": [
+            {
+              "event": "uti_preparada",
+              "is": true
+            }
+          ]
+        }
       }
     },
     {
@@ -395,13 +533,32 @@
       "when": {
         "ok": {
           "all": [
-            { "decision": "apr", "is": true },
-            { "decision": "epi", "is": true },
-            { "decision": "bloqueio", "is": true },
-            { "decision": "medir", "is": true }
+            {
+              "decision": "apr",
+              "is": true
+            },
+            {
+              "decision": "epi",
+              "is": true
+            },
+            {
+              "decision": "bloqueio",
+              "is": true
+            },
+            {
+              "decision": "medir",
+              "is": true
+            }
           ]
         },
-        "warn": { "all": [{ "event": "sem_registro", "is": false }] }
+        "warn": {
+          "all": [
+            {
+              "event": "sem_registro",
+              "is": false
+            }
+          ]
+        }
       }
     }
   ]

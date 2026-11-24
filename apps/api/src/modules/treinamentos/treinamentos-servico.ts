@@ -448,7 +448,8 @@ export class ServicoDeTreinamentos {
           id: e.id,
           label: e.label,
           tone: e.tone,
-          when: e.when
+          when: e.when,
+          scene: e.scene
         })),
         outcomes: cenario.outcomes.map((o) => ({
           id: o.id,

@@ -1,0 +1,156 @@
+/*
+ * Ambiente Palco (Treinamentos Interativos): escuro e cinematográfico. Carregado só nas rotas do
+ * Palco (importado pelas páginas, que já são sob demanda). Os brilhos esmeralda (#34D399, #6EE7B7)
+ * são realce SOBRE FUNDO ESCURO, nunca cor de texto sobre branco; âmbar e vermelho, só risco e
+ * atenção, sempre com ícone e texto. Nada se mexe com prefers-reduced-motion.
+ */
+.palco {
+  --palco-fundo: 2 6 23; /* = --mf-tinta */
+  --palco-vidro: 15 23 42;
+  --palco-brilho: 52 211 153; /* #34D399 */
+  --palco-brilho-2: 110 231 183; /* #6EE7B7 */
+  --palco-atencao: 251 191 36; /* #FBBF24, só sobre o escuro */
+  --palco-risco: 248 113 113; /* #F87171, só sobre o escuro */
+  background: rgb(var(--palco-fundo));
+  color: #f8fafc;
+}
+
+/* Painel de vidro dentro do quadro */
+.palco-vidro {
+  background: rgb(var(--palco-vidro) / 0.82);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  box-shadow:
+    0 24px 60px -20px rgb(0 0 0 / 0.7),
+    0 0 0 1px rgb(var(--palco-brilho) / 0.08);
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .palco-vidro {
+    background: rgb(var(--palco-vidro) / 0.62);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    backdrop-filter: blur(14px) saturate(1.3);
+  }
+}
+
+/* Foco: o mesmo anel azul de 3 px, com um contorno claro para aparecer no escuro */
+.palco :focus-visible {
+  outline: 3px solid rgb(var(--mf-azul));
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgb(255 255 255 / 0.85);
+}
+
+/* Vinheta, grão e letterbox */
+.palco-vinheta {
+  background: radial-gradient(ellipse at center, transparent 45%, rgb(0 0 0 / 0.75) 100%);
+}
+.palco-grao {
+  opacity: 0.08;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: palco-grao 0.9s steps(4) infinite;
+}
+@keyframes palco-grao {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-2%, 1%);
+  }
+  50% {
+    transform: translate(1%, -2%);
+  }
+  75% {
+    transform: translate(-1%, 2%);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+.palco-letterbox {
+  height: 8%;
+  background: #000;
+}
+
+/* Clarão (arco elétrico) */
+.palco-clarao {
+  animation: palco-clarao 0.9s ease-out both;
+  background: radial-gradient(
+    circle at 78% 52%,
+    #fff 0%,
+    rgb(219 234 254 / 0.9) 30%,
+    transparent 70%
+  );
+}
+@keyframes palco-clarao {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Luminárias que acendem piscando, giroflex e LED */
+.palco-luminaria {
+  animation: palco-acende 1.4s steps(1, end) both;
+}
+@keyframes palco-acende {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  25% {
+    opacity: 0.1;
+  }
+  40% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  65%,
+  100% {
+    opacity: 1;
+  }
+}
+.palco-giroflex {
+  animation: palco-gira 1.2s linear infinite;
+}
+@keyframes palco-gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.palco-led {
+  animation: palco-pulsa 1.6s ease-in-out infinite;
+}
+@keyframes palco-pulsa {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* Plano B da tela cheia (iOS Safari e navegadores sem Fullscreen API) */
+.palco-tela-cheia {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  width: 100vw;
+  height: 100dvh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .palco-grao,
+  .palco-clarao,
+  .palco-luminaria,
+  .palco-giroflex,
+  .palco-led {
+    animation: none;
+  }
+  .palco-clarao {
+    opacity: 0;
+  }
+}

@@ -45,14 +45,20 @@ afterEach(() => {
 
 describe("itensDoDock", () => {
   it("são os mesmos itens visíveis do menu, por perfil, com nome curto", () => {
-    expect(itensDoDock("COMUM").map((i) => i.href)).toEqual(["/colaboradores", "/escalas", "/lab"]);
+    expect(itensDoDock("COMUM").map((i) => i.href)).toEqual([
+      "/colaboradores",
+      "/escalas",
+      "/lab",
+      "/treinamentos"
+    ]);
     expect(itensDoDock("RH").map((i) => i.href)).toEqual(["/colaboradores", "/escalas", "/lab/rh"]);
     expect(itensDoDock("DEV").map((i) => i.curto)).toEqual([
       "Pessoas",
       "Escalas",
       "Lab",
       "Gestão",
-      "Config."
+      "Config.",
+      "Treinos"
     ]);
   });
 });

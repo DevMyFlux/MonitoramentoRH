@@ -13,6 +13,19 @@ describe("navigation groups", () => {
     expect(labels).toContain("Parâmetros");
   });
 
+  describe("Treinamentos", () => {
+    const item = navigationGroups.flatMap((g) => g.items).find((i) => i.label === "Treinamentos");
+
+    it("aparece para o participante (COMUM) e o DEV, e não para RH e ADMIN", () => {
+      expect(item).toMatchObject({ href: "/treinamentos", roles: ["COMUM", "DEV"] });
+      expect(item?.hidden).toBeUndefined();
+      expect(itemVisivelPara(item!, "COMUM")).toBe(true);
+      expect(itemVisivelPara(item!, "DEV")).toBe(true);
+      expect(itemVisivelPara(item!, "RH")).toBe(false);
+      expect(itemVisivelPara(item!, "ADMIN")).toBe(false);
+    });
+  });
+
   describe("Leadership Lab", () => {
     const item = navigationGroups.flatMap((g) => g.items).find((i) => i.label === "Leadership Lab");
 

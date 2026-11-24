@@ -56,7 +56,9 @@
             "tone": "warn",
             "title": "Gerência no escuro",
             "text": "A falta pode até ser coberta, mas quem responde pela unidade não sabe o que aconteceu.",
-            "scene": { "painel": "alerta" }
+            "scene": {
+              "painel": "alerta"
+            }
           }
         },
         {
@@ -66,7 +68,9 @@
             "tone": "good",
             "title": "Gerência a par",
             "text": "A gerência sabe da falta e das opções. A decisão não fica só nas suas costas.",
-            "scene": { "painel": "ok" }
+            "scene": {
+              "painel": "ok"
+            }
           }
         },
         {
@@ -76,7 +80,10 @@
             "tone": "bad",
             "title": "Falta sem tratamento",
             "text": "Ninguém foi avisado e o posto fica descoberto no início do plantão.",
-            "scene": { "painel": "alerta", "equipe": "duvida" }
+            "scene": {
+              "painel": "alerta",
+              "equipe": "duvida"
+            }
           }
         },
         {
@@ -86,7 +93,9 @@
             "tone": "good",
             "title": "Decisão combinada",
             "text": "Fica claro quem decide e quem executa a substituição.",
-            "scene": { "painel": "ok" }
+            "scene": {
+              "painel": "ok"
+            }
           }
         }
       ]
@@ -106,7 +115,9 @@
             "tone": "good",
             "title": "Aptidão conferida",
             "text": "ASO e treinamentos da função aparecem em dia. O substituto está apto para o posto.",
-            "scene": { "ficha": "ok" }
+            "scene": {
+              "ficha": "ok"
+            }
           }
         },
         {
@@ -116,7 +127,9 @@
             "tone": "bad",
             "title": "Aptidão não conferida",
             "text": "Um documento vencido ou um treinamento faltando passaria despercebido.",
-            "scene": { "ficha": "pendente" }
+            "scene": {
+              "ficha": "pendente"
+            }
           }
         },
         {
@@ -126,7 +139,9 @@
             "tone": "warn",
             "title": "Só a palavra dele",
             "text": "Ele acredita que está tudo certo, mas ninguém conferiu a ficha.",
-            "scene": { "ficha": "pendente" }
+            "scene": {
+              "ficha": "pendente"
+            }
           }
         },
         {
@@ -136,7 +151,9 @@
             "tone": "good",
             "title": "Ficha conferida",
             "text": "Cada exigência da função foi verificada antes da troca.",
-            "scene": { "ficha": "ok" }
+            "scene": {
+              "ficha": "ok"
+            }
           }
         }
       ]
@@ -156,7 +173,9 @@
             "tone": "bad",
             "title": "Descanso não conferido",
             "text": "A regra de descanso não foi verificada. A escala pode ficar fora da lei.",
-            "scene": { "relogio": "curto" }
+            "scene": {
+              "relogio": "curto"
+            }
           }
         },
         {
@@ -166,7 +185,9 @@
             "tone": "good",
             "title": "Descanso respeitado",
             "text": "O intervalo entre as jornadas fecha com a regra. A troca pode seguir.",
-            "scene": { "relogio": "ok" }
+            "scene": {
+              "relogio": "ok"
+            }
           }
         },
         {
@@ -176,7 +197,9 @@
             "tone": "warn",
             "title": "Outra opção, mais tempo",
             "text": "O descanso é respeitado, mas a busca toma minutos preciosos antes das 19:00.",
-            "scene": { "relogio": "ok" }
+            "scene": {
+              "relogio": "ok"
+            }
           }
         },
         {
@@ -186,7 +209,9 @@
             "tone": "bad",
             "title": "Descanso abaixo do mínimo",
             "text": "Poucos minutos ainda são menos que o mínimo. A escala fica fora da regra.",
-            "scene": { "relogio": "curto" }
+            "scene": {
+              "relogio": "curto"
+            }
           }
         }
       ]
@@ -206,7 +231,9 @@
             "tone": "warn",
             "title": "Registro fora do sistema",
             "text": "Quem passa no posto vê o aviso, mas a escala oficial continua errada.",
-            "scene": { "escala": "errada" }
+            "scene": {
+              "escala": "errada"
+            }
           }
         },
         {
@@ -216,7 +243,9 @@
             "tone": "good",
             "title": "Escala atualizada",
             "text": "A escala oficial mostra quem está de fato no posto esta noite.",
-            "scene": { "escala": "ok" }
+            "scene": {
+              "escala": "ok"
+            }
           }
         },
         {
@@ -226,7 +255,9 @@
             "tone": "bad",
             "title": "Escala oficial desatualizada",
             "text": "Durante toda a noite, a escala aponta alguém que não está no hospital.",
-            "scene": { "escala": "errada" }
+            "scene": {
+              "escala": "errada"
+            }
           }
         },
         {
@@ -236,7 +267,9 @@
             "tone": "good",
             "title": "Troca registrada",
             "text": "A troca fica registrada com o motivo e o horário.",
-            "scene": { "escala": "ok" }
+            "scene": {
+              "escala": "ok"
+            }
           }
         }
       ]
@@ -256,7 +289,9 @@
             "tone": "good",
             "title": "Equipe alinhada",
             "text": "Todos sabem quem está em cada posto antes de assumir os pacientes.",
-            "scene": { "equipe": "ok" }
+            "scene": {
+              "equipe": "ok"
+            }
           }
         },
         {
@@ -266,7 +301,9 @@
             "tone": "warn",
             "title": "Equipe descobre na hora",
             "text": "A equipe descobre a troca no susto, no meio da passagem de plantão.",
-            "scene": { "equipe": "duvida" }
+            "scene": {
+              "equipe": "duvida"
+            }
           }
         },
         {
@@ -276,7 +313,9 @@
             "tone": "good",
             "title": "Confirmação recebida",
             "text": "A líder confirma que recebeu a escala nova e repassa à equipe.",
-            "scene": { "equipe": "ok" }
+            "scene": {
+              "equipe": "ok"
+            }
           }
         },
         {
@@ -286,7 +325,9 @@
             "tone": "bad",
             "title": "Ninguém confirmou",
             "text": "Sem confirmação, ninguém sabe ao certo quem cobre o posto.",
-            "scene": { "equipe": "duvida" }
+            "scene": {
+              "equipe": "duvida"
+            }
           }
         }
       ]
@@ -299,16 +340,36 @@
       "tone": "bad",
       "when": {
         "any": [
-          { "decision": "habilitacoes", "is": false },
-          { "decision": "interjornada", "is": false }
+          {
+            "decision": "habilitacoes",
+            "is": false
+          },
+          {
+            "decision": "interjornada",
+            "is": false
+          }
         ]
+      },
+      "scene": {
+        "ficha": "pendente",
+        "relogio": "curto"
       }
     },
     {
       "id": "escala_desatualizada",
       "label": "Escala oficial desatualizada",
       "tone": "bad",
-      "when": { "all": [{ "decision": "registro", "is": false }] }
+      "when": {
+        "all": [
+          {
+            "decision": "registro",
+            "is": false
+          }
+        ]
+      },
+      "scene": {
+        "escala": "errada"
+      }
     },
     {
       "id": "cobertura_duvidosa",
@@ -316,16 +377,35 @@
       "tone": "bad",
       "when": {
         "any": [
-          { "decision": "equipe", "is": false },
-          { "event": "escala_desatualizada", "is": true }
+          {
+            "decision": "equipe",
+            "is": false
+          },
+          {
+            "event": "escala_desatualizada",
+            "is": true
+          }
         ]
+      },
+      "scene": {
+        "equipe": "duvida"
       }
     },
     {
       "id": "gerencia_surpresa",
       "label": "Gerência pega de surpresa",
       "tone": "bad",
-      "when": { "all": [{ "decision": "gerencia", "is": false }] }
+      "when": {
+        "all": [
+          {
+            "decision": "gerencia",
+            "is": false
+          }
+        ]
+      },
+      "scene": {
+        "painel": "alerta"
+      }
     },
     {
       "id": "troca_regular",
@@ -333,10 +413,24 @@
       "tone": "good",
       "when": {
         "all": [
-          { "decision": "habilitacoes", "is": true },
-          { "decision": "interjornada", "is": true },
-          { "decision": "registro", "is": true }
+          {
+            "decision": "habilitacoes",
+            "is": true
+          },
+          {
+            "decision": "interjornada",
+            "is": true
+          },
+          {
+            "decision": "registro",
+            "is": true
+          }
         ]
+      },
+      "scene": {
+        "escala": "ok",
+        "ficha": "ok",
+        "relogio": "ok"
       }
     }
   ],
@@ -352,11 +446,24 @@
       "when": {
         "ok": {
           "all": [
-            { "event": "cobertura_duvidosa", "is": false },
-            { "event": "escala_fora_regras", "is": false }
+            {
+              "event": "cobertura_duvidosa",
+              "is": false
+            },
+            {
+              "event": "escala_fora_regras",
+              "is": false
+            }
           ]
         },
-        "warn": { "all": [{ "event": "cobertura_duvidosa", "is": false }] }
+        "warn": {
+          "all": [
+            {
+              "event": "cobertura_duvidosa",
+              "is": false
+            }
+          ]
+        }
       }
     },
     {
@@ -370,11 +477,24 @@
       "when": {
         "ok": {
           "all": [
-            { "event": "escala_fora_regras", "is": false },
-            { "event": "escala_desatualizada", "is": false }
+            {
+              "event": "escala_fora_regras",
+              "is": false
+            },
+            {
+              "event": "escala_desatualizada",
+              "is": false
+            }
           ]
         },
-        "warn": { "all": [{ "event": "escala_fora_regras", "is": false }] }
+        "warn": {
+          "all": [
+            {
+              "event": "escala_fora_regras",
+              "is": false
+            }
+          ]
+        }
       }
     },
     {
@@ -388,14 +508,26 @@
       "when": {
         "ok": {
           "all": [
-            { "decision": "gerencia", "is": true },
-            { "decision": "registro", "is": true }
+            {
+              "decision": "gerencia",
+              "is": true
+            },
+            {
+              "decision": "registro",
+              "is": true
+            }
           ]
         },
         "warn": {
           "any": [
-            { "decision": "gerencia", "is": true },
-            { "decision": "registro", "is": true }
+            {
+              "decision": "gerencia",
+              "is": true
+            },
+            {
+              "decision": "registro",
+              "is": true
+            }
           ]
         }
       }

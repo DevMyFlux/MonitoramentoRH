@@ -117,5 +117,7 @@ export function contextoDaPagina(caminho: string): ContextoDaPagina {
  * (o servidor também recusa, para quem tem um teste em andamento).
  */
 export function assistenteVisivelEm(caminho: string): boolean {
-  return !(caminho === "/lab/teste" || caminho.startsWith("/lab/teste/"));
+  if (caminho === "/lab/teste" || caminho.startsWith("/lab/teste/")) return false;
+  // No Palco dos Treinamentos (a sessão e o desfecho) o assistente também some.
+  return !/^\/treinamentos\/(resultado\/[^/]+|[^/]+\/jogar)\/?$/.test(caminho);
 }
