@@ -1,4 +1,5 @@
 export * from "./acessos.js";
+export * from "./conta.js";
 export * from "./holidays.js";
 export * from "./modules.js";
 export * from "./leadership-lab.js";

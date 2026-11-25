@@ -48,20 +48,60 @@ export const scopeInputSchema = z.object({
   isGlobal: z.boolean().default(false)
 });
 
+// Cargo, nível de governança e área: obrigatórios em toda conta NOVA e ao editar uma conta antiga.
+// As mensagens saem prontas para a tela, campo a campo. A lista de níveis é a mesma de
+// packages/shared (conta.ts); um teste da API garante a igualdade.
+export const nivelGovernancaSchema = z.enum(["assistente", "supervisor", "coordenador", "diretoria"], {
+  error: "Escolha o nível de governança."
+});
+
+export const cargoSchema = z
+  .string({ error: "Informe o cargo." })
+  .trim()
+  .min(2, "Informe o cargo (pelo menos 2 letras).")
+  .max(120, "O cargo pode ter até 120 letras.");
+
+export const areaIdSchema = z.string({ error: "Escolha a área." }).uuid("Escolha a área.");
+
+export const cadastroDaContaSchema = z.object({
+  cargo: cargoSchema,
+  nivelGovernanca: nivelGovernancaSchema,
+  areaId: areaIdSchema
+});
+
 export const createUserRequestSchema = z.object({
   email: emailSchema,
   name: z.string().min(2).max(160),
   role: roleSchema,
   password: passwordSchema,
-  scopes: z.array(scopeInputSchema).default([])
+  scopes: z.array(scopeInputSchema).default([]),
+  ...cadastroDaContaSchema.shape
 });
 
 export const invitationRequestSchema = z.object({
   email: emailSchema,
   name: z.string().min(2).max(160),
   role: roleSchema,
-  scopes: z.array(scopeInputSchema).default([])
+  scopes: z.array(scopeInputSchema).default([]),
+  ...cadastroDaContaSchema.shape
 });
+
+/** Editar o cadastro de uma conta (inclusive antiga): os três campos juntos, completos. */
+export const updateUserRegistrationSchema = z.object({
+  name: z.string().min(2).max(160).optional(),
+  ...cadastroDaContaSchema.shape
+});
+
+export const areaCreateSchema = z.object({
+  nome: z.string({ error: "Informe o nome da área." }).trim().min(2, "Informe o nome da área.").max(80)
+});
+
+export const areaUpdateSchema = z
+  .object({
+    nome: z.string().trim().min(2).max(80).optional(),
+    ativa: z.boolean().optional()
+  })
+  .refine((v) => v.nome !== undefined || v.ativa !== undefined, "Informe o nome ou a situação.");
 
 export const idParamsSchema = z.object({
   id: z.string().uuid()

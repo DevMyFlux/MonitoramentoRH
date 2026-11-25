@@ -206,6 +206,15 @@ describe("Leadership Lab: fazer o teste e ver resultados", () => {
         }
   });
 
+  it("áreas: a equipe lê; só DEV e ADMIN editam", () => {
+    const le: Record<P, boolean> = { DEV: true, ADMIN: true, RH: true, COMUM: false };
+    const edita: Record<P, boolean> = { DEV: true, ADMIN: true, RH: false, COMUM: false };
+    for (const ator of perfis) {
+      expect(can(eu(ator), "area:ler", undefined), `ler área ${ator}`).toBe(le[ator]);
+      expect(can(eu(ator), "area:editar", undefined), `editar área ${ator}`).toBe(edita[ator]);
+    }
+  });
+
   it("acompanhamento e configuração de treinamentos", () => {
     const equipe: Record<P, boolean> = { DEV: true, ADMIN: true, RH: true, COMUM: false };
     const edita: Record<P, boolean> = { DEV: true, ADMIN: true, RH: false, COMUM: false };

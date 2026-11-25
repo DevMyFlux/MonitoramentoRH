@@ -124,6 +124,20 @@ export const navigationGroups: NavigationGroup[] = [
     ]
   },
   {
+    label: "Administração",
+    // Contas de acesso: cargo, nível de governança, área e perfil. DEV, ADMIN e RH; a API decide
+    // quem gerencia quem (packages/shared, can). Fica só no menu lateral, fora do dock do celular.
+    items: [
+      {
+        label: "Usuários",
+        href: "/usuarios",
+        icon: UserCog,
+        roles: ["DEV", "ADMIN", "RH"],
+        foraDoDock: true
+      }
+    ]
+  },
+  {
     label: "Estrutura e contratos",
     hidden: true,
     items: [
@@ -155,7 +169,6 @@ export const navigationGroups: NavigationGroup[] = [
       { label: "Planos de desenvolvimento", href: "/planos", icon: Workflow },
       { label: "Importações", href: "/importacoes", icon: FileCog },
       { label: "Auditoria", href: "/auditoria", icon: ShieldCheck },
-      { label: "Usuários", href: "/usuarios", icon: UserCog },
       { label: "Parâmetros", href: "/parametros", icon: Settings }
     ]
   }

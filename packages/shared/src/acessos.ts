@@ -44,6 +44,8 @@ export type AlvosDeAcesso = {
   "lab:contestar": Resultado;
   "lab:decidir-contestacao": Resultado;
   "lab:ver-acompanhamento": undefined;
+  "area:ler": undefined;
+  "area:editar": undefined;
   "treinamento:ler-config": undefined;
   "treinamento:editar-config": undefined;
   "treinamento:aprovar": undefined;
@@ -64,6 +66,8 @@ export const acoesDeAcesso = [
   "lab:contestar",
   "lab:decidir-contestacao",
   "lab:ver-acompanhamento",
+  "area:ler",
+  "area:editar",
   "treinamento:ler-config",
   "treinamento:editar-config",
   "treinamento:aprovar",
@@ -219,6 +223,10 @@ export function decidirAcesso<A extends AcaoDeAcesso>(
     case "lab:ver-acompanhamento":
     case "treinamento:ler-config":
       return naEquipe(ator.role) ? permitido : negar("perfil");
+    case "area:ler":
+      // Quem cadastra contas precisa ver as áreas para escolher uma.
+      return naEquipe(ator.role) ? permitido : negar("perfil");
+    case "area:editar":
     case "treinamento:editar-config":
     case "treinamento:aprovar":
       // DEV e ADMIN editam e aprovam; o RH só lê e comenta.

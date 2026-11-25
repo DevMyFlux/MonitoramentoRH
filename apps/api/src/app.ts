@@ -49,6 +49,7 @@ import {
 } from "./modules/leadership-lab/lab-modulo.js";
 import { registrarRotasDoLab } from "./modules/leadership-lab/lab-routes.js";
 import { registrarTravaDoComum } from "./modules/identity/comum-guard.js";
+import { registrarRotasDeCadastroDaConta } from "./modules/users/user-account-routes.js";
 import { registrarRotasDosTreinamentos } from "./modules/treinamentos/treinamentos-routes.js";
 import {
   type ConfigDosTreinamentos,
@@ -255,6 +256,7 @@ export async function buildApp(
   );
 
   await app.register(async a => registerRecruitmentRoutes(a, userRepository, prisma), { prefix: apiPrefix });
+  await app.register(async a => registrarRotasDeCadastroDaConta(a, userRepository, prisma), { prefix: apiPrefix });
   await app.register(async a => registerWorkspaceRoutes(a, userRepository, prisma), { prefix: apiPrefix });
   await app.register(async a => registerEmployeeScheduleRoutes(a, userRepository, prisma), { prefix: apiPrefix });
 

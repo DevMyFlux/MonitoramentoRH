@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { camposFaltando } from "@my-flux/shared";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { authenticateRequest } from "../auth/auth-routes.js";
 import type { UserRepository } from "../users/user-repository.js";
@@ -175,20 +176,32 @@ export async function registerWorkspaceRoutes(
   app.get("/users", async (req) => {
     const user = await authenticateRequest(req, users);
     assertRole(user, ["DEV", "ADMIN", "RH"]);
-    return {
-      data: await db.user.findMany({
-        where: user.role === "DEV" ? {} : { createdBy: user.id },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          isActive: true,
-          role: { select: { name: true } },
-          scopes: { select: { companyId: true, operationId: true, unitId: true, isGlobal: true } }
-        },
-        orderBy: { name: "asc" }
+    const apenasPendentes = z.object({ pendentes: z.enum(["0", "1"]).optional() }).parse(req.query).pendentes === "1";
+    const lista = await db.user.findMany({
+      where: user.role === "DEV" ? {} : { createdBy: user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isActive: true,
+        cargo: true,
+        nivelGovernanca: true,
+        area: { select: { id: true, nome: true } },
+        role: { select: { name: true } },
+        scopes: { select: { companyId: true, operationId: true, unitId: true, isGlobal: true } }
+      },
+      orderBy: { name: "asc" }
+    });
+    // Contas antigas ficam sem cargo, nível e área: `cadastroIncompleto` lista o que falta.
+    const comPendencias = lista.map((conta) => ({
+      ...conta,
+      cadastroIncompleto: camposFaltando({
+        cargo: conta.cargo,
+        nivelGovernanca: conta.nivelGovernanca,
+        areaId: conta.area?.id
       })
-    };
+    }));
+    return { data: apenasPendentes ? comPendencias.filter((c) => c.cadastroIncompleto.length > 0) : comPendencias };
   });
   app.patch("/users/:id/status", async (req) => {
     const user = await authenticateRequest(req, users);

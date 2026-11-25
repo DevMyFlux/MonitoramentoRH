@@ -73,7 +73,7 @@ const lista: readonly ModuloDef[] = [
 
   // --- Gestão (telas próprias) ---
   modulo("dashboard", "Dashboard", ["/dashboard"], { apiPrefixos: ["/dashboard"] }),
-  modulo("usuarios", "Usuários", ["/usuarios"], { apiPrefixos: ["/users"] }),
+  modulo("usuarios", "Usuários", ["/usuarios"], { apiPrefixos: ["/users", "/areas"] }),
   modulo("auditoria", "Auditoria", ["/auditoria"], { apiPrefixos: ["/audit"] }),
   modulo("importacoes", "Importações", ["/importacoes"], { apiPrefixos: ["/imports"] }),
 

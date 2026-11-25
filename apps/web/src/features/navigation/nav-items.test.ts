@@ -13,6 +13,23 @@ describe("navigation groups", () => {
     expect(labels).toContain("Parâmetros");
   });
 
+  describe("Usuários", () => {
+    const item = navigationGroups.flatMap((g) => g.items).find((i) => i.label === "Usuários");
+
+    it("aparece para DEV, ADMIN e RH e nunca para o COMUM", () => {
+      expect(item).toMatchObject({ href: "/usuarios", roles: ["DEV", "ADMIN", "RH"] });
+      expect(item?.hidden).toBeUndefined();
+      expect(navigationGroups.find((g) => g.items.includes(item!))?.hidden).toBeUndefined();
+      for (const perfil of ["DEV", "ADMIN", "RH"] as const)
+        expect(itemVisivelPara(item!, perfil)).toBe(true);
+      expect(itemVisivelPara(item!, "COMUM")).toBe(false);
+    });
+
+    it("fica só no menu lateral, fora do dock do celular", () => {
+      expect(item?.foraDoDock).toBe(true);
+    });
+  });
+
   describe("Treinamentos", () => {
     const item = navigationGroups.flatMap((g) => g.items).find((i) => i.label === "Treinamentos");
 

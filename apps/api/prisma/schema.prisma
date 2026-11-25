@@ -7,6 +7,30 @@ datasource db {
   schemas  = ["public", "leadership_lab", "treinamentos"]
 }
 
+/// Nível de governança da pessoa na empresa (define, com a área, o público dos treinamentos).
+enum NivelGovernanca {
+  assistente
+  supervisor
+  coordenador
+  diretoria
+  @@schema("public")
+}
+
+/// Áreas da empresa (RH, Administrativo, Compras...). Lista configurável por DEV e ADMIN.
+model Area {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug      String           @unique
+  nome      String
+  ativa     Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  createdBy String?          @db.Uuid
+  updatedBy String?          @db.Uuid
+  usuarios  User[]
+  convites  UserInvitation[]
+  @@schema("public")
+}
+
 enum RoleName {
   DEV
   ADMIN
@@ -132,6 +156,11 @@ model User {
   createdBy            String?              @db.Uuid
   updatedBy            String?              @db.Uuid
   archivedAt           DateTime?
+  /// Cadastro da conta: opcionais só por causa das contas antigas (obrigatórios nas novas, na API).
+  cargo                String?
+  nivelGovernanca      NivelGovernanca?
+  areaId               String?              @db.Uuid
+  area                 Area?                @relation(fields: [areaId], references: [id])
   auditLogs            AuditLog[]
   scopes               UserScope[]
   refreshSessions      RefreshSession[]
@@ -142,6 +171,7 @@ model User {
   labPermissoes        LabPermissaoUsuario[]
   labNotificacoesLidas LabNotificacaoLeitura[]
   labTurmas            LabTurma[]
+  @@index([areaId])
   @@schema("public")
 }
 
@@ -1012,6 +1042,10 @@ model UserInvitation {
   updatedAt   DateTime     @updatedAt
   updatedBy   String?      @db.Uuid
   archivedAt  DateTime?
+  cargo       String?
+  nivelGovernanca NivelGovernanca?
+  areaId      String?      @db.Uuid
+  area        Area?        @relation(fields: [areaId], references: [id])
 
   @@index([email])
   @@index([createdById])
