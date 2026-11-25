@@ -93,7 +93,8 @@ def test_o_esquema_aceita_resposta_ou_consulta_e_lista_as_consultas(monkeypatch)
     assert props["tipo"]["enum"] == ["resposta", "consulta"]
     assert props["consulta"]["enum"] == list(suporte.CONSULTAS)
     assert set(suporte.CONSULTAS) == {
-        "resumo_colaboradores", "desligados_recentes", "admissoes_recentes", "afastamentos_atuais", "escalas_recentes"
+        "resumo_colaboradores", "desligados_recentes", "admissoes_recentes", "afastamentos_atuais",
+        "escalas_recentes", "meus_resultados",
     }
 
 

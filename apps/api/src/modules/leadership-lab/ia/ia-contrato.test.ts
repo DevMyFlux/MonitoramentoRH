@@ -17,8 +17,11 @@ import {
   conversaIaRequestSchema,
   guardaIaRequestSchema,
   iniciarSessaoIaRequestSchema,
+  pessoaIaSchema,
   proximoTurnoIaRequestSchema,
+  respostaSuporteIaSchema,
   respostaTurnoIaSchema,
+  suporteIaRequestSchema,
   turnoIaSchema,
   validarAberturaIa,
   validarConversaIa,
@@ -936,6 +939,91 @@ describe("agente do fechamento", () => {
     expect(fechamento("facilitador")).toBe(false);
     expect(
       respostaTurnoIaSchema.safeParse({ ...respostaTurnoExemplo(), uso: usoExemplo("analista") })
+        .success
+    ).toBe(false);
+  });
+});
+
+describe("assistente de suporte: escopo, pessoa e resultados próprios", () => {
+  const pessoa = {
+    cargo: "Supervisor de manutenção",
+    nivel_governanca: "supervisor",
+    area: "Manutenção"
+  };
+  const base = {
+    mensagem: "Como funciona o teste?",
+    historico: [],
+    perfil: "COMUM",
+    pagina: { caminho: "/lab", titulo: "Leadership Lab" }
+  };
+
+  it("a pessoa é cargo, nível e área e nada mais (sem identificação)", () => {
+    expect(pessoaIaSchema.safeParse(pessoa).success).toBe(true);
+    for (const campo of ["nome", "email", "matricula", "userId"])
+      expect(pessoaIaSchema.safeParse({ ...pessoa, [campo]: "x" }).success, campo).toBe(false);
+    expect(pessoaIaSchema.safeParse({ ...pessoa, nivel_governanca: "presidente" }).success).toBe(
+      false
+    );
+    expect(pessoaIaSchema.safeParse({ ...pessoa, cargo: "x" }).success).toBe(false);
+  });
+
+  it("o pedido aceita escopo e pessoa opcionais; sem eles é o de sempre", () => {
+    expect(suporteIaRequestSchema.safeParse(base).success).toBe(true);
+    expect(suporteIaRequestSchema.safeParse({ ...base, escopo: "lab", pessoa }).success).toBe(true);
+    expect(suporteIaRequestSchema.safeParse({ ...base, escopo: "tudo" }).success).toBe(false);
+  });
+
+  it("no escopo lab os dados só podem ser os resultados da própria pessoa", () => {
+    const dados = (consulta: string) => ({ consulta, resultado: { x: 1 } });
+    expect(
+      suporteIaRequestSchema.safeParse({ ...base, escopo: "lab", dados: dados("meus_resultados") })
+        .success
+    ).toBe(true);
+    for (const consulta of ["desligados_recentes", "resumo_colaboradores", "escalas_recentes"])
+      expect(
+        suporteIaRequestSchema.safeParse({ ...base, escopo: "lab", dados: dados(consulta) })
+          .success,
+        consulta
+      ).toBe(false);
+    // No escopo completo as consultas de dados da empresa seguem valendo.
+    expect(
+      suporteIaRequestSchema.safeParse({
+        ...base,
+        perfil: "RH",
+        dados: dados("desligados_recentes")
+      }).success
+    ).toBe(true);
+  });
+
+  it("a conversa do facilitador aceita a pessoa, e só ela", () => {
+    const conversa = {
+      modo: "aprendizagem",
+      molde: "supervisor",
+      mensagem: "Como dou feedback?",
+      historico: [],
+      resultado: null,
+      contexto: contextoPedagogico("supervisor", null)
+    };
+    expect(conversaIaRequestSchema.safeParse({ ...conversa, pessoa }).success).toBe(true);
+    expect(conversaIaRequestSchema.safeParse(conversa).success).toBe(true);
+    expect(
+      conversaIaRequestSchema.safeParse({ ...conversa, pessoa: { ...pessoa, nome: "x" } }).success
+    ).toBe(false);
+  });
+
+  it("a resposta da IA pode ser texto, consulta (inclusive meus_resultados) ou recusa do assunto", () => {
+    const uso = usoExemplo("suporte");
+    expect(respostaSuporteIaSchema.safeParse({ resposta: "ok", uso }).success).toBe(true);
+    expect(
+      respostaSuporteIaSchema.safeParse({
+        consulta: { nome: "meus_resultados", limite: null },
+        uso
+      }).success
+    ).toBe(true);
+    expect(respostaSuporteIaSchema.safeParse({ fora_do_escopo: true, uso }).success).toBe(true);
+    expect(respostaSuporteIaSchema.safeParse({ fora_do_escopo: false, uso }).success).toBe(false);
+    expect(
+      respostaSuporteIaSchema.safeParse({ fora_do_escopo: true, resposta: "texto solto", uso })
         .success
     ).toBe(false);
   });

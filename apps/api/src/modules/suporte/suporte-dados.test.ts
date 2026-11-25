@@ -8,7 +8,7 @@ import { configDeTeste } from "../leadership-lab/motor/cenario-de-teste.js";
 import { MotorDoTeste } from "../leadership-lab/motor/motor.js";
 import {
   LIMITE_MAXIMO,
-  MENSAGEM_DE_LIMITACAO,
+  RESPOSTA_FORA_DO_ESCOPO,
   consultarDados,
   podeConsultarDados
 } from "./suporte-dados.js";
@@ -250,15 +250,16 @@ describe("motor.suporte: o assistente com dados", () => {
     expect(r.resposta).toContain("Ana Souza");
   });
 
-  it("perfil COMUM: recusa com a mensagem de limitação, não consulta o banco e a IA não vê nada", async () => {
+  it("perfil COMUM: recusa com a mensagem fixa, não consulta o banco e a IA não vê nada", async () => {
     const { b, ia, motor } = montar();
     const r = await motor.suporte(
       ator("COMUM"),
       usuario("COMUM", daOperacao),
       ENTRADA("Quantos funcionários temos?")
     );
-    expect(r).toEqual({ desfecho: "restrita", resposta: MENSAGEM_DE_LIMITACAO });
-    expect(r.resposta).toMatch(/limitações da sua conta/);
+    // O COMUM só conversa sobre o Leadership Lab: a pergunta de dados é "fora do escopo".
+    expect(r).toEqual({ desfecho: "fora_do_escopo", resposta: RESPOSTA_FORA_DO_ESCOPO });
+    expect(r.resposta).toMatch(/RH/);
     expect(ia.chamadas.suporte).toBe(1);
     expect(b.employee.findMany).not.toHaveBeenCalled();
     expect(b.employee.groupBy).not.toHaveBeenCalled();
@@ -308,7 +309,11 @@ describe("motor.suporte: o assistente com dados", () => {
     expect((await motor.estadoDoSuporte()).estado).toBe("ok");
     ia.saude = async () => ({ servico: "lab-ia", versao_instrucao: "v1" });
     expect(await motor.estadoDoSuporte()).toMatchObject({ estado: "desatualizado", versao: "v1" });
-    ia.saude = async () => ({ versao_instrucao: "v2", agentes: ["facilitador", "suporte"] });
+    ia.saude = async () => ({
+      versao_instrucao: "v2",
+      agentes: ["facilitador", "suporte"],
+      recursos_suporte: ["escopo", "pessoa", "meus_resultados", "fora_do_escopo"]
+    });
     expect(await motor.estadoDoSuporte()).toMatchObject({ estado: "ok", versao: "v2" });
     ia.saude = async () => {
       throw new Error("a IA respondeu HTTP 503");

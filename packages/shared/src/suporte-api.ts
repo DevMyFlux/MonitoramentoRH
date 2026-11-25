@@ -40,9 +40,10 @@ export const suporteRespostaSchema = z.strictObject({
   /** "bloqueada": a mensagem tinha dado sensível e não foi enviada à IA. */
   /**
    * "respondida"; "bloqueada" (a mensagem tinha dado sensível e não foi enviada à IA); "restrita" (a
-   * pergunta pede dados de pessoas e o perfil da conta não pode vê-los).
+   * pergunta pede dados de pessoas e o perfil da conta não pode vê-los); "fora_do_escopo" (conta COMUM
+   * perguntou de algo que não é o Leadership Lab nem o resultado dela: recusa curta, sem consultar nada).
    */
-  desfecho: z.enum(["respondida", "bloqueada", "restrita"]),
+  desfecho: z.enum(["respondida", "bloqueada", "restrita", "fora_do_escopo"]),
   resposta: z.string()
 });
 export type SuporteResposta = z.infer<typeof suporteRespostaSchema>;

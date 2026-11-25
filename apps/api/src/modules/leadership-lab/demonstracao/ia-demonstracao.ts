@@ -21,7 +21,12 @@ import {
   proximoTurnoIaRequestSchema,
   suporteIaRequestSchema
 } from "../ia/ia-contrato.js";
-import { consultaPedidaPela, responderComoSuporte } from "./suporte-demonstracao.js";
+import {
+  assuntoDoLab,
+  consultaPedidaPela,
+  pedidoDosPropriosResultados,
+  responderComoSuporte
+} from "./suporte-demonstracao.js";
 import type { ClienteIa } from "../motor/cliente-ia.js";
 import { responderComoFacilitador } from "./facilitador-demonstracao.js";
 import { cenarioDe, idsDasCategorias } from "../simulador/catalogo.js";
@@ -258,6 +263,14 @@ export class IaDemonstracao implements ClienteIa {
 
   async suporte(corpo: unknown): Promise<unknown> {
     const pedido = suporteIaRequestSchema.parse(corpo);
+    // Escopo "lab" (COMUM): só o Leadership Lab e os resultados da própria pessoa.
+    if (pedido.escopo === "lab" && !pedido.dados) {
+      const m = pedido.mensagem;
+      if (pedidoDosPropriosResultados(m))
+        return { consulta: { nome: "meus_resultados", limite: null }, uso: uso("suporte") };
+      if (!assuntoDoLab(m)) return { fora_do_escopo: true, uso: uso("suporte") };
+      return { resposta: responderComoSuporte(pedido), uso: uso("suporte") };
+    }
     const consulta = pedido.dados ? null : consultaPedidaPela(pedido.mensagem);
     if (consulta) return { consulta: { nome: consulta, limite: null }, uso: uso("suporte") };
     return { resposta: responderComoSuporte(pedido), uso: uso("suporte") };

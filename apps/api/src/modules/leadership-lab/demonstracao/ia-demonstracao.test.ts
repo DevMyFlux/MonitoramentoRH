@@ -238,3 +238,51 @@ describe("IaDemonstracao obedece ao contrato do serviço de IA", () => {
     expect(JSON.stringify(bruto)).not.toContain("SEGREDO-DO-TEXTO-LIVRE");
   });
 });
+
+describe("assistente de suporte no modo demonstração (escopo lab, do COMUM)", () => {
+  const pedido = (mensagem: string, extra: Record<string, unknown> = {}) => ({
+    mensagem,
+    historico: [],
+    perfil: "COMUM",
+    pagina: { caminho: "/lab", titulo: "Leadership Lab" },
+    escopo: "lab",
+    ...extra
+  });
+  const ia = () => new IaDemonstracao();
+
+  it("assunto do Lab é respondido, e só com o tópico do Lab", async () => {
+    const r = (await ia().suporte(pedido("Como funciona o teste?"))) as { resposta: string };
+    expect(r.resposta).toMatch(/Leadership Lab/);
+    expect(r.resposta).not.toMatch(/Escalas|Colaboradores/);
+  });
+
+  it("assunto de outro módulo é recusado, sem texto da IA", async () => {
+    for (const mensagem of [
+      "Como gero a escala do mês?",
+      "Quem foi desligado recentemente?",
+      "Quantos funcionários temos?"
+    ]) {
+      const r = (await ia().suporte(pedido(mensagem))) as Record<string, unknown>;
+      expect(r.fora_do_escopo, mensagem).toBe(true);
+      expect(r).not.toHaveProperty("resposta");
+      expect(r).not.toHaveProperty("consulta");
+    }
+  });
+
+  it("a pergunta sobre o próprio resultado pede meus_resultados", async () => {
+    const r = (await ia().suporte(pedido("Qual foi o meu resultado?"))) as {
+      consulta: { nome: string };
+    };
+    expect(r.consulta.nome).toBe("meus_resultados");
+  });
+
+  it("o escopo completo (staff) segue igual: escalas são respondidas", async () => {
+    const r = (await ia().suporte({
+      mensagem: "Como gero a escala do mês?",
+      historico: [],
+      perfil: "RH",
+      pagina: { caminho: "/escalas", titulo: "Escalas" }
+    })) as { resposta: string };
+    expect(r.resposta).toMatch(/Escalas/);
+  });
+});
