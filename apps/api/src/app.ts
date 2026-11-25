@@ -48,6 +48,7 @@ import {
   usaModoDemonstracao
 } from "./modules/leadership-lab/lab-modulo.js";
 import { registrarRotasDoLab } from "./modules/leadership-lab/lab-routes.js";
+import { registrarTravaDoComum } from "./modules/identity/comum-guard.js";
 import { registrarRotasDosTreinamentos } from "./modules/treinamentos/treinamentos-routes.js";
 import {
   type ConfigDosTreinamentos,
@@ -160,6 +161,8 @@ export async function buildApp(
     }
   });
   const userRepository = new UserRepository(prisma);
+  // O COMUM só alcança o Leadership Lab (e o que é global): negado por padrão, antes de a rota rodar.
+  registrarTravaDoComum(app, userRepository, apiPrefix);
   const operationalRepository = new OperationalRepository(prisma);
   const employeeRepository = new EmployeeRepository(prisma);
   const importRepository = new ImportRepository(prisma, employeeRepository);

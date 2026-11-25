@@ -1,4 +1,6 @@
+export * from "./acessos.js";
 export * from "./holidays.js";
+export * from "./modules.js";
 export * from "./leadership-lab.js";
 export * from "./leadership-lab-acesso.js";
 export * from "./leadership-lab-api.js";

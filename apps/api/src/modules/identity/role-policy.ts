@@ -1,21 +1,15 @@
 import type { Role } from "@my-flux/types";
-import { roleRank } from "@my-flux/shared";
+import { perfilGerencia } from "@my-flux/shared";
 import { HttpError } from "../../lib/http-error.js";
 
+// A regra mora em packages/shared (acessos.ts, perfilGerencia): DEV gerencia qualquer perfil, ADMIN só
+// RH e COMUM, RH só COMUM. Aqui só se traduz para os nomes que as rotas já usam.
 export function canCreateRole(actorRole: Role, targetRole: Role): boolean {
-  if (actorRole === "DEV") {
-    return true;
-  }
-
-  return roleRank[actorRole] > roleRank[targetRole];
+  return perfilGerencia(actorRole, targetRole);
 }
 
 export function canManageRole(actorRole: Role, targetRole: Role): boolean {
-  if (actorRole === "DEV") {
-    return true;
-  }
-
-  return roleRank[actorRole] > roleRank[targetRole];
+  return perfilGerencia(actorRole, targetRole);
 }
 
 export function assertCanCreateRole(actorRole: Role, targetRole: Role): void {
