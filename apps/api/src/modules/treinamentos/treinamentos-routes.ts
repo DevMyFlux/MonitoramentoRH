@@ -16,6 +16,7 @@
 //   GET  /cenarios                       cenários e versões
 //   POST /cenarios                       { conteudo } cria o cenário com a versão 1
 //   POST /cenarios/validar               { conteudo } -> { valido, problemas[], resumo }
+//   POST /cenarios/importar              { cenarios[] } em lote, como RASCUNHO; relatório por item
 //   GET  /cenarios/:id/versoes/:versaoId conteúdo completo de uma versão (pré-visualização)
 //   POST /cenarios/:id/versoes           { conteudo } nova versão (mesmo slug)
 //   POST /cenarios/:id/aprovar           { versaoId } congela a versão
@@ -35,6 +36,7 @@ import {
   treinoAtribuirBodySchema,
   treinoConteudoBodySchema,
   treinoFiltrosDoRhSchema,
+  treinoImportarBodySchema,
   treinoRespostaBodySchema,
   treinoSimularBodySchema,
   treinoValidarTentativaBodySchema
@@ -51,6 +53,8 @@ const paramsDaVersao = z.object({ id: z.uuid(), versaoId: z.uuid() });
 /** Corpos pequenos, exceto o do conteúdo de cenário (JSON de autoria). */
 const LIMITE_DO_CORPO = 16 * 1024;
 const LIMITE_DO_CENARIO = 512 * 1024;
+/** Importação em lote: até 100 cenários de ~12 KB cada. */
+const LIMITE_DA_IMPORTACAO = 4 * 1024 * 1024;
 
 export async function registrarRotasDosTreinamentos(
   app: FastifyInstance,
@@ -129,6 +133,12 @@ export async function registrarRotasDosTreinamentos(
   app.post("/cenarios/validar", grande, async (request) => {
     const corpo = treinoConteudoBodySchema.parse(request.body);
     return { data: servico.validar(await atorDe(request), corpo.conteudo) };
+  });
+
+  // Importação em lote (formato do projeto ou do pacote do Lab): 200 com o relatório por item.
+  app.post("/cenarios/importar", { bodyLimit: LIMITE_DA_IMPORTACAO }, async (request) => {
+    const corpo = treinoImportarBodySchema.parse(request.body);
+    return { data: await servico.importarCenarios(await atorDe(request), corpo.cenarios) };
   });
 
   app.post("/cenarios", grande, async (request, reply) => {

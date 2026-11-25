@@ -1,0 +1,513 @@
+{
+ "id": "sup-checklist-incompleto",
+ "title": "Checklist de OS incompleto",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Segunda, 14h. Uma auditoria interna encontra OS fechadas com o checklist incompleto.",
+   "Você é o supervisor e precisa tratar o assunto.",
+   "O técnico diz que 'sempre fez assim e nunca teve problema'."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_coordenacao",
+   "label": "Informar a coordenação",
+   "procedure": "Informar a coordenação sobre o achado da auditoria e o plano de tratamento. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "levantar",
+   "label": "Levantar a extensão",
+   "procedure": "Verificar quantas OS e quais técnicos estão afetados. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "entender_causa",
+   "label": "Entender a causa",
+   "procedure": "Descobrir por que o checklist não foi preenchido. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "corrigir_registro",
+   "label": "Corrigir o registro",
+   "procedure": "Regularizar o que for possível, sem alterar o que não aconteceu. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "treinar",
+   "label": "Alinhar o procedimento",
+   "procedure": "Reforçar com a equipe o preenchimento correto e acompanhar. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_coordenacao",
+   "shot": "mesa",
+   "time": "14:05",
+   "narration": "14:05 · O relatório de auditoria chegou e a coordenação ainda não viu.",
+   "prompt": "Qual é a sua primeira ação?",
+   "alternatives": [
+    {
+     "text": "Espero a auditoria cobrar para me mexer.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Atitude reativa",
+      "text": "O prazo se encurta e a equipe se pressiona.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Levo o relatório à coordenação e proponho um plano de tratamento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Coordenação ciente",
+      "text": "Você chega com o problema e uma proposta.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Resolvo o quanto antes sem comentar com ninguém.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Silêncio sobre o achado",
+      "text": "Se a auditoria perguntar, a coordenação será surpreendida.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Aviso a coordenação e peço apoio para definir o prazo de correção.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Apoio pedido",
+      "text": "A correção ganha prioridade e respaldo.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "levantar",
+   "shot": "tela",
+   "time": "14:30",
+   "narration": "14:30 · Há várias OS com campos em branco.",
+   "prompt": "Como você avalia o tamanho do problema?",
+   "alternatives": [
+    {
+     "text": "Levanto todas as OS do período e identifico o padrão e os técnicos afetados.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Extensão levantada",
+      "text": "Você sabe exatamente o que precisa corrigir.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero só as que a auditoria apontou.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Só o que foi mostrado",
+      "text": "Outros casos continuam sem ser vistos.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Pergunto à equipe quantas OS acham que têm problema.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Estimativa subjetiva",
+      "text": "A resposta depende da memória de cada um.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço um relatório do sistema com os campos obrigatórios vazios.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Relatório do sistema",
+      "text": "Os dados dão o retrato mais fiel.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "entender_causa",
+   "shot": "reuniao",
+   "time": "15:00",
+   "narration": "15:00 · Os técnicos explicam que o campo atrasa o trabalho.",
+   "prompt": "Como você busca a causa?",
+   "alternatives": [
+    {
+     "text": "Converso com os técnicos para entender dificuldades de tempo, sistema ou clareza.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Causa investigada",
+      "text": "Você descobre o que realmente atrapalha.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Culpo os técnicos mais antigos pela falta de disciplina.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Culpa pessoal",
+      "text": "A equipe se fecha e esconde as dificuldades.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Observo o preenchimento de uma OS em campo para ver onde trava.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Observação direta",
+      "text": "Você enxerga o problema em vez de supor.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Cobro o preenchimento e pronto, as regras são claras.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Cobrança direta",
+      "text": "A causa continua sem ser tratada.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "corrigir_registro",
+   "shot": "documento",
+   "time": "15:30",
+   "narration": "15:30 · Algumas OS têm informações que o técnico lembra bem.",
+   "prompt": "O que você faz com os registros?",
+   "alternatives": [
+    {
+     "text": "Deixo tudo como está, não vale a pena mexer.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro abandonado",
+      "text": "A auditoria seguinte encontrará o mesmo problema.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Corrijo com a data atual e uma nota explicando a regularização.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Correção documentada",
+      "text": "A data e o motivo ficam claros.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Preencho todos os campos em branco como se tivessem sido feitos.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Registro falsificado",
+      "text": "Você cria um registro do que não aconteceu.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Regularizo o que o técnico confirma ter feito e registro o que não é possível confirmar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Regularização honesta",
+      "text": "O registro passa a refletir o que é verdade.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "treinar",
+   "shot": "relogio",
+   "time": "16:00",
+   "narration": "16:00 · A equipe precisa de clareza sobre o que se espera.",
+   "prompt": "Como você evita que volte a acontecer?",
+   "alternatives": [
+    {
+     "text": "Peço ao sistema um alerta de campo obrigatório e converso com a equipe.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Prevenção no sistema",
+      "text": "O erro fica mais difícil de repetir.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Reúno a equipe, reforço o preenchimento e acompanho nas próximas semanas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Procedimento reforçado",
+      "text": "Todos entendem e há acompanhamento.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Mando um comunicado e considero encerrado.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Comunicado e pronto",
+      "text": "Sem acompanhamento, os hábitos voltam.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Reforço o procedimento só com quem errou.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Orientação seletiva",
+      "text": "A equipe percebe tratamento desigual.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Problema escondido",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "levantar",
+      "is": false
+     },
+     {
+      "decision": "entender_causa",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Extensão conhecida",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "levantar",
+      "is": true
+     },
+     {
+      "decision": "entender_causa",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Registro regularizado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "corrigir_registro",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Coordenação ciente",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_coordenacao",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Prática que volta a se repetir",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "treinar",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Qualidade dos registros",
+   "levels": {
+    "ok": "Registros confiáveis",
+    "warn": "Registros parcialmente confiáveis",
+    "bad": "Registros comprometidos"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Conformidade na auditoria",
+   "levels": {
+    "ok": "Pronto para a próxima auditoria",
+    "warn": "Algumas lacunas permanecem",
+    "bad": "Auditoria vai reencontrar o problema"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Cultura da equipe",
+   "levels": {
+    "ok": "Equipe engajada",
+    "warn": "Equipe pouco convencida",
+    "bad": "Equipe na defensiva"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "supervisor-manutencao-adm"
+}

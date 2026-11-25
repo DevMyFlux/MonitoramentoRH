@@ -25,6 +25,14 @@ export const treinoValidarTentativaBodySchema = z.strictObject({
 /** Conteúdo de cenário vindo da autoria: o formato é conferido por validarCenario(). */
 export const treinoConteudoBodySchema = z.strictObject({ conteudo: z.unknown() });
 
+/** Quantos cenários cabem numa importação em lote (os 40 do Lab cabem com folga). */
+export const TREINO_IMPORTACAO_MAXIMA = 100;
+
+/** Importação em lote: cada item é um cenário bruto (formato do projeto ou do pacote do Lab). */
+export const treinoImportarBodySchema = z.strictObject({
+  cenarios: z.array(z.unknown()).min(1).max(TREINO_IMPORTACAO_MAXIMA)
+});
+
 export const treinoAprovarBodySchema = z.strictObject({ versaoId: id });
 
 export const treinoAtribuirBodySchema = z.strictObject({

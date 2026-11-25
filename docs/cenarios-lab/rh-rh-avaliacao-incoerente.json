@@ -1,0 +1,513 @@
+{
+ "id": "rh-avaliacao-incoerente",
+ "title": "Avaliações de desempenho incoerentes",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Quarta, 14h. As avaliações de desempenho chegaram com notas muito diferentes entre gestores.",
+   "Você é do RH e precisa tornar o processo justo.",
+   "Um gestor deu nota máxima para todos; outro, nota baixa para todos."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "alinhar_gestores",
+   "label": "Alinhar com os gestores",
+   "procedure": "Alinhar critérios e expectativas com os gestores. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "analisar_distribuicao",
+   "label": "Analisar as notas",
+   "procedure": "Analisar a distribuição das notas por gestor. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "calibrar",
+   "label": "Calibrar as avaliações",
+   "procedure": "Fazer uma reunião de calibração com evidências. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_decisoes",
+   "label": "Registrar as decisões",
+   "procedure": "Registrar os critérios e as mudanças feitas. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "dar_retorno",
+   "label": "Dar retorno",
+   "procedure": "Dar retorno aos gestores e aos avaliados com clareza. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "alinhar_gestores",
+   "shot": "mesa",
+   "time": "14:05",
+   "narration": "14:05 · Os gestores têm visões diferentes de 'bom desempenho'.",
+   "prompt": "Como começa?",
+   "alternatives": [
+    {
+     "text": "Preparo um guia de avaliação e envio a todos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Guia enviado",
+      "text": "A régua fica mais clara.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Reajusto as notas sozinho.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Ajuste unilateral",
+      "text": "Os gestores se sentem desautorizados.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Alinho com os gestores os critérios e como aplicá-los.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Critérios alinhados",
+      "text": "Todos avaliam com a mesma régua.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aceito as notas como vieram para não gerar atrito.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Aceite sem questionar",
+      "text": "A injustiça se consolida.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "analisar_distribuicao",
+   "shot": "tela",
+   "time": "14:30",
+   "narration": "14:30 · Os dados mostram padrões diferentes.",
+   "prompt": "Como analisa?",
+   "alternatives": [
+    {
+     "text": "Cruzo as notas com os resultados e entregas de cada pessoa.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Notas cruzadas com entregas",
+      "text": "Você vê o que sustenta cada nota.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Comparo a distribuição por gestor e vejo onde estão as maiores diferenças.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Distribuição analisada",
+      "text": "Você enxerga onde atuar.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Olho só a média geral da empresa.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Média geral",
+      "text": "Diferenças entre gestores passam despercebidas.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Considero que 'sempre foi assim'.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Hábito",
+      "text": "O viés se mantém.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "calibrar",
+   "shot": "reuniao",
+   "time": "15:00",
+   "narration": "15:00 · Os gestores precisam justificar as notas.",
+   "prompt": "Como calibra?",
+   "alternatives": [
+    {
+     "text": "Conduzo uma reunião em que cada gestor apresenta evidências das notas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Calibração feita",
+      "text": "As notas passam a ter base.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Altero as notas no sistema sem conversar.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Alteração sem diálogo",
+      "text": "Os gestores perdem a confiança no processo.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço que cada gestor revise sozinho.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Revisão isolada",
+      "text": "As diferenças persistem.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Uso casos exemplares para ancorar o que significa cada nota.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Casos âncora",
+      "text": "Todos passam a entender os níveis.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_decisoes",
+   "shot": "tela",
+   "time": "15:30",
+   "narration": "15:30 · As decisões foram tomadas.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Não registro para não criar polêmica.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem registro",
+      "text": "As mudanças ficam sem sustentação.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro só as notas finais.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro mínimo",
+      "text": "Faltam os motivos.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Compartilho o registro com a liderança.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Registro compartilhado",
+      "text": "A liderança acompanha.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro os critérios, as mudanças e os motivos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Decisões registradas",
+      "text": "O processo pode ser explicado.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "dar_retorno",
+   "shot": "relogio",
+   "time": "Semana seguinte",
+   "narration": "Semana seguinte · É hora de comunicar.",
+   "prompt": "Como dá retorno?",
+   "alternatives": [
+    {
+     "text": "Ofereço apoio aos gestores nas conversas de retorno.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Apoio oferecido",
+      "text": "As conversas são mais produtivas.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Comunico só as notas finais, sem contexto.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Retorno seco",
+      "text": "Os avaliados não entendem o resultado.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Dou retorno aos gestores e oriento como comunicar os avaliados.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Retorno estruturado",
+      "text": "Os avaliados recebem mensagens coerentes.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo cada gestor comunicar como quiser.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Comunicação livre",
+      "text": "As mensagens se contradizem.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Notas desiguais",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "analisar_distribuicao",
+      "is": false
+     },
+     {
+      "decision": "calibrar",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Critérios alinhados",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "analisar_distribuicao",
+      "is": true
+     },
+     {
+      "decision": "calibrar",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Decisões registradas",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_decisoes",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Gestores alinhados",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "alinhar_gestores",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Retorno sem coerência",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "dar_retorno",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Justiça da avaliação",
+   "levels": {
+    "ok": "Avaliação justa",
+    "warn": "Avaliação parcialmente justa",
+    "bad": "Avaliação injusta"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Confiança nos gestores",
+   "levels": {
+    "ok": "Gestores confiantes",
+    "warn": "Gestores cautelosos",
+    "bad": "Gestores desconfiados"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Clareza para os avaliados",
+   "levels": {
+    "ok": "Avaliados compreendem",
+    "warn": "Compreensão parcial",
+    "bad": "Avaliados confusos"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "rh"
+}

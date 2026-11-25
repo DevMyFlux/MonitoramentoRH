@@ -1,0 +1,513 @@
+{
+ "id": "coord-prazo-impossivel",
+ "title": "Pedido com prazo impossível",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Quarta, 17h. A diretoria pede um levantamento completo para sexta de manhã.",
+   "Você é coordenador e sabe que o prazo é muito curto.",
+   "A equipe já está no limite."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_diretoria",
+   "label": "Alinhar com a diretoria",
+   "procedure": "Alinhar com a diretoria o que é possível entregar no prazo. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "entender_necessidade",
+   "label": "Entender a necessidade",
+   "procedure": "Entender para que o levantamento será usado. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "avaliar_viabilidade",
+   "label": "Avaliar a viabilidade",
+   "procedure": "Avaliar o esforço real e a capacidade da equipe. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_acordo",
+   "label": "Registrar o combinado",
+   "procedure": "Registrar o escopo e o prazo combinados. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "comunicar_equipe",
+   "label": "Comunicar à equipe",
+   "procedure": "Explicar à equipe o que será feito e como será dividido. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_diretoria",
+   "shot": "mesa",
+   "time": "17:05",
+   "narration": "17:05 · O pedido veio sem muitos detalhes.",
+   "prompt": "Qual é a primeira reação?",
+   "alternatives": [
+    {
+     "text": "Respondo que vou avaliar e voltar rápido com o que é possível entregar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Resposta construtiva",
+      "text": "Você demonstra compromisso sem prometer o impossível.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Digo que sim para não contrariar a diretoria.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sim por pressão",
+      "text": "Você assume algo que não consegue cumprir.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço uma conversa de dez minutos para entender o pedido.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Conversa pedida",
+      "text": "Você esclarece antes de decidir.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Respondo que é impossível, sem explicar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Negativa seca",
+      "text": "A diretoria vê falta de colaboração.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "entender_necessidade",
+   "shot": "reuniao",
+   "time": "17:20",
+   "narration": "17:20 · O pedido cobre muitos dados.",
+   "prompt": "Como você entende o que realmente precisa?",
+   "alternatives": [
+    {
+     "text": "Imagino o que querem e começo a reunir tudo.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Suposição",
+      "text": "Você faz muito trabalho de pouco uso.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço mais prazo, sem perguntar o objetivo.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Prazo sem contexto",
+      "text": "A diretoria não entende o motivo.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Mostro uma versão resumida e pergunto se atende.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Versão resumida",
+      "text": "Você valida o escopo antes de investir.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Pergunto qual decisão o levantamento vai apoiar e o que é essencial.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Objetivo esclarecido",
+      "text": "Você descobre o que realmente importa.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "avaliar_viabilidade",
+   "shot": "tela",
+   "time": "17:45",
+   "narration": "17:45 · Você precisa dimensionar o trabalho.",
+   "prompt": "Como avalia a viabilidade?",
+   "alternatives": [
+    {
+     "text": "Pergunto à equipe se alguém topa ficar até tarde.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Esforço extra informal",
+      "text": "Você transfere o problema para o tempo pessoal.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Divido o trabalho em partes e vejo o que cabe até sexta.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Trabalho dividido",
+      "text": "Você propõe entregas parciais.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Estimo horas por parte do levantamento e comparo com a capacidade.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Esforço estimado",
+      "text": "Você sabe o que cabe no prazo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Acho que dá, se todos se esforçarem.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Otimismo",
+      "text": "A equipe é levada ao limite.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_acordo",
+   "shot": "tela",
+   "time": "18:10",
+   "narration": "18:10 · Fica combinado um escopo possível.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Envio um e-mail resumindo o combinado e peço confirmação.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Confirmação pedida",
+      "text": "A diretoria valida o entendimento.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro o escopo, o prazo e o que ficará para depois.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Acordo registrado",
+      "text": "Todos sabem o que foi combinado.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Fica na conversa, confio na palavra.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Acordo verbal",
+      "text": "Cada parte lembra de um jeito.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro só o prazo.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro incompleto",
+      "text": "O escopo vira discussão.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "comunicar_equipe",
+   "shot": "reuniao",
+   "time": "Quinta, 08h",
+   "narration": "Quinta, 08h · A equipe precisa saber o que fazer.",
+   "prompt": "Como comunica à equipe?",
+   "alternatives": [
+    {
+     "text": "Explico o objetivo, o escopo e a divisão do trabalho com clareza.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Equipe alinhada",
+      "text": "Todos sabem o que entregar.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Peço 'o que for possível' sem detalhar.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Instrução vaga",
+      "text": "Cada um faz algo diferente.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Reúno a equipe, apresento o plano e pergunto o que precisam para entregar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Necessidades ouvidas",
+      "text": "A equipe se sente parte do plano.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Mando uma mensagem rápida sem reunião.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Mensagem apressada",
+      "text": "Dúvidas importantes ficam sem resposta.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Compromisso impossível",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "entender_necessidade",
+      "is": false
+     },
+     {
+      "decision": "avaliar_viabilidade",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Escopo possível entendido",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "entender_necessidade",
+      "is": true
+     },
+     {
+      "decision": "avaliar_viabilidade",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Acordo registrado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_acordo",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Diretoria alinhada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_diretoria",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Equipe sem clareza ou acordo sem registro",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "comunicar_equipe",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Entrega no prazo",
+   "levels": {
+    "ok": "Entrega possível no prazo",
+    "warn": "Entrega parcial",
+    "bad": "Entrega comprometida"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Saúde da equipe",
+   "levels": {
+    "ok": "Carga razoável",
+    "warn": "Carga alta",
+    "bad": "Equipe no limite"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Relação com a diretoria",
+   "levels": {
+    "ok": "Relação fortalecida",
+    "warn": "Relação mantida",
+    "bad": "Relação desgastada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "coordenador-administrativo"
+}

@@ -1,0 +1,513 @@
+{
+ "id": "rh-admissao-incompleta",
+ "title": "Admissão com documentos incompletos",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Terça, 10h. Uma pessoa começa na segunda e faltam documentos da admissão.",
+   "Você é do RH e o gestor pressiona para a pessoa começar.",
+   "O exame admissional ainda não foi feito."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_gestor",
+   "label": "Informar o gestor",
+   "procedure": "Informar o gestor sobre o que falta e quando a pessoa poderá começar. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "conferir_docs",
+   "label": "Conferir os documentos",
+   "procedure": "Conferir a lista de documentos obrigatórios da admissão. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "confirmar_exame",
+   "label": "Confirmar o exame admissional",
+   "procedure": "Confirmar que o exame admissional foi realizado antes do início. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_admissao",
+   "label": "Registrar a admissão",
+   "procedure": "Registrar a admissão no sistema com a data de início. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "recepcionar",
+   "label": "Preparar a recepção",
+   "procedure": "Preparar integração, acessos e equipamentos para o primeiro dia. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_gestor",
+   "shot": "mesa",
+   "time": "10:05",
+   "narration": "10:05 · O gestor quer que a pessoa comece na segunda de qualquer jeito.",
+   "prompt": "Como você conduz o aviso?",
+   "alternatives": [
+    {
+     "text": "Envio ao gestor a lista de pendências e o prazo previsto.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Pendências listadas",
+      "text": "Todos sabem o que falta.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Respondo só quando ele cobrar de novo.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Silêncio",
+      "text": "O gestor segue acreditando que está tudo certo.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso o gestor do que falta e proponho uma data viável para começar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Gestor informado",
+      "text": "O gestor entende o motivo e planeja.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Digo que está tudo certo para não gerar atrito.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Tudo certo falso",
+      "text": "A pessoa começa sem documentação válida.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "conferir_docs",
+   "shot": "documento",
+   "time": "10:30",
+   "narration": "10:30 · Falta um comprovante e um documento está ilegível.",
+   "prompt": "Como confere?",
+   "alternatives": [
+    {
+     "text": "Envio à pessoa uma lista objetiva do que falta.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Lista enviada",
+      "text": "A pessoa sabe o que providenciar.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Confiro cada item da lista obrigatória e peço o que faltar à pessoa.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Documentos conferidos",
+      "text": "A admissão fica completa.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aceito o que veio e completo depois.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Aceite com pendência",
+      "text": "A pessoa começa com cadastro incompleto.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Confio no que a pessoa disse por telefone.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Confirmação verbal",
+      "text": "Falta a prova do documento.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "confirmar_exame",
+   "shot": "documento",
+   "time": "11:00",
+   "narration": "11:00 · O exame admissional ainda não foi feito.",
+   "prompt": "O que faz sobre o exame?",
+   "alternatives": [
+    {
+     "text": "Confirmo que o exame foi realizado e liberado antes do início.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Exame confirmado",
+      "text": "A pessoa começa em conformidade.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Libero para começar e deixo o exame para a semana seguinte.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Exame depois",
+      "text": "A empresa descumpre uma exigência.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Aceito o exame 'em andamento'.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Exame em andamento",
+      "text": "Não há liberação formal.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Reagendo o exame para antes do início e informo o gestor.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Exame reagendado",
+      "text": "A data de início se ajusta ao exame.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_admissao",
+   "shot": "tela",
+   "time": "11:30",
+   "narration": "11:30 · Está tudo pronto para registrar.",
+   "prompt": "Como registra a admissão?",
+   "alternatives": [
+    {
+     "text": "Lanço com a data prevista, mesmo sem tudo pronto.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Data presumida",
+      "text": "O cadastro tem informações que não são reais.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Lanço sem conferir os dados.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Lançamento rápido",
+      "text": "Erros de cadastro aparecem na folha.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço a um colega que confira o lançamento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Dupla conferência",
+      "text": "Os erros são pegos antes.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Lanço a admissão com a data correta e confiro os dados.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Admissão registrada",
+      "text": "O cadastro está completo e correto.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "recepcionar",
+   "shot": "relogio",
+   "time": "Quinta",
+   "narration": "Quinta · A pessoa começa em breve.",
+   "prompt": "Como prepara a recepção?",
+   "alternatives": [
+    {
+     "text": "Envio ao gestor e à TI uma checklist da recepção.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Checklist enviada",
+      "text": "Todos fazem sua parte.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Confirmo só o crachá.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Recepção parcial",
+      "text": "O primeiro dia fica improvisado.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Confirmo integração, acessos e equipamentos para o primeiro dia.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Recepção preparada",
+      "text": "A pessoa chega com tudo pronto.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo a recepção por conta do gestor.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Recepção delegada",
+      "text": "A pessoa chega sem acesso e sem integração.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Admissão fora da regra",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "conferir_docs",
+      "is": false
+     },
+     {
+      "decision": "confirmar_exame",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Documentos conferidos",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "conferir_docs",
+      "is": true
+     },
+     {
+      "decision": "confirmar_exame",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Admissão registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_admissao",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Gestor informado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_gestor",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Recepção sem preparo",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "recepcionar",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Conformidade da admissão",
+   "levels": {
+    "ok": "Admissão em conformidade",
+    "warn": "Admissão com pendências",
+    "bad": "Admissão irregular"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Experiência da pessoa",
+   "levels": {
+    "ok": "Boa recepção",
+    "warn": "Recepção irregular",
+    "bad": "Recepção desorganizada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Relação com o gestor",
+   "levels": {
+    "ok": "Gestor alinhado",
+    "warn": "Gestor parcialmente alinhado",
+    "bad": "Gestor frustrado"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "rh"
+}

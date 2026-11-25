@@ -1,0 +1,513 @@
+{
+ "id": "sup-passagem-turno",
+ "title": "Passagem de turno com pendência",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Sábado, 06h50. O turno da noite termina e uma manutenção ficou pela metade.",
+   "Você assume o turno da manhã como supervisor.",
+   "O colega da noite está cansado e quer ir embora."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_equipe",
+   "label": "Alinhar com a equipe",
+   "procedure": "Repassar à equipe do turno o que está pendente e as prioridades. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "receber_status",
+   "label": "Receber o status do colega",
+   "procedure": "Ouvir do turno anterior o que foi feito, o que falta e os riscos. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "verificar_local",
+   "label": "Verificar o local",
+   "procedure": "Ver pessoalmente o estado do equipamento e do local de trabalho. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_passagem",
+   "label": "Registrar a passagem",
+   "procedure": "Registrar a passagem de turno com pendências e responsáveis. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "confirmar_prioridade",
+   "label": "Confirmar a prioridade",
+   "procedure": "Confirmar com a coordenação o que deve ser feito primeiro. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_equipe",
+   "shot": "reuniao",
+   "time": "06:55",
+   "narration": "06:55 · A equipe da manhã chega e pergunta o que será feito.",
+   "prompt": "Como você inicia o turno?",
+   "alternatives": [
+    {
+     "text": "Começo as tarefas novas e deixo a pendência para depois.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Pendência ignorada",
+      "text": "A manutenção interrompida pode virar um risco.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Faço uma conversa de cinco minutos com as prioridades do dia.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Conversa rápida",
+      "text": "A equipe começa com clareza e sem perder tempo.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Peço que cada um comece pelo que acha mais importante.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Início sem rumo",
+      "text": "Cada um segue um critério e as pendências ficam.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Reúno a equipe, apresento o que está pendente e distribuo as tarefas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Equipe alinhada",
+      "text": "Todos sabem o que fazer e por quê.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "receber_status",
+   "shot": "mesa",
+   "time": "07:00",
+   "narration": "07:00 · O colega diz 'está tudo mais ou menos encaminhado'.",
+   "prompt": "O que você pede dele?",
+   "alternatives": [
+    {
+     "text": "Peço ao colega que me mostre o equipamento e as anotações.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Status guiado",
+      "text": "A informação vem acompanhada do que se vê.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aceito a resposta e libero o colega.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Passagem vaga",
+      "text": "Você não sabe o que está pela metade.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço que diga o que foi feito, o que falta e o que preocupa.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Status completo",
+      "text": "Você recebe o contexto que precisa.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Pergunto só se há algum perigo imediato.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Pergunta curta",
+      "text": "Você descobre o risco mais óbvio, mas não o resto.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "verificar_local",
+   "shot": "mesa",
+   "time": "07:15",
+   "narration": "07:15 · O equipamento está aberto e há ferramentas no local.",
+   "prompt": "O que você faz antes de retomar o trabalho?",
+   "alternatives": [
+    {
+     "text": "Vou ao local, confirmo as condições e o estado do equipamento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Local verificado",
+      "text": "Você retoma com conhecimento do que há de fato.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Mando a equipe retomar o trabalho sem olhar o local.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Retomada às cegas",
+      "text": "Riscos que o turno anterior deixou passam despercebidos.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Pergunto ao colega se está tudo seguro.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Confiança verbal",
+      "text": "Você depende de uma resposta rápida, sem ver.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço a um técnico experiente que verifique comigo.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Verificação em dupla",
+      "text": "Duas pessoas observam e o risco diminui.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_passagem",
+   "shot": "tela",
+   "time": "07:30",
+   "narration": "07:30 · Falta o registro da passagem.",
+   "prompt": "Como você formaliza?",
+   "alternatives": [
+    {
+     "text": "Considero que o diálogo basta.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Só conversa",
+      "text": "Se algo falhar, não há histórico.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro só 'sem novidades'.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro vazio",
+      "text": "O registro não ajuda ninguém.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço ao colega que registre e eu confirmo antes de ele sair.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Registro compartilhado",
+      "text": "Os dois confirmam o mesmo conteúdo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro as pendências, os responsáveis e a hora da passagem.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Passagem registrada",
+      "text": "Quem vier depois sabe o que aconteceu.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "confirmar_prioridade",
+   "shot": "relogio",
+   "time": "07:45",
+   "narration": "07:45 · Há mais trabalho do que pessoas e o dia acabou de começar.",
+   "prompt": "Como você define a prioridade?",
+   "alternatives": [
+    {
+     "text": "Faço o que aparecer primeiro.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Prioridade ao acaso",
+      "text": "O mais urgente pode ficar para o fim do dia.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Mando um resumo com minha proposta e peço aprovação.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Proposta enviada",
+      "text": "A coordenação aprova ou ajusta rapidamente.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Confirmo com a coordenação o que deve ser feito primeiro.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Prioridade confirmada",
+      "text": "A equipe trabalha no que mais importa.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Decido sozinho e informo depois.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Decisão sem alinhar",
+      "text": "Você pode contrariar uma prioridade que não conhecia.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Pendência perdida",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "receber_status",
+      "is": false
+     },
+     {
+      "decision": "verificar_local",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Passagem completa",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "receber_status",
+      "is": true
+     },
+     {
+      "decision": "verificar_local",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Passagem registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_passagem",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Equipe alinhada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_equipe",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Dia sem prioridade ou sem registro",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "confirmar_prioridade",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Continuidade do serviço",
+   "levels": {
+    "ok": "Serviço retomado com segurança",
+    "warn": "Retomada com algumas lacunas",
+    "bad": "Retomada insegura"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Informação entre turnos",
+   "levels": {
+    "ok": "Informação completa",
+    "warn": "Informação parcial",
+    "bad": "Informação perdida"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Alinhamento da equipe",
+   "levels": {
+    "ok": "Equipe alinhada",
+    "warn": "Equipe parcialmente alinhada",
+    "bad": "Equipe sem rumo"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "supervisor-manutencao-adm"
+}

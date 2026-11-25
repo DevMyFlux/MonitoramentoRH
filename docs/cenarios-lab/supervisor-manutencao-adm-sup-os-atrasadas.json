@@ -1,0 +1,513 @@
+{
+ "id": "sup-os-atrasadas",
+ "title": "Ordens de serviço atrasadas",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Segunda, 07h45. A fila de ordens de serviço da equipe tem mais atrasos que a capacidade do dia.",
+   "Você é supervisor e precisa decidir o que fazer primeiro.",
+   "Dois pedidos chegam ao mesmo tempo, ambos 'urgentes'."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_solicitantes",
+   "label": "Avisar os solicitantes",
+   "procedure": "Avisar quem abriu a OS sobre o que será feito e quando. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "priorizar",
+   "label": "Priorizar por impacto",
+   "procedure": "Ordenar as OS por risco e impacto na operação, não por quem pede mais alto. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "alocar",
+   "label": "Alocar a equipe",
+   "procedure": "Distribuir as OS considerando habilidade e carga de cada técnico. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_status",
+   "label": "Atualizar o status no sistema",
+   "procedure": "Registrar a prioridade e o prazo previsto de cada OS. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "revisar_fim_dia",
+   "label": "Revisar no fim do dia",
+   "procedure": "Rever o que foi feito e replanejar o que sobrou. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_solicitantes",
+   "shot": "mesa",
+   "time": "07:50",
+   "narration": "07:50 · Os solicitantes cobram por mensagem e telefone ao mesmo tempo.",
+   "prompt": "Como você lida com as cobranças?",
+   "alternatives": [
+    {
+     "text": "Envio uma mensagem única com a ordem prevista e o prazo estimado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Comunicado único",
+      "text": "Você economiza tempo e dá previsibilidade.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Respondo só a quem cobra mais forte.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Atendimento por pressão",
+      "text": "Quem insiste passa na frente, mesmo com menos impacto.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Respondo a todos que vou priorizar por impacto e informo o prazo de cada pedido.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Solicitantes informados",
+      "text": "Cada um sabe o que esperar e as cobranças diminuem.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Ignoro as mensagens até ter resolvido tudo.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Silêncio",
+      "text": "As cobranças aumentam e a confiança na equipe cai.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "priorizar",
+   "shot": "tela",
+   "time": "08:00",
+   "narration": "08:00 · Uma OS é de ar-condicionado de sala administrativa; outra, de um equipamento de área crítica.",
+   "prompt": "Como você decide a ordem?",
+   "alternatives": [
+    {
+     "text": "Uso uma regra de prioridade combinada com a coordenação e a aplico a todas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Regra aplicada",
+      "text": "As decisões ficam consistentes e defensáveis.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Começo pela OS de quem é mais exigente.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Prioridade por insistência",
+      "text": "O critério vira a pressão e não o risco.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peso risco e impacto de cada OS e faço primeiro a da área crítica.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Impacto priorizado",
+      "text": "O que mais afeta a operação é atendido primeiro.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Faço na ordem em que chegaram, sem avaliar nada.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Fila cega",
+      "text": "Uma OS crítica espera atrás de pedidos simples.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "alocar",
+   "shot": "mesa",
+   "time": "08:15",
+   "narration": "08:15 · Um técnico é especialista na área crítica, mas está com três OS pendentes.",
+   "prompt": "Como você aloca a equipe?",
+   "alternatives": [
+    {
+     "text": "Aloco a OS crítica ao técnico habilitado e redistribuo as simples entre os demais.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Equipe bem alocada",
+      "text": "Cada OS vai para quem pode executar com segurança.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Mando qualquer técnico livre, mesmo sem habilitação.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem habilitação",
+      "text": "O risco de erro ou acidente sobe e o retrabalho vem depois.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Deixo cada técnico escolher a OS que preferir.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Escolha livre",
+      "text": "As OS difíceis ficam por último e o prazo escorrega.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Confiro a carga de cada técnico e distribuo de forma equilibrada.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Carga equilibrada",
+      "text": "Ninguém fica sobrecarregado e as OS andam em paralelo.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_status",
+   "shot": "tela",
+   "time": "08:30",
+   "narration": "08:30 · O sistema ainda mostra todas as OS como 'abertas', sem prioridade.",
+   "prompt": "Como você atualiza o sistema?",
+   "alternatives": [
+    {
+     "text": "Registro agora a prioridade e o prazo previsto de cada OS.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Status atualizado",
+      "text": "O sistema mostra a situação real e dá base para cobrar.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Não atualizo, já avisei a equipe por voz.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Só de boca",
+      "text": "Ninguém fora da equipe sabe o que está acontecendo.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço a cada técnico que atualize a própria OS e confiro no meio do dia.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Atualização distribuída",
+      "text": "O registro é feito por quem executa e você acompanha.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Atualizo só no fim da semana.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro atrasado",
+      "text": "Quem consulta o sistema vê uma situação que não existe.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "revisar_fim_dia",
+   "shot": "relogio",
+   "time": "17:10",
+   "narration": "17:10 · O dia termina e duas OS não foram concluídas.",
+   "prompt": "O que você faz antes de encerrar o dia?",
+   "alternatives": [
+    {
+     "text": "Passo as pendências ao turno seguinte só pelo sistema.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Passagem sem conversa",
+      "text": "O turno seguinte não entende o contexto das OS.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Converso com cada técnico sobre as pendências e reorganizo a fila de amanhã.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Fila de amanhã pronta",
+      "text": "A equipe começa o dia com prioridade clara.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Reviso o que foi feito, replanejo o que sobrou e aviso os solicitantes do novo prazo.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Dia revisado",
+      "text": "O que ficou pendente já tem plano e dono.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Encerro o dia sem olhar a fila.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem revisão",
+      "text": "As pendências voltam amanhã sem plano e sem aviso.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Fila sem critério",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "priorizar",
+      "is": false
+     },
+     {
+      "decision": "alocar",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Fila priorizada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "priorizar",
+      "is": true
+     },
+     {
+      "decision": "alocar",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Status atualizado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_status",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Solicitantes informados",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_solicitantes",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Pendências sem plano",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "revisar_fim_dia",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Cumprimento dos prazos",
+   "levels": {
+    "ok": "Prazos sob controle",
+    "warn": "Alguns prazos sob risco",
+    "bad": "Atrasos se acumulam"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Critério de prioridade",
+   "levels": {
+    "ok": "Prioridade clara e aplicada",
+    "warn": "Critério aplicado só em parte",
+    "bad": "Prioridade por pressão"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Confiança dos solicitantes",
+   "levels": {
+    "ok": "Solicitantes confiantes",
+    "warn": "Solicitantes parcialmente informados",
+    "bad": "Solicitantes no escuro"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "supervisor-manutencao-adm"
+}

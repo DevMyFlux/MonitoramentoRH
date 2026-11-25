@@ -4,6 +4,7 @@
 // só para atenção e risco, sempre acompanhados de texto no painel e na descrição da cena.
 import { useId } from "react";
 import type { EstadoDaCena } from "../fluxo";
+import { MundoEscritorioGestao } from "./mundo-escritorio";
 
 type PropsDoMundo = { estado: EstadoDaCena; reduzido: boolean };
 
@@ -490,5 +491,7 @@ export function MundoDoPacote({ pacote, estado, reduzido }: PropsDoMundo & { pac
     return <MundoHospitalEnergia estado={estado} reduzido={reduzido} />;
   if (pacote === "hospital-escala")
     return <MundoHospitalEscala estado={estado} reduzido={reduzido} />;
+  if (pacote === "escritorio-gestao")
+    return <MundoEscritorioGestao estado={estado} reduzido={reduzido} />;
   return <MundoGenerico />;
 }

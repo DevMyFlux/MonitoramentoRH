@@ -18,6 +18,7 @@ export * from "./shift-pattern.js";
 export * from "./suporte-api.js";
 export * from "./treinamento-schema.js";
 export * from "./treinamento-motor.js";
+export * from "./treinamento-importacao.js";
 export * from "./treinamentos-acesso.js";
 export * from "./treinamentos-api.js";
 

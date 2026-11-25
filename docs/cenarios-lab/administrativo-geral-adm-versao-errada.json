@@ -1,0 +1,513 @@
+{
+ "id": "adm-versao-errada",
+ "title": "Versão errada de documento circulando",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Terça, 10h. Duas versões de um procedimento circulam na empresa.",
+   "Você é do administrativo e controla os documentos.",
+   "Uma área já está usando a versão antiga."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_responsavel",
+   "label": "Avisar o dono do documento",
+   "procedure": "Avisar o responsável pelo documento sobre as duas versões. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "identificar_versao",
+   "label": "Identificar a versão vigente",
+   "procedure": "Confirmar qual versão é a oficial e a data de aprovação. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "recolher_antiga",
+   "label": "Recolher a versão antiga",
+   "procedure": "Retirar de circulação a versão desatualizada. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_controle",
+   "label": "Atualizar o controle",
+   "procedure": "Atualizar a lista de documentos com a versão vigente. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "comunicar_areas",
+   "label": "Comunicar as áreas",
+   "procedure": "Avisar as áreas sobre a versão correta. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_responsavel",
+   "shot": "mesa",
+   "time": "10:05",
+   "narration": "10:05 · As duas versões têm diferenças importantes.",
+   "prompt": "Qual é o primeiro passo?",
+   "alternatives": [
+    {
+     "text": "Escolho a que parece mais recente e sigo.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Escolha por aparência",
+      "text": "Você pode manter a errada.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Pergunto ao responsável qual é a versão oficial e desde quando.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Versão consultada",
+      "text": "Você tem a informação da fonte.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aviso só se alguém perguntar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Aviso reativo",
+      "text": "O problema continua.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso o responsável pelo documento sobre as duas versões.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Responsável avisado",
+      "text": "Quem aprova o documento decide.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "identificar_versao",
+   "shot": "documento",
+   "time": "10:20",
+   "narration": "10:20 · Uma versão tem data de aprovação; a outra, não.",
+   "prompt": "Como identifica a vigente?",
+   "alternatives": [
+    {
+     "text": "Considero vigente a versão da última modificação.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Última modificação",
+      "text": "Alterações informais passam como oficiais.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Comparo as duas e confirmo as diferenças com o responsável.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Diferenças confirmadas",
+      "text": "Você valida o que mudou.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Confirmo no controle de documentos qual versão foi aprovada e quando.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Versão vigente confirmada",
+      "text": "A decisão usa a fonte oficial.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero vigente a que está em mais pastas.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Frequência como critério",
+      "text": "A versão errada pode ser a mais copiada.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "recolher_antiga",
+   "shot": "tela",
+   "time": "10:45",
+   "narration": "10:45 · A versão antiga ainda está em várias pastas.",
+   "prompt": "Como trata a antiga?",
+   "alternatives": [
+    {
+     "text": "Substituo nas pastas pela versão vigente.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Substituição feita",
+      "text": "As pastas passam a ter só a versão correta.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Retiro de circulação e guardo como histórico, marcada como obsoleta.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Versão antiga recolhida",
+      "text": "Ninguém usa a antiga por engano.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo as duas disponíveis para consulta.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Duas versões vivas",
+      "text": "A confusão continua.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Apago a versão antiga.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Apagada",
+      "text": "Você perde o histórico.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_controle",
+   "shot": "tela",
+   "time": "11:10",
+   "narration": "11:10 · O controle de documentos precisa refletir a realidade.",
+   "prompt": "Como atualiza o controle?",
+   "alternatives": [
+    {
+     "text": "Atualizo a versão, a data e o responsável.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Controle atualizado",
+      "text": "O controle volta a ser fonte confiável.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo o controle como está.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Controle defasado",
+      "text": "O problema se repete.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Atualizo só a versão.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Atualização parcial",
+      "text": "Faltam data e responsável.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço ao responsável que valide a atualização.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Atualização validada",
+      "text": "O controle tem aprovação.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "comunicar_areas",
+   "shot": "reuniao",
+   "time": "11:30",
+   "narration": "11:30 · As áreas precisam saber.",
+   "prompt": "Como comunica?",
+   "alternatives": [
+    {
+     "text": "Não aviso, para não gerar confusão.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Silêncio",
+      "text": "As áreas seguem na versão antiga.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Envio um comunicado e confirmo que as áreas leram.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Comunicado confirmado",
+      "text": "Há certeza de que a informação chegou.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aviso só a área que reclamou.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Aviso limitado",
+      "text": "As outras seguem erradas.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso as áreas qual é a versão correta e como acessá-la.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Áreas informadas",
+      "text": "Todos passam a usar a versão correta.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Duas versões em uso",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "identificar_versao",
+      "is": false
+     },
+     {
+      "decision": "recolher_antiga",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Versão vigente confirmada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "identificar_versao",
+      "is": true
+     },
+     {
+      "decision": "recolher_antiga",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Controle atualizado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_controle",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Responsável avisado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_responsavel",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Áreas sem informação",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "comunicar_areas",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Controle documental",
+   "levels": {
+    "ok": "Documentos sob controle",
+    "warn": "Controle parcial",
+    "bad": "Controle perdido"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Consistência dos processos",
+   "levels": {
+    "ok": "Processos consistentes",
+    "warn": "Processos parcialmente consistentes",
+    "bad": "Processos inconsistentes"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Confiança nos documentos",
+   "levels": {
+    "ok": "Confiança mantida",
+    "warn": "Confiança abalada",
+    "bad": "Confiança perdida"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "administrativo-geral"
+}

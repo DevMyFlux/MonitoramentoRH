@@ -20,7 +20,24 @@ export const TREINO_DECISOES = 5;
 export const TREINO_ALTERNATIVAS = 4;
 
 /** Áreas conhecidas (para filtros e rótulos). O schema aceita outras, no mesmo formato de slug. */
-export const treinoAreasConhecidas = ["manutencao", "rh", "seguranca", "operacao"] as const;
+export const treinoAreasConhecidas = [
+  "manutencao",
+  "rh",
+  "seguranca",
+  "operacao",
+  "gestao"
+] as const;
+/**
+ * Público-alvo de um cenário (quem o recebe no teste do Lab). Vem da regra nível+área do cadastro da
+ * conta. Opcional: cenário sem público serve a qualquer um (como os dois exemplos iniciais).
+ */
+export const treinoPublicos = [
+  "supervisor-manutencao-adm",
+  "coordenador-administrativo",
+  "rh",
+  "administrativo-geral"
+] as const;
+export type TreinoPublico = (typeof treinoPublicos)[number];
 export const treinoTons = ["good", "warn", "bad"] as const;
 export const treinoTonsDeAcontecimento = ["good", "bad"] as const;
 export const treinoStatusDoCenario = ["rascunho", "em_revisao", "aprovado", "arquivado"] as const;
@@ -66,7 +83,8 @@ const perguntaSchema = z.strictObject({
   decision: slug,
   /** Plano de câmera do pacote de cena (wide, icu, lever...). Desconhecido = plano geral. */
   shot: slug,
-  time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Horário no formato HH:MM."),
+  /** Rótulo de tempo do HUD: um horário ("14:05") ou uma marca curta ("Dia seguinte", "Segunda, 08h"). */
+  time: z.string().trim().min(1).max(24),
   narration: textoLongo,
   prompt: textoCurto,
   alternatives: z.array(alternativaSchema).length(TREINO_ALTERNATIVAS)
@@ -99,6 +117,8 @@ const cenarioBaseSchema = z.strictObject({
   area: slug,
   title: textoCurto,
   summary: textoLongo,
+  /** Quem recebe este cenário no teste (veja treinoPublicos). Ausente = qualquer público. */
+  publico: z.enum(treinoPublicos).optional(),
   /** Conteúdo ainda não validado por segurança do trabalho, RH ou jurídico. A tela avisa. */
   exemplo: z.boolean().default(false),
   /** Vocabulário visual (hospital-energia, hospital-escala...). Desconhecido = pacote genérico. */

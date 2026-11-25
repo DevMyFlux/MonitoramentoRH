@@ -1,0 +1,513 @@
+{
+ "id": "coord-contrato-vencendo",
+ "title": "Contrato de fornecedor vencendo",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Terça, 14h. Um contrato de serviço essencial vence em quatro semanas.",
+   "Você é coordenador e responde pela renovação.",
+   "O fornecedor atual atende, mas o preço subiu."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_gestor",
+   "label": "Informar a diretoria",
+   "procedure": "Informar a diretoria sobre o vencimento e as opções antes de decidir. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "avaliar_servico",
+   "label": "Avaliar o serviço",
+   "procedure": "Avaliar a qualidade do serviço com dados dos últimos meses. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "comparar_opcoes",
+   "label": "Comparar opções",
+   "procedure": "Pedir propostas de outros fornecedores e comparar preço e condições. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_decisao",
+   "label": "Registrar a decisão",
+   "procedure": "Registrar a decisão, os critérios e as aprovações. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "confirmar_vigencia",
+   "label": "Confirmar a vigência",
+   "procedure": "Confirmar datas e condições do novo contrato antes do vencimento. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_gestor",
+   "shot": "mesa",
+   "time": "14:05",
+   "narration": "14:05 · O vencimento pode passar despercebido.",
+   "prompt": "Qual é o primeiro passo?",
+   "alternatives": [
+    {
+     "text": "Aviso só se o fornecedor pedir aumento.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Aviso condicional",
+      "text": "A diretoria é surpreendida.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso a diretoria do vencimento e proponho um calendário para decidir.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Calendário proposto",
+      "text": "Há tempo para decidir com calma.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo para ver perto do vencimento.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Decisão deixada para depois",
+      "text": "A pressa limita as opções.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Envio um resumo do contrato e peço orientação sobre a abordagem.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Resumo enviado",
+      "text": "A diretoria entra no processo desde o início.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "avaliar_servico",
+   "shot": "documento",
+   "time": "14:30",
+   "narration": "14:30 · Você quer saber se o serviço vale o preço.",
+   "prompt": "Como avalia o serviço atual?",
+   "alternatives": [
+    {
+     "text": "Reúno indicadores dos últimos meses e a opinião das áreas atendidas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Serviço avaliado",
+      "text": "A decisão parte de fatos.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero que 'está tudo bem' porque não houve reclamação.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Ausência de reclamação",
+      "text": "Problemas silenciosos passam despercebidos.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Renovo sem avaliar porque o fornecedor é conhecido.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Renovação automática",
+      "text": "Você pode perder uma oportunidade melhor.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço às áreas atendidas uma nota e exemplos de problemas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Áreas consultadas",
+      "text": "Você vê o serviço pelos olhos de quem usa.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "comparar_opcoes",
+   "shot": "tela",
+   "time": "15:00",
+   "narration": "15:00 · Há outros fornecedores no mercado.",
+   "prompt": "Como você compara as opções?",
+   "alternatives": [
+    {
+     "text": "Fecho com o atual sem consultar mais ninguém.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem comparação",
+      "text": "Você aceita o aumento sem questionar.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Procuro só o preço mais baixo.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Foco no preço",
+      "text": "A qualidade e o risco ficam fora da análise.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Uso as propostas para negociar com o fornecedor atual.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Negociação com base",
+      "text": "O fornecedor tem motivo para melhorar a oferta.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Peço propostas a pelo menos dois outros e comparo preço, prazo e condições.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Propostas comparadas",
+      "text": "Você tem base para negociar.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_decisao",
+   "shot": "tela",
+   "time": "15:30",
+   "narration": "15:30 · A decisão está tomada.",
+   "prompt": "Como você registra?",
+   "alternatives": [
+    {
+     "text": "Registro só o fornecedor escolhido.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro mínimo",
+      "text": "Faltam os critérios.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço à diretoria um 'de acordo' por escrito.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "De acordo obtido",
+      "text": "A decisão tem respaldo formal.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro o critério, as propostas e as aprovações obtidas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Decisão registrada",
+      "text": "A escolha pode ser explicada depois.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Guardo a decisão na memória.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem registro",
+      "text": "Ninguém sabe por que foi escolhido.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "confirmar_vigencia",
+   "shot": "relogio",
+   "time": "Uma semana antes",
+   "narration": "Uma semana antes · O vencimento se aproxima.",
+   "prompt": "Como você garante a continuidade?",
+   "alternatives": [
+    {
+     "text": "Espero o fornecedor avisar que o contrato venceu.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Aviso tardio",
+      "text": "A interrupção só é notada depois.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Confirmo datas, condições e responsáveis do novo contrato antes do vencimento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Vigência confirmada",
+      "text": "O serviço não é interrompido.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero tudo resolvido e não olho mais.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem conferência",
+      "text": "Pode haver um intervalo sem contrato.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Confirmo com o jurídico que o contrato foi assinado e está em vigor.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Jurídico consultado",
+      "text": "A formalização é verificada.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Renovação sem critério",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "avaliar_servico",
+      "is": false
+     },
+     {
+      "decision": "comparar_opcoes",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Contrato bem avaliado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avaliar_servico",
+      "is": true
+     },
+     {
+      "decision": "comparar_opcoes",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Decisão registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_decisao",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Diretoria ciente",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_gestor",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Vencimento sem acompanhamento",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "confirmar_vigencia",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Continuidade do serviço",
+   "levels": {
+    "ok": "Serviço contínuo",
+    "warn": "Risco de intervalo",
+    "bad": "Serviço interrompido"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Custo-benefício",
+   "levels": {
+    "ok": "Boa relação custo e benefício",
+    "warn": "Relação parcialmente avaliada",
+    "bad": "Sem base de comparação"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Governança do contrato",
+   "levels": {
+    "ok": "Decisão bem documentada",
+    "warn": "Decisão pouco documentada",
+    "bad": "Decisão sem respaldo"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "coordenador-administrativo"
+}

@@ -1,0 +1,513 @@
+{
+ "id": "coord-mudanca-resistencia",
+ "title": "Mudança de processo e resistência",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Segunda, 10h. A empresa vai trocar um sistema que sua equipe usa todo dia.",
+   "Você é coordenador e precisa conduzir a mudança.",
+   "A equipe diz que 'o sistema atual funciona bem'."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_equipe",
+   "label": "Comunicar à equipe",
+   "procedure": "Comunicar a mudança cedo, explicando o motivo e o prazo. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "ouvir_resistencia",
+   "label": "Ouvir as preocupações",
+   "procedure": "Ouvir o que preocupa a equipe antes de insistir. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "planejar_transicao",
+   "label": "Planejar a transição",
+   "procedure": "Planejar treinamento, prazos e suporte durante a troca. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_plano",
+   "label": "Registrar o plano",
+   "procedure": "Registrar o plano da mudança e os responsáveis. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "acompanhar_adesao",
+   "label": "Acompanhar a adoção",
+   "procedure": "Acompanhar a adoção e corrigir dificuldades cedo. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_equipe",
+   "shot": "reuniao",
+   "time": "10:05",
+   "narration": "10:05 · A notícia ainda não chegou à equipe.",
+   "prompt": "Como você comunica?",
+   "alternatives": [
+    {
+     "text": "Conto por alto e deixo as perguntas para depois.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Comunicação superficial",
+      "text": "Surgem boatos e inseguranças.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Reúno a equipe, explico o motivo da mudança, o prazo e o que muda no dia a dia.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Comunicação clara",
+      "text": "Todos entendem por que e quando.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aviso quando o sistema novo estiver pronto.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Aviso tardio",
+      "text": "A equipe sente que foi pega de surpresa.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Envio um comunicado e abro espaço para perguntas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Espaço para dúvidas",
+      "text": "A equipe se sente respeitada.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "ouvir_resistencia",
+   "shot": "mesa",
+   "time": "10:30",
+   "narration": "10:30 · Alguns colegas se mostram contrariados.",
+   "prompt": "Como lida com a resistência?",
+   "alternatives": [
+    {
+     "text": "Escuto o que preocupa cada um e anoto os pontos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Preocupações ouvidas",
+      "text": "Você descobre problemas reais e ganha confiança.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Digo que a decisão está tomada e que é para se adaptar.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Imposição",
+      "text": "A resistência fica silenciosa e cresce.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Ignoro as reclamações, vão passar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Silêncio",
+      "text": "As queixas viram desmotivação.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço sugestões de como tornar a transição menos difícil.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Sugestões pedidas",
+      "text": "A equipe participa da solução.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "planejar_transicao",
+   "shot": "documento",
+   "time": "11:00",
+   "narration": "11:00 · A mudança precisa de planejamento.",
+   "prompt": "Como organiza a transição?",
+   "alternatives": [
+    {
+     "text": "Libero o sistema novo e peço que aprendam sozinhos.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Mudança sem apoio",
+      "text": "A produtividade cai e a frustração cresce.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Marco um treinamento único e rápido.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Treinamento único",
+      "text": "Quem tem dúvidas depois fica sem apoio.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Defino alguns 'multiplicadores' que ajudem os colegas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Multiplicadores",
+      "text": "O apoio fica próximo da equipe.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Planejo treinamento, datas e suporte, com calendário claro.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Transição planejada",
+      "text": "A equipe sabe quando e como será.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_plano",
+   "shot": "tela",
+   "time": "11:30",
+   "narration": "11:30 · O plano está pronto.",
+   "prompt": "Como formaliza?",
+   "alternatives": [
+    {
+     "text": "Compartilho só com os supervisores.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Plano parcial",
+      "text": "A equipe descobre as datas pelos boatos.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Registro o plano e peço a validação da diretoria.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Plano validado",
+      "text": "A mudança tem respaldo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro o plano, os responsáveis e os prazos, e compartilho com todos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Plano compartilhado",
+      "text": "Todos sabem seu papel.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "O plano fica comigo.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Plano privado",
+      "text": "Ninguém sabe o que acontece quando.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "acompanhar_adesao",
+   "shot": "relogio",
+   "time": "Após a troca",
+   "narration": "Após a troca · O sistema novo entrou em operação.",
+   "prompt": "Como acompanha a adoção?",
+   "alternatives": [
+    {
+     "text": "Só atuo quando algo trava a operação.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Atuação reativa",
+      "text": "As dificuldades menores se acumulam.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Acompanho as dificuldades nas primeiras semanas e ajusto o apoio.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Adoção acompanhada",
+      "text": "Os problemas são resolvidos cedo.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero encerrado e não pergunto mais.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem acompanhamento",
+      "text": "As dificuldades viram atalhos fora do sistema.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Faço rodadas curtas semanais para coletar problemas e dúvidas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Rodadas semanais",
+      "text": "A equipe sente que é ouvida.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Resistência silenciosa",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "ouvir_resistencia",
+      "is": false
+     },
+     {
+      "decision": "planejar_transicao",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Equipe ouvida",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "ouvir_resistencia",
+      "is": true
+     },
+     {
+      "decision": "planejar_transicao",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Plano compartilhado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_plano",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Equipe comunicada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_equipe",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Adoção sem acompanhamento",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "acompanhar_adesao",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Adoção do novo sistema",
+   "levels": {
+    "ok": "Adoção completa",
+    "warn": "Adoção parcial",
+    "bad": "Adoção fraca"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Confiança da equipe",
+   "levels": {
+    "ok": "Equipe confiante",
+    "warn": "Equipe cautelosa",
+    "bad": "Equipe desconfiada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Continuidade da operação",
+   "levels": {
+    "ok": "Operação estável",
+    "warn": "Operação com oscilações",
+    "bad": "Operação prejudicada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "coordenador-administrativo"
+}

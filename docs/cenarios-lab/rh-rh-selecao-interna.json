@@ -1,0 +1,513 @@
+{
+ "id": "rh-selecao-interna",
+ "title": "Seleção interna e externa",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Segunda, 10h. Surge uma vaga e há uma pessoa da casa interessada.",
+   "Você é do RH e conduz o processo seletivo.",
+   "O gestor já tem um candidato externo em mente."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "alinhar_gestor",
+   "label": "Alinhar com o gestor",
+   "procedure": "Alinhar com o gestor as regras do processo seletivo. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "definir_perfil",
+   "label": "Definir o perfil",
+   "procedure": "Definir perfil e critérios objetivos da vaga. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "avaliar_candidatos",
+   "label": "Avaliar candidatos",
+   "procedure": "Avaliar todos pelos mesmos critérios. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_processo",
+   "label": "Registrar o processo",
+   "procedure": "Registrar o processo, os critérios e as decisões. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "dar_retorno",
+   "label": "Dar retorno",
+   "procedure": "Dar retorno a todos os candidatos, inclusive ao interno. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "alinhar_gestor",
+   "shot": "mesa",
+   "time": "10:05",
+   "narration": "10:05 · O gestor já tem preferência.",
+   "prompt": "Como alinha?",
+   "alternatives": [
+    {
+     "text": "Sigo a preferência dele para evitar conflito.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Preferência seguida",
+      "text": "O processo vira formalidade.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Proponho que o gestor participe da avaliação com os critérios acordados.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Gestor envolvido",
+      "text": "Ele contribui sem decidir sozinho.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Faço o processo e só comento no final.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Alinhamento tardio",
+      "text": "O gestor se sente surpreendido.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Explico ao gestor que o processo avalia todos pelos mesmos critérios.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Regras explicadas",
+      "text": "O gestor entende a lógica do processo.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "definir_perfil",
+   "shot": "documento",
+   "time": "10:30",
+   "narration": "10:30 · A vaga precisa de requisitos claros.",
+   "prompt": "Como define o perfil?",
+   "alternatives": [
+    {
+     "text": "Mantenho a descrição antiga da vaga sem revisar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Descrição defasada",
+      "text": "Os critérios podem estar desatualizados.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Reviso a descrição e valido com a área.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Descrição revisada",
+      "text": "O perfil reflete o que a vaga precisa.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Defino com o gestor o perfil e os critérios objetivos da vaga.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Perfil definido",
+      "text": "A avaliação tem base clara.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Uso o perfil do candidato que o gestor já escolheu.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Perfil sob medida",
+      "text": "O processo exclui os demais.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "avaliar_candidatos",
+   "shot": "reuniao",
+   "time": "11:00",
+   "narration": "11:00 · Há três candidatos, um deles interno.",
+   "prompt": "Como avalia?",
+   "alternatives": [
+    {
+     "text": "Uso um roteiro de entrevista e uma nota por critério.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Roteiro padronizado",
+      "text": "Os resultados são comparáveis.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Avalio todos com as mesmas perguntas e critérios.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Critérios iguais",
+      "text": "A comparação é justa.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Dou preferência ao candidato conhecido.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Familiaridade",
+      "text": "Você deixa de avaliar o mérito.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Faço entrevistas diferentes para cada pessoa.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Entrevistas desiguais",
+      "text": "A comparação perde sentido.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_processo",
+   "shot": "tela",
+   "time": "11:30",
+   "narration": "11:30 · O processo está concluindo.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Registro critérios, notas e a decisão final.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Processo registrado",
+      "text": "A decisão pode ser explicada.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Não registro, é desnecessário.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem registro",
+      "text": "A decisão fica sem sustentação.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro só o resultado final.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro mínimo",
+      "text": "Faltam os critérios e as notas.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Arquivo as notas e o motivo da escolha.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Arquivo completo",
+      "text": "O processo pode ser auditado.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "dar_retorno",
+   "shot": "relogio",
+   "time": "Dia seguinte",
+   "narration": "Dia seguinte · A escolha foi comunicada ao gestor.",
+   "prompt": "Como dá retorno aos candidatos?",
+   "alternatives": [
+    {
+     "text": "Aviso só quem foi escolhido.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Silêncio aos demais",
+      "text": "Candidatos ficam sem resposta.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Marco uma conversa com o candidato interno para explicar os motivos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Feedback ao interno",
+      "text": "Ele entende e se mantém engajado.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Mando uma mensagem padrão sem detalhes.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Retorno genérico",
+      "text": "Os candidatos não aprendem nada.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Dou retorno a todos, inclusive ao interno, com respeito e feedback.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Retorno a todos",
+      "text": "Todos saem sabendo o resultado.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Processo com favorecimento",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "definir_perfil",
+      "is": false
+     },
+     {
+      "decision": "avaliar_candidatos",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Perfil e critérios claros",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "definir_perfil",
+      "is": true
+     },
+     {
+      "decision": "avaliar_candidatos",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Processo registrado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_processo",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Gestor alinhado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "alinhar_gestor",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Candidatos sem retorno",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "dar_retorno",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Justiça do processo",
+   "levels": {
+    "ok": "Processo justo",
+    "warn": "Processo com falhas",
+    "bad": "Processo injusto"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Qualidade da escolha",
+   "levels": {
+    "ok": "Escolha fundamentada",
+    "warn": "Escolha pouco fundamentada",
+    "bad": "Escolha sem base"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Imagem do RH",
+   "levels": {
+    "ok": "Imagem preservada",
+    "warn": "Imagem arranhada",
+    "bad": "Imagem prejudicada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "rh"
+}

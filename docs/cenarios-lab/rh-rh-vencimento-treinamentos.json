@@ -1,0 +1,513 @@
+{
+ "id": "rh-vencimento-treinamentos",
+ "title": "Vencimentos de treinamentos obrigatórios",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Segunda, 10h. O relatório do RH mostra muitos treinamentos obrigatórios prestes a vencer.",
+   "Você é do RH e a equipe de campo está com agenda cheia.",
+   "Alguns gestores dizem que 'não dá tempo'."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_gestores",
+   "label": "Avisar os gestores",
+   "procedure": "Avisar os gestores com a lista de pessoas e prazos. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "priorizar_risco",
+   "label": "Priorizar por risco",
+   "procedure": "Priorizar os vencimentos por risco e exigência. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "agendar_turmas",
+   "label": "Agendar as turmas",
+   "procedure": "Agendar turmas considerando as escalas das equipes. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_plano",
+   "label": "Registrar o plano",
+   "procedure": "Registrar o plano e os prazos no sistema. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "acompanhar_conclusao",
+   "label": "Acompanhar a conclusão",
+   "procedure": "Acompanhar a conclusão e atualizar os registros. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_gestores",
+   "shot": "mesa",
+   "time": "10:05",
+   "narration": "10:05 · A lista tem dezenas de nomes.",
+   "prompt": "Como comunica?",
+   "alternatives": [
+    {
+     "text": "Espero o vencimento para tratar com cada caso.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Esperar vencer",
+      "text": "Pessoas ficam impedidas de trabalhar.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Marco uma reunião rápida com os gestores para alinhar prazos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Reunião de alinhamento",
+      "text": "Os gestores se organizam.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aviso só os gestores que perguntarem.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Aviso seletivo",
+      "text": "A maioria descobre tarde.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Envio aos gestores a lista por equipe, com prazos e o que acontece se vencer.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Gestores informados",
+      "text": "Cada gestor sabe o que precisa fazer.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "priorizar_risco",
+   "shot": "tela",
+   "time": "10:30",
+   "narration": "10:30 · Alguns vencimentos têm impacto maior.",
+   "prompt": "Como prioriza?",
+   "alternatives": [
+    {
+     "text": "Atendo primeiro quem pede mais.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Prioridade por insistência",
+      "text": "O critério vira pressão.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço à segurança do trabalho ajuda para ordenar os riscos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Segurança consultada",
+      "text": "A priorização tem apoio técnico.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Priorizo por exigência, risco da atividade e data de vencimento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Priorização por risco",
+      "text": "Os casos mais críticos vão primeiro.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Atendo por ordem alfabética.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Ordem arbitrária",
+      "text": "Casos críticos ficam para depois.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "agendar_turmas",
+   "shot": "documento",
+   "time": "11:00",
+   "narration": "11:00 · As equipes trabalham em turnos.",
+   "prompt": "Como agenda?",
+   "alternatives": [
+    {
+     "text": "Ofereço turmas em horários diferentes e vagas de reposição.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Turmas flexíveis",
+      "text": "A adesão aumenta.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Agendo turmas considerando escalas e propondo mais de uma data.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Turmas bem agendadas",
+      "text": "A participação é mais viável.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Marco uma única data e pronto.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Data única",
+      "text": "Muitos ficarão de fora.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Deixo cada gestor marcar quando puder.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Agenda livre",
+      "text": "Muitos não marcam.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_plano",
+   "shot": "tela",
+   "time": "11:30",
+   "narration": "11:30 · O plano está pronto.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Registro o plano, as turmas e os prazos no sistema.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Plano registrado",
+      "text": "Todos consultam o mesmo plano.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "O plano fica na minha planilha pessoal.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Plano privado",
+      "text": "Ninguém mais o vê.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro só as datas.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro mínimo",
+      "text": "Faltam responsáveis e prazos.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Compartilho o plano com a liderança e os gestores.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Plano compartilhado",
+      "text": "A liderança acompanha.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "acompanhar_conclusao",
+   "shot": "relogio",
+   "time": "Fim do mês",
+   "narration": "Fim do mês · As turmas aconteceram.",
+   "prompt": "Como acompanha?",
+   "alternatives": [
+    {
+     "text": "Considero resolvido e não atualizo.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem atualização",
+      "text": "O sistema mostra pendências que já foram cumpridas.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Envio ao gestor a lista de quem concluiu e de quem falta.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Lista enviada",
+      "text": "Os gestores sabem quem falta.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Atualizo só quando alguém cobra.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Atualização tardia",
+      "text": "Informações defasadas geram decisões erradas.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Confirmo presença e atualizo os registros e vencimentos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Conclusão acompanhada",
+      "text": "O sistema reflete a realidade.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Treinamentos vencidos",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "priorizar_risco",
+      "is": false
+     },
+     {
+      "decision": "agendar_turmas",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Risco priorizado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "priorizar_risco",
+      "is": true
+     },
+     {
+      "decision": "agendar_turmas",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Plano registrado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_plano",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Gestores informados",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_gestores",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Conclusões sem acompanhamento",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "acompanhar_conclusao",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Conformidade dos treinamentos",
+   "levels": {
+    "ok": "Treinamentos em dia",
+    "warn": "Treinamentos parcialmente em dia",
+    "bad": "Treinamentos vencidos"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Segurança das equipes",
+   "levels": {
+    "ok": "Equipes habilitadas",
+    "warn": "Parte habilitada",
+    "bad": "Equipes sem habilitação"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Fidelidade dos registros",
+   "levels": {
+    "ok": "Registros atualizados",
+    "warn": "Registros parciais",
+    "bad": "Registros defasados"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "rh"
+}

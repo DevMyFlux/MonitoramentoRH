@@ -1,0 +1,513 @@
+{
+ "id": "coord-reconhecimento-justo",
+ "title": "Reconhecimento entre dois colaboradores",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Terça, 11h. Há uma vaga de reconhecimento da área e dois nomes fortes.",
+   "Você é coordenador e precisa recomendar um deles.",
+   "Um é mais visível; o outro, mais discreto e muito consistente."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_rh",
+   "label": "Alinhar com o RH",
+   "procedure": "Alinhar com o RH os critérios do reconhecimento. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "definir_criterios",
+   "label": "Definir critérios",
+   "procedure": "Definir critérios objetivos antes de olhar para os nomes. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "coletar_evidencias",
+   "label": "Coletar evidências",
+   "procedure": "Reunir resultados e evidências de cada colaborador. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_justificativa",
+   "label": "Registrar a justificativa",
+   "procedure": "Registrar a justificativa da recomendação. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "dar_retorno",
+   "label": "Dar retorno",
+   "procedure": "Dar retorno ao colaborador não escolhido, com respeito e clareza. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_rh",
+   "shot": "mesa",
+   "time": "11:05",
+   "narration": "11:05 · A decisão pode afetar a motivação do time.",
+   "prompt": "O que faz antes de escolher?",
+   "alternatives": [
+    {
+     "text": "Peço ao RH o modelo oficial de justificativa.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Modelo pedido",
+      "text": "A recomendação segue o formato esperado.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Pergunto aos colegas quem eles escolheriam.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Votação informal",
+      "text": "Popularidade passa a pesar mais que resultado.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Falo com o RH sobre as regras e os critérios de reconhecimento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "RH consultado",
+      "text": "A recomendação segue regras da empresa.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Decido sozinho e levo ao RH só o nome.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Decisão unilateral",
+      "text": "Pode ferir regras ou gerar contestação.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "definir_criterios",
+   "shot": "documento",
+   "time": "11:30",
+   "narration": "11:30 · Os dois têm bons perfis, de formas diferentes.",
+   "prompt": "Como você define os critérios?",
+   "alternatives": [
+    {
+     "text": "Uso os critérios da avaliação de desempenho anual.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Avaliação como base",
+      "text": "A recomendação se apoia em algo conhecido.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Defino critérios objetivos antes de comparar os nomes.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Critérios definidos",
+      "text": "A comparação fica justa.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Decido por simpatia e confiança pessoal.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Critério pessoal",
+      "text": "A decisão parece favorecimento.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Escolho o que apareceu mais em reuniões.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Visibilidade",
+      "text": "Quem trabalha em silêncio é prejudicado.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "coletar_evidencias",
+   "shot": "tela",
+   "time": "12:00",
+   "narration": "12:00 · Você precisa de dados concretos.",
+   "prompt": "Como reúne as evidências?",
+   "alternatives": [
+    {
+     "text": "Levanto resultados, entregas e feedbacks dos dois no período.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Evidências levantadas",
+      "text": "A comparação é baseada em fatos.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Confio na memória dos últimos dias.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Memória recente",
+      "text": "Você premia o que é lembrado, não o que é melhor.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço a cada um que escreva por que merece.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Autodeclaração",
+      "text": "Quem se vende melhor leva vantagem.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço feedback aos colegas e clientes internos de cada um.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Feedback coletado",
+      "text": "Você completa a visão do desempenho.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_justificativa",
+   "shot": "tela",
+   "time": "12:30",
+   "narration": "12:30 · A decisão está tomada.",
+   "prompt": "Como registra a justificativa?",
+   "alternatives": [
+    {
+     "text": "Não registro, é um assunto delicado.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem registro",
+      "text": "A decisão fica sem sustentação.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro só 'melhor desempenho'.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Justificativa vazia",
+      "text": "Ninguém entende o motivo.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Envio a justificativa ao RH e à diretoria.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Justificativa enviada",
+      "text": "A decisão tem respaldo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro os critérios, as evidências e o motivo da escolha.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Justificativa registrada",
+      "text": "A decisão pode ser explicada a qualquer um.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "dar_retorno",
+   "shot": "reuniao",
+   "time": "Dia seguinte",
+   "narration": "Dia seguinte · Um dos dois não foi escolhido.",
+   "prompt": "Como você dá retorno?",
+   "alternatives": [
+    {
+     "text": "Dou um retorno rápido e vago.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Retorno vago",
+      "text": "Ele não entende o que melhorar.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Marco uma conversa e apresento o que ele pode desenvolver para a próxima.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Caminho apontado",
+      "text": "Ele sai com algo concreto.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Converso em particular, reconheço o que fez bem e explico os critérios.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Retorno respeitoso",
+      "text": "Ele entende e continua motivado.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo que ele descubra pela equipe.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Descoberta pelos corredores",
+      "text": "Ele se sente desprezado.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Decisão contestável",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "definir_criterios",
+      "is": false
+     },
+     {
+      "decision": "coletar_evidencias",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Critérios claros",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "definir_criterios",
+      "is": true
+     },
+     {
+      "decision": "coletar_evidencias",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Justificativa registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_justificativa",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "RH alinhado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_rh",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Retorno sem respeito ou sem registro",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "dar_retorno",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Justiça percebida",
+   "levels": {
+    "ok": "Processo percebido como justo",
+    "warn": "Processo parcialmente justo",
+    "bad": "Processo percebido como injusto"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Motivação da equipe",
+   "levels": {
+    "ok": "Equipe motivada",
+    "warn": "Motivação oscilante",
+    "bad": "Equipe desmotivada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Respaldo institucional",
+   "levels": {
+    "ok": "Decisão respaldada",
+    "warn": "Decisão parcialmente respaldada",
+    "bad": "Decisão sem respaldo"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "coordenador-administrativo"
+}

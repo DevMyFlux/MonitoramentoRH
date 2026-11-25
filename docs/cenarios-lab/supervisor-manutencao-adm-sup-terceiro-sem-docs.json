@@ -1,0 +1,513 @@
+{
+ "id": "sup-terceiro-sem-docs",
+ "title": "Terceirizado sem documentos",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Quarta, 07h20. Uma empresa terceirizada chega para um serviço agendado.",
+   "Você é o supervisor responsável pelo acompanhamento.",
+   "O encarregado diz que 'os documentos ficaram no escritório' e quer entrar mesmo assim."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_responsavel",
+   "label": "Avisar a área de segurança",
+   "procedure": "Informar a área responsável pela liberação de acessos antes de decidir. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "conferir_docs",
+   "label": "Conferir a documentação",
+   "procedure": "Verificar se a documentação exigida da empresa e das pessoas está em dia. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "verificar_integracao",
+   "label": "Verificar a integração",
+   "procedure": "Confirmar se cada pessoa fez a integração exigida para a área. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_acesso",
+   "label": "Registrar o acesso",
+   "procedure": "Registrar quem entrou, quando e para qual serviço. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "acompanhar",
+   "label": "Acompanhar o serviço",
+   "procedure": "Definir quem acompanha a equipe terceira durante o serviço. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_responsavel",
+   "shot": "mesa",
+   "time": "07:25",
+   "narration": "07:25 · A equipe espera na portaria. O serviço é importante e já foi adiado uma vez.",
+   "prompt": "O que você faz primeiro?",
+   "alternatives": [
+    {
+     "text": "Deixo o encarregado esperando enquanto penso.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Espera sem ação",
+      "text": "O tempo passa e ninguém decide.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso a área de segurança sobre a situação e pergunto qual caminho seguir.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Segurança acionada",
+      "text": "A decisão passa a ter quem entende do assunto.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Libero a entrada para não atrasar o serviço de novo.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Liberação por pressa",
+      "text": "Você assume sozinho um risco que não é só seu.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Ligo para o responsável pela liberação e peço orientação por escrito.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Orientação formal",
+      "text": "Fica registrado quem decidiu o quê.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "conferir_docs",
+   "shot": "documento",
+   "time": "07:35",
+   "narration": "07:35 · O encarregado mostra fotos de documentos no celular.",
+   "prompt": "Como você trata a documentação?",
+   "alternatives": [
+    {
+     "text": "Peço os documentos originais ou digitais oficiais e confiro com a lista exigida.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Documentos conferidos",
+      "text": "A empresa só entra com o que é exigido.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aceito as fotos como suficientes porque a pessoa é conhecida.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Prova frágil",
+      "text": "Foto no celular não garante validade nem autenticidade.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Dispenso a conferência porque o contrato já existe.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem conferência",
+      "text": "O contrato não substitui a documentação de cada pessoa.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Consulto o cadastro da empresa no sistema e peço o que estiver faltando.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Cadastro consultado",
+      "text": "Você identifica exatamente o que falta antes de liberar.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "verificar_integracao",
+   "shot": "documento",
+   "time": "07:50",
+   "narration": "07:50 · Dois dos quatro trabalhadores nunca estiveram na unidade.",
+   "prompt": "O que você faz sobre a integração deles?",
+   "alternatives": [
+    {
+     "text": "Libero e peço que os colegas expliquem o básico no caminho.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Integração informal",
+      "text": "A explicação varia e não vira registro.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Considero que a experiência deles basta.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Experiência no lugar da regra",
+      "text": "Quem não conhece o local fica exposto a riscos.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Agendo a integração na hora, se possível, e libero depois que concluírem.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Integração no dia",
+      "text": "O serviço atrasa pouco e a regra é cumprida.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Verifico se fizeram a integração e, se não, só libero após realizá-la.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Integração exigida",
+      "text": "Quem entra sabe as regras e os riscos do local.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_acesso",
+   "shot": "tela",
+   "time": "08:10",
+   "narration": "08:10 · A portaria quer saber como registrar a entrada.",
+   "prompt": "Como você registra o acesso?",
+   "alternatives": [
+    {
+     "text": "Registro só o nome da empresa.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro vago",
+      "text": "Não dá para saber quem estava no local.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço à portaria que registre e confiro o registro antes de liberar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Registro conferido",
+      "text": "O registro é feito e verificado no mesmo momento.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo sem registro, é só um serviço rápido.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Entrada sem registro",
+      "text": "Se algo acontecer, ninguém sabe quem estava.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro nomes, horário de entrada, área e responsável pelo acompanhamento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Acesso registrado",
+      "text": "A entrada fica rastreável.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "acompanhar",
+   "shot": "relogio",
+   "time": "08:20",
+   "narration": "08:20 · A equipe vai trabalhar em uma área com equipamentos sensíveis.",
+   "prompt": "Como você acompanha o serviço?",
+   "alternatives": [
+    {
+     "text": "Combino pontos de verificação e passo no local em horários definidos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Verificações combinadas",
+      "text": "O serviço é acompanhado sem atrapalhar.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Defino quem acompanha a equipe e combino o que podem ou não tocar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Acompanhamento definido",
+      "text": "Alguém conhece os limites e responde pelo local.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo a equipe trabalhar sozinha, são profissionais.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Sem acompanhante",
+      "text": "Qualquer dúvida é resolvida sem ninguém para orientar.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Só passo por lá se alguém reclamar.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Presença eventual",
+      "text": "Problemas só aparecem depois de acontecerem.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Acesso fora da regra",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "conferir_docs",
+      "is": false
+     },
+     {
+      "decision": "verificar_integracao",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Acesso dentro da regra",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "conferir_docs",
+      "is": true
+     },
+     {
+      "decision": "verificar_integracao",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Acesso rastreável",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_acesso",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Segurança ciente",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_responsavel",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Serviço sem acompanhamento ou sem registro",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "acompanhar",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Segurança do local",
+   "levels": {
+    "ok": "Local protegido",
+    "warn": "Proteção parcial",
+    "bad": "Local exposto"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Conformidade documental",
+   "levels": {
+    "ok": "Tudo exigido conferido",
+    "warn": "Conferência incompleta",
+    "bad": "Sem conferência"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Rastreabilidade",
+   "levels": {
+    "ok": "Acesso rastreado",
+    "warn": "Parcialmente rastreado",
+    "bad": "Sem rastro"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "supervisor-manutencao-adm"
+}

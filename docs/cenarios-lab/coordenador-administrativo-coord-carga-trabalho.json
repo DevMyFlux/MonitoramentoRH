@@ -1,0 +1,513 @@
+{
+ "id": "coord-carga-trabalho",
+ "title": "Colaborador sobrecarregado",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Terça, 16h. Um colaborador de confiança tem entregado com atraso e parece cansado.",
+   "Você é coordenador e há um pico de demanda.",
+   "Ele nunca reclama, mas tem feito horas extras todas as semanas."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_rh",
+   "label": "Alinhar com o RH",
+   "procedure": "Alinhar com o RH quando a carga extra se repete. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "conversar",
+   "label": "Conversar com ele",
+   "procedure": "Conversar de forma acolhedora e sem julgamento. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "revisar_carga",
+   "label": "Revisar a carga",
+   "procedure": "Rever a carga de trabalho e redistribuir o que for possível. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_acordo",
+   "label": "Registrar o combinado",
+   "procedure": "Registrar as mudanças combinadas e a data de revisão. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "acompanhar",
+   "label": "Acompanhar a situação",
+   "procedure": "Acompanhar a situação nas semanas seguintes. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_rh",
+   "shot": "mesa",
+   "time": "16:05",
+   "narration": "16:05 · As horas extras se tornaram rotina.",
+   "prompt": "Com quem alinha antes da conversa?",
+   "alternatives": [
+    {
+     "text": "Peço ao RH um panorama de horas extras da equipe.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Panorama pedido",
+      "text": "Você vê se é um caso isolado.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Só falo com o RH se ele pedir ajuda.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Aviso condicional",
+      "text": "O problema só aparece quando é grave.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Falo com o RH sobre as horas extras recorrentes e as opções de apoio.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "RH consultado",
+      "text": "Você age dentro das regras e com respaldo.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo as horas extras continuarem, ele não reclama.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Horas extras normalizadas",
+      "text": "O risco de esgotamento cresce.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "conversar",
+   "shot": "reuniao",
+   "time": "16:30",
+   "narration": "16:30 · Você vai conversar com ele.",
+   "prompt": "Como conduz a conversa?",
+   "alternatives": [
+    {
+     "text": "Peço que descreva o dia a dia e escuto sem interromper.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Escuta ativa",
+      "text": "Você conhece a realidade dele.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Convido para uma conversa privada e pergunto como ele está com a carga.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Conversa acolhedora",
+      "text": "Ele se sente cuidado, não cobrado.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Cobro mais organização e pontualidade.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Cobrança",
+      "text": "Ele se sente injustiçado e se cala.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Comento de passagem em uma reunião geral.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Comentário solto",
+      "text": "Ele não entende que é com ele.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "revisar_carga",
+   "shot": "tela",
+   "time": "17:00",
+   "narration": "17:00 · A carga precisa mudar.",
+   "prompt": "Como revisa a carga?",
+   "alternatives": [
+    {
+     "text": "Listo as tarefas dele, redistribuo o que for possível e priorizo o essencial.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Carga redistribuída",
+      "text": "A carga fica sustentável.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Peço que ele 'se organize melhor' com a mesma carga.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Mesma carga",
+      "text": "O problema não é resolvido.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Retiro tarefas ao acaso, sem avaliar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Redistribuição cega",
+      "text": "Você pode tirar o que ele faz bem.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Avalio com ele o que pode ser adiado, delegado ou simplificado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Ajuste conjunto",
+      "text": "Ele participa da solução.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_acordo",
+   "shot": "tela",
+   "time": "17:20",
+   "narration": "17:20 · Algumas mudanças foram combinadas.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Fica na conversa.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Combinado de boca",
+      "text": "Nada garante que será cumprido.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro só para mim.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro privado",
+      "text": "Ele não sabe o que ficou registrado.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Envio a ele um resumo e peço que confirme.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Resumo enviado",
+      "text": "Os dois confirmam o mesmo entendimento.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro as mudanças, o prazo e a data da próxima revisão.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Combinado registrado",
+      "text": "Há referência para acompanhar.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "acompanhar",
+   "shot": "relogio",
+   "time": "Duas semanas depois",
+   "narration": "Duas semanas depois · Você quer saber se a mudança funcionou.",
+   "prompt": "Como acompanha?",
+   "alternatives": [
+    {
+     "text": "Reviso as horas extras da equipe e converso com ele na data combinada.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Revisão na data",
+      "text": "A revisão cumpre o que foi combinado.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Só pergunto se atrasar de novo.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Atenção reativa",
+      "text": "A sobrecarga só aparece pelo atraso.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Marco conversas curtas e observo a carga e o ritmo.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Acompanhamento próximo",
+      "text": "Você percebe cedo se algo voltar.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero resolvido e não pergunto mais.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem retorno",
+      "text": "O padrão pode voltar sem ninguém notar.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Carga que adoece",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "conversar",
+      "is": false
+     },
+     {
+      "decision": "revisar_carga",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Conversa feita",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "conversar",
+      "is": true
+     },
+     {
+      "decision": "revisar_carga",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Combinado registrado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_acordo",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "RH alinhado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_rh",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Situação sem acompanhamento",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "acompanhar",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Equilíbrio da carga",
+   "levels": {
+    "ok": "Carga equilibrada",
+    "warn": "Carga em ajuste",
+    "bad": "Carga excessiva"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Cuidado com a pessoa",
+   "levels": {
+    "ok": "Pessoa bem cuidada",
+    "warn": "Cuidado parcial",
+    "bad": "Pessoa desassistida"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Continuidade das entregas",
+   "levels": {
+    "ok": "Entregas estáveis",
+    "warn": "Entregas oscilantes",
+    "bad": "Entregas em risco"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "coordenador-administrativo"
+}

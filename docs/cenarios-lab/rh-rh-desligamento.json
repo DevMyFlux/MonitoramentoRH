@@ -1,0 +1,513 @@
+{
+ "id": "rh-desligamento",
+ "title": "Conversa de desligamento",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Quinta, 14h. Uma pessoa será desligada e a decisão já foi aprovada.",
+   "Você é do RH e conduz a conversa com o gestor.",
+   "A pessoa ainda não sabe."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "alinhar_gestor",
+   "label": "Alinhar com o gestor",
+   "procedure": "Alinhar com o gestor o papel de cada um na conversa. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "preparar_documentos",
+   "label": "Preparar a documentação",
+   "procedure": "Preparar os documentos e cálculos antes da conversa. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "preparar_conversa",
+   "label": "Preparar a conversa",
+   "procedure": "Planejar a conversa, com respeito e clareza. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_processo",
+   "label": "Registrar o processo",
+   "procedure": "Registrar o desligamento e as etapas cumpridas. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "orientar_proximos_passos",
+   "label": "Orientar os próximos passos",
+   "procedure": "Explicar à pessoa os próximos passos e prazos. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "alinhar_gestor",
+   "shot": "reuniao",
+   "time": "14:05",
+   "narration": "14:05 · O gestor quer conduzir sozinho.",
+   "prompt": "Como alinha?",
+   "alternatives": [
+    {
+     "text": "Alinho no momento em que a pessoa chegar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Alinhamento em cima da hora",
+      "text": "A conversa fica improvisada.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Alinho com o gestor quem fala o quê e como será a conversa.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Gestor alinhado",
+      "text": "A conversa tem coerência.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo o gestor conduzir sozinho.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Conversa sem RH",
+      "text": "A formalização pode ser falha.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Combino que o RH conduz a formalização e o gestor dá o contexto.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Papéis combinados",
+      "text": "Cada um sabe sua parte.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "preparar_documentos",
+   "shot": "documento",
+   "time": "14:30",
+   "narration": "14:30 · Há documentos e cálculos a preparar.",
+   "prompt": "O que prepara antes?",
+   "alternatives": [
+    {
+     "text": "Preparo documentos e cálculos e confiro com o financeiro.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Documentos preparados",
+      "text": "A pessoa recebe informações corretas.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo os cálculos para depois da conversa.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Cálculo depois",
+      "text": "A pessoa sai sem saber o que receber.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Faço os cálculos de memória.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Cálculo apressado",
+      "text": "Erros podem gerar reclamações.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço a conferência dos cálculos ao financeiro e ao jurídico.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Dupla conferência",
+      "text": "Os números chegam seguros.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "preparar_conversa",
+   "shot": "reuniao",
+   "time": "15:00",
+   "narration": "15:00 · A conversa será difícil.",
+   "prompt": "Como prepara?",
+   "alternatives": [
+    {
+     "text": "Faço a conversa no corredor para ser rápida.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Conversa apressada",
+      "text": "A pessoa se sente desrespeitada.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Improviso e adapto no momento.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Improviso",
+      "text": "O discurso pode soar frio ou confuso.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Escrevo os pontos principais para não esquecer nada.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Pontos escritos",
+      "text": "A conversa é completa e clara.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Planejo o que dizer, escolho local reservado e deixo tempo para perguntas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Conversa preparada",
+      "text": "A pessoa é tratada com respeito.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_processo",
+   "shot": "tela",
+   "time": "15:30",
+   "narration": "15:30 · A conversa aconteceu.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Registro só a data do desligamento.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro mínimo",
+      "text": "Faltam as etapas e os documentos.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Arquivo os documentos assinados e o comprovante da conversa.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Documentos arquivados",
+      "text": "Há prova de que o processo foi seguido.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro o desligamento, as etapas cumpridas e as datas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Processo registrado",
+      "text": "O processo tem histórico claro.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Não registro os detalhes.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem registro",
+      "text": "Em caso de dúvida, não há como comprovar.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "orientar_proximos_passos",
+   "shot": "relogio",
+   "time": "15:45",
+   "narration": "15:45 · A pessoa tem dúvidas.",
+   "prompt": "Como orienta os próximos passos?",
+   "alternatives": [
+    {
+     "text": "Respondo apenas ao que ela perguntar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Orientação mínima",
+      "text": "A pessoa não descobre o que não pergunta.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Explico prazos, documentos e como falar com o RH depois.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Próximos passos claros",
+      "text": "A pessoa sai sabendo o que fazer.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Digo que ela receberá tudo por e-mail.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem orientação",
+      "text": "A pessoa sai sem saber o que esperar.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Entrego um resumo impresso e um contato direto para dúvidas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Resumo entregue",
+      "text": "A pessoa tem referência para consultar.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Desligamento mal conduzido",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "preparar_documentos",
+      "is": false
+     },
+     {
+      "decision": "preparar_conversa",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Documentos corretos",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "preparar_documentos",
+      "is": true
+     },
+     {
+      "decision": "preparar_conversa",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Processo registrado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_processo",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Gestor alinhado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "alinhar_gestor",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Pessoa sem orientação",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "orientar_proximos_passos",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Respeito à pessoa",
+   "levels": {
+    "ok": "Pessoa tratada com respeito",
+    "warn": "Tratamento irregular",
+    "bad": "Pessoa desrespeitada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Segurança do processo",
+   "levels": {
+    "ok": "Processo seguro",
+    "warn": "Processo com lacunas",
+    "bad": "Processo frágil"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Imagem da empresa",
+   "levels": {
+    "ok": "Imagem preservada",
+    "warn": "Imagem arranhada",
+    "bad": "Imagem prejudicada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "rh"
+}

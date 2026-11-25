@@ -1,0 +1,513 @@
+{
+ "id": "sup-feedback-tecnico",
+ "title": "Feedback a um técnico",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Quarta, 15h. Um técnico tem entregado OS com retrabalho nas últimas semanas.",
+   "Você é o supervisor e decide conversar com ele.",
+   "Ele é antigo na equipe e tem muita experiência."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_rh",
+   "label": "Alinhar com RH e coordenação",
+   "procedure": "Alinhar a abordagem com a coordenação e o RH quando houver risco de formalização. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "coletar_exemplos",
+   "label": "Reunir exemplos concretos",
+   "procedure": "Levantar OS e datas que mostrem o padrão, sem generalizações. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "preparar_conversa",
+   "label": "Preparar a conversa",
+   "procedure": "Planejar a conversa privada, com foco em fatos e em ajudar. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_combinado",
+   "label": "Registrar o combinado",
+   "procedure": "Registrar o que foi combinado e o prazo de acompanhamento. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "acompanhar",
+   "label": "Acompanhar a evolução",
+   "procedure": "Acompanhar o técnico com conversas curtas e retorno positivo. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_rh",
+   "shot": "mesa",
+   "time": "15:05",
+   "narration": "15:05 · Você percebe que a conversa pode ter desdobramentos.",
+   "prompt": "Com quem você alinha antes?",
+   "alternatives": [
+    {
+     "text": "Conduzo sozinho e só falo com eles se piorar.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Conversa sem respaldo",
+      "text": "Se a situação escalar, você estará exposto.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço orientação ao RH sobre o que é adequado dizer.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Orientação do RH",
+      "text": "A conversa segue regras da empresa.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Alinho com a equipe, para saberem do problema.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Exposição na equipe",
+      "text": "O técnico será visto como problema antes de conversar.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso a coordenação e consulto o RH sobre como conduzir.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Alinhamento prévio",
+      "text": "Você conduz com respaldo e sem improvisar.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "coletar_exemplos",
+   "shot": "tela",
+   "time": "15:20",
+   "narration": "15:20 · Você quer ser justo e concreto.",
+   "prompt": "Como você prepara os exemplos?",
+   "alternatives": [
+    {
+     "text": "Levo só os piores exemplos.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Seleção enviesada",
+      "text": "O quadro fica injusto e pode gerar defensiva.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Levo exemplos dos últimos meses, incluindo o que ele fez bem.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Quadro equilibrado",
+      "text": "A conversa mostra o todo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Seleciono OS e datas específicas, com o que ocorreu em cada uma.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Exemplos concretos",
+      "text": "A conversa fica no que dá para verificar.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Levo a impressão geral de que ele 'anda desleixado'.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Impressão geral",
+      "text": "Ele não tem como se defender nem melhorar.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "preparar_conversa",
+   "shot": "reuniao",
+   "time": "15:45",
+   "narration": "15:45 · Chega o momento da conversa.",
+   "prompt": "Como você conduz?",
+   "alternatives": [
+    {
+     "text": "Começo ouvindo a visão dele e depois apresento os exemplos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Escuta primeiro",
+      "text": "A conversa fica mais aberta.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Marco um local reservado, descrevo os fatos e pergunto o que está acontecendo.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Conversa privada",
+      "text": "Ele se sente respeitado e pode explicar.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Falo na frente de colegas para servir de exemplo.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Exposição pública",
+      "text": "Ele se humilha e a equipe se retrai.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Sugiro mudanças sem ouvir o que aconteceu.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Monólogo",
+      "text": "Ele se sente julgado.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_combinado",
+   "shot": "tela",
+   "time": "16:10",
+   "narration": "16:10 · Ele concorda em mudar algumas coisas.",
+   "prompt": "Como você formaliza?",
+   "alternatives": [
+    {
+     "text": "Registro o combinado e o prazo de acompanhamento e envio a ele.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Combinado registrado",
+      "text": "Há um ponto de referência objetivo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Não registro, não quero parecer burocrático.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem registro",
+      "text": "Ninguém lembra do que foi combinado.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro só para mim.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro unilateral",
+      "text": "Ele não sabe o que ficou registrado.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço a ele que escreva com as próprias palavras o que entendeu.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Entendimento dele",
+      "text": "O combinado é confirmado pelos dois.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "acompanhar",
+   "shot": "relogio",
+   "time": "Semana seguinte",
+   "narration": "Semana seguinte · Algumas OS já saíram sem retrabalho.",
+   "prompt": "Como você acompanha?",
+   "alternatives": [
+    {
+     "text": "Só volto ao assunto se houver novo erro.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Só no erro",
+      "text": "Ele sente que só é visto quando falha.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço à coordenação para observar a evolução e conversamos juntos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Evolução observada",
+      "text": "A avaliação não depende de uma única pessoa.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero que ele aprendeu e deixo de olhar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Atenção abandonada",
+      "text": "Sem apoio, pode voltar ao padrão antigo.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Converso brevemente toda semana e reconheço o que melhorou.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Acompanhamento próximo",
+      "text": "Ele vê que o esforço é notado.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Conversa sem preparo",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "coletar_exemplos",
+      "is": false
+     },
+     {
+      "decision": "preparar_conversa",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Fatos apresentados",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "coletar_exemplos",
+      "is": true
+     },
+     {
+      "decision": "preparar_conversa",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Combinado registrado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_combinado",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Coordenação alinhada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_rh",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Evolução sem acompanhamento",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "acompanhar",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Desempenho do técnico",
+   "levels": {
+    "ok": "Desempenho melhora",
+    "warn": "Melhora irregular",
+    "bad": "Sem melhora"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Respeito na relação",
+   "levels": {
+    "ok": "Relação respeitosa",
+    "warn": "Relação com ruídos",
+    "bad": "Relação prejudicada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Segurança do gestor",
+   "levels": {
+    "ok": "Gestor respaldado",
+    "warn": "Respaldo parcial",
+    "bad": "Gestor exposto"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "supervisor-manutencao-adm"
+}

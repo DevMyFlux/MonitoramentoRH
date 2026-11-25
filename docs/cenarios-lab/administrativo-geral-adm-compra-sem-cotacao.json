@@ -1,0 +1,513 @@
+{
+ "id": "adm-compra-sem-cotacao",
+ "title": "Compra pequena sem cotação",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Quarta, 11h. Uma área pede material de escritório com urgência, 'só uma compra pequena'.",
+   "Você é do administrativo e compras pequenas também têm regras.",
+   "O solicitante diz que já 'combinou o preço com o fornecedor'."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_gestor",
+   "label": "Informar o gestor",
+   "procedure": "Informar o gestor sobre a compra e o motivo. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "cotar",
+   "label": "Fazer a cotação",
+   "procedure": "Pedir ao menos duas cotações, mesmo em compras pequenas. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "verificar_orcamento",
+   "label": "Verificar o orçamento",
+   "procedure": "Conferir se há orçamento disponível para a compra. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_pedido",
+   "label": "Registrar o pedido",
+   "procedure": "Registrar o pedido no sistema com solicitante e justificativa. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "confirmar_recebimento",
+   "label": "Confirmar o recebimento",
+   "procedure": "Conferir o material recebido com o pedido. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_gestor",
+   "shot": "mesa",
+   "time": "11:05",
+   "narration": "11:05 · O solicitante insiste que é rápido.",
+   "prompt": "Qual é o primeiro passo?",
+   "alternatives": [
+    {
+     "text": "Peço ao solicitante a justificativa por escrito e consulto o gestor.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Justificativa pedida",
+      "text": "A compra fica fundamentada.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Digo que sim e depois vejo as regras.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Aceite precipitado",
+      "text": "Você pode ter de desfazer depois.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso meu gestor e explico que a compra segue o procedimento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Gestor informado",
+      "text": "Você tem respaldo para seguir as regras.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Fecho com o fornecedor combinado para agilizar.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Compra direta",
+      "text": "A compra foge do processo.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "cotar",
+   "shot": "tela",
+   "time": "11:25",
+   "narration": "11:25 · O fornecedor 'combinado' pode ou não ser o melhor.",
+   "prompt": "Como faz a cotação?",
+   "alternatives": [
+    {
+     "text": "Consulto o histórico de compras de itens parecidos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Histórico consultado",
+      "text": "Você tem referência de preço.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Peço pelo menos duas cotações e comparo.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Cotações comparadas",
+      "text": "O preço fica justificado.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aceito o preço combinado.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Preço pré-combinado",
+      "text": "Você não sabe se é um bom preço.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Cotação só no site do fornecedor.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Cotação única",
+      "text": "Falta comparação.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "verificar_orcamento",
+   "shot": "tela",
+   "time": "11:45",
+   "narration": "11:45 · Há restrição de gasto no mês.",
+   "prompt": "Como verifica o orçamento?",
+   "alternatives": [
+    {
+     "text": "Consulto o saldo do centro de custo antes de fechar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Orçamento verificado",
+      "text": "Você evita estouro.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Compro e vejo depois se há orçamento.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Compra sem saldo",
+      "text": "O gasto pode ser negado depois.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Pergunto ao solicitante se há saldo.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Saldo declarado",
+      "text": "A informação pode estar errada.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço ao financeiro a confirmação do saldo.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Saldo confirmado",
+      "text": "A compra é feita com certeza de saldo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_pedido",
+   "shot": "tela",
+   "time": "12:10",
+   "narration": "12:10 · A compra está definida.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Faço o pedido por mensagem e pronto.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Pedido por mensagem",
+      "text": "Não há registro oficial.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro sem justificativa.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro incompleto",
+      "text": "A auditoria questionará.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Anexo as cotações e a aprovação do gestor.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Anexos incluídos",
+      "text": "O pedido tem comprovação.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro o pedido com solicitante, justificativa e cotações.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Pedido registrado",
+      "text": "A compra é rastreável.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "confirmar_recebimento",
+   "shot": "relogio",
+   "time": "Dia seguinte",
+   "narration": "Dia seguinte · O material chegou.",
+   "prompt": "Como confirma o recebimento?",
+   "alternatives": [
+    {
+     "text": "Confiro só a quantidade.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Conferência parcial",
+      "text": "Qualidade e itens errados passam.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço ao solicitante que confirme o recebimento por escrito.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Confirmação escrita",
+      "text": "Fica comprovado que o material chegou.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Confiro o material recebido com o pedido e registro a entrada.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Recebimento conferido",
+      "text": "Você confirma o que chegou.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Entrego direto ao solicitante sem conferir.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Entrega sem conferência",
+      "text": "Itens faltantes passam despercebidos.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Compra fora do processo",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "cotar",
+      "is": false
+     },
+     {
+      "decision": "verificar_orcamento",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Compra justificada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "cotar",
+      "is": true
+     },
+     {
+      "decision": "verificar_orcamento",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Pedido registrado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_pedido",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Gestor informado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_gestor",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Recebimento sem conferência",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "confirmar_recebimento",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Controle de gastos",
+   "levels": {
+    "ok": "Gasto controlado",
+    "warn": "Gasto parcialmente controlado",
+    "bad": "Gasto sem controle"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Aderência ao processo",
+   "levels": {
+    "ok": "Processo seguido",
+    "warn": "Processo parcialmente seguido",
+    "bad": "Processo ignorado"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Transparência",
+   "levels": {
+    "ok": "Compra transparente",
+    "warn": "Transparência parcial",
+    "bad": "Compra opaca"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "administrativo-geral"
+}

@@ -1,0 +1,513 @@
+{
+ "id": "sup-estoque-critico",
+ "title": "Item crítico abaixo do mínimo",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Terça, 09h. O almoxarifado avisa que um item crítico está abaixo do estoque mínimo.",
+   "Você é supervisor e depende dele para manutenções programadas.",
+   "A próxima compra normal só chega em duas semanas."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_compras",
+   "label": "Avisar compras e coordenação",
+   "procedure": "Avisar quem compra e quem decide sobre o item e a urgência. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "verificar_consumo",
+   "label": "Verificar o consumo",
+   "procedure": "Conferir o consumo recente e as manutenções que dependem do item. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "buscar_alternativa",
+   "label": "Buscar alternativas",
+   "procedure": "Verificar se há item equivalente homologado ou estoque em outra unidade. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_solicitacao",
+   "label": "Registrar a solicitação",
+   "procedure": "Lançar a solicitação de compra com justificativa e quantidade. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "acompanhar_chegada",
+   "label": "Acompanhar a chegada",
+   "procedure": "Acompanhar o pedido até o recebimento e conferir a entrada. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_compras",
+   "shot": "mesa",
+   "time": "09:05",
+   "narration": "09:05 · O almoxarife te mostra a tela com o saldo muito baixo.",
+   "prompt": "O que você faz primeiro?",
+   "alternatives": [
+    {
+     "text": "Aviso compras e coordenação do saldo, do risco e da necessidade de antecipar a compra.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Compras acionada",
+      "text": "Quem decide tem informação a tempo.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aguardo a compra normal, porque o processo é esse.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Espera passiva",
+      "text": "O item pode acabar antes de chegar.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Escrevo ao comprador com o consumo e o prazo crítico.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Pedido fundamentado",
+      "text": "A compra ganha prioridade com dados.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Compro por fora, em loja, com dinheiro próprio.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Compra paralela",
+      "text": "Você foge do processo e cria risco para si.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "verificar_consumo",
+   "shot": "tela",
+   "time": "09:20",
+   "narration": "09:20 · Há muita manutenção programada usando o item.",
+   "prompt": "Como você avalia a necessidade?",
+   "alternatives": [
+    {
+     "text": "Peço a quantidade do mês passado.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Cópia do passado",
+      "text": "O consumo pode ter mudado.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço a maior quantidade possível para nunca mais faltar.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Excesso por precaução",
+      "text": "O estoque imobiliza dinheiro e espaço.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço ao planejamento o calendário de manutenções do próximo mês.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Calendário consultado",
+      "text": "O pedido atende ao que está programado.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Consulto o consumo dos últimos meses e as manutenções que usarão o item.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Consumo analisado",
+      "text": "A quantidade a pedir tem justificativa.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "buscar_alternativa",
+   "shot": "documento",
+   "time": "09:40",
+   "narration": "09:40 · Outra unidade do grupo tem esse item em estoque.",
+   "prompt": "Como você busca alternativas?",
+   "alternatives": [
+    {
+     "text": "Pergunto ao técnico se acha que o outro serve.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Opinião isolada",
+      "text": "A decisão depende de uma percepção só.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço ao comprador um transferência entre unidades, com aprovação.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Transferência combinada",
+      "text": "O estoque é movido de forma controlada.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Consulto o saldo da outra unidade e verifico equivalentes homologados.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Alternativas verificadas",
+      "text": "Você descobre como evitar a parada sem improvisar.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Substituo por um item parecido sem consultar ninguém.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Troca sem homologação",
+      "text": "O item pode não ser compatível.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_solicitacao",
+   "shot": "tela",
+   "time": "10:00",
+   "narration": "10:00 · O pedido precisa de um número de solicitação.",
+   "prompt": "Como você registra?",
+   "alternatives": [
+    {
+     "text": "Lanço e envio o número ao comprador e à coordenação.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Número compartilhado",
+      "text": "Todos acompanham a mesma solicitação.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Lanço a solicitação no sistema com a quantidade, o motivo e a urgência.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Solicitação registrada",
+      "text": "O pedido fica rastreável e visível.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Peço verbalmente ao comprador e sigo para o trabalho.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Pedido verbal",
+      "text": "Ninguém mais consegue acompanhar.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Lanço sem urgência para não incomodar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Urgência escondida",
+      "text": "A fila trata o pedido como rotina.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "acompanhar_chegada",
+   "shot": "relogio",
+   "time": "Dia seguinte",
+   "narration": "Dia seguinte · A compra foi aprovada.",
+   "prompt": "Como você acompanha até a chegada?",
+   "alternatives": [
+    {
+     "text": "Peço previsão de entrega, acompanho e confiro o recebimento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Chegada acompanhada",
+      "text": "O item chega e entra no estoque certo.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Espero o fornecedor avisar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Espera passiva",
+      "text": "Um atraso só aparece quando é tarde demais.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Considero resolvido e não olho mais o assunto.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Assunto encerrado cedo",
+      "text": "Atrasos na entrega passam sem ninguém notar.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Combino com o almoxarifado quem confere a entrada e lança no sistema.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Entrada combinada",
+      "text": "O estoque é atualizado no mesmo dia.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Risco de falta do item",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "verificar_consumo",
+      "is": false
+     },
+     {
+      "decision": "buscar_alternativa",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Reposição planejada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "verificar_consumo",
+      "is": true
+     },
+     {
+      "decision": "buscar_alternativa",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Solicitação rastreável",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_solicitacao",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Compras e coordenação cientes",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_compras",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Reposição sem acompanhamento",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "acompanhar_chegada",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Continuidade das manutenções",
+   "levels": {
+    "ok": "Manutenções protegidas",
+    "warn": "Algumas manutenções sob risco",
+    "bad": "Manutenções paradas"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Gestão do estoque",
+   "levels": {
+    "ok": "Quantidade e prazo justificados",
+    "warn": "Reposição razoável mas pouco justificada",
+    "bad": "Reposição sem critério"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Aderência ao processo",
+   "levels": {
+    "ok": "Processo seguido",
+    "warn": "Processo seguido em parte",
+    "bad": "Processo contornado"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "supervisor-manutencao-adm"
+}

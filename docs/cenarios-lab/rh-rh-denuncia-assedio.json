@@ -1,0 +1,513 @@
+{
+ "id": "rh-denuncia-assedio",
+ "title": "Denúncia de assédio recebida",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Segunda, 09h. Chega ao canal do RH uma denúncia contra um supervisor.",
+   "Você é da equipe de RH e o caso exige cuidado.",
+   "A pessoa pede sigilo e tem medo de represália."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_gestao_rh",
+   "label": "Acionar a gestão do RH",
+   "procedure": "Levar o caso à liderança do RH e ao fluxo de apuração da empresa. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "acolher",
+   "label": "Acolher a pessoa",
+   "procedure": "Ouvir com respeito, sem julgar nem prometer resultados. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "proteger_sigilo",
+   "label": "Proteger o sigilo",
+   "procedure": "Limitar quem sabe do caso ao necessário e evitar exposição. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_denuncia",
+   "label": "Registrar a denúncia",
+   "procedure": "Registrar a denúncia no canal formal e abrir o processo de apuração. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "dar_retorno",
+   "label": "Dar retorno",
+   "procedure": "Informar a pessoa sobre o andamento dentro do que for permitido. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_gestao_rh",
+   "shot": "mesa",
+   "time": "09:05",
+   "narration": "09:05 · A denúncia envolve alguém com cargo de liderança.",
+   "prompt": "Qual é o seu primeiro passo?",
+   "alternatives": [
+    {
+     "text": "Converso diretamente com o supervisor para ouvir a versão dele.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Contato precoce",
+      "text": "Você expõe a pessoa e compromete a apuração.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Consulto o procedimento interno e aciono quem conduz as apurações.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Procedimento seguido",
+      "text": "A apuração parte de quem tem a competência.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aguardo alguns dias para ver se a situação se repete.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Espera",
+      "text": "A pessoa continua exposta enquanto você espera.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Levo o caso à liderança do RH e ao fluxo oficial de apuração.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Fluxo acionado",
+      "text": "O caso segue o caminho previsto.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "acolher",
+   "shot": "reuniao",
+   "time": "09:30",
+   "narration": "09:30 · A pessoa está insegura e em silêncio.",
+   "prompt": "Como acolhe?",
+   "alternatives": [
+    {
+     "text": "Peço que 'releve' para evitar maiores problemas.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Minimização",
+      "text": "A pessoa se sente desprotegida.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Explico como o processo funciona e o que posso garantir.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Processo explicado",
+      "text": "A pessoa sabe o que esperar.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Ouço com atenção, sem julgar nem prometer o resultado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Acolhimento adequado",
+      "text": "A pessoa se sente segura para continuar.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Digo que tudo vai ser resolvido e que o supervisor será punido.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Promessa de resultado",
+      "text": "Você promete o que não pode garantir.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "proteger_sigilo",
+   "shot": "mesa",
+   "time": "10:00",
+   "narration": "10:00 · O caso precisa de reserva.",
+   "prompt": "Como protege o sigilo?",
+   "alternatives": [
+    {
+     "text": "Limito o acesso aos registros a quem conduz a apuração.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Acesso restrito",
+      "text": "Apenas o necessário circula.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Compartilho só com quem precisa saber e uso canais seguros.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Sigilo protegido",
+      "text": "A pessoa fica menos exposta.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Comento com colegas para pedir opinião.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Exposição",
+      "text": "O caso vaza e a pessoa é identificada.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Deixo os documentos em uma pasta compartilhada.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Pasta aberta",
+      "text": "Pessoas sem necessidade acessam o caso.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_denuncia",
+   "shot": "tela",
+   "time": "10:30",
+   "narration": "10:30 · O caso precisa de um número e de um dono.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Registro a denúncia no canal formal e abro o processo com prazos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Denúncia registrada",
+      "text": "O caso tem número, dono e prazo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Anoto no meu caderno para manter a discrição.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Registro paralelo",
+      "text": "O caso não existe formalmente.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro só 'queixa de relacionamento'.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro enfraquecido",
+      "text": "A gravidade do caso se perde.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Registro com os fatos relatados, sem interpretações.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Fatos registrados",
+      "text": "O processo parte de dados claros.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "dar_retorno",
+   "shot": "relogio",
+   "time": "Uma semana depois",
+   "narration": "Uma semana depois · A pessoa pergunta como está o caso.",
+   "prompt": "Como dá retorno?",
+   "alternatives": [
+    {
+     "text": "Digo que não posso falar nada.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Silêncio total",
+      "text": "A pessoa acha que ninguém está fazendo nada.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Marco um retorno periódico e explico as próximas etapas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Retorno periódico",
+      "text": "A pessoa se sente acompanhada.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Revelo o que o supervisor disse na apuração.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Quebra de reserva",
+      "text": "Você compromete o processo e a segurança de todos.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Informo o andamento possível, sem expor detalhes da apuração.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Retorno adequado",
+      "text": "A pessoa mantém a confiança no canal.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Caso exposto",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "acolher",
+      "is": false
+     },
+     {
+      "decision": "proteger_sigilo",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Pessoa acolhida",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "acolher",
+      "is": true
+     },
+     {
+      "decision": "proteger_sigilo",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Denúncia registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_denuncia",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Gestão do RH ciente",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_gestao_rh",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Caso sem retorno ou sem registro",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "dar_retorno",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Proteção da pessoa",
+   "levels": {
+    "ok": "Pessoa protegida",
+    "warn": "Proteção parcial",
+    "bad": "Pessoa exposta"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Integridade do processo",
+   "levels": {
+    "ok": "Processo íntegro",
+    "warn": "Processo com falhas",
+    "bad": "Processo comprometido"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Confiança no canal",
+   "levels": {
+    "ok": "Canal confiável",
+    "warn": "Confiança abalada",
+    "bad": "Canal desacreditado"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "rh"
+}

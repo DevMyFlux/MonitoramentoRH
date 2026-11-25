@@ -134,6 +134,34 @@
   }
 }
 
+/* Pacote escritorio-gestao: "alerta" pulsa, "falha" vibra (curto), o ponteiro dos segundos gira */
+.palco-pulso {
+  animation: palco-pulsa-objeto 1.6s ease-in-out infinite;
+}
+@keyframes palco-pulsa-objeto {
+  50% {
+    opacity: 0.72;
+  }
+}
+.palco-vibra {
+  animation: palco-vibra 0.45s linear 2;
+}
+@keyframes palco-vibra {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+.palco-ponteiro {
+  animation: palco-gira 12s linear infinite;
+}
+
 /* Plano B da tela cheia (iOS Safari e navegadores sem Fullscreen API) */
 .palco-tela-cheia {
   position: fixed;
@@ -148,6 +176,9 @@
   .palco-clarao,
   .palco-luminaria,
   .palco-giroflex,
+  .palco-pulso,
+  .palco-vibra,
+  .palco-ponteiro,
   .palco-led {
     animation: none;
   }

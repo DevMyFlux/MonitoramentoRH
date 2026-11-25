@@ -1,0 +1,513 @@
+{
+ "id": "sup-conflito-tecnicos",
+ "title": "Conflito entre dois técnicos",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Sexta, 10h. Dois técnicos discutem em frente à equipe sobre a divisão de uma OS.",
+   "Você é o supervisor e a equipe espera sua atitude.",
+   "Cada um diz que o outro deixou o trabalho pela metade."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_coordenacao",
+   "label": "Informar a coordenação",
+   "procedure": "Comunicar à coordenação quando um conflito afeta a equipe. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "separar_conversa",
+   "label": "Conversar com cada um em separado",
+   "procedure": "Ouvir cada pessoa individualmente antes de qualquer decisão conjunta. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "fatos",
+   "label": "Separar fatos de opinião",
+   "procedure": "Reconstruir o que aconteceu com base em registros e relatos. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_acordo",
+   "label": "Registrar o combinado",
+   "procedure": "Registrar o que ficou combinado e quem faz o quê. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "acompanhar_depois",
+   "label": "Acompanhar depois",
+   "procedure": "Voltar a conversar nos dias seguintes para ver se o combinado funcionou. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_coordenacao",
+   "shot": "reuniao",
+   "time": "10:05",
+   "narration": "10:05 · A discussão alterou o clima da equipe.",
+   "prompt": "Qual é a sua primeira atitude?",
+   "alternatives": [
+    {
+     "text": "Peço que se resolvam entre eles e sigo meu dia.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Delegação do conflito",
+      "text": "Sem mediação, o conflito tende a piorar.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Encerro a discussão, combino uma conversa individual e informo a coordenação.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Passo dado",
+      "text": "Você dá um limite e organiza o próximo passo.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Tomo partido de quem eu conheço melhor.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Escolha de lado",
+      "text": "A outra pessoa perde a confiança em você.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço que parem, retiro os dois do local e aviso a coordenação do ocorrido.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Conflito contido",
+      "text": "A equipe volta ao trabalho e a coordenação sabe.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "separar_conversa",
+   "shot": "mesa",
+   "time": "10:30",
+   "narration": "10:30 · Os dois técnicos estão magoados.",
+   "prompt": "Como você conduz a conversa?",
+   "alternatives": [
+    {
+     "text": "Marco duas conversas curtas, uma com cada um, no mesmo dia.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Conversas no mesmo dia",
+      "text": "Você evita que o assunto esfrie ou vire boato.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Falo só com quem veio me procurar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Ouvido uma só parte",
+      "text": "A outra pessoa sente que não foi escutada.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Falo com cada um em separado, ouço sem interromper e anoto os pontos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Escuta individual",
+      "text": "Cada um conta a sua versão sem plateia.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Reúno os dois na frente da equipe para resolver na hora.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Exposição pública",
+      "text": "A conversa vira disputa e a equipe assiste.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "fatos",
+   "shot": "documento",
+   "time": "11:00",
+   "narration": "11:00 · Há as versões dos dois e um histórico de OS.",
+   "prompt": "Como você separa o que aconteceu do que cada um acha?",
+   "alternatives": [
+    {
+     "text": "Peço a um terceiro que presenciou o fato o que viu, com cuidado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Terceiro ouvido",
+      "text": "Você enriquece a visão do que aconteceu.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Fico com a versão mais convincente.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Versão persuasiva",
+      "text": "Quem fala melhor ganha, não quem tem razão.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Olho o histórico da OS e os registros e comparo com os relatos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Fatos reconstruídos",
+      "text": "A decisão se apoia no que dá para verificar.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Concluo que os dois erraram e aplico a mesma advertência.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Punição igual",
+      "text": "Quem agiu certo se sente injustiçado.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_acordo",
+   "shot": "tela",
+   "time": "11:30",
+   "narration": "11:30 · Os dois aceitam voltar a trabalhar juntos, com condições.",
+   "prompt": "Como você formaliza o combinado?",
+   "alternatives": [
+    {
+     "text": "Registro o que cada um fará, o prazo e quem acompanha, e envio aos dois.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Combinado registrado",
+      "text": "Há um ponto de referência se o conflito voltar.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Fica na palavra, ninguém quer papel.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Só de boca",
+      "text": "Ninguém lembra do combinado depois.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro apenas no meu caderno pessoal.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro privado",
+      "text": "Ninguém mais consegue consultar o combinado.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Mando uma mensagem aos dois resumindo o combinado e peço o 'de acordo'.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "De acordo pedido",
+      "text": "Os dois confirmam o que entenderam.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "acompanhar_depois",
+   "shot": "relogio",
+   "time": "Dia seguinte",
+   "narration": "Dia seguinte · Passaram alguns dias e o clima parece melhor.",
+   "prompt": "Você acompanha o caso?",
+   "alternatives": [
+    {
+     "text": "Dou o assunto por encerrado e não volto a ele.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Caso esquecido",
+      "text": "Sinais de reincidência passam despercebidos.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Marco uma conversa curta em uma semana para checar o combinado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Checagem marcada",
+      "text": "O combinado ganha acompanhamento.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Só volto ao tema se alguém reclamar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Atenção reativa",
+      "text": "Você só sabe depois que o conflito voltou.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Volto a conversar com cada um e observo a convivência.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Acompanhamento feito",
+      "text": "Você percebe cedo se o problema voltar.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Conflito que se agrava",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "separar_conversa",
+      "is": false
+     },
+     {
+      "decision": "fatos",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Fatos reconstruídos",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "separar_conversa",
+      "is": true
+     },
+     {
+      "decision": "fatos",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Combinado registrado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_acordo",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Coordenação ciente",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_coordenacao",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Caso sem acompanhamento ou sem registro",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "acompanhar_depois",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Clima da equipe",
+   "levels": {
+    "ok": "Clima recuperado",
+    "warn": "Clima instável",
+    "bad": "Clima deteriorado"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Justiça no processo",
+   "levels": {
+    "ok": "Todos ouvidos com justiça",
+    "warn": "Processo parcialmente justo",
+    "bad": "Processo injusto"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Confiança na liderança",
+   "levels": {
+    "ok": "Equipe confia no supervisor",
+    "warn": "Confiança abalada em parte",
+    "bad": "Confiança perdida"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "supervisor-manutencao-adm"
+}
