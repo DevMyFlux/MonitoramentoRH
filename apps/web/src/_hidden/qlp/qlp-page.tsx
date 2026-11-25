@@ -9,10 +9,10 @@ import {
   ErrorState,
   Skeleton,
   TituloDePagina
-} from "../components/ui";
-import { LinhaDeEtapas } from "../components/ui/linha-de-etapas";
-import { request, date, text, type Row } from "../features/my-flux/client";
-import { labels } from "../features/my-flux/resources";
+} from "../../components/ui";
+import { LinhaDeEtapas } from "../../components/ui/linha-de-etapas";
+import { request, date, text, type Row } from "../../features/my-flux/client";
+import { labels } from "../../features/my-flux/resources";
 
 const demoOp = "55555555-5555-4555-8555-555555555555";
 const demoFunctions = [

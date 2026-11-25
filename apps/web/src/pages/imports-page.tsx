@@ -35,7 +35,6 @@ type Lote = Row & {
 
 const tipos = [
   { valor: "EMPLOYEES", rotulo: "Colaboradores" },
-  { valor: "QLP", rotulo: "QLP" },
   { valor: "SCHEDULE", rotulo: "Escala" }
 ];
 const rotuloDoTipo = (tipo: string) => tipos.find((t) => t.valor === tipo)?.rotulo ?? tipo;

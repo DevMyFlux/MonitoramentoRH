@@ -8,8 +8,7 @@ import { LoginPage } from "./pages/login-page";
 import { DashboardPage } from "./pages/dashboard-page";
 import { ResourcePage } from "./pages/resource-page";
 import { resources } from "./features/my-flux/resources";
-import { QlpPage } from "./pages/qlp-page";
-import { RecruitmentPage } from "./pages/recruitment-page";
+import { rotasOcultas } from "./_hidden/rotas";
 import { MonthlySchedulePage } from "./pages/monthly-schedule-page";
 import { UsersPage } from "./pages/users-page";
 import { AuditPage } from "./pages/audit-page";
@@ -106,8 +105,6 @@ function PaginaDoLab({
   );
 }
 const paths: Record<string, string> = {
-  qlp: "QLP",
-  recrutamento: "Recrutamento",
   escalas: "Escalas",
   avaliacoes: "Avaliações",
   auditoria: "Auditoria",
@@ -254,16 +251,7 @@ const router = createBrowserRouter([
   },
   ...Object.keys(resources)
     .filter(
-      (key) =>
-        ![
-          "qlp",
-          "recrutamento",
-          "escalas",
-          "usuarios",
-          "colaboradores",
-          "auditoria",
-          "importacoes"
-        ].includes(key)
+      (key) => !["escalas", "usuarios", "colaboradores", "auditoria", "importacoes"].includes(key)
     )
     .map((key) => ({
       path: `/${key}`,
@@ -277,22 +265,8 @@ const router = createBrowserRouter([
       </App>
     )
   },
-  {
-    path: "/qlp",
-    element: (
-      <App breadcrumbs={["MY FLUX", "QLP"]}>
-        <QlpPage />
-      </App>
-    )
-  },
-  {
-    path: "/recrutamento",
-    element: (
-      <App breadcrumbs={["MY FLUX", "Recrutamento"]}>
-        <RecruitmentPage />
-      </App>
-    )
-  },
+  // QLP e Recrutamento (módulos ocultos): só entram no roteador se estiverem ativos no registro.
+  ...rotasOcultas(),
   {
     path: "/escalas",
     element: (

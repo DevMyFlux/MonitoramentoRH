@@ -7,7 +7,7 @@
 //  - "active": existe para quem o perfil permite.
 //  - "hidden": INACESSÍVEL PARA TODOS (inclusive DEV): fora do menu, das rotas web e da API
 //    (404 igual ao de rota inexistente). O código segue no repositório e compilando; religar é trocar
-//    uma linha aqui (veja docs/modulos-ocultos.md, a ser escrito na Fase 9).
+//    uma linha aqui (veja docs/modulos-ocultos.md).
 //
 // `apiPrefixos` lista só os prefixos EXCLUSIVOS do módulo. Módulos de cadastro (Operações, Funções,
 // Parâmetros, Eventos, Documentos...) não têm prefixo próprio: os endpoints deles alimentam as telas

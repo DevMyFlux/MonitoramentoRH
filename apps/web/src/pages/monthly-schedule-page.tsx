@@ -12,7 +12,7 @@ import {
   Trash2,
   X
 } from "lucide-react";
-import { holidaysOfMonth, scheduleCodes } from "@my-flux/shared";
+import { holidaysOfMonth, MODULOS, scheduleCodes } from "@my-flux/shared";
 import {
   AvisoTemporario,
   Badge,
@@ -20,8 +20,6 @@ import {
   Button,
   CampoDeSelecao,
   CampoDeTexto,
-  CartaoSpotlight,
-  Contador,
   EquipesPorTurno,
   Interruptor,
   ListaDePendencias,
@@ -35,6 +33,11 @@ import {
 import { cn } from "../lib/cn";
 import { download, request, text, date, type Row } from "../features/my-flux/client";
 import { labels } from "../features/my-flux/resources";
+import {
+  CartoesDeCobertura,
+  metricasDaVersao,
+  textoDeCobertura
+} from "../_hidden/qlp/metricas-de-cobertura";
 
 const demoOp = "55555555-5555-4555-8555-555555555555";
 
@@ -57,7 +60,6 @@ type Grid = {
   holidays?: { day: number; name: string }[];
 };
 type Pendency = { employeeId: string; employeeName: string; date: string; reasonCodes: string[] };
-type Metrics = { required: number; covered: number; coverage: number };
 type SelectedCell = {
   employeeId: string;
   employeeName: string;
@@ -91,11 +93,10 @@ const monthNames = [
   "dezembro"
 ];
 
+const qlpAtivo = MODULOS.qlp?.status === "active";
+
 function getGrid(version: Row | null): Grid | null {
   return ((version?.generatedResult as Row | undefined)?.grid as Grid | undefined) ?? null;
-}
-function getMetrics(version: Row | null): Metrics | null {
-  return ((version?.generatedResult as Row | undefined)?.metrics as Metrics | undefined) ?? null;
 }
 function getPendencies(version: Row | null): Pendency[] {
   return (
@@ -427,62 +428,6 @@ export function MonthlySchedulePage() {
     );
   }
 
-  function metricsRow(s: Row) {
-    const m = getMetrics(s);
-    const cobertura = Math.max(0, Math.min(100, m?.coverage ?? 0));
-    const cartoes = [
-      { rotulo: "Necessário", valor: m?.required, dica: "pessoa-dia que o rodízio escala" },
-      { rotulo: "Coberto", valor: m?.covered, dica: "pessoa-dia com trabalho" }
-    ];
-    return (
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {cartoes.map((c) => (
-          <CartaoSpotlight key={c.rotulo} className="p-3.5">
-            <p className="text-xs font-medium text-mf-texto-2">{c.rotulo}</p>
-            <p className="mt-1.5 font-display text-3xl font-bold leading-none text-mf-tinta">
-              {c.valor === undefined ? (
-                "—"
-              ) : (
-                <Contador valor={c.valor} formatar={(n) => String(Math.round(n))} />
-              )}
-            </p>
-            <p className="mt-1.5 text-[11px] text-mf-texto-3">{c.dica}</p>
-          </CartaoSpotlight>
-        ))}
-        <CartaoSpotlight className="col-span-2 p-3.5 sm:col-span-1">
-          <p className="text-xs font-medium text-mf-texto-2">Cobertura</p>
-          <p
-            className={cn(
-              "mt-1.5 font-display text-3xl font-bold leading-none",
-              cobertura < 100 ? "text-mf-alerta" : "text-mf-primaria"
-            )}
-          >
-            {m?.coverage === undefined ? (
-              "—"
-            ) : (
-              <>
-                <Contador valor={m.coverage} formatar={(n) => String(Math.round(n))} />%
-              </>
-            )}
-          </p>
-          <div
-            role="img"
-            aria-label={`Cobertura de ${m?.coverage ?? 0}%`}
-            className="mt-2 h-1.5 overflow-hidden rounded-full bg-mf-linha"
-          >
-            <div
-              className={cn(
-                "h-full rounded-full transition-[width] duration-700",
-                cobertura < 100 ? "bg-mf-alerta" : "bg-mf-brilho"
-              )}
-              style={{ width: `${cobertura}%` }}
-            />
-          </div>
-        </CartaoSpotlight>
-      </div>
-    );
-  }
-
   function scheduleViewer(s: Row) {
     if (s.id !== selectedId) return null;
     if (!grid) {
@@ -766,7 +711,7 @@ export function MonthlySchedulePage() {
             <div className="mt-4">
               <ProgressoDoFluxo status={text(latest.status)} />
             </div>
-            {metricsRow(latest)}
+            {qlpAtivo ? <CartoesDeCobertura metricas={metricasDaVersao(latest)} /> : null}
             {scheduleViewer(latest)}
           </article>
         )}
@@ -843,8 +788,8 @@ export function MonthlySchedulePage() {
                       </p>
                       <p className="mt-1 text-xs text-slate-500">
                         Unidade: {text(operations.find((o) => o.id === s.operationId)?.name ?? "—")}{" "}
-                        · Gerada em {generatedAt(s.createdAt)} · Cobertura{" "}
-                        {getMetrics(s)?.coverage ?? "—"}%
+                        · Gerada em {generatedAt(s.createdAt)}
+                        {qlpAtivo ? textoDeCobertura(s) : null}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">

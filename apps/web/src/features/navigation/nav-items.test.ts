@@ -6,7 +6,8 @@ describe("navigation groups", () => {
     const labels = navigationGroups.flatMap((group) => group.items.map((item) => item.label));
 
     expect(labels).toContain("Dashboard");
-    expect(labels).toContain("QLP");
+    expect(labels).not.toContain("QLP");
+    expect(labels).not.toContain("Recrutamento");
     expect(labels).toContain("Colaboradores");
     expect(labels).toContain("Escalas");
     expect(labels).toContain("Auditoria");

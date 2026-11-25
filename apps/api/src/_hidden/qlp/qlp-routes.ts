@@ -2,8 +2,8 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { idParamsSchema, positionInputSchema, qlpVersionInputSchema } from "@my-flux/validation";
 import { z } from "zod";
 import { HttpError } from "../../lib/http-error.js";
-import { verifyAccessToken } from "../auth/token-service.js";
-import type { UserRepository } from "../users/user-repository.js";
+import { verifyAccessToken } from "../../modules/auth/token-service.js";
+import type { UserRepository } from "../../modules/users/user-repository.js";
 import type { QlpRepository } from "./qlp-repository.js";
 
 const transitionSchema = z.object({

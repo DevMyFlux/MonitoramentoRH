@@ -159,7 +159,7 @@ describe("consultarDados", () => {
     ]);
   });
 
-  it("escalas recentes: situação em português e cobertura vinda das métricas", async () => {
+  it("escalas recentes: situação em português (e nada do dimensionamento do QLP, que está oculto)", async () => {
     const b = bancoFalso();
     b.scheduleVersion.findMany.mockResolvedValue([
       {
@@ -167,7 +167,6 @@ describe("consultarDados", () => {
         month: new Date("2026-11-01T00:00:00Z"),
         status: "IN_REVIEW",
         createdAt: new Date("2026-11-05T10:00:00Z"),
-        generatedResult: { metrics: { coverage: 92 } },
         operation: { name: "Operação Norte" }
       },
       {
@@ -175,15 +174,16 @@ describe("consultarDados", () => {
         month: new Date("2026-10-01T00:00:00Z"),
         status: "PUBLISHED",
         createdAt: new Date("2026-10-02T10:00:00Z"),
-        generatedResult: null,
         operation: { name: "Operação Norte" }
       }
     ]);
     const r = await consultarDados(comoDb(b), usuario("ADMIN", global), "escalas_recentes", 5);
     expect(r.itens).toMatchObject([
-      { mes: "2026-11", situacao: "em_aprovacao", cobertura_percentual: 92 },
-      { mes: "2026-10", situacao: "publicada", cobertura_percentual: null }
+      { mes: "2026-11", situacao: "em_aprovacao" },
+      { mes: "2026-10", situacao: "publicada" }
     ]);
+    for (const item of r.itens as object[])
+      expect(Object.keys(item)).not.toContain("cobertura_percentual");
   });
 });
 

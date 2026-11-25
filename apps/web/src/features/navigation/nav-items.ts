@@ -10,7 +10,6 @@ import {
   FileCheck2,
   FileCog,
   FileWarning,
-  Gauge,
   LayoutDashboard,
   Network,
   Settings,
@@ -21,6 +20,7 @@ import {
   Workflow
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { itensDeMenuOcultos } from "../../_hidden/navegacao";
 
 export type NavigationItem = {
   label: string;
@@ -65,8 +65,8 @@ export const navigationGroups: NavigationGroup[] = [
   {
     label: "Operação",
     items: [
-      { label: "QLP", href: "/qlp", icon: Gauge, hidden: true },
-      { label: "Recrutamento", href: "/recrutamento", icon: Users, hidden: true },
+      // Módulos ocultos (QLP, Recrutamento): só aparecem se estiverem ativos no registro.
+      ...itensDeMenuOcultos(),
       { label: "Colaboradores", href: "/colaboradores", icon: Users, curto: "Pessoas" },
       { label: "Escalas", href: "/escalas", icon: CalendarDays, curto: "Escalas" }
     ]

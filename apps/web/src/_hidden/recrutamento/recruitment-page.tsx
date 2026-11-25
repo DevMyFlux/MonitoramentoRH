@@ -9,10 +9,10 @@ import {
   ErrorState,
   Skeleton,
   TituloDePagina
-} from "../components/ui";
-import { LinhaDeEtapas } from "../components/ui/linha-de-etapas";
-import { request, text, date, type Row } from "../features/my-flux/client";
-import { labels } from "../features/my-flux/resources";
+} from "../../components/ui";
+import { LinhaDeEtapas } from "../../components/ui/linha-de-etapas";
+import { request, text, date, type Row } from "../../features/my-flux/client";
+import { labels } from "../../features/my-flux/resources";
 
 const nextStage: Record<string, string> = {
   REQUESTED: "RECRUITING",

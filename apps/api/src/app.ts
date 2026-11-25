@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { registerRecruitmentRoutes } from "./modules/recruitment/recruitment-routes.js";
+import { registrarModulosOcultos } from "./_hidden/registrar.js";
 import { registerWorkspaceRoutes } from "./modules/operations/workspace-routes.js";
 import cors from "@fastify/cors";
 import fastifyStatic from "@fastify/static";
@@ -29,8 +29,6 @@ import { ImportRepository } from "./modules/imports/import-repository.js";
 import { registerImportRoutes } from "./modules/imports/import-routes.js";
 import { OperationalRepository } from "./modules/operations/operational-repository.js";
 import { registerOperationalRoutes } from "./modules/operations/operational-routes.js";
-import { QlpRepository } from "./modules/qlp/qlp-repository.js";
-import { registerQlpRoutes } from "./modules/qlp/qlp-routes.js";
 import { ReportRepository } from "./modules/reports/report-repository.js";
 import { registerReportRoutes } from "./modules/reports/report-routes.js";
 import { ScheduleRepository } from "./modules/scheduling/schedule-repository.js";
@@ -167,7 +165,6 @@ export async function buildApp(
   const operationalRepository = new OperationalRepository(prisma);
   const employeeRepository = new EmployeeRepository(prisma);
   const importRepository = new ImportRepository(prisma, employeeRepository);
-  const qlpRepository = new QlpRepository(prisma);
   const aptitudeRepository = new AptitudeRepository(prisma);
   const evaluationRepository = new EvaluationRepository(prisma);
   const calendarRepository = new CalendarRepository(prisma);
@@ -197,12 +194,6 @@ export async function buildApp(
   await app.register(
     async (versionedApp) =>
       registerEmployeeRoutes(versionedApp, userRepository, employeeRepository),
-    {
-      prefix: apiPrefix
-    }
-  );
-  await app.register(
-    async (versionedApp) => registerQlpRoutes(versionedApp, userRepository, qlpRepository),
     {
       prefix: apiPrefix
     }
@@ -255,7 +246,8 @@ export async function buildApp(
     }
   );
 
-  await app.register(async a => registerRecruitmentRoutes(a, userRepository, prisma), { prefix: apiPrefix });
+  // QLP e Recrutamento: ocultos (rotas só existem se o módulo estiver ativo no registro).
+  await registrarModulosOcultos(app, { users: userRepository, prisma, apiPrefix });
   await app.register(async a => registrarRotasDeCadastroDaConta(a, userRepository, prisma), { prefix: apiPrefix });
   await app.register(async a => registerWorkspaceRoutes(a, userRepository, prisma), { prefix: apiPrefix });
   await app.register(async a => registerEmployeeScheduleRoutes(a, userRepository, prisma), { prefix: apiPrefix });

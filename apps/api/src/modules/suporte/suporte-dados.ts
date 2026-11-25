@@ -212,22 +212,16 @@ export async function consultarDados(
           month: true,
           status: true,
           createdAt: true,
-          generatedResult: true,
           operation: { select: { name: true } }
         }
       });
       return {
         itens: versoes.map((v) => {
-          const metricas = ((v.generatedResult as { metrics?: { coverage?: unknown } } | null)
-            ?.metrics ?? {}) as {
-            coverage?: unknown;
-          };
           return {
             operacao: v.operation.name,
             mes: v.month.toISOString().slice(0, 7),
             versao: v.version,
             situacao: SITUACAO_DA_ESCALA[v.status] ?? v.status,
-            cobertura_percentual: typeof metricas.coverage === "number" ? metricas.coverage : null,
             gerada_em: dia(v.createdAt)
           };
         })

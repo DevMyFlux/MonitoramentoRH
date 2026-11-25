@@ -2,9 +2,14 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { HttpError } from "../../lib/http-error.js";
-import { authenticateRequest } from "../auth/auth-routes.js";
-import type { UserRepository } from "../users/user-repository.js";
-import { assertRole, json, operationWhere, scopedOperation } from "../identity/access.js";
+import { authenticateRequest } from "../../modules/auth/auth-routes.js";
+import type { UserRepository } from "../../modules/users/user-repository.js";
+import {
+  assertRole,
+  json,
+  operationWhere,
+  scopedOperation
+} from "../../modules/identity/access.js";
 import { assertAdmissionTransition } from "./recruitment-workflow.js";
 
 const idSchema = z.object({ id: z.string().uuid() });

@@ -73,7 +73,7 @@ export function LoginPage() {
             aria-label="Fluxo: planejar, conectar pessoas e organizar escalas"
           >
             {[
-              { icon: Layers2, title: "Planejar", description: "QLP e posições" },
+              { icon: Layers2, title: "Planejar", description: "Funções e regras" },
               { icon: Users, title: "Conectar", description: "Pessoas e talentos" },
               { icon: CalendarDays, title: "Organizar", description: "Escalas e equipes" }
             ].map((step, index) => (

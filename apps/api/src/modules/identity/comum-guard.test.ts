@@ -34,8 +34,7 @@ const ROTAS = [
   "/api/v1/operations",
   "/api/v1/functions",
   "/api/v1/parameters",
-  "/api/v1/users",
-  "/api/v1/qlp/versions"
+  "/api/v1/users"
 ];
 
 async function montar(): Promise<FastifyInstance> {
@@ -85,6 +84,15 @@ describe("trava do COMUM fora do Lab", () => {
         expect(r.json().code).toBe("MODULO_FORBIDDEN");
       }
     }
+  });
+
+  it("módulo oculto não é 403 para o COMUM: a trava deixa passar para o 404 de rota inexistente", async () => {
+    app = await montar();
+    banco.set("ana", "COMUM");
+    // Nenhuma rota do QLP está registrada (módulo oculto): o COMUM recebe o mesmo 404 dos demais.
+    const r = await pedir(app, "/api/v1/qlp/versions", token("ana", "COMUM"));
+    expect(r.statusCode).toBe(404);
+    expect(JSON.stringify(r.json())).not.toContain("MODULO_FORBIDDEN");
   });
 
   it("DEV, ADMIN e RH passam em tudo", async () => {

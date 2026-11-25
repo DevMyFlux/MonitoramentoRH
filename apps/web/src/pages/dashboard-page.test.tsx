@@ -31,16 +31,12 @@ describe("painel inicial", () => {
     const indicadores = within(
       await screen.findByRole("region", { name: "Indicadores operacionais" })
     );
-    expect(indicadores.getByRole("link", { name: /Posições previstas/ }).getAttribute("href")).toBe(
-      "/qlp"
-    );
-    expect(indicadores.getByRole("link", { name: /Posições previstas/ }).textContent).toContain(
-      "40"
-    );
+    // Posições, vagas e cobertura vêm do QLP (módulo oculto): não aparecem.
+    expect(indicadores.queryByRole("link", { name: /Posições|Vagas/ })).toBeNull();
     expect(
       indicadores.getByRole("link", { name: /Documentos críticos/ }).getAttribute("href")
     ).toBe("/documentos");
-    expect(screen.getByRole("img", { name: "Cobertura: 80%" })).toBeTruthy();
+    expect(screen.queryByRole("img", { name: /Cobertura/ })).toBeNull();
     expect(screen.getByText("Pendências operacionais").closest("a")!.textContent).toContain("5");
   });
 

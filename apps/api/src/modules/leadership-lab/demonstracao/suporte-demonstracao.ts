@@ -108,7 +108,7 @@ export function consultaPedidaPela(mensagem: string): ConsultaDoSuporte | null {
     return "admissoes_recentes";
   }
   if (/(afastad|ferias|licenca|atestado)/.test(m)) return "afastamentos_atuais";
-  if (/(escalas? (recente|gerada|publicada)|ultimas? escalas?|cobertura)/.test(m)) {
+  if (/(escalas? (recente|gerada|publicada)|ultimas? escalas?)/.test(m)) {
     return "escalas_recentes";
   }
   if (/(quantos|quantas|total de|numero de).*(colaborador|funcionario|pessoas|equipe)/.test(m)) {
@@ -158,7 +158,7 @@ export function textoDosDados(consulta: ConsultaDoSuporte, r: Record<string, unk
       return `Escalas mais recentes:\n${lista(
         itens(r).map(
           (e) =>
-            `${String(e.operacao)} ${String(e.mes)} (versão ${String(e.versao)}): ${String(e.situacao).replace(/_/g, " ")}, cobertura ${String(e.cobertura_percentual ?? "—")}%`
+            `${String(e.operacao)} ${String(e.mes)} (versão ${String(e.versao)}): ${String(e.situacao).replace(/_/g, " ")}`
         )
       )}`;
   }

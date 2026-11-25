@@ -17,6 +17,7 @@
     "format": "prettier . --check",
     "format:write": "prettier . --write",
     "typecheck": "pnpm -r typecheck",
+    "test:ocultos": "pnpm --filter @my-flux/shared exec vitest run src/modules.test.ts src/acessos.test.ts && pnpm --filter @my-flux/api exec vitest run src/_hidden src/modules/identity/comum-guard.test.ts && pnpm --filter @my-flux/web exec vitest run src/_hidden",
     "test": "pnpm -r test",
     "db:generate": "pnpm --filter @my-flux/api db:generate",
     "deploy:build": "pnpm --filter @my-flux/shared --filter @my-flux/types --filter @my-flux/validation --filter @my-flux/config build && pnpm --filter @my-flux/api db:generate && VITE_API_BASE_URL=/api/v1 pnpm --filter @my-flux/web build && pnpm --filter @my-flux/api bundle",

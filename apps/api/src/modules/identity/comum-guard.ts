@@ -12,7 +12,7 @@
 // token: o pior caso é alguém REBAIXADO a COMUM manter o acesso antigo até 15 min, o mesmo prazo de
 // qualquer outra mudança de permissão. Sem token, ou com token inválido, a trava não responde: a
 // própria rota devolve 401.
-import { rotaDaApiPermitidaAoComum } from "@my-flux/shared";
+import { moduloDaRotaApi, rotaDaApiPermitidaAoComum } from "@my-flux/shared";
 import type { FastifyInstance } from "fastify";
 import { HttpError } from "../../lib/http-error.js";
 import { verifyAccessToken } from "../auth/token-service.js";
@@ -28,6 +28,9 @@ export function registrarTravaDoComum(
     if (!caminho.startsWith(`${apiPrefix}/`)) return;
     const rota = caminho.slice(apiPrefix.length);
     if (rotaDaApiPermitidaAoComum(rota)) return;
+    // Módulo oculto não existe para ninguém: deixa passar para o 404 de rota inexistente (o mesmo que
+    // os outros perfis recebem), em vez de um 403 que confirmaria que o módulo existe.
+    if (moduloDaRotaApi(rota)?.status === "hidden") return;
 
     const autorizacao = request.headers.authorization;
     if (!autorizacao?.startsWith("Bearer ")) return;

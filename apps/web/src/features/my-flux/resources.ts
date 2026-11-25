@@ -368,46 +368,6 @@ export const resources: Record<string, Resource> = {
     ],
     roles: people
   },
-  qlp: {
-    title: "QLP e posições",
-    subtitle: "Versione o quadro de lotação e materialize posições após aprovação.",
-    endpoint: "/qlp/versions",
-    fields: [
-      op,
-      {
-        key: "kind",
-        label: "Tipo",
-        type: "select",
-        options: ["CONTRACTUAL", "OPERATIONAL"],
-        value: "OPERATIONAL"
-      },
-      { key: "validFrom", label: "Vigência inicial", type: "date" },
-      f("reason", "Motivo")
-    ],
-    columns: [
-      ["version", "Versão"],
-      ["kind", "Tipo"],
-      ["status", "Situação"],
-      ["validFrom", "Vigência"]
-    ],
-    roles: admin
-  },
-  recrutamento: {
-    title: "Recrutamento e admissão",
-    subtitle: "Conecte cada vaga a uma posição e acompanhe o candidato até a admissão.",
-    endpoint: "/recruitment/requests",
-    fields: [
-      f("positionId", "Posição", "/positions"),
-      f("reason", "Motivo"),
-      { key: "desiredDate", label: "Data desejada", type: "date" }
-    ],
-    columns: [
-      ["position", "Posição"],
-      ["status", "Situação"],
-      ["desiredDate", "Data desejada"]
-    ],
-    roles: people
-  },
   escalas: {
     title: "Escalas",
     subtitle: "Gere uma escala mensal determinística e mantenha as lacunas visíveis.",
@@ -443,7 +403,7 @@ export const resources: Record<string, Resource> = {
         key: "type",
         label: "Tipo",
         type: "select",
-        options: ["EMPLOYEES", "QLP", "SCHEDULE"],
+        options: ["EMPLOYEES", "SCHEDULE"],
         value: "EMPLOYEES"
       },
       { key: "fileName", label: "Nome do arquivo" },

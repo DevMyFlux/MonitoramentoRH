@@ -1,9 +1,9 @@
-import { assertRole } from "../identity/access.js";
+import { assertRole } from "../../modules/identity/access.js";
 import type { AuthenticatedUser } from "@my-flux/types";
 import { Prisma, type AuditAction, type PrismaClient, type WorkflowStatus } from "@prisma/client";
 import { HttpError } from "../../lib/http-error.js";
-import { countsAsCurrentHeadcount } from "../employees/employee-rules.js";
-import { canAccessScope } from "../identity/scope-policy.js";
+import { countsAsCurrentHeadcount } from "../../modules/employees/employee-rules.js";
+import { canAccessScope } from "../../modules/identity/scope-policy.js";
 import { calculateQlpCoverage } from "./qlp-calculator.js";
 import { canTransitionQlp } from "./qlp-workflow.js";
 
@@ -59,7 +59,8 @@ export class QlpRepository {
     });
     for (const requirement of data.requirements) {
       const fn = await this.db.jobFunction.findUnique({ where: { id: requirement.functionId } });
-      if (!fn || (fn.operationId && fn.operationId !== data.operationId)) throw new HttpError(400, "FUNCTION_SCOPE_MISMATCH", "Função não pertence à operação.");
+      if (!fn || (fn.operationId && fn.operationId !== data.operationId))
+        throw new HttpError(400, "FUNCTION_SCOPE_MISMATCH", "Funï¿½ï¿½o nï¿½o pertence ï¿½ operaï¿½ï¿½o.");
     }
     const created = await this.db.qLPVersion.create({
       data: {
@@ -119,22 +120,53 @@ export class QlpRepository {
       updateData.approvedAt = new Date();
     }
 
-    const updated = await this.db.$transaction(async tx => {
-      const updated = await tx.qLPVersion.update({ where: { id, status: before.status, updatedAt: before.updatedAt }, data: updateData });
-      if (next === "APPROVED") {
-        const requirements = await tx.qLPRequirement.findMany({ where: { versionId: id } });
-        if (before.kind === "OPERATIONAL") for (const requirement of requirements) {
-          for (let i = 0; i < requirement.quantity; i++) await tx.position.create({ data: {
-            qlpVersionId: id, operationId: before.operationId, functionId: requirement.functionId,
-            shift: requirement.shift, team: requirement.team, parity: requirement.parity,
-            workRegime: requirement.workRegime, criticality: requirement.criticality,
-            validFrom: before.validFrom, validTo: before.validTo, createdBy: user.id
-          } });
+    const updated = await this.db.$transaction(
+      async (tx) => {
+        const updated = await tx.qLPVersion.update({
+          where: { id, status: before.status, updatedAt: before.updatedAt },
+          data: updateData
+        });
+        if (next === "APPROVED") {
+          const requirements = await tx.qLPRequirement.findMany({ where: { versionId: id } });
+          if (before.kind === "OPERATIONAL")
+            for (const requirement of requirements) {
+              for (let i = 0; i < requirement.quantity; i++)
+                await tx.position.create({
+                  data: {
+                    qlpVersionId: id,
+                    operationId: before.operationId,
+                    functionId: requirement.functionId,
+                    shift: requirement.shift,
+                    team: requirement.team,
+                    parity: requirement.parity,
+                    workRegime: requirement.workRegime,
+                    criticality: requirement.criticality,
+                    validFrom: before.validFrom,
+                    validTo: before.validTo,
+                    createdBy: user.id
+                  }
+                });
+            }
         }
-      }
-      await tx.auditLog.create({ data: { userId: user.id, userRole: user.role, action: next === "APPROVED" ? "APPROVE" : "UPDATE", entity: "QLPVersion", entityId: id, operationId: before.operationId, companyId: before.operation.companyId, unitId: before.operation.unitId, before: toJson(before), after: toJson(updated), origin: "api" } });
-      return updated;
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+        await tx.auditLog.create({
+          data: {
+            userId: user.id,
+            userRole: user.role,
+            action: next === "APPROVED" ? "APPROVE" : "UPDATE",
+            entity: "QLPVersion",
+            entityId: id,
+            operationId: before.operationId,
+            companyId: before.operation.companyId,
+            unitId: before.operation.unitId,
+            before: toJson(before),
+            after: toJson(updated),
+            origin: "api"
+          }
+        });
+        return updated;
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    );
 
     return updated;
   }
@@ -182,7 +214,10 @@ export class QlpRepository {
   async listPositions(user: AuthenticatedUser) {
     return this.db.position.findMany({
       where: { status: "ACTIVE", operation: operationScopeWhere(user) },
-      include: { function: true, assignments: { where: { status: "ACTIVE" }, include: { employee: true } } },
+      include: {
+        function: true,
+        assignments: { where: { status: "ACTIVE" }, include: { employee: true } }
+      },
       orderBy: { createdAt: "desc" }
     });
   }
@@ -190,7 +225,11 @@ export class QlpRepository {
   async createPosition(user: AuthenticatedUser, data: PositionInput) {
     assertRole(user, ["DEV", "ADMIN"]);
     await this.assertOperationScope(user, data.operationId);
-    throw new HttpError(409, "QLP_ORIGIN_REQUIRED", "Posições são materializadas pela aprovação do QLP operacional.");
+    throw new HttpError(
+      409,
+      "QLP_ORIGIN_REQUIRED",
+      "Posiï¿½ï¿½es sï¿½o materializadas pela aprovaï¿½ï¿½o do QLP operacional."
+    );
     /* legacy manual creation disabled
     const created = await this.db.position.create({
       data: {
