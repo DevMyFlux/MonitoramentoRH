@@ -22,6 +22,7 @@ import {
   useConfigDosMoldes
 } from "../../features/leadership-lab/cadastro-hooks";
 import { descreverErroDoCadastro } from "../../features/leadership-lab/erros";
+import { SaudeDaIa } from "../../features/leadership-lab/componentes/saude-da-ia";
 import { cn } from "../../lib/cn";
 import { Interruptor } from "../../components/ui/interruptor";
 
@@ -37,6 +38,8 @@ export function LabConfigPage() {
           descricao="Defina o tempo de cada situação, quais cargos usam cada teste e quando o teste é liberado para os participantes. Não há dados de pessoas nesta tela."
         />
       </Revelar>
+
+      <SaudeDaIa />
 
       {config.isPending ? (
         <LoadingState />

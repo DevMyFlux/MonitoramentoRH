@@ -114,7 +114,7 @@ describe("conversa com o facilitador", () => {
     await usuario.type(caixa, "Como fui?{Enter}");
 
     expect((await screen.findByRole("alert")).textContent).toContain(
-      "O serviço de IA não respondeu"
+      "Assistente indisponível agora"
     );
     expect((caixa as HTMLTextAreaElement).value).toBe("Como fui?");
     expect(screen.queryByText("Como fui?", { selector: "p" })).toBeNull();
@@ -226,5 +226,21 @@ describe("espaço de aprendizagem", () => {
       .setup()
       .click(screen.getByRole("button", { name: "Como dar um feedback difícil?" }));
     expect((await screen.findByRole("alert")).textContent).toContain("Termine o teste antes");
+  });
+});
+
+describe("assistente indisponível", () => {
+  it("diz que o teste segue funcionando e deixa tentar de novo com a mesma pergunta", async () => {
+    aprender
+      .mockRejectedValueOnce(new ApiError("falhou", 502, "LAB_IA_INDISPONIVEL"))
+      .mockResolvedValue({ desfecho: "respondida", resposta: "Agora sim.", fontes: [] });
+    renderizar(<AprendizagemComFacilitador />);
+    await userEvent.click(screen.getByRole("button", { name: "Como dar um feedback difícil?" }));
+    expect(await screen.findByText("Assistente indisponível agora")).toBeTruthy();
+    expect(screen.getByText(/não usam IA/)).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Tentar de novo" }));
+    expect(await screen.findByText("Agora sim.")).toBeTruthy();
+    expect(aprender).toHaveBeenCalledTimes(2);
+    expect(aprender.mock.calls[1]![0].mensagem).toBe("Como dar um feedback difícil?");
   });
 });

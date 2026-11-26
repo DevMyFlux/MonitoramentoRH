@@ -3,13 +3,18 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { labCadastroApi } from "../../features/leadership-lab/cadastro-api";
-import { ApiError } from "../../features/my-flux/client";
+import { ApiError, request } from "../../features/my-flux/client";
 import { configDosMoldes, molde } from "../../test/dados-do-cadastro";
 import { renderizar } from "../../test/render";
 import { LabConfigPage } from "./lab-config-page";
 
 vi.mock("../../features/leadership-lab/cadastro-api", () => ({
   labCadastroApi: { configDosMoldes: vi.fn(), atualizarMolde: vi.fn() }
+}));
+
+vi.mock("../../features/my-flux/client", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../features/my-flux/client")>()),
+  request: vi.fn()
 }));
 
 const api = vi.mocked(labCadastroApi);
@@ -304,5 +309,22 @@ describe("configuração dos moldes", () => {
       await usuario.type(supervisor.getByLabelText(/Filtrar cargos/), "zzz");
       expect(supervisor.getByText("Nenhum cargo encontrado.")).toBeTruthy();
     });
+  });
+});
+
+describe("indicador da IA (ADMIN e DEV)", () => {
+  it.each([
+    ["ok", null, "IA disponível"],
+    ["desatualizado", "Reimplante o serviço lab-ia.", "IA desatualizada"],
+    ["indisponivel", "a IA respondeu HTTP 503", "IA indisponível"],
+    ["desligado", "LAB_IA_URL não está definida.", "IA desligada"]
+  ])("estado %s", async (estado, detalhe, rotulo) => {
+    api.configDosMoldes.mockResolvedValue(configDosMoldes());
+    vi.mocked(request).mockResolvedValue({ estado, detalhe, versao: null } as never);
+    abrir();
+    const regiao = await screen.findByRole("status", { name: "Situação da IA" });
+    await waitFor(() => expect(regiao.textContent).toContain(rotulo));
+    if (detalhe) expect(regiao.textContent).toContain(detalhe);
+    expect(request).toHaveBeenCalledWith("/suporte/status");
   });
 });

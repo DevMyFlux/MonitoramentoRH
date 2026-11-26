@@ -27,6 +27,8 @@ export interface ClienteIa {
   suporte(corpo: SuporteIaRequest): Promise<unknown>;
   /** GET / do serviço (versão e agentes). Só o cliente HTTP real tem; as IAs de teste e demonstração não. */
   saude?(): Promise<unknown>;
+  /** GET /saude/modelo: a credencial do serviço alcança o modelo? Só o cliente HTTP real tem. */
+  saudeDoModelo?(): Promise<unknown>;
 }
 
 /** Falha ao falar com o serviço (rede, status de erro, resposta que não é JSON). */

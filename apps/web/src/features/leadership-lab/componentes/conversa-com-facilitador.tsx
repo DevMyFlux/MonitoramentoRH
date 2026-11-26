@@ -278,8 +278,30 @@ function ConversaDoFacilitador({ conversar, textos }: { conversar: Conversar; te
           ) : null}
 
           {erro ? (
-            <MensagemDeErro titulo={erro.erro.titulo}>
+            <MensagemDeErro
+              titulo={
+                erro.erro.tipo === "tentar-de-novo"
+                  ? "Assistente indisponível agora"
+                  : erro.erro.titulo
+              }
+            >
               <p className="mt-0.5">{erro.erro.descricao}</p>
+              {erro.erro.podeTentarDeNovo ? (
+                <>
+                  <p className="mt-1 text-lab-legenda">
+                    O teste e as cenas continuam funcionando: eles não usam IA.
+                  </p>
+                  <Button
+                    className="mt-3"
+                    size="sm"
+                    variant="secondary"
+                    disabled={conversar.isPending}
+                    onClick={() => enviar(erro.mensagem)}
+                  >
+                    Tentar de novo
+                  </Button>
+                </>
+              ) : null}
             </MensagemDeErro>
           ) : null}
 

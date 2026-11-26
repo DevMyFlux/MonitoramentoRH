@@ -707,6 +707,6 @@ O assistente também responde perguntas sobre os dados da plataforma (quantos co
 
 **Diagnóstico quando aparece "O serviço de IA não respondeu agora".**
 
-1. `GET /api/v1/suporte/status` (ADMIN ou DEV) devolve `ok`, `desatualizado` (o serviço responde mas não tem o agente de suporte: falta **reimplantar o `lab-ia`**) ou `indisponivel` (não responde), com o detalhe.
+1. O topo da tela **Configuração do Lab** mostra a situação da IA. Por trás, `GET /api/v1/suporte/status` (ADMIN ou DEV), que também confere em `GET /saude/modelo` do `lab-ia` se a credencial alcança o modelo, devolve `ok`, `desatualizado` (o serviço responde mas não tem o agente de suporte: falta **reimplantar o `lab-ia`**) ou `indisponivel` (não responde), com o detalhe.
 2. Para ADMIN e DEV, a própria mensagem do assistente traz o "Detalhe técnico" (por exemplo, `a IA respondeu HTTP 404`). Os demais perfis só veem a mensagem comum.
 3. Para o serviço novo valer, implante **os dois**: `gcloud run deploy lab-ia --source services/lab-ia --region southamerica-east1 --project gestao-rh-escalas` e o site/API (a migração `0020` e `0021` rodam no start).
