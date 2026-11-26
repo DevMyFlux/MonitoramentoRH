@@ -152,7 +152,17 @@ describe.skipIf(!integrationEnabled)("configuração do teste do Lab", () => {
     expect(
       (await tre(rh, "POST", "/cenarios/importar", { cenarios: [cenarios[0]] })).statusCode
     ).toBe(403);
-    expect((await tre(comum, "GET", "/cenarios")).statusCode).toBe(403);
+    expect((await tre(comum, "GET", "/cenarios")).statusCode).toBe(404);
+    // O módulo antigo está fechado ao COMUM (ele faz os cenários dentro do teste do Lab): 404 em tudo,
+    // com a mesma resposta de uma rota que não existe para ele; sem login, 401.
+    for (const [metodo, caminho] of [
+      ["GET", "/minhas"],
+      ["GET", "/atribuicoes/00000000-0000-4000-8000-000000000000"],
+      ["POST", "/tentativas/00000000-0000-4000-8000-000000000000/concluir"],
+      ["GET", "/rh/tentativas"]
+    ] as const) {
+      expect((await tre(comum, metodo, caminho)).statusCode, caminho).toBe(404);
+    }
   });
 
   it("as regras iniciais são as do cadastro de contas; o RH lê, só ADMIN e DEV salvam, o COMUM nada", async () => {
@@ -168,8 +178,8 @@ describe.skipIf(!integrationEnabled)("configuração do teste do Lab", () => {
       })
     );
     expect((await tre(rh, "PUT", "/configuracao/regras", { regras })).statusCode).toBe(403);
-    expect((await tre(comum, "GET", "/configuracao/regras")).statusCode).toBe(403);
-    expect((await tre(comum, "PUT", "/configuracao/regras", { regras })).statusCode).toBe(403);
+    expect((await tre(comum, "GET", "/configuracao/regras")).statusCode).toBe(404);
+    expect((await tre(comum, "PUT", "/configuracao/regras", { regras })).statusCode).toBe(404);
   });
 
   it("salvar as regras muda o público de quem usa o teste (e grava a auditoria)", async () => {

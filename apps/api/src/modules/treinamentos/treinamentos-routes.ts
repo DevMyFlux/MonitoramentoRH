@@ -51,6 +51,7 @@ import {
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { authenticateRequest } from "../auth/auth-routes.js";
+import { HttpError } from "../../lib/http-error.js";
 import type { UserRepository } from "../users/user-repository.js";
 import type { ConfiguracaoDosTreinamentos } from "./treinamentos-configuracao.js";
 import type { ServicoDeTreinamentos } from "./treinamentos-servico.js";
@@ -68,11 +69,21 @@ export async function registrarRotasDosTreinamentos(
   app: FastifyInstance,
   users: UserRepository,
   servico: ServicoDeTreinamentos,
-  configuracao: ConfiguracaoDosTreinamentos
+  configuracao: ConfiguracaoDosTreinamentos,
+  /** Só para testes do módulo antigo: deixa o COMUM entrar (em produção, nunca). */
+  opcoes: { abertoParaComum?: boolean } = {}
 ): Promise<void> {
   app.addHook("onSend", async (_request, reply, payload) => {
     reply.header("Cache-Control", "no-store");
     return payload;
+  });
+
+  // O módulo antigo de Treinamentos não é do COMUM: ele faz os cenários dentro do teste do Leadership
+  // Lab (/leadership-lab/teste). 404 uniforme, igual a "não existe"; sem login continua 401.
+  app.addHook("onRequest", async (request) => {
+    const user = await authenticateRequest(request, users);
+    if (user.role === "COMUM" && !opcoes.abertoParaComum)
+      throw new HttpError(404, "NOT_FOUND", "Registro não encontrado.");
   });
 
   const atorDe = async (request: FastifyRequest) => {

@@ -114,7 +114,7 @@ describe.skipIf(!integrationEnabled)("rotas dos Treinamentos Interativos", () =>
     ({ buildApp } = await import("../../app.js"));
     const { prisma } = await import("../../lib/prisma.js");
     desligarPrisma = () => prisma.$disconnect();
-    app = await buildApp({ treinamentos: { config: { limiteTentativasDia: null } } });
+    app = await buildApp({ treinamentos: { config: { limiteTentativasDia: null }, abertoParaComum: true } });
 
     papeis.COMUM = banco.base.roleId;
     for (const [nome, nivel] of [
@@ -472,7 +472,7 @@ describe.skipIf(!integrationEnabled)("rotas dos Treinamentos Interativos", () =>
   });
 
   it("limite de tentativas por dia, quando configurado", async () => {
-    const limitado = await buildApp({ treinamentos: { config: { limiteTentativasDia: 1 } } });
+    const limitado = await buildApp({ treinamentos: { config: { limiteTentativasDia: 1 }, abertoParaComum: true } });
     try {
       const novo = await participante(turmaA);
       const primeira = await chamar(

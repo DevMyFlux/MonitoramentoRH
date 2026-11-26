@@ -9,15 +9,6 @@ export type ContextoDaPagina = { titulo: string; sugestoes: readonly string[] };
 
 const CONTEXTOS: ReadonlyArray<{ prefixo: string } & ContextoDaPagina> = [
   {
-    prefixo: "/treinamentos/rh",
-    titulo: "Treinamentos · Acompanhamento do RH",
-    sugestoes: [
-      "Como valido um treinamento?",
-      "Quem aparece nesta lista?",
-      "Como leio o resultado de um treinamento?"
-    ]
-  },
-  {
     prefixo: "/treinamentos/config",
     titulo: "Treinamentos · Configuração",
     sugestoes: [

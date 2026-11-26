@@ -84,7 +84,11 @@ function getErrorMessage(error: unknown): string {
 export async function buildApp(
   opcoes: {
     lab?: InjecaoDoLab;
-    treinamentos?: { config?: ConfigDosTreinamentos; agora?: () => Date };
+    treinamentos?: {
+      config?: ConfigDosTreinamentos;
+      agora?: () => Date;
+      abertoParaComum?: boolean;
+    };
   } = {}
 ): Promise<FastifyInstance> {
   const app = Fastify({
@@ -322,7 +326,8 @@ export async function buildApp(
         versionedApp,
         userRepository,
         servicoDeTreinamentos,
-        configuracaoDosTreinamentos
+        configuracaoDosTreinamentos,
+        { abertoParaComum: opcoes.treinamentos?.abertoParaComum === true }
       ),
     { prefix: `${apiPrefix}/treinamentos` }
   );

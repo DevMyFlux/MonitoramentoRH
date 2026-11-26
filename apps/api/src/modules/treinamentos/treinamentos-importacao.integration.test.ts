@@ -61,7 +61,7 @@ describe.skipIf(!integrationEnabled)("importação em lote dos cenários do Lab"
     const { buildApp } = await import("../../app.js");
     const { prisma } = await import("../../lib/prisma.js");
     desligarPrisma = () => prisma.$disconnect();
-    app = await buildApp({ treinamentos: { config: { limiteTentativasDia: null } } });
+    app = await buildApp({ treinamentos: { config: { limiteTentativasDia: null }, abertoParaComum: true } });
 
     papeis.COMUM = banco.base.roleId;
     for (const [nome, nivel] of [

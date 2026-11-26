@@ -149,19 +149,6 @@ export type TurmaParaAtribuir = {
   curador: string;
   participantes: number;
 };
-export type TentativaDoRh = {
-  tentativaId: string;
-  atribuicaoId: string;
-  participante: string;
-  turma: string;
-  titulo: string;
-  area: string;
-  concluidaEm: string | null;
-  resultados: { id: string; label: string; nivel: TreinoNivel }[];
-  validada: boolean;
-};
-export type SituacaoDoRh = "pendentes" | "validadas" | "todas";
-
 const base = "/treinamentos";
 
 export const apiDosTreinamentos = {
@@ -232,14 +219,5 @@ export const apiDosTreinamentos = {
     request<{ salvas: number }>(`${base}/configuracao/quantidades`, "PUT", { itens }),
   turmas: () => request<TurmaParaAtribuir[]>(`${base}/turmas`),
   atribuir: (versaoId: string, turmaId: string, prazo: string | null) =>
-    request<{ id: string }>(`${base}/atribuicoes`, "POST", { versaoId, turmaId, prazo }),
-  // Curadoria
-  tentativasDoRh: (situacao: SituacaoDoRh) =>
-    request<TentativaDoRh[]>(`${base}/rh/tentativas?situacao=${situacao}`),
-  validarTentativa: (tentativaId: string, nota: string) =>
-    request<{ tentativaId: string; validadaEm: string; nota: string | null }>(
-      `${base}/rh/tentativas/${tentativaId}/validar`,
-      "POST",
-      nota.trim() ? { nota } : {}
-    )
+    request<{ id: string }>(`${base}/atribuicoes`, "POST", { versaoId, turmaId, prazo })
 };
