@@ -74,7 +74,8 @@ export const motivoSemTeste: Record<string, { titulo: string; descricao: string 
   },
   "teste-legado-em-andamento": {
     titulo: "Há um teste do modo anterior em andamento",
-    descricao: "Conclua o teste em andamento antes de começar um por cenários."
+    descricao:
+      "Falta concluir um teste começado no modo anterior. Retome-o para terminar; depois o teste por cenários fica disponível."
   }
 };
 

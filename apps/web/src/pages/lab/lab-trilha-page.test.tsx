@@ -25,7 +25,7 @@ vi.mock("../../features/treinamentos/palco/movimento", () => ({
 vi.mock("../../features/leadership-lab/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../features/leadership-lab/api")>()),
   labApi: { painel: vi.fn() },
-  testeApi: { proxima: vi.fn(), iniciar: vi.fn(), responder: vi.fn(), concluir: vi.fn() }
+  testeApi: { proxima: vi.fn(), iniciar: vi.fn(), responder: vi.fn(), concluir: vi.fn(), reiniciar: vi.fn() }
 }));
 const teste = vi.mocked(testeApi);
 const lab = vi.mocked(labApi);
@@ -300,5 +300,52 @@ describe("o modo do servidor decide a tela do teste", () => {
     await waitFor(() => expect(lab.painel).toHaveBeenCalled());
     await new Promise((r) => setTimeout(r, 50));
     expect(teste.proxima).not.toHaveBeenCalled();
+  });
+});
+
+describe("teste interno sem saída? nunca", () => {
+  const equipe = ["supervisor-manutencao-adm", "rh"] as const;
+
+  it("teste interno em andamento: dá para reiniciar, com confirmação", async () => {
+    teste.proxima
+      .mockResolvedValueOnce(emAndamento(1, [], "interno"))
+      .mockResolvedValue(semTeste({ publicosEscolhiveis: [...equipe] }));
+    teste.reiniciar.mockResolvedValue({ encerrado: true });
+    abrir();
+    await userEvent.click(await screen.findByRole("button", { name: "Reiniciar teste" }));
+    expect(teste.reiniciar).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "Sim, encerrar e recomeçar" }));
+    expect(teste.reiniciar).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole("button", { name: "Começar o teste" })).toBeTruthy();
+  });
+
+  it("o participante não vê o atalho de reiniciar", async () => {
+    teste.proxima.mockResolvedValue(emAndamento(1));
+    abrir();
+    await screen.findByRole("button", { name: "Iniciar" });
+    expect(screen.queryByRole("button", { name: "Reiniciar teste" })).toBeNull();
+  });
+
+  it("teste do modo anterior em aberto: a equipe pode retomá-lo ou reiniciar", async () => {
+    teste.proxima.mockResolvedValue(
+      semTeste({
+        podeIniciar: false,
+        motivo: "teste-legado-em-andamento",
+        publicosEscolhiveis: [...equipe]
+      })
+    );
+    abrir();
+    const retomar = await screen.findByRole("link", { name: "Retomar o teste anterior" });
+    expect(retomar.getAttribute("href")).toBe("/lab/teste?anterior=1");
+    expect(screen.getByRole("button", { name: "Reiniciar teste" })).toBeTruthy();
+  });
+
+  it("para o participante, o teste anterior tem como ser retomado, sem reiniciar", async () => {
+    teste.proxima.mockResolvedValue(
+      semTeste({ podeIniciar: false, motivo: "teste-legado-em-andamento" })
+    );
+    abrir();
+    expect(await screen.findByRole("link", { name: "Retomar o teste anterior" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Reiniciar teste" })).toBeNull();
   });
 });

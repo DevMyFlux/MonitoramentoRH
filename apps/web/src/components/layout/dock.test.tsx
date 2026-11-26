@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
+import { menuDoPerfil, type PerfilDeAcesso } from "@my-flux/shared";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { chaveDoUsuarioAtual } from "../../features/auth/use-usuario-atual";
 import { itensDoDock } from "../../features/navigation/nav-items";
 import { novoCliente } from "../../test/render";
@@ -17,7 +18,8 @@ function montar(perfil: string | null, rota = "/colaboradores") {
       email: "a@b.c",
       name: "Pessoa",
       role: perfil,
-      scopes: []
+      scopes: [],
+      menu: menuDoPerfil(perfil as PerfilDeAcesso)
     });
   }
   return render(
@@ -30,7 +32,6 @@ function montar(perfil: string | null, rota = "/colaboradores") {
 }
 
 beforeEach(() => {
-  vi.stubEnv("VITE_MODO_TESTE_SEM_LOGIN", "false");
   window.matchMedia = ((q: string) => ({
     matches: q.includes("max-width"),
     addEventListener: () => undefined,
@@ -40,15 +41,14 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   sessionStorage.clear();
-  vi.unstubAllEnvs();
 });
 
 describe("itensDoDock", () => {
   it("são os mesmos itens visíveis do menu, por perfil, com nome curto", () => {
     // O COMUM só tem o Leadership Lab.
-    expect(itensDoDock("COMUM").map((i) => i.href)).toEqual(["/lab"]);
-    expect(itensDoDock("RH").map((i) => i.href)).toEqual(["/colaboradores", "/escalas", "/lab/rh"]);
-    expect(itensDoDock("DEV").map((i) => i.curto)).toEqual([
+    expect(itensDoDock(menuDoPerfil("COMUM")).map((i) => i.href)).toEqual(["/lab"]);
+    expect(itensDoDock(menuDoPerfil("RH")).map((i) => i.href)).toEqual(["/colaboradores", "/escalas", "/lab/rh"]);
+    expect(itensDoDock(menuDoPerfil("DEV")).map((i) => i.curto)).toEqual([
       "Pessoas",
       "Escalas",
       "Lab",

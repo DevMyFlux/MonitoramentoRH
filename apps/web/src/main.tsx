@@ -14,7 +14,6 @@ import { UsersPage } from "./pages/users-page";
 import { AuditPage } from "./pages/audit-page";
 import { ImportsPage } from "./pages/imports-page";
 import { EmptyState } from "./components/ui";
-import { SoParaEquipe } from "./features/navigation/so-para-equipe";
 import { EmployeesPage } from "./pages/employees-page";
 import { HomeRedirect } from "./pages/home-redirect";
 // Fontes auto-hospedadas (@fontsource, licença OFL): Inter no corpo, Bricolage Grotesque nos títulos
@@ -131,10 +130,8 @@ function Wrapped({ resourceKey }: { resourceKey: string }) {
 }
 const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
-  // Dashboard is hidden from the interface for now: the landing page is
-  // Colaboradores, except for the Leadership Lab participant (COMUM), who lands on /lab. The
-  // page/route is kept (reachable by direct URL) so bringing the dashboard back is just a
-  // nav-items.ts change plus pointing "/" at it again.
+  // "/" leva ao login ou à inicial do perfil (HomeRedirect). O Dashboard está oculto, mas segue
+  // acessível pela URL.
   { path: "/", element: <HomeRedirect /> },
   {
     path: "/lab",
@@ -285,11 +282,9 @@ const router = createBrowserRouter([
   {
     path: "/colaboradores",
     element: (
-      <SoParaEquipe>
-        <App breadcrumbs={["MY FLUX", "Colaboradores"]}>
-          <EmployeesPage />
-        </App>
-      </SoParaEquipe>
+      <App breadcrumbs={["MY FLUX", "Colaboradores"]}>
+        <EmployeesPage />
+      </App>
     )
   },
   // QLP e Recrutamento (módulos ocultos): só entram no roteador se estiverem ativos no registro.
@@ -297,52 +292,42 @@ const router = createBrowserRouter([
   {
     path: "/escalas",
     element: (
-      <SoParaEquipe>
-        <App breadcrumbs={["MY FLUX", "Escalas"]}>
-          <MonthlySchedulePage />
-        </App>
-      </SoParaEquipe>
+      <App breadcrumbs={["MY FLUX", "Escalas"]}>
+        <MonthlySchedulePage />
+      </App>
     )
   },
   {
     path: "/treinamentos",
     element: (
-      <SoParaEquipe>
-        <App breadcrumbs={["MY FLUX", "Treinamentos"]}>
-          <TreinamentosPage />
-        </App>
-      </SoParaEquipe>
+      <App breadcrumbs={["MY FLUX", "Treinamentos"]}>
+        <TreinamentosPage />
+      </App>
     )
   },
   { path: "/treinamentos/rh", element: <Navigate to="/lab/rh/acompanhamento" replace /> },
   {
     path: "/treinamentos/config",
     element: (
-      <SoParaEquipe>
-        <App breadcrumbs={["MY FLUX", "Treinamentos", "Configuração"]}>
-          <TreinamentosConfigPage />
-        </App>
-      </SoParaEquipe>
+      <App breadcrumbs={["MY FLUX", "Treinamentos", "Configuração"]}>
+        <TreinamentosConfigPage />
+      </App>
     )
   },
   {
     path: "/treinamentos/:atribuicaoId/jogar",
     element: (
-      <SoParaEquipe>
-        <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Palco"]}>
-          <JogarTreinamentoPage />
-        </App>
-      </SoParaEquipe>
+      <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Palco"]}>
+        <JogarTreinamentoPage />
+      </App>
     )
   },
   {
     path: "/treinamentos/resultado/:tentativaId",
     element: (
-      <SoParaEquipe>
-        <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Resultado"]}>
-          <ResultadoTreinamentoPage />
-        </App>
-      </SoParaEquipe>
+      <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Resultado"]}>
+        <ResultadoTreinamentoPage />
+      </App>
     )
   },
   {

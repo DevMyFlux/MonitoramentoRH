@@ -117,6 +117,10 @@ export class ClienteIaHttp implements ClienteIa {
     return this.postar("", undefined, "GET");
   }
 
+  saudeDoModelo(): Promise<unknown> {
+    return this.postar("saude/modelo", undefined, "GET");
+  }
+
   private async postar(
     caminho: string,
     corpo: unknown,

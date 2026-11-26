@@ -19,6 +19,8 @@ export type AuthenticatedUser = {
   cargo?: string | null;
   nivelGovernanca?: NivelGovernanca | null;
   area?: { id: string; nome: string } | null;
+  /** As rotas do menu desta conta, na ordem fixa (só em GET /auth/me). */
+  menu?: string[];
 };
 
 export type ApiErrorShape = {

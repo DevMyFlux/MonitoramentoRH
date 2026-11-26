@@ -15,15 +15,24 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { caminhoInterno } from "@my-flux/shared";
+import { useUsuarioAtual } from "../features/auth/use-usuario-atual";
 import { BotaoEstrela, FundoAmbiente, Input } from "../components/ui";
 import { Brand } from "../components/brand";
 import { apiPost, storeSession } from "../services/api-client";
+import { session } from "../features/my-flux/client";
 
 type LoginForm = { email: string; password: string };
 type LoginResponse = { data: { accessToken: string; refreshToken: string } };
 export function LoginPage() {
   const navigate = useNavigate();
+  // A rota pretendida antes do login (só caminho interno); sem ela, "/" escolhe a inicial do perfil.
+  const destino = caminhoInterno((useLocation().state as { from?: unknown } | null)?.from) ?? "/";
+  // Quem já tem uma sessão válida não precisa ver o login. O perfil em cache sozinho não vale: depois
+  // de sair, ele continua lá, e redirecionar por ele faria um laço com a página inicial.
+  const usuario = useUsuarioAtual().data;
+  const jaEntrou = session() !== null && usuario !== undefined;
   const queryClient = useQueryClient();
   const [message, setMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -41,13 +50,14 @@ export function LoginPage() {
       // Quem entrou pode não ser quem estava antes (sessão que expirou): descarta o que a tela
       // anterior guardou, como o perfil usado no menu.
       queryClient.clear();
-      navigate("/");
+      navigate(destino, { replace: true });
     } catch {
       setMessage(
         "Não foi possível entrar. Confira seus dados e tente novamente. Se o problema continuar, procure o administrador."
       );
     }
   }
+  if (jaEntrou && !isSubmitting) return <Navigate to={destino} replace />;
   return (
     <main className="login-layout">
       <section className="login-story">

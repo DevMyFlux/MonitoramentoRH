@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // Módulos ocultos na web (QLP e Recrutamento): fora do roteador, do menu, do dock, do assistente e
 // das telas ativas; a URL direta cai na página 404; religar o módulo no registro traz tudo de volta.
+import { menuDoPerfil } from "@my-flux/shared";
 import { MODULOS, type ModuloDef } from "@my-flux/shared";
 import { render, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
@@ -58,7 +59,7 @@ describe("módulos ocultos: roteador, menu e assistente", () => {
     expect(rotulos).not.toContain("QLP");
     expect(rotulos).not.toContain("Recrutamento");
     for (const perfil of ["DEV", "ADMIN", "RH", "COMUM"] as const) {
-      const hrefs = itensDoDock(perfil).map((i) => i.href);
+      const hrefs = itensDoDock(menuDoPerfil(perfil)).map((i) => i.href);
       expect(hrefs, perfil).not.toContain("/qlp");
       expect(hrefs, perfil).not.toContain("/recrutamento");
     }

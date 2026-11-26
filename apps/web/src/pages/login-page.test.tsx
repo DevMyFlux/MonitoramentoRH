@@ -3,7 +3,8 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiPost, storeSession } from "../services/api-client";
-import { renderizar } from "../test/render";
+import { chaveDoUsuarioAtual } from "../features/auth/use-usuario-atual";
+import { novoCliente, renderizar } from "../test/render";
 import { LoginPage } from "./login-page";
 
 vi.mock("../services/api-client", () => ({ apiPost: vi.fn(), storeSession: vi.fn() }));
@@ -69,5 +70,36 @@ describe("login", () => {
     expect(screen.getByRole("button", { name: "Ocultar senha" }).getAttribute("aria-pressed")).toBe(
       "true"
     );
+  });
+
+  it.each([
+    ["/escalas", "/escalas"],
+    ["https://exemplo.com/roubo", "/"],
+    ["//exemplo.com", "/"]
+  ])("volta à rota pretendida só se ela for interna (%s)", async (from, destino) => {
+    postar.mockResolvedValue({ data: { accessToken: "a", refreshToken: "r" } } as never);
+    renderizar(<LoginPage />, { rota: { pathname: "/login", state: { from } } });
+    await userEvent.type(screen.getByLabelText("E-mail"), "rh@myflux.local");
+    await userEvent.type(screen.getByLabelText("Senha"), "segredo123");
+    await userEvent.click(screen.getByRole("button", { name: /Entrar no MyFlux/ }));
+    expect((await screen.findByTestId("local")).textContent).toBe(destino);
+  });
+
+  const perfilEmCache = () => {
+    const cliente = novoCliente();
+    cliente.setQueryData(chaveDoUsuarioAtual, { id: "u", role: "RH" });
+    return cliente;
+  };
+
+  it("quem já tem sessão válida não vê o login", () => {
+    sessionStorage.setItem("flux.access", "token");
+    renderizar(<LoginPage />, { rota: "/login", cliente: perfilEmCache() });
+    expect(screen.getByTestId("local").textContent).toBe("/");
+    sessionStorage.clear();
+  });
+
+  it("depois de sair (perfil ainda em cache, sem sessão), mostra o login em vez de entrar em laço", () => {
+    renderizar(<LoginPage />, { rota: "/login", cliente: perfilEmCache() });
+    expect(screen.getByRole("heading", { level: 1 })).toBeTruthy();
   });
 });

@@ -87,7 +87,7 @@ function Pagina({ children }: { children: React.ReactNode }) {
     <Escalonar className="space-y-8">
       <Revelar>
         <CabecalhoDePagina
-          eyebrow="MY FLUX · Desenvolvimento"
+          eyebrow="MY FLUX · Hub Leadership"
           titulo="Leadership Lab"
           descricao="Treine decisões de liderança com situações do dia a dia e acompanhe a sua evolução."
         />

@@ -1,33 +1,31 @@
 import { useState } from "react";
 import { ArrowUpRight, Search, X } from "lucide-react";
 import { motion } from "motion/react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useUsuarioAtual } from "../../features/auth/use-usuario-atual";
-import { itemVisivelPara, navigationGroups } from "../../features/navigation/nav-items";
+import { gruposVisiveis, itemAtivo } from "../../features/navigation/nav-items";
 import { cn } from "../../lib/cn";
-import { modoDeTesteSemLogin } from "../../modo-de-teste";
 import { Brand } from "../brand";
 
 type SidebarProps = { isOpen?: boolean; onNavigate?: () => void };
 export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
   const [query, setQuery] = useState("");
-  const perfil = useUsuarioAtual().data?.role;
-  const modoDeTeste = modoDeTesteSemLogin();
+  const permitidas = useUsuarioAtual().data?.menu;
+  const { pathname } = useLocation();
+  const visiveis = gruposVisiveis(permitidas);
+  const ativo = itemAtivo(
+    pathname,
+    visiveis.flatMap((g) => g.items)
+  );
   const normalize = (value: string) =>
     value
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase();
-  const groups = navigationGroups
-    .filter((group) => !group.hidden)
+  const groups = visiveis
     .map((group) => ({
       ...group,
-      items: group.items.filter(
-        (item) =>
-          !item.hidden &&
-          itemVisivelPara(item, perfil, modoDeTeste) &&
-          normalize(item.label).includes(normalize(query))
-      )
+      items: group.items.filter((item) => normalize(item.label).includes(normalize(query)))
     }))
     .filter((group) => group.items.length);
   return (
@@ -75,43 +73,37 @@ export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
             </h2>
             <div className="space-y-0.5">
               {group.items.map((item) => (
-                <NavLink
+                <Link
                   key={item.href}
-                  end={item.href === "/"}
                   to={item.href}
                   onClick={onNavigate}
-                  className={({ isActive }) =>
-                    cn(
-                      "group relative flex min-h-11 items-center gap-3 rounded-mf-controle px-3 py-2 text-[13px] font-medium transition-colors",
-                      isActive
-                        ? "text-mf-primaria"
-                        : "text-mf-texto-2 hover:bg-mf-fundo hover:text-mf-tinta"
-                    )
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {/* Indicador do item ativo: desliza de um item para o outro (layoutId). */}
-                      {isActive ? (
-                        <motion.span
-                          layoutId="menu-ativo"
-                          aria-hidden="true"
-                          transition={{ type: "spring", stiffness: 460, damping: 36, mass: 0.7 }}
-                          className="absolute inset-0 rounded-mf-controle bg-mf-realce-suave ring-1 ring-inset ring-mf-realce"
-                        >
-                          <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-mf-brilho" />
-                        </motion.span>
-                      ) : null}
-                      <item.icon
-                        size={17}
-                        strokeWidth={isActive ? 2 : 1.7}
-                        aria-hidden="true"
-                        className="relative"
-                      />
-                      <span className="relative">{item.label}</span>
-                    </>
+                  aria-current={item.href === ativo ? "page" : undefined}
+                  className={cn(
+                    "group relative flex min-h-11 items-center gap-3 rounded-mf-controle px-3 py-2 text-[13px] font-medium transition-colors",
+                    item.href === ativo
+                      ? "text-mf-primaria"
+                      : "text-mf-texto-2 hover:bg-mf-fundo hover:text-mf-tinta"
                   )}
-                </NavLink>
+                >
+                  {/* Indicador do item ativo: desliza de um item para o outro (layoutId). */}
+                  {item.href === ativo ? (
+                    <motion.span
+                      layoutId="menu-ativo"
+                      aria-hidden="true"
+                      transition={{ type: "spring", stiffness: 460, damping: 36, mass: 0.7 }}
+                      className="absolute inset-0 rounded-mf-controle bg-mf-realce-suave ring-1 ring-inset ring-mf-realce"
+                    >
+                      <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-mf-brilho" />
+                    </motion.span>
+                  ) : null}
+                  <item.icon
+                    size={17}
+                    strokeWidth={item.href === ativo ? 2 : 1.7}
+                    aria-hidden="true"
+                    className="relative"
+                  />
+                  <span className="relative">{item.label}</span>
+                </Link>
               ))}
             </div>
           </section>
@@ -122,6 +114,7 @@ export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
           </p>
         )}
       </nav>
+      {permitidas?.includes("/escalas") ? (
       <div className="m-3 rounded-xl bg-mf-primaria p-4 text-white">
         <p className="text-xs font-medium text-emerald-100">Da necessidade à escala.</p>
         <Link
@@ -132,6 +125,7 @@ export function Sidebar({ isOpen = true, onNavigate }: SidebarProps) {
           Ver escalas geradas <ArrowUpRight size={16} />
         </Link>
       </div>
+      ) : null}
     </aside>
   );
 }

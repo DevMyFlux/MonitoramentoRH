@@ -155,13 +155,70 @@ function SemTeste({ estado }: { estado: Extract<LabTesteProxima, { tipo: "sem-te
             <p className="mt-2 text-lab-corpo leading-7 text-lab-tinta-2">
               {motivo?.descricao ?? "Tente de novo mais tarde."}
             </p>
-            <div className="mt-5">
+            <div className="mt-5 flex flex-wrap items-start gap-3">
+              {estado.motivo === "teste-legado-em-andamento" ? (
+                <>
+                  <BotaoLink to="/lab/teste?anterior=1">Retomar o teste anterior</BotaoLink>
+                  {escolhe ? <ReiniciarTeste /> : null}
+                </>
+              ) : null}
               <VoltarAoPainel />
             </div>
           </>
         )}
       </Cartao>
     </Escalonar>
+  );
+}
+
+/**
+ * Só para o teste interno da equipe: encerra o que está aberto (com confirmação) e volta à tela de
+ * começar. Se falhar, o teste continua como estava e a mensagem diz o motivo.
+ */
+function ReiniciarTeste() {
+  const cliente = useQueryClient();
+  const [confirmando, setConfirmando] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<ReturnType<typeof descreverErro> | null>(null);
+
+  async function reiniciar() {
+    setErro(null);
+    setEnviando(true);
+    try {
+      await testeApi.reiniciar();
+      void cliente.invalidateQueries({ queryKey: chaves.painel });
+      await cliente.resetQueries({ queryKey: chaves.proximoDoTeste });
+    } catch (e) {
+      setErro(descreverErro(e));
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      {confirmando ? (
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Reiniciar teste">
+          <p className="text-lab-pequeno text-lab-tinta-2">
+            O teste em andamento será encerrado e não volta.
+          </p>
+          <Button disabled={enviando} onClick={() => void reiniciar()}>
+            Sim, encerrar e recomeçar
+          </Button>
+          <Button variant="ghost" disabled={enviando} onClick={() => setConfirmando(false)}>
+            Cancelar
+          </Button>
+        </div>
+      ) : (
+        <Button variant="secondary" onClick={() => setConfirmando(true)}>
+          Reiniciar teste
+        </Button>
+      )}
+      {erro ? (
+        <MensagemDeErro titulo={erro.titulo}>
+          <p className="mt-1">{erro.descricao}</p>
+        </MensagemDeErro>
+      ) : null}
+    </div>
   );
 }
 
@@ -253,6 +310,7 @@ function Trilha({ emAndamento }: { emAndamento: LabCenarioEmAndamento }) {
           </li>
         ) : null}
       </ol>
+      {trilha.origem === "interno" ? <ReiniciarTeste /> : null}
 
       <div className="bg-[#020617]">
         <TreinamentoPalco

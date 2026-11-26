@@ -36,6 +36,8 @@ export async function registrarRotasDoSuporte(
       );
     }
     const ator = await carregarAtorLab(db, user);
+    // Um teste interno abandonado não deixa o assistente bloqueado para sempre.
+    await motor.expirarTesteInterno(ator);
     return { data: await motor.suporte(ator, user, request.body) };
   });
 

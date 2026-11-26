@@ -55,16 +55,19 @@ export async function request<T>(
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     signal: AbortSignal.timeout(timeoutMs)
   });
-  if (response.status === 401 && !path.startsWith("/auth/") && !retried) {
+  // Entrar e renovar não se renovam; o resto (inclusive /auth/me) tenta renovar uma vez.
+  const renovavel = path !== "/auth/login" && path !== "/auth/refresh";
+  if (response.status === 401 && renovavel && !retried) {
+    // Numa aba nova o sessionStorage está vazio: vale o token guardado no navegador.
+    const guardado = () =>
+      sessionStorage.getItem("flux.refresh") ?? localStorage.getItem("my-flux.refreshToken");
     if (!refreshing)
       refreshing = request<{ accessToken: string; refreshToken?: string }>(
         "/auth/refresh",
         "POST",
-        { refreshToken: sessionStorage.getItem("flux.refresh") }
+        { refreshToken: guardado() }
       )
-        .then((r) =>
-          saveSession(r.accessToken, r.refreshToken ?? sessionStorage.getItem("flux.refresh") ?? "")
-        )
+        .then((r) => saveSession(r.accessToken, r.refreshToken ?? guardado() ?? ""))
         .finally(() => {
           refreshing = null;
         });

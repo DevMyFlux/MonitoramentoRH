@@ -255,6 +255,7 @@ As pré-condições de início ficam num só lugar, `avaliarInicio` (`precondico
 | `LAB_TOLERANCIA_TEMPO_S`    | sim, se `LAB_IA_URL` existe   | **Sem valor padrão.** Segundos de latência de rede descontados do tempo de resposta (0 = nada) |
 | `LAB_LIMITE_TESTES_DIA`     | não                           | Testes por participante por dia. Sem ela, sem limite                                           |
 | `LAB_IA_TIMEOUT_MS`         | não                           | Tempo máximo de cada chamada à IA. Padrão 25 000; fica abaixo dos 30 s do cliente web          |
+| `LAB_TESTE_INTERNO_EXPIRA_H` | não                          | Horas sem atividade até o teste interno (DEV, ADMIN, RH) expirar. Padrão 24; o do participante nunca expira. Vale no próximo acesso do dono |
 | `LAB_MODO_DEMO`             | não                           | `true` liga o **modo demonstração** (veja a seção própria). Só vale sem `LAB_IA_URL`           |
 | `LAB_IA_AUTENTICACAO`       | não                           | `cloud-run`: cada chamada leva o ID token da conta de serviço do site (serviço de IA privado)  |
 | `LAB_EXIGE_BASE_VALIDADA`   | não                           | `true`: resultado experimental (situação sem base validada) não pode ser validado como oficial |
@@ -374,13 +375,11 @@ Os formatos das respostas são schemas Zod em `packages/shared/src/leadership-la
 
 As três páginas e a biblioteca de gráficos (Recharts, só linha e radar) são carregadas sob demanda: o restante do sistema não paga por elas. `"sideEffects": false` em `packages/shared` impede que o Zod dos schemas entre no pacote principal.
 
-### Modo de teste: sem login (temporário)
+### Modo de teste: sem login (desligado por padrão)
 
-Por decisão do dono do sistema, **para o primeiro momento de teste o front não pede login**: todo visitante entra como o usuário DEV do seed (`dev@myflux.local`), como era antes da Etapa 4. Isto vale em produção, e a senha de demonstração vai no pacote. Quem abre o endereço tem acesso de DEV (escopo global: dados de todos os colaboradores e gestão de usuários).
+O front **exige login**. Sem sessão, a raiz e qualquer rota interna levam a `/login`, e depois de entrar a pessoa volta à rota pretendida (só caminhos internos) ou cai na página inicial do perfil (`homeFor`, em `packages/shared/src/menu.ts`).
 
-Nesse modo o item **Leadership Lab** aparece no menu para qualquer perfil, para ser encontrado. Como o DEV não faz testes, a página dele diz isso e traz a dica de entrar como `comum@myflux.local` (botão "Ir para o login"). Com o modo de teste desligado, o item volta a aparecer só para o perfil COMUM.
-
-Para voltar a exigir login, construa o front com `VITE_MODO_TESTE_SEM_LOGIN=false` (ou mude o padrão em `App.tsx`): a tela de login volta e o e-mail do usuário DEV sai do pacote (conferido). O teste de ponta a ponta comum já constrói o front assim, porque exercita o login de verdade.
+Só para demonstração local, construir o front com `VITE_MODO_TESTE_SEM_LOGIN=true` liga o modo sem login: todo visitante entra como o DEV do seed (`dev@myflux.local`) e a senha de demonstração vai no pacote. **Nunca ligar em ambiente com dados reais.**
 
 ## Modo demonstração
 
@@ -709,6 +708,6 @@ O assistente também responde perguntas sobre os dados da plataforma (quantos co
 
 **Diagnóstico quando aparece "O serviço de IA não respondeu agora".**
 
-1. `GET /api/v1/suporte/status` (ADMIN ou DEV) devolve `ok`, `desatualizado` (o serviço responde mas não tem o agente de suporte: falta **reimplantar o `lab-ia`**) ou `indisponivel` (não responde), com o detalhe.
+1. O topo da tela **Configuração do Lab** mostra a situação da IA. Por trás, `GET /api/v1/suporte/status` (ADMIN ou DEV), que também confere em `GET /saude/modelo` do `lab-ia` se a credencial alcança o modelo, devolve `ok`, `desatualizado` (o serviço responde mas não tem o agente de suporte: falta **reimplantar o `lab-ia`**) ou `indisponivel` (não responde), com o detalhe.
 2. Para ADMIN e DEV, a própria mensagem do assistente traz o "Detalhe técnico" (por exemplo, `a IA respondeu HTTP 404`). Os demais perfis só veem a mensagem comum.
 3. Para o serviço novo valer, implante **os dois**: `gcloud run deploy lab-ia --source services/lab-ia --region southamerica-east1 --project gestao-rh-escalas` e o site/API (a migração `0020` e `0021` rodam no start).

@@ -27,7 +27,9 @@ import {
   labMoldeNiveis,
   medirResposta,
   type SuporteResposta,
-  suporteEntradaSchema
+  suporteEntradaSchema,
+  moldeDoPublico,
+  publicoDoCadastro
 } from "@my-flux/shared";
 import {
   Prisma,
@@ -89,6 +91,7 @@ import {
   moldePronto,
   resolverMoldeDoParticipante
 } from "./precondicoes.js";
+import { expirarTesteInternoParado } from "../trilha/expiracao.js";
 import {
   type EstadoDoTeste,
   type RespostaDeResultado,
@@ -585,20 +588,50 @@ export class MotorDoTeste {
     const participanteId = this.participanteDe(ator);
 
     if (await buscarSessaoAtiva(this.db, participanteId)) throw erros.aprendizagemBloqueada();
-    const resolvido = await resolverMoldeDoParticipante(this.db, participanteId);
-    if ("falta" in resolvido) {
-      throw resolvido.falta === "cargo" ? erros.cargoNaoInformado() : erros.moldeNaoMapeado();
-    }
+    const molde = await this.moldeDaAprendizagem(ator.userId, participanteId);
     this.reservarMensagemDeAprendizagem(participanteId);
 
     return this.responderComoFacilitador({
       modo: "aprendizagem",
       sessaoId: null,
       participanteId,
-      molde: resolvido.molde.nivel as LabMoldeNivel,
+      molde,
       entrada,
       resultado: null
     });
+  }
+
+  /**
+   * O molde que enquadra a aprendizagem: o do cargo do colaborador, como sempre. No modo por cenários,
+   * quem não tem cargo ligado a um molde usa o público do cadastro da conta, a mesma regra do teste.
+   */
+  private async moldeDaAprendizagem(userId: string, participanteId: string): Promise<LabMoldeNivel> {
+    const resolvido = await resolverMoldeDoParticipante(this.db, participanteId);
+    if ("molde" in resolvido) return resolvido.molde.nivel as LabMoldeNivel;
+    if (this.modoDoTeste === "cenarios") {
+      const conta = await this.db.user.findUnique({
+        where: { id: userId },
+        select: { nivelGovernanca: true, area: { select: { slug: true } } }
+      });
+      if (conta?.nivelGovernanca && conta.area)
+        return moldeDoPublico(
+          publicoDoCadastro({
+            nivelGovernanca: conta.nivelGovernanca,
+            areaSlug: conta.area.slug
+          }).publico
+        );
+    }
+    throw resolvido.falta === "cargo" ? erros.cargoNaoInformado() : erros.moldeNaoMapeado();
+  }
+
+  /** Antes de olhar o teste em aberto: o interno parado além do prazo expira (veja expiracao.ts). */
+  expirarTesteInterno(ator: LabAtor): Promise<void> {
+    return expirarTesteInternoParado(
+      this.db,
+      ator,
+      this.relogio(),
+      this.config.expiraTesteInternoH
+    );
   }
 
   /**
@@ -835,13 +868,13 @@ export class MotorDoTeste {
       // Escopo por perfil, cargo/nível/área e resultados próprios: sem eles o serviço recusa o corpo
       // novo e o assistente do perfil COMUM falha (fechado, nunca aberto). Reimplante o lab-ia.
       const faltam = RECURSOS_DO_SUPORTE.filter((r) => !recursos.includes(r));
-      return faltam.length === 0
-        ? { estado: "ok", versao, detalhe: null }
-        : {
-            estado: "desatualizado",
-            versao,
-            detalhe: `O serviço de IA não tem o contrato novo do assistente (${faltam.join(", ")}). Reimplante o serviço lab-ia antes de usar o assistente com o perfil COMUM.`
-          };
+      if (faltam.length > 0)
+        return {
+          estado: "desatualizado",
+          versao,
+          detalhe: `O serviço de IA não tem o contrato novo do assistente (${faltam.join(", ")}). Reimplante o serviço lab-ia antes de usar o assistente com o perfil COMUM.`
+        };
+      return await this.estadoDoModelo(versao);
     } catch (erro) {
       return {
         estado: "indisponivel",
@@ -849,6 +882,27 @@ export class MotorDoTeste {
         detalhe: erro instanceof Error ? erro.message : "falha desconhecida"
       };
     }
+  }
+
+  /** O serviço está de pé: falta saber se a credencial dele alcança o modelo configurado. */
+  private async estadoDoModelo(versao: string | null) {
+    if (!this.ia.saudeDoModelo) return { estado: "ok" as const, versao, detalhe: null };
+    let corpo: { ok?: unknown; modelo?: unknown; erro?: unknown };
+    try {
+      corpo = (await this.ia.saudeDoModelo()) as typeof corpo;
+    } catch {
+      return {
+        estado: "desatualizado" as const,
+        versao,
+        detalhe: "O serviço de IA não verifica o modelo. Reimplante o serviço lab-ia."
+      };
+    }
+    if (corpo.ok === true) return { estado: "ok" as const, versao, detalhe: null };
+    return {
+      estado: "indisponivel" as const,
+      versao,
+      detalhe: `O serviço responde, mas não alcança o modelo ${String(corpo.modelo)} (${String(corpo.erro)}). Confira a credencial, o nome do modelo, a cota e o faturamento.`
+    };
   }
 
   /** Teto por hora, por usuário, em memória (por instância): freio de custo, como na aprendizagem. */

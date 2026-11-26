@@ -105,7 +105,7 @@ function erroDoCodigo(codigo: CodigoConhecido, mensagemDaApi: string): ErroDaTel
     case "LAB_MOLDE_DIVERGENTE":
     case "LAB_TEMA_INVALIDO":
     case "LAB_LIMITE_DIARIO":
-      return semNovaTentativa("geral", "Não foi possível iniciar o teste", mensagemDaApi);
+      return semNovaTentativa("geral", "Não foi possível começar", mensagemDaApi);
     case "LAB_TURNO_FORA_DE_ORDEM":
     case "LAB_RESPOSTA_DIVERGENTE":
       return semNovaTentativa(

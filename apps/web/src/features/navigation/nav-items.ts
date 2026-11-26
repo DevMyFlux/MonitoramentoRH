@@ -1,4 +1,4 @@
-import type { Role } from "@my-flux/types";
+import { rotasDoMenu } from "@my-flux/shared";
 import {
   Activity,
   CalendarDays,
@@ -31,11 +31,6 @@ export type NavigationItem = {
   hidden?: boolean;
   /** Fica só no menu lateral (não entra no dock do celular, para ele caber em 360 px). */
   foraDoDock?: boolean;
-  /**
-   * Only these profiles see the item. Omitted = everyone, as before. This only tidies the menu:
-   * the API still decides who may do what.
-   */
-  roles?: readonly Role[];
 };
 
 export type NavigationGroup = {
@@ -66,35 +61,29 @@ export const navigationGroups: NavigationGroup[] = [
     items: [
       // Módulos ocultos (QLP, Recrutamento): só aparecem se estiverem ativos no registro.
       ...itensDeMenuOcultos(),
-      // Colaboradores e Escalas são da equipe (DEV, ADMIN e RH): o menu do COMUM tem APENAS o Leadership Lab.
       {
         label: "Colaboradores",
         href: "/colaboradores",
         icon: Users,
-        curto: "Pessoas",
-        roles: ["DEV", "ADMIN", "RH"]
+        curto: "Pessoas"
       },
       {
         label: "Escalas",
         href: "/escalas",
         icon: CalendarDays,
-        curto: "Escalas",
-        roles: ["DEV", "ADMIN", "RH"]
+        curto: "Escalas"
       }
     ]
   },
   {
-    label: "Desenvolvimento",
-    // Cada perfil vê a sua parte do Leadership Lab (a matriz de permissões do módulo): o participante
-    // é o COMUM, quem acompanha é o RH e quem configura os moldes é ADMIN ou DEV. O DEV vê as três
-    // áreas (acesso total ao módulo, para testar e dar suporte sem trocar de conta).
+    label: "Hub Leadership",
+    // Quem vê cada item é o menu que a API devolve (packages/shared/src/menu.ts).
     items: [
       {
         label: "Leadership Lab",
         href: "/lab",
         icon: Compass,
-        curto: "Lab",
-        roles: ["COMUM", "DEV"]
+        curto: "Lab"
       },
       {
         // O acompanhamento unificado (teste por cenários, pessoas, cenários, contestações). O RH vê
@@ -102,32 +91,25 @@ export const navigationGroups: NavigationGroup[] = [
         label: "Acompanhamento do Lab",
         href: "/lab/rh",
         icon: ClipboardList,
-        curto: "Gestão",
-        roles: ["RH", "ADMIN", "DEV"]
+        curto: "Gestão"
       },
       {
         label: "Configuração do Lab",
         href: "/lab/config",
         icon: SlidersHorizontal,
-        curto: "Config.",
-        roles: ["ADMIN", "DEV"]
+        curto: "Config."
       },
-      // Treinamentos Interativos (o módulo antigo): só o DEV. Os cenários agora fazem parte do teste do
-      // Leadership Lab, e o menu do COMUM tem APENAS o Leadership Lab. Esconder é arrumação: a web
-      // também redireciona o COMUM (SoParaEquipe).
+      // Treinamentos Interativos (o módulo antigo): os cenários agora fazem parte do teste do Lab.
       {
         label: "Treinamentos",
         href: "/treinamentos",
         icon: Clapperboard,
-        curto: "Treinos",
-        roles: ["DEV"]
+        curto: "Treinos"
       },
       {
         label: "Configuração de treinamentos",
         href: "/treinamentos/config",
         icon: Settings2,
-        // ADMIN e DEV editam; o RH só lê (cenários, regras e quantidades).
-        roles: ["RH", "ADMIN", "DEV"],
         foraDoDock: true
       }
     ]
@@ -141,7 +123,6 @@ export const navigationGroups: NavigationGroup[] = [
         label: "Usuários",
         href: "/usuarios",
         icon: UserCog,
-        roles: ["DEV", "ADMIN", "RH"],
         foraDoDock: true
       }
     ]
@@ -183,27 +164,39 @@ export const navigationGroups: NavigationGroup[] = [
   }
 ];
 
+const posicao = (item: NavigationItem) => rotasDoMenu.indexOf(item.href);
+
 /**
- * O item aparece para este perfil? Sem `roles`, aparece para todos. Sem perfil conhecido, só os
- * livres. No modo de teste (todo visitante entra como DEV) o menu mostra tudo a todos, para o
- * Leadership Lab poder ser encontrado; a página dele explica o que cada perfil pode fazer.
+ * Os grupos do menu com apenas o que a API permitiu (`user.menu` de GET /auth/me): o resto não é
+ * desenhado. A ordem é a fixa de `rotasDoMenu` (packages/shared), a mesma em qualquer página e
+ * qualquer que seja a ordem da resposta. Sem permissões conhecidas, o menu fica vazio.
  */
-export function itemVisivelPara(
-  item: NavigationItem,
-  perfil: Role | undefined,
-  modoDeTeste = false
-): boolean {
-  if (modoDeTeste) return true;
-  if (item.roles === undefined) return true;
-  return perfil !== undefined && item.roles.includes(perfil);
+export function gruposVisiveis(permitidas: readonly string[] = []): NavigationGroup[] {
+  return navigationGroups
+    .filter((grupo) => !grupo.hidden)
+    .map((grupo) => ({
+      ...grupo,
+      items: grupo.items
+        .filter((item) => !item.hidden && permitidas.includes(item.href))
+        .sort((a, b) => posicao(a) - posicao(b))
+    }))
+    .filter((grupo) => grupo.items.length > 0);
 }
 
 /** Os itens da barra de navegação inferior (celular): os mesmos do menu, na mesma ordem. */
-export function itensDoDock(perfil: Role | undefined, modoDeTeste = false): NavigationItem[] {
-  return navigationGroups
-    .filter((grupo) => !grupo.hidden)
+export function itensDoDock(permitidas?: readonly string[]): NavigationItem[] {
+  return gruposVisiveis(permitidas)
     .flatMap((grupo) => grupo.items)
-    .filter(
-      (item) => !item.hidden && !item.foraDoDock && itemVisivelPara(item, perfil, modoDeTeste)
-    );
+    .filter((item) => !item.foraDoDock);
+}
+
+/**
+ * O item que a página destaca: o de endereço mais específico que a contém (as rotas filhas contam:
+ * /lab/rh/revisao destaca /lab/rh, e não /lab). Destacar não muda a posição de nada.
+ */
+export function itemAtivo(pathname: string, itens: readonly NavigationItem[]): string | null {
+  const candidatos = itens
+    .map((item) => item.href)
+    .filter((href) => pathname === href || pathname.startsWith(`${href}/`));
+  return candidatos.sort((a, b) => b.length - a.length)[0] ?? null;
 }

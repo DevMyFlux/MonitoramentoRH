@@ -8,6 +8,7 @@ import {
   refreshRequestSchema,
   resetPasswordRequestSchema
 } from "@my-flux/validation";
+import { menuDoPerfil } from "@my-flux/shared";
 import { assertDelegatedScopes } from "../identity/access.js";
 import type { UserScope } from "@my-flux/types";
 import { HttpError } from "../../lib/http-error.js";
@@ -98,7 +99,8 @@ export async function registerAuthRoutes(
   app.get("/auth/me", async (request) => {
     const currentUser = await authenticateRequest(request, users);
 
-    return { data: { user: currentUser } };
+    // O menu da conta: a web monta a navegação a partir dele.
+    return { data: { user: { ...currentUser, menu: menuDoPerfil(currentUser.role) } } };
   });
 
   app.post("/users", async (request) => {

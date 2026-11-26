@@ -363,6 +363,19 @@ def saude() -> dict[str, Any]:
     }
 
 
+@app.get("/saude/modelo")
+def saude_do_modelo(x_servico_token: str | None = Header(default=None)) -> dict[str, Any]:
+    """A credencial alcança o modelo configurado? Só consulta o cadastro do modelo (não gera
+    conteúdo). Da falha sai apenas o tipo: o detalhe fica no log do serviço."""
+    exigir_token(x_servico_token)
+    try:
+        agente.cliente().models.get(model=agente.MODELO)
+    except Exception as erro:  # noqa: BLE001 — credencial, nome do modelo, cota, rede
+        log.error("saude do modelo falhou: %s", erro)
+        return {"ok": False, "modelo": agente.MODELO, "erro": type(erro).__name__}
+    return {"ok": True, "modelo": agente.MODELO, "erro": None}
+
+
 @app.post("/teste/sessoes")
 def abrir_sessao(corpo: IniciarSessao, x_servico_token: str | None = Header(default=None)) -> dict[str, Any]:
     exigir_token(x_servico_token)

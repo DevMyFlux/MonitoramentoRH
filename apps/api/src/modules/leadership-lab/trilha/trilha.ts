@@ -70,6 +70,9 @@ export type DependenciasDaTrilha = {
 const NAO_ENCONTRADO = () =>
   new HttpError(404, LAB_NAO_ENCONTRADO.code, LAB_NAO_ENCONTRADO.message);
 
+const SESSAO_ENCERRADA = () =>
+  new HttpError(409, "LAB_SESSAO_ENCERRADA", "Este teste já foi encerrado.");
+
 const json = (valor: unknown) => valor as Prisma.InputJsonValue;
 const ehConflitoDeUnicidade = (erro: unknown) =>
   erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002";
@@ -221,6 +224,17 @@ export class TrilhaDeCenarios {
     return doPublico ? limite(doPublico.quantidade) : this.quantidade;
   }
 
+  /** O termo de ciência é etapa de participante: o teste interno (DEV, ADMIN, RH) não depende dele. */
+  private async faltaOTermo(user: AuthenticatedUser, participanteId: string): Promise<boolean> {
+    if (origemDoPerfil(user.role) === "interno") return false;
+    const termo = await this.db.labTermoAceite.findUnique({
+      where: {
+        participanteId_versaoTermo: { participanteId, versaoTermo: this.config.versaoTermo }
+      }
+    });
+    return termo === null;
+  }
+
   /** DEV, ADMIN e RH escolhem o público; o COMUM recebe o da regra do cadastro. */
   private escolhiveis(user: AuthenticatedUser): readonly TreinoPublico[] {
     return user.role === "COMUM" ? [] : treinoPublicos;
@@ -306,13 +320,9 @@ export class TrilhaDeCenarios {
     if (ativa?.modo === "cenarios") return this.estadoDaSessao(ativa.id);
     if (ativa) return this.semTeste(user, false, "teste-legado-em-andamento", null, 0);
 
-    const termo = await this.db.labTermoAceite.findUnique({
-      where: {
-        participanteId_versaoTermo: { participanteId, versaoTermo: this.config.versaoTermo }
-      }
-    });
     const publico = await this.publicoDaConta(user);
-    if (!termo) return this.semTeste(user, false, "termo-pendente", publico, 0);
+    if (await this.faltaOTermo(user, participanteId))
+      return this.semTeste(user, false, "termo-pendente", publico, 0);
     if (await this.passouDoLimite(participanteId))
       return this.semTeste(user, false, "limite-diario", publico, 0);
     if (publico === null && user.role === "COMUM")
@@ -392,12 +402,7 @@ export class TrilhaDeCenarios {
         "Há um teste do modo anterior em andamento. Conclua-o antes de iniciar outro."
       );
 
-    const termo = await this.db.labTermoAceite.findUnique({
-      where: {
-        participanteId_versaoTermo: { participanteId, versaoTermo: this.config.versaoTermo }
-      }
-    });
-    if (!termo)
+    if (await this.faltaOTermo(user, participanteId))
       throw new HttpError(
         409,
         "LAB_TERMO_PENDENTE",
@@ -475,6 +480,52 @@ export class TrilhaDeCenarios {
   }
 
   // -------------------------------------------------------------------------
+  // POST /teste/reiniciar
+  // -------------------------------------------------------------------------
+
+  /**
+   * Encerra o teste em andamento (de qualquer modo) para a equipe começar outro. Só o teste interno:
+   * o participante tem um teste só, que retoma. Nada é apagado: a sessão vira "cancelada", com
+   * auditoria na mesma transação. Sem teste aberto, não faz nada.
+   */
+  async reiniciar(ator: LabAtor, user: AuthenticatedUser): Promise<{ encerrado: boolean }> {
+    this.exigirModo();
+    assertAcesso(ator, "teste:iniciar");
+    if (origemDoPerfil(user.role) !== "interno")
+      throw new HttpError(
+        403,
+        "LAB_REINICIO_SO_INTERNO",
+        "Só o teste interno da equipe pode ser reiniciado. Continue o teste em andamento."
+      );
+    return this.db.$transaction(async (tx) => {
+      const ativa = await tx.labSessao.findFirst({
+        where: { participanteId: ator.participanteId!, status: "em_andamento" },
+        select: { id: true, modo: true }
+      });
+      if (!ativa) return { encerrado: false };
+      // Condicional: se o teste terminou neste meio-tempo, não há o que cancelar.
+      const { count } = await tx.labSessao.updateMany({
+        where: { id: ativa.id, status: "em_andamento" },
+        data: { status: "cancelada" }
+      });
+      if (count === 0) return { encerrado: false };
+      await tx.auditLog.create({
+        data: {
+          userId: ator.userId,
+          userRole: user.role,
+          action: "UPDATE",
+          entity: "LabSessao",
+          entityId: ativa.id,
+          before: json({ status: "em_andamento", modo: ativa.modo }),
+          after: json({ status: "cancelada", motivo: "reinicio-do-teste-interno" }),
+          origin: "api"
+        }
+      });
+      return { encerrado: true };
+    });
+  }
+
+  // -------------------------------------------------------------------------
   // A sessão em andamento
   // -------------------------------------------------------------------------
 
@@ -502,7 +553,7 @@ export class TrilhaDeCenarios {
       }
     });
     const atual = sessao.cenarios.find((c) => c.status === "em_andamento");
-    if (!atual) throw new HttpError(409, "LAB_SESSAO_ENCERRADA", "Este teste já foi encerrado.");
+    if (!atual) throw SESSAO_ENCERRADA();
     const cenario = cenarioDe(atual.cenarioVersao.conteudo);
     return {
       tipo: "cenario",
@@ -560,6 +611,7 @@ export class TrilhaDeCenarios {
       tentativaId,
       ator.participanteId!
     );
+    if (tentativa.sessao.status === "cancelada") throw SESSAO_ENCERRADA();
     if (tentativa.status !== "em_andamento")
       throw new HttpError(409, "LAB_CENARIO_ENCERRADO", "Este cenário já foi concluído.");
 
@@ -628,6 +680,7 @@ export class TrilhaDeCenarios {
         }
       });
       if (!tentativa || tentativa.sessao.participanteId !== participanteId) throw NAO_ENCONTRADO();
+      if (tentativa.sessao.status === "cancelada") throw SESSAO_ENCERRADA();
       const cenario = cenarioDe(tentativa.cenarioVersao.conteudo);
 
       if (tentativa.status === "concluida") {
