@@ -130,14 +130,6 @@ export async function avaliarInicioPorCenarios(
 ): Promise<EstadoDoInicio | { tipo: "cadastro-incompleto" }> {
   const { participanteId, userId, config, agora } = args;
 
-  const termo = await db.labTermoAceite.findUnique({
-    where: { participanteId_versaoTermo: { participanteId, versaoTermo: config.versaoTermo } }
-  });
-  if (!termo) return { tipo: "termo-pendente" };
-
-  const ativa = await buscarSessaoAtiva(db, participanteId);
-  if (ativa) return { tipo: "continuar", sessao: ativa };
-
   const usuario = await db.user.findUnique({
     where: { id: userId },
     select: {
@@ -146,6 +138,17 @@ export async function avaliarInicioPorCenarios(
       role: { select: { name: true } }
     }
   });
+  // O termo é etapa de participante: o teste interno (a equipe) não depende dele.
+  if (!usuario || usuario.role.name === "COMUM") {
+    const termo = await db.labTermoAceite.findUnique({
+      where: { participanteId_versaoTermo: { participanteId, versaoTermo: config.versaoTermo } }
+    });
+    if (!termo) return { tipo: "termo-pendente" };
+  }
+
+  const ativa = await buscarSessaoAtiva(db, participanteId);
+  if (ativa) return { tipo: "continuar", sessao: ativa };
+
   const completo = usuario?.nivelGovernanca != null && usuario.area != null;
   if (usuario?.role.name === "COMUM" && !completo) return { tipo: "cadastro-incompleto" };
 

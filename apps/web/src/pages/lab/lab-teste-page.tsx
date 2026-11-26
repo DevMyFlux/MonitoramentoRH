@@ -1,5 +1,5 @@
 import { labSituacaoDoMarco } from "@my-flux/shared";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   BotaoLink,
   Button,
@@ -32,6 +32,9 @@ const VoltarAoPainel = () => (
  */
 export function LabTestePage() {
   const painel = usePainel();
+  // O teste começado no modo anterior continua na tela dele (o servidor aceita as respostas).
+  const [busca] = useSearchParams();
+  if (busca.has("anterior")) return <LabTesteLegadoPage />;
   if (painel.isPending) return <LoadingState />;
   if (painel.isError)
     return (

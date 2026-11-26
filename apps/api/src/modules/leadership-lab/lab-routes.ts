@@ -10,6 +10,7 @@
 //   GET  /moldes                        moldes, com o do cargo do usuário marcado
 //   GET  /teste/proxima                 o teste por cenários: a trilha em andamento (ou o que iniciar faria)
 //   POST /teste                         inicia a trilha de cenários (ou retoma a em andamento)
+//   POST /teste/reiniciar               (equipe) encerra o teste interno em andamento
 //   POST /teste/:id/respostas           uma pergunta do cenário: devolve só a reação da alternativa
 //   POST /teste/:id/concluir            conclui o cenário, abre o próximo e, no último, grava o resultado
 //   GET  /teste/:sessaoId/resultado     resultado de um teste por cenários concluído
@@ -106,6 +107,11 @@ export async function registrarRotasDoLab(
     const { user, ator } = await contextoDe(request);
     const entrada = labTesteIniciarEntradaSchema.parse(request.body ?? {});
     return { data: await trilha.iniciar(ator, user, entrada) };
+  });
+
+  app.post("/teste/reiniciar", { bodyLimit: LIMITE_DO_CORPO_BYTES }, async (request) => {
+    const { user, ator } = await contextoDe(request);
+    return { data: await trilha.reiniciar(ator, user) };
   });
 
   app.post<ComId>("/teste/:id/respostas", { bodyLimit: LIMITE_DO_CORPO_BYTES }, async (request) => {

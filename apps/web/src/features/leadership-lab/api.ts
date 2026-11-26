@@ -117,6 +117,8 @@ export const testeApi = {
   /** O clique em "Começar": cria a trilha (ou retoma a que já existe). */
   iniciar: (entrada: LabTesteIniciarEntrada = {}) =>
     chamar(labCenarioEmAndamentoSchema, "POST", "/teste", entrada),
+  /** Só a equipe: encerra o teste interno em andamento, para começar outro. */
+  reiniciar: () => chamar(z.object({ encerrado: z.boolean() }), "POST", "/teste/reiniciar"),
   /** Uma pergunta do cenário: volta só a reação da alternativa escolhida. */
   responder: (tentativaId: string, perguntaId: string, alternativa: number) =>
     chamar(labRespostaDeCenarioSchema, "POST", `${doTeste(tentativaId)}/respostas`, {
