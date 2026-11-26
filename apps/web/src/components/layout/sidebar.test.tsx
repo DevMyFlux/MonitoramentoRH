@@ -65,7 +65,7 @@ describe("menu lateral", () => {
     expect(configuracao()?.getAttribute("href")).toBe("/lab/config");
   });
 
-  it("cada perfil vê a sua parte do Lab: RH acompanha, ADMIN configura, COMUM participa", () => {
+  it("cada perfil vê a sua parte do Lab: RH e ADMIN acompanham, ADMIN configura, COMUM participa", () => {
     montar("RH");
     expect(acompanhamento()?.getAttribute("href")).toBe("/lab/rh");
     expect(configuracao()).toBeNull();
@@ -73,7 +73,8 @@ describe("menu lateral", () => {
 
     montar("ADMIN");
     expect(configuracao()?.getAttribute("href")).toBe("/lab/config");
-    expect(acompanhamento()).toBeNull();
+    // O ADMIN também acompanha (todas as turmas) e decide contestações.
+    expect(acompanhamento()?.getAttribute("href")).toBe("/lab/rh");
     cleanup();
 
     montar("COMUM");

@@ -2,7 +2,8 @@ import {
   type LabContestacaoPropria,
   type LabResultado,
   labCriarContestacaoEntradaSchema,
-  labLimitesDeTexto
+  labLimitesDeTexto,
+  labRotuloDaContestacao
 } from "@my-flux/shared";
 import { useState } from "react";
 import { Badge, Button, MensagemDeErro, Select, Textarea } from "../ui";
@@ -13,12 +14,12 @@ import { Cartao } from "./cartao";
 
 const PONTO_GERAL = "Resultado geral";
 
-const rotuloDoStatus = {
-  pendente: "Em análise",
-  aceita: "Aceita",
-  rejeitada: "Rejeitada"
+const tomDoStatus = {
+  pendente: "neutral",
+  em_analise: "warning",
+  aceita: "success",
+  rejeitada: "neutral"
 } as const;
-const tomDoStatus = { pendente: "warning", aceita: "success", rejeitada: "neutral" } as const;
 
 /**
  * O participante questiona um ponto do próprio resultado. O RH da turma analisa e responde, e a
@@ -103,7 +104,8 @@ export function ContestarResultado({
         ) : null}
         {enviada ? (
           <p role="status" className="text-lab-pequeno text-lab-destaque-texto">
-            Contestação enviada. O RH vai analisar e a resposta aparece aqui embaixo.
+            Contestação enviada (aberta). O RH vai analisar e a resposta, com a justificativa,
+            aparece aqui embaixo.
           </p>
         ) : null}
         <Button type="submit" loading={contestar.isPending}>
@@ -133,14 +135,19 @@ function ContestacaoPropria({ contestacao: c }: { contestacao: LabContestacaoPro
   return (
     <li className="rounded-lab-md border border-lab-linha p-3 text-lab-pequeno">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone={tomDoStatus[c.status]}>{rotuloDoStatus[c.status]}</Badge>
+        <Badge tone={tomDoStatus[c.status]}>{labRotuloDaContestacao[c.status]}</Badge>
         <span className="font-medium text-lab-tinta">{c.ponto}</span>
         <span className="text-lab-legenda text-lab-tinta-2">{formatarDataEHora(c.criadoEm)}</span>
       </div>
       <p className="mt-2 leading-6 text-lab-tinta-2">{c.motivo}</p>
       {c.nota ? (
         <p className="mt-2 border-l-2 border-lab-linha pl-3 leading-6 text-lab-tinta-2">
-          <span className="font-medium text-lab-tinta">Resposta do RH:</span> {c.nota}
+          <span className="font-medium text-lab-tinta">Justificativa do RH:</span> {c.nota}
+        </p>
+      ) : null}
+      {c.status === "aceita" ? (
+        <p role="status" className="mt-2 font-medium text-lab-destaque-texto">
+          Contestação deferida: o seu teste foi anulado e você pode fazer um novo.
         </p>
       ) : null}
     </li>

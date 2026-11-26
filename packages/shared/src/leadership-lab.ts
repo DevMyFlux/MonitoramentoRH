@@ -93,8 +93,19 @@ export type LabAlertaStatus = (typeof labAlertaStatus)[number];
 export const labContribuicaoStatus = ["pendente", "aprovada", "rejeitada"] as const;
 export type LabContribuicaoStatus = (typeof labContribuicaoStatus)[number];
 
-export const labContestacaoStatus = ["pendente", "aceita", "rejeitada"] as const;
+/**
+ * Estados da contestação. Os valores são os gravados; os nomes que as telas mostram são
+ * `labRotuloDaContestacao`: pendente = Aberta, em_analise = Em análise, aceita = Deferida,
+ * rejeitada = Indeferida.
+ */
+export const labContestacaoStatus = ["pendente", "em_analise", "aceita", "rejeitada"] as const;
 export type LabContestacaoStatus = (typeof labContestacaoStatus)[number];
+export const labRotuloDaContestacao: Readonly<Record<LabContestacaoStatus, string>> = {
+  pendente: "Aberta",
+  em_analise: "Em análise",
+  aceita: "Deferida",
+  rejeitada: "Indeferida"
+};
 
 /** Permissões por usuário, além do perfil (DEV, ADMIN, RH, COMUM). */
 export const labPermissoes = ["lab_gestao", "lab_especialista"] as const;

@@ -85,8 +85,14 @@ const matriz = {
   "alerta:tratar": { curador: "turma" },
   "contribuicao:listar": { curador: "turma" },
   "contribuicao:decidir": { curador: "turma" },
-  "contestacao:listar": { curador: "turma" },
-  "contestacao:decidir": { curador: "turma" },
+  // Contestações: o RH decide (turmas que acompanha); ADMIN e DEV também (todas).
+  "contestacao:listar": { curador: "turma", administrador: "turma" },
+  "contestacao:analisar": { curador: "turma", administrador: "turma" },
+  "contestacao:decidir": { curador: "turma", administrador: "turma" },
+  // Acompanhamento unificado do Lab (visão geral, pessoas, cenários, exportação): o RH, nas turmas
+  // ativas que acompanha; ADMIN e DEV, em tudo. Quem faz o teste só vê o próprio resultado.
+  "acompanhamento:ler": { curador: "turma", administrador: "turma" },
+  "acompanhamento:exportar": { curador: "turma", administrador: "turma" },
   "turma:listar": { curador: "turma" },
   "turma:criar": { curador: "turma" },
   "turma:atualizar": { curador: "turma" },

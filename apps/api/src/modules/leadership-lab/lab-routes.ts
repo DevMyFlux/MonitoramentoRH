@@ -41,6 +41,7 @@ import { assertAcesso } from "./lab-access.js";
 import { cenaDaSituacao, simulacaoDaSessao } from "./simulador/cena.js";
 import { descreverClassificacao, temasDaBiblioteca } from "./simulador/rotas.js";
 import { registrarRotasDoCadastro } from "./lab-cadastro-routes.js";
+import { registrarRotasDoAcompanhamento } from "./lab-acompanhamento-routes.js";
 import { registrarRotasDaCuradoria } from "./lab-curadoria-routes.js";
 import { carregarAtorLab } from "./lab-actor.js";
 import type { MotorDoTeste } from "./motor/motor.js";
@@ -212,5 +213,6 @@ export async function registrarRotasDoLab(
   }
 
   await registrarRotasDoCadastro(app, users, db);
+  await registrarRotasDoAcompanhamento(app, users, db);
   await registrarRotasDaCuradoria(app, users, db, { exigeBaseValidada: motor.exigeBaseValidada });
 }

@@ -46,6 +46,16 @@ const LabTurmasPage = lazy(() =>
 const LabTurmaPage = lazy(() =>
   import("./pages/lab/rh/lab-turma-page").then((m) => ({ default: m.LabTurmaPage }))
 );
+const LabAcompanhamentoPage = lazy(() =>
+  import("./pages/lab/rh/lab-acompanhamento-page").then((m) => ({
+    default: m.LabAcompanhamentoPage
+  }))
+);
+const LabAcompanhamentoPessoaPage = lazy(() =>
+  import("./pages/lab/rh/lab-acompanhamento-pessoa-page").then((m) => ({
+    default: m.LabAcompanhamentoPessoaPage
+  }))
+);
 const LabVisaoGeralPage = lazy(() =>
   import("./pages/lab/rh/lab-visao-geral-page").then((m) => ({ default: m.LabVisaoGeralPage }))
 );
@@ -79,9 +89,6 @@ const JogarTreinamentoPage = lazy(() =>
 );
 const ResultadoTreinamentoPage = lazy(() =>
   import("./pages/treinamentos/resultado-page").then((m) => ({ default: m.ResultadoPage }))
-);
-const TreinamentosRhPage = lazy(() =>
-  import("./pages/treinamentos/rh-page").then((m) => ({ default: m.TreinamentosRhPage }))
 );
 const TreinamentosConfigPage = lazy(() =>
   import("./pages/treinamentos/config-page").then((m) => ({ default: m.TreinamentosConfigPage }))
@@ -161,7 +168,24 @@ const router = createBrowserRouter([
       </PaginaDoLab>
     )
   },
-  { path: "/lab/rh", element: <Navigate to="/lab/rh/visao-geral" replace /> },
+  // O acompanhamento é um só (o antigo de Treinamentos também vem para cá).
+  { path: "/lab/rh", element: <Navigate to="/lab/rh/acompanhamento" replace /> },
+  {
+    path: "/lab/rh/acompanhamento",
+    element: (
+      <PaginaDoLab breadcrumbs={["Acompanhamento"]}>
+        <LabAcompanhamentoPage />
+      </PaginaDoLab>
+    )
+  },
+  {
+    path: "/lab/rh/acompanhamento/pessoas/:participanteId",
+    element: (
+      <PaginaDoLab breadcrumbs={["Acompanhamento", "Pessoa"]}>
+        <LabAcompanhamentoPessoaPage />
+      </PaginaDoLab>
+    )
+  },
   {
     path: "/lab/rh/visao-geral",
     element: (
@@ -290,16 +314,7 @@ const router = createBrowserRouter([
       </SoParaEquipe>
     )
   },
-  {
-    path: "/treinamentos/rh",
-    element: (
-      <SoParaEquipe>
-        <App breadcrumbs={["MY FLUX", "Treinamentos", "Acompanhamento"]}>
-          <TreinamentosRhPage />
-        </App>
-      </SoParaEquipe>
-    )
-  },
+  { path: "/treinamentos/rh", element: <Navigate to="/lab/rh/acompanhamento" replace /> },
   {
     path: "/treinamentos/config",
     element: (

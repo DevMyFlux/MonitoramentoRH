@@ -29,10 +29,11 @@ export const chavesDaCuradoria = {
 const antesDeDecidir = () => ({ origem: centroDoFoco() });
 
 /** Os números das abas. Se falhar, as abas só ficam sem número: nada depende deles. */
-export function usePendencias() {
+export function usePendencias(ativo = true) {
   return useQuery({
     queryKey: chavesDaCuradoria.pendencias,
     queryFn: labCuradoriaApi.pendencias,
+    enabled: ativo,
     retry: false,
     staleTime: 15_000
   });
@@ -153,6 +154,17 @@ export function useContestacoes(status: string) {
   });
 }
 
+export function useAnalisarContestacao() {
+  const cliente = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => labCuradoriaApi.analisarContestacao(id),
+    onSuccess: () => {
+      void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.todasAsContestacoes });
+      void cliente.invalidateQueries({ queryKey: ["lab", "acompanhamento"] });
+    }
+  });
+}
+
 export function useDecidirContestacao() {
   const cliente = useQueryClient();
   return useMutation({
@@ -170,6 +182,7 @@ export function useDecidirContestacao() {
       faisca(contexto?.origem ?? null);
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.todasAsContestacoes });
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.todasAsRevisoes });
+      void cliente.invalidateQueries({ queryKey: ["lab", "acompanhamento"] });
       void cliente.invalidateQueries({ queryKey: ["lab", "curadoria", "ficha"] });
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.pendencias });
       void cliente.invalidateQueries({ queryKey: chavesDaCuradoria.notificacoes });

@@ -3,7 +3,6 @@ import {
   Activity,
   CalendarDays,
   Clapperboard,
-  ClipboardCheck,
   Compass,
   ClipboardList,
   SlidersHorizontal,
@@ -98,11 +97,13 @@ export const navigationGroups: NavigationGroup[] = [
         roles: ["COMUM", "DEV"]
       },
       {
+        // O acompanhamento unificado (teste por cenários, pessoas, cenários, contestações). O RH vê
+        // as turmas dele; ADMIN e DEV, tudo.
         label: "Acompanhamento do Lab",
         href: "/lab/rh",
         icon: ClipboardList,
         curto: "Gestão",
-        roles: ["RH", "DEV"]
+        roles: ["RH", "ADMIN", "DEV"]
       },
       {
         label: "Configuração do Lab",
@@ -120,13 +121,6 @@ export const navigationGroups: NavigationGroup[] = [
         icon: Clapperboard,
         curto: "Treinos",
         roles: ["DEV"]
-      },
-      {
-        label: "Acompanhamento de treinamentos",
-        href: "/treinamentos/rh",
-        icon: ClipboardCheck,
-        roles: ["RH", "DEV"],
-        foraDoDock: true
       },
       {
         label: "Configuração de treinamentos",

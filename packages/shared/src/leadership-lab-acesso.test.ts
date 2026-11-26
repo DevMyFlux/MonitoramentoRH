@@ -42,6 +42,8 @@ type NomeDoAtor = keyof typeof atores;
 const participantes: NomeDoAtor[] = ["comum", "comumGestao", "comumEspecialista", "dev"];
 const curadores: NomeDoAtor[] = ["rh", "rhGestao", "dev"];
 const administradores: NomeDoAtor[] = ["admin", "adminGestao", "dev"];
+// Contestações e acompanhamento: o RH (das turmas dele) e ADMIN/DEV (de todos).
+const acompanham: NomeDoAtor[] = [...curadores, ...administradores];
 // O teste por cenários: todos os perfis fazem o próprio (com vínculo), cada um só o seu.
 const fazemTeste: NomeDoAtor[] = participantes; // quem TEM vínculo (RH e ADMIN sem vínculo: veja abaixo)
 const gestores: NomeDoAtor[] = ["comumGestao", "rhGestao", "adminGestao", "dev"];
@@ -78,8 +80,11 @@ const podem: Record<LabAcao, NomeDoAtor[]> = {
   "alerta:tratar": curadores,
   "contribuicao:listar": curadores,
   "contribuicao:decidir": curadores,
-  "contestacao:listar": curadores,
-  "contestacao:decidir": curadores,
+  "contestacao:listar": acompanham,
+  "contestacao:analisar": acompanham,
+  "contestacao:decidir": acompanham,
+  "acompanhamento:ler": acompanham,
+  "acompanhamento:exportar": acompanham,
   "turma:listar": curadores,
   "turma:criar": curadores,
   "turma:atualizar": curadores,
@@ -186,8 +191,16 @@ describe("estrutura da matriz (vale para qualquer ação que se acrescente)", ()
     for (const c of celulas.filter((x) => x.papel === "gestao")) {
       expect(c.escopo, c.acao).toBe("agregados");
     }
+    // A exceção deliberada (Prompt 2, Fase 8): ADMIN e DEV decidem contestações e acompanham todos.
+    const doAcompanhamento = new Set<string>([
+      "contestacao:listar",
+      "contestacao:analisar",
+      "contestacao:decidir",
+      "acompanhamento:ler",
+      "acompanhamento:exportar"
+    ]);
     for (const c of celulas.filter((x) => x.papel === "administrador")) {
-      expect(c.escopo, c.acao).toBe("configuracao");
+      expect(c.escopo, c.acao).toBe(doAcompanhamento.has(c.acao) ? "turma" : "configuracao");
     }
   });
 
@@ -196,7 +209,13 @@ describe("estrutura da matriz (vale para qualquer ação que se acrescente)", ()
       (c) => c.escopo === "proprios" || c.escopo === "turma" || c.escopo === "escopo-do-rh"
     );
     for (const c of comDadoDePessoa) {
-      expect(["participante", "curador", "testador"], `${c.acao} -> ${c.papel}`).toContain(c.papel);
+      // O administrador só chega a dado de pessoa nas ações do acompanhamento e das contestações.
+      const papeisAdmitidos =
+        c.papel === "administrador" &&
+        (c.acao.startsWith("contestacao:") || c.acao.startsWith("acompanhamento:"))
+          ? ["administrador"]
+          : ["participante", "curador", "testador"];
+      expect(papeisAdmitidos, `${c.acao} -> ${c.papel}`).toContain(c.papel);
     }
   });
 

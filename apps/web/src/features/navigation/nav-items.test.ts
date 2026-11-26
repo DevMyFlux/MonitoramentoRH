@@ -44,25 +44,30 @@ describe("navigation groups", () => {
     });
   });
 
-  describe("Acompanhamento e configuração de treinamentos", () => {
+  describe("Acompanhamento do Lab e configuração de treinamentos", () => {
     const todos = navigationGroups.flatMap((g) => g.items);
-    const rh = todos.find((i) => i.href === "/treinamentos/rh")!;
+    const acompanhamento = todos.find((i) => i.href === "/lab/rh")!;
     const config = todos.find((i) => i.href === "/treinamentos/config")!;
 
-    it("o RH acompanha e lê a configuração, o ADMIN configura, o DEV vê os dois; o participante, nenhum", () => {
-      expect(itemVisivelPara(rh, "RH")).toBe(true);
-      expect(itemVisivelPara(rh, "ADMIN")).toBe(false);
+    it("o acompanhamento é um só: RH, ADMIN e DEV; o participante não o vê", () => {
+      expect(acompanhamento.label).toBe("Acompanhamento do Lab");
+      for (const perfil of ["RH", "ADMIN", "DEV"] as const) {
+        expect(itemVisivelPara(acompanhamento, perfil), perfil).toBe(true);
+      }
+      expect(itemVisivelPara(acompanhamento, "COMUM")).toBe(false);
+      // O item antigo, "Acompanhamento de treinamentos", foi unificado neste.
+      expect(todos.find((i) => i.href === "/treinamentos/rh")).toBeUndefined();
+    });
+
+    it("o RH lê a configuração, o ADMIN configura, o DEV vê; o participante, não", () => {
       expect(itemVisivelPara(config, "ADMIN")).toBe(true);
       // O RH só lê a configuração (a tela esconde o que edita).
       expect(itemVisivelPara(config, "RH")).toBe(true);
-      for (const item of [rh, config]) {
-        expect(itemVisivelPara(item, "DEV")).toBe(true);
-        expect(itemVisivelPara(item, "COMUM")).toBe(false);
-      }
+      expect(itemVisivelPara(config, "DEV")).toBe(true);
+      expect(itemVisivelPara(config, "COMUM")).toBe(false);
     });
 
-    it("ficam só no menu lateral, fora do dock do celular", () => {
-      expect(rh.foraDoDock).toBe(true);
+    it("a configuração fica só no menu lateral, fora do dock do celular", () => {
       expect(config.foraDoDock).toBe(true);
     });
   });
@@ -96,7 +101,7 @@ describe("navigation groups", () => {
     const configuracao = itens.find((i) => i.label === "Configuração do Lab");
 
     it("estão no menu e apontam para as telas certas", () => {
-      expect(acompanhamento).toMatchObject({ href: "/lab/rh", roles: ["RH", "DEV"] });
+      expect(acompanhamento).toMatchObject({ href: "/lab/rh", roles: ["RH", "ADMIN", "DEV"] });
       expect(configuracao).toMatchObject({ href: "/lab/config", roles: ["ADMIN", "DEV"] });
       for (const item of [acompanhamento, configuracao]) {
         expect(item?.hidden).toBeUndefined();
@@ -104,10 +109,10 @@ describe("navigation groups", () => {
       }
     });
 
-    it("o acompanhamento é do RH e do DEV, e a configuração, de ADMIN e DEV", () => {
+    it("o acompanhamento é de RH, ADMIN e DEV, e a configuração, de ADMIN e DEV", () => {
       for (const perfil of ["DEV", "ADMIN", "RH", "COMUM", undefined] as const) {
         expect(itemVisivelPara(acompanhamento!, perfil), `acompanhamento ${perfil}`).toBe(
-          perfil === "RH" || perfil === "DEV"
+          perfil === "RH" || perfil === "ADMIN" || perfil === "DEV"
         );
         expect(itemVisivelPara(configuracao!, perfil), `configuração ${perfil}`).toBe(
           perfil === "ADMIN" || perfil === "DEV"
@@ -115,11 +120,11 @@ describe("navigation groups", () => {
       }
     });
 
-    it("cada perfil vê uma entrada do Leadership Lab, e o DEV vê as três", () => {
+    it("o COMUM e o RH veem uma entrada do Leadership Lab, o ADMIN duas e o DEV as três", () => {
       const doLab = ["/lab", "/lab/rh", "/lab/config"];
       for (const perfil of ["DEV", "ADMIN", "RH", "COMUM"] as const) {
         const visiveis = itens.filter((i) => doLab.includes(i.href) && itemVisivelPara(i, perfil));
-        expect(visiveis, perfil).toHaveLength(perfil === "DEV" ? 3 : 1);
+        expect(visiveis, perfil).toHaveLength(perfil === "DEV" ? 3 : perfil === "ADMIN" ? 2 : 1);
       }
     });
 

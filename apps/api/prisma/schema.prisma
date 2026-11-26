@@ -1458,6 +1458,8 @@ model LabResultado {
   validadoPor           String?   @map("validado_por") @db.Uuid
   validadoEm            DateTime? @map("validado_em") @db.Timestamptz(3)
   justificativaValidacao String?  @map("justificativa_validacao")
+  /// Uma contestação deste resultado foi deferida: ele fica guardado, mas a trilha não o conta mais.
+  contestacaoDeferidaEm DateTime? @map("contestacao_deferida_em") @db.Timestamptz(3)
   criadoEm              DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
   contestacoes          LabContestacao[]
 
@@ -1539,6 +1541,9 @@ model LabContestacao {
   decididoPor  String?      @map("decidido_por") @db.Uuid
   decididoEm   DateTime?    @map("decidido_em") @db.Timestamptz(3)
   notaDecisao  String?      @map("nota_decisao")
+  /// Quem passou a contestação para "em análise" e quando.
+  analisePor   String?      @map("analise_por") @db.Uuid
+  analiseEm    DateTime?    @map("analise_em") @db.Timestamptz(3)
   criadoEm     DateTime     @default(now()) @map("criado_em") @db.Timestamptz(3)
 
   @@index([status])

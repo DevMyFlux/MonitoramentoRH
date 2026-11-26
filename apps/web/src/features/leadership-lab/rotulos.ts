@@ -122,6 +122,11 @@ export function formatarNumero(valor: number): string {
   return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format(valor);
 }
 
+/** 85.5 -> "85,5%"; sem valor, um traço. */
+export function formatarPercentual(valor: number | null): string {
+  return valor === null ? "—" : `${formatarNumero(valor)}%`;
+}
+
 export function formatarDataCurta(iso: string): string {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",

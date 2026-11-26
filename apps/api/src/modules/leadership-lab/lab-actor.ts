@@ -50,8 +50,8 @@ export async function carregarParticipantesDasTurmas(
   curadorUserId: string,
   role?: string
 ): Promise<ReadonlySet<string>> {
-  // O perfil DEV vê todos os participantes, tenham turma ou não.
-  if (role === "DEV") {
+  // DEV e ADMIN veem todos os participantes, tenham turma ou não (o RH, só os das suas turmas).
+  if (role === "DEV" || role === "ADMIN") {
     const todos = await db.labParticipante.findMany({ select: { id: true } });
     return new Set(todos.map((p) => p.id));
   }

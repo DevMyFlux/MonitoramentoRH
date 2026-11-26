@@ -6,6 +6,7 @@ export * from "./leadership-lab.js";
 export * from "./leadership-lab-acesso.js";
 export * from "./leadership-lab-api.js";
 export * from "./leadership-lab-cadastro-api.js";
+export * from "./leadership-lab-acompanhamento-api.js";
 export * from "./leadership-lab-curadoria-api.js";
 export * from "./leadership-lab-notificacoes-api.js";
 export * from "./leadership-lab-simulador-api.js";

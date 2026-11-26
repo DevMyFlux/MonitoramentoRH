@@ -95,6 +95,54 @@ Rotas (`/api/v1/treinamentos`): `POST /cenarios/:id/revisao`, `POST /cenarios/ap
 `GET|PUT /configuracao/regras`, `GET|PUT /configuracao/quantidades`, além das de cenários e importação.
 Migração `0025_treinamentos_configuracao` (aditiva, com `down.sql`).
 
+## Acompanhamento unificado (`/lab/rh/acompanhamento`)
+
+Uma tela só para RH, ADMIN e DEV (substitui o antigo "Acompanhamento de treinamentos"; `/treinamentos/rh`
+redireciona para cá). Rotas `GET /api/v1/leadership-lab/acompanhamento/...`:
+
+| Rota | O que devolve |
+| --- | --- |
+| `resumo` | totais, funil (cadastrados → iniciaram → concluíram), por turma, por público, testes internos à parte e as opções dos filtros |
+| `pessoas` | cada pessoa com turmas, nível, área e o último teste |
+| `pessoas/:id` | a linha do tempo da pessoa: por cenário, as 5 decisões (cumpriu ou não), os desfechos, as alternativas escolhidas, os tempos, as contestações e a comparação com o grupo |
+| `cenarios` | por cenário e versão: decisões mais descumpridas e alternativas mais escolhidas |
+| `exportar?visao=sessoes\|cenarios` | CSV (`;`, vírgula decimal, BOM) com os **mesmos filtros e a mesma visibilidade** |
+
+Filtros (todas as rotas): `turmaId`, `publico`, `nivel`, `areaId`, `de`, `ate` (AAAA-MM-DD) e `status`
+(`em_andamento` ou `concluida`). Eles vão na URL da tela, que dá para compartilhar.
+
+- **Quem vê o quê.** DEV e ADMIN leem tudo; o RH, só as pessoas das turmas **ativas** que acompanha (fora
+  disso, 404 igual a "não existe"; filtrar por turma alheia devolve vazio). Quem faz o teste (COMUM) recebe
+  403: só vê o próprio resultado, na tela do Lab. A matriz tem as ações `acompanhamento:ler` e
+  `acompanhamento:exportar` (curador e administrador, escopo "turma"; para ADMIN e DEV o escopo é todos).
+- **Teste interno.** Sessões com origem `interno` (DEV, ADMIN e RH testando) nunca entram em média, funil
+  nem comparação com o grupo: aparecem só como contagem à parte. A comparação com o grupo usa apenas
+  participantes (COMUM) do mesmo público que quem pergunta enxerga, com teste concluído e válido.
+- **Teste anulado.** Se a contestação foi deferida (abaixo), a sessão continua visível, marcada, mas sai das
+  médias e dos totais de concluídos.
+- A lista de pessoas tem teto de 500 (a tela avisa quando é cortada).
+- A exportação não grava auditoria (não há ação `EXPORT` no enum do banco); isso fica como decisão a rever.
+
+## Contestações: análise, decisão e nova tentativa
+
+Estados (valor gravado → nome na tela): `pendente` → **Aberta**, `em_analise` → **Em análise**, `aceita` →
+**Deferida**, `rejeitada` → **Indeferida**. Quem decide: o RH (das turmas dele), ADMIN e DEV. Nunca a
+própria contestação (404).
+
+- `POST /contestacoes/:id/analise`: aberta → em análise (só a partir de "aberta"; repetir é 409).
+- `POST /contestacoes/:id/decisao`: `{ decisao: "aceita"|"rejeitada", nota }`, a partir de aberta ou em
+  análise. A justificativa (`nota`) é **obrigatória** (a API recusa em branco e o banco também, por
+  `ck_contestacao_justificativa`). O participante vê o estado e a justificativa, nunca quem decidiu.
+- **Deferir** grava `leadership_lab.resultado.contestacao_deferida_em`. O resultado original **não é
+  alterado nem apagado**; a marca faz a trilha deixar de contar aquela sessão no limite do dia
+  (`LAB_LIMITE_TESTES_DIA`) e nos cenários "já feitos", então a pessoa pode refazer o teste.
+  **Indeferir** só registra a decisão.
+- Auditoria: `CREATE` (contestar), `UPDATE` (análise) e `APPROVE`/`REJECT` (decisão, com
+  `liberaNovaTentativa`); o texto da justificativa não vai para o log.
+- Migração `0026_lab_contestacao_analise` (aditiva, com `down.sql`): status `em_analise`, colunas
+  `analise_por`/`analise_em`, `resultado.contestacao_deferida_em`. O deferimento só afeta a trilha de
+  cenários; o teste antigo (legado) não usa a marca.
+
 ## Menu
 
 O COMUM só tem o Leadership Lab. `/treinamentos`, `/colaboradores` e `/escalas` o levam para o Lab na
@@ -104,4 +152,5 @@ web; o fechamento das rotas antigas de Treinamentos na API fica para a Fase 9.
 
 Integração com banco real (`trilha/trilha.integration.test.ts`), tela (`lab-trilha-page.test.tsx`) e o
 fluxo por teclado no Chromium: `LAB_E2E=1 pnpm --filter @my-flux/api test:e2e`
-(`leadership-lab/e2e/trilha.e2e.test.ts`).
+(`leadership-lab/e2e/trilha.e2e.test.ts`). O acompanhamento e as contestações têm integração própria
+(`acompanhamento/acompanhamento.integration.test.ts`) e testes de tela (`lab-acompanhamento.test.tsx`).

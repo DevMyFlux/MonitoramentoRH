@@ -1,7 +1,12 @@
-import { type LabContestacaoDoCurador, labLimitesDeTexto } from "@my-flux/shared";
+import {
+  type LabContestacaoDoCurador,
+  labLimitesDeTexto,
+  labRotuloDaContestacao
+} from "@my-flux/shared";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  Badge,
   Button,
   classeDaSuperficie,
   EmptyState,
@@ -14,13 +19,11 @@ import {
   useNotificar
 } from "../../../features/leadership-lab/ui";
 import { LayoutDoAcompanhamento } from "../../../features/leadership-lab/cadastro/layout-do-acompanhamento";
-import {
-  IdentificacaoDoParticipante,
-  SeloDeDecisao
-} from "../../../features/leadership-lab/cadastro/situacao-de-curadoria";
+import { IdentificacaoDoParticipante } from "../../../features/leadership-lab/cadastro/situacao-de-curadoria";
 import { ErroDaTelaDoLab } from "../../../features/leadership-lab/componentes/erro-da-tela";
 import { SeloDeValidacao } from "../../../features/leadership-lab/componentes/selo-de-validacao";
 import {
+  useAnalisarContestacao,
   useContestacoes,
   useDecidirContestacao
 } from "../../../features/leadership-lab/curadoria-hooks";
@@ -28,10 +31,18 @@ import { descreverErroDoCadastro } from "../../../features/leadership-lab/erros"
 import { formatarDataEHora } from "../../../features/leadership-lab/rotulos";
 import { cn } from "../../../lib/cn";
 
+const tomDoStatus = {
+  pendente: "neutral",
+  em_analise: "warning",
+  aceita: "success",
+  rejeitada: "neutral"
+} as const;
+
 const filtros = [
-  { value: "pendente", label: "Pendentes" },
-  { value: "aceita", label: "Aceitas" },
-  { value: "rejeitada", label: "Rejeitadas" },
+  { value: "pendente", label: `${labRotuloDaContestacao.pendente}s` },
+  { value: "em_analise", label: labRotuloDaContestacao.em_analise },
+  { value: "aceita", label: `${labRotuloDaContestacao.aceita}s` },
+  { value: "rejeitada", label: `${labRotuloDaContestacao.rejeitada}s` },
   { value: "todas", label: "Todas" }
 ];
 
@@ -39,13 +50,15 @@ export function LabContestacoesPage() {
   const [status, setStatus] = useState("pendente");
   const contestacoes = useContestacoes(status);
   const [aDecidir, setADecidir] = useState<LabContestacaoDoCurador | null>(null);
+  const analisar = useAnalisarContestacao();
 
   return (
     <LayoutDoAcompanhamento>
       <p className="max-w-3xl text-lab-pequeno text-lab-tinta-2">
-        O participante pode questionar um ponto do próprio resultado. A sua decisão e a nota
-        explicativa chegam a ele. Decidir não altera o resultado sozinho: o ajuste de um nível é
-        feito na validação, enquanto o resultado aguarda validação.
+        O participante pode questionar um ponto do próprio resultado. O caminho é: aberta, em
+        análise e, por fim, deferida ou indeferida, sempre com a justificativa, que chega a ele.
+        Deferir anula o teste contestado (o original continua guardado) e libera uma nova tentativa;
+        indeferir não muda nada. O ajuste de um nível continua sendo feito na validação.
       </p>
       <div className="max-w-xs">
         <Select
@@ -56,6 +69,11 @@ export function LabContestacoesPage() {
           options={filtros}
         />
       </div>
+      {analisar.isError ? (
+        <MensagemDeErro>
+          {descreverErroDoCadastro(analisar.error, "acompanhamento").descricao}
+        </MensagemDeErro>
+      ) : null}
       {contestacoes.isPending ? (
         <LoadingState />
       ) : contestacoes.isError ? (
@@ -66,7 +84,7 @@ export function LabContestacoesPage() {
       ) : contestacoes.data.length === 0 ? (
         <EmptyState
           title={
-            status === "pendente" ? "Nenhuma contestação pendente" : "Nenhuma contestação por aqui"
+            status === "pendente" ? "Nenhuma contestação aberta" : "Nenhuma contestação por aqui"
           }
           description="As contestações dos participantes das suas turmas aparecem aqui."
         />
@@ -83,14 +101,14 @@ export function LabContestacoesPage() {
                 </div>
                 <span className="flex flex-wrap items-center gap-2">
                   <SeloDeValidacao status={c.statusValidacao} />
-                  <SeloDeDecisao status={c.status} />
+                  <Badge tone={tomDoStatus[c.status]}>{labRotuloDaContestacao[c.status]}</Badge>
                 </span>
               </div>
               <div className="text-lab-pequeno leading-6">
                 <p className="font-medium text-lab-tinta">{c.ponto}</p>
                 <p className="text-lab-tinta-2">{c.motivo}</p>
               </div>
-              {c.status !== "pendente" ? (
+              {c.status === "aceita" || c.status === "rejeitada" ? (
                 <p className="border-l-2 border-lab-linha pl-3 text-lab-pequeno leading-6 text-lab-tinta-2">
                   Decisão{c.decididoPor ? ` de ${c.decididoPor}` : ""}
                   {c.decididoEm ? ` em ${formatarDataEHora(c.decididoEm)}` : ""}: {c.nota}
@@ -100,12 +118,29 @@ export function LabContestacoesPage() {
                 {c.status === "pendente" ? (
                   <Button
                     size="sm"
+                    variant="secondary"
+                    loading={analisar.isPending && analisar.variables === c.id}
+                    aria-label={`Iniciar a análise da contestação de ${c.participante.nome}`}
+                    onClick={() => analisar.mutate(c.id)}
+                  >
+                    Iniciar análise
+                  </Button>
+                ) : null}
+                {c.status === "pendente" || c.status === "em_analise" ? (
+                  <Button
+                    size="sm"
                     aria-label={`Decidir a contestação de ${c.participante.nome}`}
                     onClick={() => setADecidir(c)}
                   >
                     Decidir
                   </Button>
                 ) : null}
+                <Link
+                  to={`/lab/rh/acompanhamento/pessoas/${c.participante.id}`}
+                  className="text-lab-pequeno font-medium text-lab-destaque-texto hover:underline"
+                >
+                  Ver as decisões da pessoa
+                </Link>
                 <Link
                   to={`/lab/rh/revisao/${c.resultadoId}`}
                   className="text-lab-pequeno font-medium text-lab-destaque-texto hover:underline"
@@ -120,7 +155,7 @@ export function LabContestacoesPage() {
       <Modal
         isOpen={aDecidir !== null}
         title="Decidir contestação"
-        description="A decisão e a nota chegam ao participante e não se desfazem."
+        description="A decisão e a justificativa chegam ao participante e não se desfazem."
         onClose={() => setADecidir(null)}
       >
         {/* O conteúdo só existe com o modal aberto: abrir de novo começa do zero. */}
@@ -148,11 +183,11 @@ function FormularioDaDecisao({
 
   const enviar = () => {
     if (decisao === null) {
-      setAviso("Escolha se a contestação é aceita ou rejeitada.");
+      setAviso("Escolha se a contestação é deferida ou indeferida.");
       return;
     }
     if (nota.trim() === "") {
-      setAviso("Escreva a nota: é ela que explica a decisão ao participante.");
+      setAviso("Escreva a justificativa: é ela que explica a decisão ao participante.");
       return;
     }
     setAviso(null);
@@ -162,7 +197,10 @@ function FormularioDaDecisao({
         onSuccess: () => {
           notificar({
             tom: "sucesso",
-            titulo: decisao === "aceita" ? "Contestação aceita" : "Contestação rejeitada"
+            titulo:
+              decisao === "aceita"
+                ? "Contestação deferida: nova tentativa liberada"
+                : "Contestação indeferida"
           });
           aoFechar();
         }
@@ -188,14 +226,14 @@ function FormularioDaDecisao({
       >
         {jaValidado
           ? "Este resultado já foi validado, e uma validação não se refaz: a decisão fica registrada, mas o resultado não muda."
-          : "Aceitar registra a decisão e a nota. Se o nível de alguma skill deve mudar, faça o ajuste ao validar o resultado."}
+          : "Deferir anula este teste (o original continua guardado) e libera uma nova tentativa para a pessoa. Indeferir só registra a decisão. Se o nível de alguma skill deve mudar, faça o ajuste ao validar o resultado."}
       </p>
       <fieldset className="space-y-2">
         <legend className="text-lab-pequeno font-medium text-lab-tinta-2">Decisão</legend>
         {(
           [
-            ["aceita", "Aceitar a contestação"],
-            ["rejeitada", "Rejeitar a contestação"]
+            ["aceita", "Deferir a contestação (libera nova tentativa)"],
+            ["rejeitada", "Indeferir a contestação"]
           ] as const
         ).map(([valor, rotulo]) => (
           <label key={valor} className="flex items-center gap-2 text-lab-pequeno text-lab-tinta">
@@ -210,7 +248,7 @@ function FormularioDaDecisao({
         ))}
       </fieldset>
       <div className="grid gap-2 text-lab-pequeno font-medium text-lab-tinta-2">
-        <label htmlFor="nota-da-contestacao">Nota para o participante</label>
+        <label htmlFor="nota-da-contestacao">Justificativa (obrigatória)</label>
         <Textarea
           id="nota-da-contestacao"
           rows={4}

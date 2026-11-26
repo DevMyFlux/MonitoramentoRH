@@ -259,7 +259,15 @@ export class TrilhaDeCenarios {
     const pool = await this.aprovadosDoPublico(db, publico);
     if (pool.length === 0) return [];
     const feitos = await db.labTentativaCenario.findMany({
-      where: { status: "concluida", sessao: { participanteId, modo: "cenarios" } },
+      where: {
+        status: "concluida",
+        // Um teste cuja contestação foi deferida não conta: a pessoa pode refazer os cenários.
+        sessao: {
+          participanteId,
+          modo: "cenarios",
+          NOT: { resultado: { is: { contestacaoDeferidaEm: { not: null } } } }
+        }
+      },
       select: { concluidaEm: true, cenarioVersao: { select: { cenarioId: true } } }
     });
     const ultima = new Map<string, number>();
@@ -342,7 +350,9 @@ export class TrilhaDeCenarios {
       where: {
         participanteId,
         iniciadaEm: { gte: inicioDoDia(this.agora(), this.config.fusoHorario) },
-        status: { in: ["em_andamento", "concluida"] }
+        status: { in: ["em_andamento", "concluida"] },
+        // Deferida a contestação, esse teste não gasta o limite do dia.
+        NOT: { resultado: { is: { contestacaoDeferidaEm: { not: null } } } }
       }
     });
     return hoje >= limite;
