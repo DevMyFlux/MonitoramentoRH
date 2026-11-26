@@ -39,7 +39,7 @@ export class NotificacoesDoLab {
       this.db.labResultado.findMany({
         where: {
           statusValidacao: "aguardando_validacao",
-          sessao: { status: "concluida", ...doParticipante }
+          sessao: { status: "concluida", origem: "participante", ...doParticipante }
         },
         select: {
           id: true,

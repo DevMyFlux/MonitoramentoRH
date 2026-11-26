@@ -67,8 +67,21 @@ export const navigationGroups: NavigationGroup[] = [
     items: [
       // Módulos ocultos (QLP, Recrutamento): só aparecem se estiverem ativos no registro.
       ...itensDeMenuOcultos(),
-      { label: "Colaboradores", href: "/colaboradores", icon: Users, curto: "Pessoas" },
-      { label: "Escalas", href: "/escalas", icon: CalendarDays, curto: "Escalas" }
+      // Colaboradores e Escalas são da equipe (DEV, ADMIN e RH): o menu do COMUM tem APENAS o Leadership Lab.
+      {
+        label: "Colaboradores",
+        href: "/colaboradores",
+        icon: Users,
+        curto: "Pessoas",
+        roles: ["DEV", "ADMIN", "RH"]
+      },
+      {
+        label: "Escalas",
+        href: "/escalas",
+        icon: CalendarDays,
+        curto: "Escalas",
+        roles: ["DEV", "ADMIN", "RH"]
+      }
     ]
   },
   {
@@ -98,14 +111,15 @@ export const navigationGroups: NavigationGroup[] = [
         curto: "Config.",
         roles: ["ADMIN", "DEV"]
       },
-      // Treinamentos Interativos: o participante (COMUM) e o DEV. Curadoria e configuração entram
-      // na Fase 8. Esconder é só arrumação: quem barra é a API.
+      // Treinamentos Interativos (o módulo antigo): só o DEV. Os cenários agora fazem parte do teste do
+      // Leadership Lab, e o menu do COMUM tem APENAS o Leadership Lab. Esconder é arrumação: a web
+      // também redireciona o COMUM (SoParaEquipe).
       {
         label: "Treinamentos",
         href: "/treinamentos",
         icon: Clapperboard,
         curto: "Treinos",
-        roles: ["COMUM", "DEV"]
+        roles: ["DEV"]
       },
       {
         label: "Acompanhamento de treinamentos",

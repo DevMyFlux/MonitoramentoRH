@@ -14,6 +14,7 @@ import { UsersPage } from "./pages/users-page";
 import { AuditPage } from "./pages/audit-page";
 import { ImportsPage } from "./pages/imports-page";
 import { EmptyState } from "./components/ui";
+import { SoParaEquipe } from "./features/navigation/so-para-equipe";
 import { EmployeesPage } from "./pages/employees-page";
 import { HomeRedirect } from "./pages/home-redirect";
 // Fontes auto-hospedadas (@fontsource, licença OFL): Inter no corpo, Bricolage Grotesque nos títulos
@@ -260,9 +261,11 @@ const router = createBrowserRouter([
   {
     path: "/colaboradores",
     element: (
-      <App breadcrumbs={["MY FLUX", "Colaboradores"]}>
-        <EmployeesPage />
-      </App>
+      <SoParaEquipe>
+        <App breadcrumbs={["MY FLUX", "Colaboradores"]}>
+          <EmployeesPage />
+        </App>
+      </SoParaEquipe>
     )
   },
   // QLP e Recrutamento (módulos ocultos): só entram no roteador se estiverem ativos no registro.
@@ -270,49 +273,61 @@ const router = createBrowserRouter([
   {
     path: "/escalas",
     element: (
-      <App breadcrumbs={["MY FLUX", "Escalas"]}>
-        <MonthlySchedulePage />
-      </App>
+      <SoParaEquipe>
+        <App breadcrumbs={["MY FLUX", "Escalas"]}>
+          <MonthlySchedulePage />
+        </App>
+      </SoParaEquipe>
     )
   },
   {
     path: "/treinamentos",
     element: (
-      <App breadcrumbs={["MY FLUX", "Treinamentos"]}>
-        <TreinamentosPage />
-      </App>
+      <SoParaEquipe>
+        <App breadcrumbs={["MY FLUX", "Treinamentos"]}>
+          <TreinamentosPage />
+        </App>
+      </SoParaEquipe>
     )
   },
   {
     path: "/treinamentos/rh",
     element: (
-      <App breadcrumbs={["MY FLUX", "Treinamentos", "Acompanhamento"]}>
-        <TreinamentosRhPage />
-      </App>
+      <SoParaEquipe>
+        <App breadcrumbs={["MY FLUX", "Treinamentos", "Acompanhamento"]}>
+          <TreinamentosRhPage />
+        </App>
+      </SoParaEquipe>
     )
   },
   {
     path: "/treinamentos/config",
     element: (
-      <App breadcrumbs={["MY FLUX", "Treinamentos", "Configuração"]}>
-        <TreinamentosConfigPage />
-      </App>
+      <SoParaEquipe>
+        <App breadcrumbs={["MY FLUX", "Treinamentos", "Configuração"]}>
+          <TreinamentosConfigPage />
+        </App>
+      </SoParaEquipe>
     )
   },
   {
     path: "/treinamentos/:atribuicaoId/jogar",
     element: (
-      <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Palco"]}>
-        <JogarTreinamentoPage />
-      </App>
+      <SoParaEquipe>
+        <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Palco"]}>
+          <JogarTreinamentoPage />
+        </App>
+      </SoParaEquipe>
     )
   },
   {
     path: "/treinamentos/resultado/:tentativaId",
     element: (
-      <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Resultado"]}>
-        <ResultadoTreinamentoPage />
-      </App>
+      <SoParaEquipe>
+        <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Resultado"]}>
+          <ResultadoTreinamentoPage />
+        </App>
+      </SoParaEquipe>
     )
   },
   {

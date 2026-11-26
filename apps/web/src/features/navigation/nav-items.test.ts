@@ -34,10 +34,10 @@ describe("navigation groups", () => {
   describe("Treinamentos", () => {
     const item = navigationGroups.flatMap((g) => g.items).find((i) => i.label === "Treinamentos");
 
-    it("aparece para o participante (COMUM) e o DEV, e não para RH e ADMIN", () => {
-      expect(item).toMatchObject({ href: "/treinamentos", roles: ["COMUM", "DEV"] });
+    it("é só do DEV: o participante faz os cenários dentro do teste do Leadership Lab", () => {
+      expect(item).toMatchObject({ href: "/treinamentos", roles: ["DEV"] });
       expect(item?.hidden).toBeUndefined();
-      expect(itemVisivelPara(item!, "COMUM")).toBe(true);
+      expect(itemVisivelPara(item!, "COMUM")).toBe(false);
       expect(itemVisivelPara(item!, "DEV")).toBe(true);
       expect(itemVisivelPara(item!, "RH")).toBe(false);
       expect(itemVisivelPara(item!, "ADMIN")).toBe(false);
@@ -131,13 +131,22 @@ describe("navigation groups", () => {
     });
   });
 
-  it("os itens sem restrição de perfil continuam aparecendo para todos, como antes", () => {
-    const colaboradores = navigationGroups
-      .flatMap((g) => g.items)
-      .find((i) => i.label === "Colaboradores");
-    for (const perfil of ["DEV", "ADMIN", "RH", "COMUM", undefined] as const) {
-      expect(itemVisivelPara(colaboradores!, perfil)).toBe(true);
+  it("Colaboradores e Escalas são da equipe: nunca aparecem para o COMUM nem sem saber o perfil", () => {
+    for (const rotulo of ["Colaboradores", "Escalas"]) {
+      const item = navigationGroups.flatMap((g) => g.items).find((i) => i.label === rotulo)!;
+      for (const perfil of ["DEV", "ADMIN", "RH"] as const)
+        expect(itemVisivelPara(item, perfil), `${rotulo} ${perfil}`).toBe(true);
+      expect(itemVisivelPara(item, "COMUM"), rotulo).toBe(false);
+      expect(itemVisivelPara(item, undefined), rotulo).toBe(false);
     }
+  });
+
+  it("o menu do COMUM tem APENAS o Leadership Lab", () => {
+    const itens = navigationGroups
+      .filter((g) => !g.hidden)
+      .flatMap((g) => g.items)
+      .filter((i) => !i.hidden && itemVisivelPara(i, "COMUM"));
+    expect(itens.map((i) => i.href)).toEqual(["/lab"]);
   });
 
   describe("modo de teste (todo visitante entra como DEV)", () => {

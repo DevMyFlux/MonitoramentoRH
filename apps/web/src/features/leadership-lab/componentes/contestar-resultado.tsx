@@ -24,7 +24,15 @@ const tomDoStatus = { pendente: "warning", aceita: "success", rejeitada: "neutra
  * O participante questiona um ponto do próprio resultado. O RH da turma analisa e responde, e a
  * resposta aparece aqui, com a nota, mas sem o nome de quem decidiu.
  */
-export function ContestarResultado({ resultado }: { resultado: LabResultado }) {
+export function ContestarResultado({
+  resultado,
+  pontos: pontosDoTeste
+}: {
+  resultado: Pick<LabResultado, "resultadoId"> &
+    Partial<Pick<LabResultado, "situacoes" | "niveisPorSkill">>;
+  /** Os pontos que se pode contestar, se não forem situações e níveis (o teste por cenários: um por cenário). */
+  pontos?: readonly string[];
+}) {
   const minhas = useMinhasContestacoes(resultado.resultadoId);
   const contestar = useContestar(resultado.resultadoId);
   const [ponto, setPonto] = useState(PONTO_GERAL);
@@ -34,8 +42,10 @@ export function ContestarResultado({ resultado }: { resultado: LabResultado }) {
 
   const pontos = [
     PONTO_GERAL,
-    ...resultado.situacoes.map((s) => `Situação ${s.numero}`),
-    ...resultado.niveisPorSkill.map((s) => `Nível de ${s.nome}`)
+    ...(pontosDoTeste ?? [
+      ...(resultado.situacoes ?? []).map((s) => `Situação ${s.numero}`),
+      ...(resultado.niveisPorSkill ?? []).map((s) => `Nível de ${s.nome}`)
+    ])
   ];
 
   const enviar = () => {

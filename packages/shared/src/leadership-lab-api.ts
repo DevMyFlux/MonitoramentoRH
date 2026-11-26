@@ -11,6 +11,7 @@
 //
 // Datas viajam como texto ISO 8601 (é o que o JSON faz com um Date).
 import { z } from "zod";
+import { labModosDeTeste } from "./leadership-lab-teste.js";
 import { labTiposDeFonte } from "./leadership-lab-pedagogia.js";
 import { labCenaSchema, labSimulacaoSchema } from "./leadership-lab-simulador-api.js";
 import {
@@ -65,7 +66,8 @@ export const labMotivosDeIndisponibilidade = [
   "cargo-nao-informado",
   "molde-nao-mapeado",
   "molde-inativo",
-  "limite-diario"
+  "limite-diario",
+  "cadastro-incompleto"
 ] as const;
 export type LabMotivoDeIndisponibilidade = (typeof labMotivosDeIndisponibilidade)[number];
 
@@ -152,6 +154,8 @@ export const labAlertaDoPainelSchema = z.object({
 export type LabAlertaDoPainel = z.infer<typeof labAlertaDoPainelSchema>;
 
 export const labPainelSchema = z.object({
+  /** O modo do teste neste ambiente: a trilha de cenários ou o legado (IA). Servidor antigo = legado. */
+  modoDoTeste: z.enum(labModosDeTeste).default("legado"),
   /** Modo demonstração: a IA e o conteúdo são de exemplo. Servidor antigo (sem o campo) = falso. */
   demonstracao: z.boolean().default(false),
   termo: z.object({ versaoAtual: z.string(), aceito: z.boolean(), aceitoEm: dataIso.nullable() }),

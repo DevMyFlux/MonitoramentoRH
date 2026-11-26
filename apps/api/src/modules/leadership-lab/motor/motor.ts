@@ -21,6 +21,7 @@ import {
   type LabEscolha,
   type LabConversaResposta,
   type LabMoldeNivel,
+  type LabModoDeTeste,
   labConversaEntradaSchema,
   labConversaLimites,
   labMoldeNiveis,
@@ -183,6 +184,23 @@ export class MotorDoTeste {
     this.logger = dependencias.logger;
   }
 
+  /** O relógio do motor (injetável nos testes): a trilha de cenários usa o mesmo. */
+  get agora(): () => Date {
+    return this.relogio;
+  }
+
+  /** O modo do teste neste ambiente. Sem configuração explícita, o legado. */
+  get modoDoTeste(): LabModoDeTeste {
+    return this.config.modoDoTeste ?? "legado";
+  }
+
+  /** O que a trilha de cenários precisa da configuração do motor (o mesmo termo, limite e fuso). */
+  get configDaTrilha() {
+    const { versaoTermo, limiteTestesDia, fusoHorario, cenariosPorTeste, modoDoTeste } =
+      this.config;
+    return { versaoTermo, limiteTestesDia, fusoHorario, cenariosPorTeste, modoDoTeste };
+  }
+
   /** A trava de resultado experimental está ligada (LAB_EXIGE_BASE_VALIDADA)? */
   get exigeBaseValidada(): boolean {
     return this.config.exigeBaseValidada === true;
@@ -280,7 +298,9 @@ export class MotorDoTeste {
     return consultarPainel(this.db, {
       participanteId: this.participanteDe(ator),
       config: this.config,
-      agora: this.relogio()
+      agora: this.relogio(),
+      modoDoTeste: this.modoDoTeste,
+      userId: ator.userId
     });
   }
 
@@ -295,6 +315,14 @@ export class MotorDoTeste {
    */
   async iniciar(ator: LabAtor, entradaBruta: unknown = {}): Promise<RespostaDoTeste> {
     assertAcesso(ator, "sessao:iniciar");
+    // No modo por cenários o teste é a trilha (POST /teste); este, de situações conduzidas pela IA, só
+    // existe no modo legado. Falha fechado: ninguém começa o teste da IA por engano.
+    if (this.modoDoTeste === "cenarios")
+      throw new HttpError(
+        409,
+        "LAB_MODO_CENARIOS",
+        "O teste deste ambiente é por cenários. Use o teste do painel do Leadership Lab."
+      );
     const entrada = iniciarEntradaSchema.parse(entradaBruta ?? {});
     const participanteId = this.participanteDe(ator);
 

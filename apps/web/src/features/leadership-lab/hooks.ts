@@ -6,11 +6,12 @@
 import type { LabClassificarEntrada, LabConversaEntrada, LabEstadoDoTeste } from "@my-flux/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../my-flux/client";
-import { labApi } from "./api";
+import { labApi, testeApi } from "./api";
 
 export const chaves = {
   painel: ["lab", "painel"] as const,
   testeAtual: ["lab", "teste-atual"] as const,
+  proximoDoTeste: ["lab", "teste-proximo"] as const,
   resultado: (sessaoId: string) => ["lab", "resultado", sessaoId] as const
 };
 
@@ -74,6 +75,18 @@ export function useIniciarTeste() {
       }
       void cliente.invalidateQueries({ queryKey: chaves.painel });
     }
+  });
+}
+
+/** O teste por cenários: a trilha em andamento (com as respostas já dadas) ou o que iniciar faria. */
+export function useProximoDoTeste() {
+  return useQuery({
+    queryKey: chaves.proximoDoTeste,
+    queryFn: testeApi.proxima,
+    retry: repetirSoSeFalhaPassageira,
+    // O servidor é o dono do estado: ao voltar à tela, lê de novo (recarregar retoma).
+    staleTime: 0,
+    refetchOnWindowFocus: false
   });
 }
 

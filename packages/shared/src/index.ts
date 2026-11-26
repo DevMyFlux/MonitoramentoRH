@@ -19,6 +19,8 @@ export * from "./suporte-api.js";
 export * from "./treinamento-schema.js";
 export * from "./treinamento-motor.js";
 export * from "./treinamento-importacao.js";
+export * from "./leadership-lab-teste.js";
+export * from "./leadership-lab-teste-api.js";
 export * from "./treinamentos-acesso.js";
 export * from "./treinamentos-api.js";
 

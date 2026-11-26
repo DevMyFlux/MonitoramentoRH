@@ -8,6 +8,11 @@
 //   GET  /termo                         situação do termo de ciência
 //   POST /termo                         aceita a versão atual do termo
 //   GET  /moldes                        moldes, com o do cargo do usuário marcado
+//   GET  /teste/proxima                 o teste por cenários: a trilha em andamento (ou o que iniciar faria)
+//   POST /teste                         inicia a trilha de cenários (ou retoma a em andamento)
+//   POST /teste/:id/respostas           uma pergunta do cenário: devolve só a reação da alternativa
+//   POST /teste/:id/concluir            conclui o cenário, abre o próximo e, no último, grava o resultado
+//   GET  /teste/:sessaoId/resultado     resultado de um teste por cenários concluído
 //   POST /sessoes                       inicia um teste, ou retoma o que está em andamento
 //   GET  /sessoes/atual                 lê o teste em andamento (nunca inicia um)
 //   POST /sessoes/:id/respostas         envia A, B ou C (e o campo livre)
@@ -26,7 +31,12 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { PrismaClient } from "@prisma/client";
 import { authenticateRequest } from "../auth/auth-routes.js";
 import type { UserRepository } from "../users/user-repository.js";
-import { type LabCena, labClassificarEntradaSchema } from "@my-flux/shared";
+import {
+  type LabCena,
+  labClassificarEntradaSchema,
+  labTesteIniciarEntradaSchema,
+  labTesteRespostaEntradaSchema
+} from "@my-flux/shared";
 import { assertAcesso } from "./lab-access.js";
 import { cenaDaSituacao, simulacaoDaSessao } from "./simulador/cena.js";
 import { descreverClassificacao, temasDaBiblioteca } from "./simulador/rotas.js";
@@ -34,6 +44,7 @@ import { registrarRotasDoCadastro } from "./lab-cadastro-routes.js";
 import { registrarRotasDaCuradoria } from "./lab-curadoria-routes.js";
 import { carregarAtorLab } from "./lab-actor.js";
 import type { MotorDoTeste } from "./motor/motor.js";
+import { TrilhaDeCenarios } from "./trilha/trilha.js";
 
 export type DependenciasDasRotasDoLab = {
   db: PrismaClient;
@@ -59,6 +70,16 @@ export async function registrarRotasDoLab(
 
   const atorDe = async (request: FastifyRequest) =>
     carregarAtorLab(db, await authenticateRequest(request, users));
+  // O teste por cenários também precisa do cadastro da conta (cargo, nível e área decidem o público).
+  const contextoDe = async (request: FastifyRequest) => {
+    const user = await authenticateRequest(request, users);
+    return { user, ator: await carregarAtorLab(db, user) };
+  };
+  const trilha = new TrilhaDeCenarios({
+    db,
+    config: motor.configDaTrilha,
+    agora: motor.agora
+  });
 
   // Na simulação local, acrescenta à situação quem aparece na cena e ao resultado de que simulação
   // foi. Só apresentação: nada da avaliação. Fora da simulação, não mexe em nada.
@@ -73,6 +94,38 @@ export async function registrarRotasDoLab(
     }
     return resposta;
   }
+
+  // --- O teste por cenários (a trilha): sem IA no caminho do participante ---
+  app.get("/teste/proxima", async (request) => {
+    const { user, ator } = await contextoDe(request);
+    return { data: await trilha.proxima(ator, user) };
+  });
+
+  app.post("/teste", { bodyLimit: LIMITE_DO_CORPO_BYTES }, async (request) => {
+    const { user, ator } = await contextoDe(request);
+    const entrada = labTesteIniciarEntradaSchema.parse(request.body ?? {});
+    return { data: await trilha.iniciar(ator, user, entrada) };
+  });
+
+  app.post<ComId>("/teste/:id/respostas", { bodyLimit: LIMITE_DO_CORPO_BYTES }, async (request) => {
+    const { perguntaId, alternativa } = labTesteRespostaEntradaSchema.parse(request.body);
+    return {
+      data: await trilha.responder(
+        await atorDe(request),
+        request.params.id,
+        perguntaId,
+        alternativa
+      )
+    };
+  });
+
+  app.post<ComId>("/teste/:id/concluir", { bodyLimit: LIMITE_DO_CORPO_BYTES }, async (request) => ({
+    data: await trilha.concluir(await atorDe(request), request.params.id)
+  }));
+
+  app.get<ComId>("/teste/:id/resultado", async (request) => ({
+    data: await trilha.resultado(await atorDe(request), request.params.id)
+  }));
 
   app.get("/painel", async (request) => ({
     data: await motor.painel(await atorDe(request))
@@ -119,6 +172,13 @@ export async function registrarRotasDoLab(
   );
 
   app.get<ComId>("/sessoes/:id/resultado", async (request) => {
+    // Um teste por cenários tem o resultado dele (a tela distingue pelo campo `modo`).
+    const sessao = await db.labSessao.findUnique({
+      where: { id: request.params.id },
+      select: { modo: true }
+    });
+    if (sessao?.modo === "cenarios")
+      return { data: await trilha.resultado(await atorDe(request), request.params.id) };
     const resultado = await motor.obterResultado(await atorDe(request), request.params.id);
     if (!motor.temSimulador) return { data: resultado };
     const simulacao = await simulacaoDaSessao(db, resultado.sessaoId);

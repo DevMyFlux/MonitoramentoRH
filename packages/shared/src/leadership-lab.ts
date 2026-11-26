@@ -68,8 +68,8 @@ export type LabAderencia = (typeof labAderenciaEscala)[number];
 export const labEscolhas = ["A", "B", "C"] as const;
 export type LabEscolha = (typeof labEscolhas)[number];
 
-/** No piloto só existe o modo dinâmico; "validado" entra na versão 1. */
-export const labModos = ["dinamico"] as const;
+/** O modo da sessão: "dinamico" (situações A/B/C conduzidas pela IA, o legado) e "cenarios" (a trilha de Treinamentos). */
+export const labModos = ["dinamico", "cenarios"] as const;
 export type LabModo = (typeof labModos)[number];
 
 export const labSessaoStatus = ["em_andamento", "concluida", "cancelada"] as const;
