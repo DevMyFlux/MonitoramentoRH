@@ -1,0 +1,513 @@
+{
+ "id": "rh-retorno-afastamento",
+ "title": "Retorno após afastamento",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Segunda, 09h. Uma pessoa retorna de um afastamento longo.",
+   "Você é do RH e acompanha a reintegração.",
+   "O gestor não sabe como recebê-la."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "alinhar_gestor",
+   "label": "Orientar o gestor",
+   "procedure": "Orientar o gestor sobre como receber a pessoa, sem expor sua história. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "verificar_condicoes",
+   "label": "Verificar as condições",
+   "procedure": "Verificar liberações e eventuais restrições no retorno. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "planejar_retorno",
+   "label": "Planejar o retorno",
+   "procedure": "Planejar tarefas, carga e acesso nos primeiros dias. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_retorno",
+   "label": "Registrar o retorno",
+   "procedure": "Registrar o retorno e as orientações no sistema. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "acompanhar",
+   "label": "Acompanhar a reintegração",
+   "procedure": "Acompanhar a pessoa nas primeiras semanas. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "alinhar_gestor",
+   "shot": "mesa",
+   "time": "09:05",
+   "narration": "09:05 · O gestor teme dizer algo errado.",
+   "prompt": "Como orienta?",
+   "alternatives": [
+    {
+     "text": "Deixo o gestor decidir sozinho como receber.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Sem orientação",
+      "text": "O gestor pode errar por falta de preparo.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Oriento o gestor a receber bem, sem expor motivos nem perguntar detalhes.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Gestor orientado",
+      "text": "A recepção é respeitosa e discreta.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Peço que o gestor comente com a equipe o motivo do afastamento.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Exposição",
+      "text": "Você invade a privacidade da pessoa.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Explico como tratar o retorno e o que não deve ser perguntado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Limites explicados",
+      "text": "O gestor sabe como agir.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "verificar_condicoes",
+   "shot": "documento",
+   "time": "09:30",
+   "narration": "09:30 · A pessoa traz documentos de liberação.",
+   "prompt": "O que verifica?",
+   "alternatives": [
+    {
+     "text": "Verifico as liberações e eventuais restrições e comunico só o necessário.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Liberações verificadas",
+      "text": "O retorno acontece com segurança.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aceito a palavra da pessoa e não peço documentos.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem documentos",
+      "text": "A empresa pode descumprir exigências.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço documentos, mas não confiro com o responsável.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Documentos sem conferência",
+      "text": "As restrições podem ser ignoradas.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Confirmo com a área responsável se há restrições e como cumprir.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Restrições confirmadas",
+      "text": "O retorno respeita as condições.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "planejar_retorno",
+   "shot": "reuniao",
+   "time": "10:00",
+   "narration": "10:00 · A pessoa ficou fora por um tempo.",
+   "prompt": "Como planeja o retorno?",
+   "alternatives": [
+    {
+     "text": "Coloco a pessoa na carga normal desde o primeiro dia.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Carga cheia",
+      "text": "A pessoa pode se sentir pressionada.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Deixo a pessoa sem tarefas até ela se ajeitar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Sem tarefas",
+      "text": "A pessoa se sente deslocada.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Pergunto à pessoa o que a ajudaria no retorno.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Pessoa ouvida",
+      "text": "O plano considera as necessidades dela.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Combino com o gestor tarefas, carga e acessos graduais nos primeiros dias.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Retorno gradual",
+      "text": "A pessoa se reintegra com tranquilidade.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_retorno",
+   "shot": "tela",
+   "time": "10:30",
+   "narration": "10:30 · O retorno é formalizado.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Registro com detalhes pessoais desnecessários.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro em excesso",
+      "text": "A privacidade da pessoa é exposta.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Registro só o necessário e guardo com acesso restrito.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Registro restrito",
+      "text": "A privacidade é preservada.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro o retorno, a data e as orientações acordadas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Retorno registrado",
+      "text": "O sistema reflete a realidade.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Não registro, é informal.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem registro",
+      "text": "O histórico fica com lacunas.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "acompanhar",
+   "shot": "relogio",
+   "time": "Semanas depois",
+   "narration": "Semanas depois · A pessoa está de volta há algumas semanas.",
+   "prompt": "Como acompanha?",
+   "alternatives": [
+    {
+     "text": "Só converso se houver reclamação.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Acompanhamento reativo",
+      "text": "Problemas aparecem tarde.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Converso periodicamente com a pessoa e o gestor sobre a adaptação.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Reintegração acompanhada",
+      "text": "Você percebe cedo dificuldades.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero encerrado após o primeiro dia.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Acompanhamento zero",
+      "text": "Dificuldades passam despercebidas.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Marco conversas curtas de retorno em prazos combinados.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Retornos marcados",
+      "text": "A pessoa sente cuidado contínuo.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Retorno desorganizado",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "verificar_condicoes",
+      "is": false
+     },
+     {
+      "decision": "planejar_retorno",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Condições verificadas",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "verificar_condicoes",
+      "is": true
+     },
+     {
+      "decision": "planejar_retorno",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Retorno registrado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_retorno",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Gestor orientado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "alinhar_gestor",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Reintegração sem acompanhamento",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "acompanhar",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Reintegração da pessoa",
+   "levels": {
+    "ok": "Pessoa bem reintegrada",
+    "warn": "Reintegração irregular",
+    "bad": "Reintegração fracassada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Privacidade",
+   "levels": {
+    "ok": "Privacidade preservada",
+    "warn": "Privacidade parcial",
+    "bad": "Privacidade violada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Preparo do gestor",
+   "levels": {
+    "ok": "Gestor preparado",
+    "warn": "Gestor parcialmente preparado",
+    "bad": "Gestor despreparado"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "rh"
+}

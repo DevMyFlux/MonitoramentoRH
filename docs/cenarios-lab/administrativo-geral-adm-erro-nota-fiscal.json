@@ -1,0 +1,513 @@
+{
+ "id": "adm-erro-nota-fiscal",
+ "title": "Erro no lançamento de nota fiscal",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Segunda, 16h. Você percebe que lançou uma nota fiscal com valor errado na semana passada.",
+   "Você é do administrativo e a nota já foi paga.",
+   "Ninguém percebeu o erro."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_gestor",
+   "label": "Avisar o gestor e o financeiro",
+   "procedure": "Avisar imediatamente o gestor e o financeiro sobre o erro. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "conferir_documento",
+   "label": "Conferir a nota",
+   "procedure": "Conferir o documento original e o valor correto. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "medir_impacto",
+   "label": "Medir o impacto",
+   "procedure": "Verificar o que foi pago, a diferença e se há outros lançamentos. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_correcao",
+   "label": "Registrar a correção",
+   "procedure": "Registrar o erro, o impacto e a correção. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "prevenir",
+   "label": "Prevenir novo erro",
+   "procedure": "Sugerir um controle para evitar novo erro. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_gestor",
+   "shot": "mesa",
+   "time": "16:05",
+   "narration": "16:05 · O erro é seu e ninguém notou.",
+   "prompt": "Qual é o primeiro passo?",
+   "alternatives": [
+    {
+     "text": "Corrijo em silêncio para ninguém perceber.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Correção em silêncio",
+      "text": "A diferença no pagamento fica sem explicação.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço uma conversa breve com o gestor para explicar e propor a correção.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Conversa pedida",
+      "text": "Você assume e propõe solução.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Espero para ver se alguém percebe.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Esperar ser descoberto",
+      "text": "O erro piora e você perde credibilidade.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso meu gestor e o financeiro sobre o erro e o que sei até agora.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Erro comunicado",
+      "text": "O problema é tratado cedo e com transparência.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "conferir_documento",
+   "shot": "documento",
+   "time": "16:20",
+   "narration": "16:20 · Você tem a nota original e o lançamento.",
+   "prompt": "Como confere?",
+   "alternatives": [
+    {
+     "text": "Confio no que me lembro da nota.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Memória",
+      "text": "Detalhes podem ter sido esquecidos.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço ao fornecedor uma cópia da nota para conferir.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Cópia pedida",
+      "text": "A conferência usa a fonte.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Comparo a nota original com o lançamento e confirmo o valor correto.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Nota conferida",
+      "text": "Você sabe exatamente o erro.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero que o valor está errado e ajusto de cabeça.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Ajuste de memória",
+      "text": "Você pode errar de novo.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "medir_impacto",
+   "shot": "tela",
+   "time": "16:45",
+   "narration": "16:45 · Pode haver outros lançamentos afetados.",
+   "prompt": "Como mede o impacto?",
+   "alternatives": [
+    {
+     "text": "Peço ao financeiro um relatório dos pagamentos ao fornecedor.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Relatório pedido",
+      "text": "Você vê o histórico completo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Confiro o valor pago, a diferença e outros lançamentos do mesmo período.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Impacto medido",
+      "text": "Você enxerga o tamanho real.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero só esse lançamento.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Visão limitada",
+      "text": "Outros erros ficam escondidos.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Estimo o impacto sem confirmar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Estimativa",
+      "text": "A correção pode ficar incompleta.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_correcao",
+   "shot": "tela",
+   "time": "17:10",
+   "narration": "17:10 · A correção precisa ser formal.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Registro o erro, o valor correto e a correção, com aprovação.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Correção registrada",
+      "text": "O ajuste tem rastro.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Ajusto o valor no sistema e pronto.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Ajuste sem registro",
+      "text": "Ninguém sabe o que mudou.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro a correção sem o motivo.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Correção sem motivo",
+      "text": "A auditoria questionará.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Anexo a nota original e uma explicação.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Anexos incluídos",
+      "text": "O registro é completo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "prevenir",
+   "shot": "reuniao",
+   "time": "Dia seguinte",
+   "narration": "Dia seguinte · Você quer evitar que se repita.",
+   "prompt": "Como previne?",
+   "alternatives": [
+    {
+     "text": "Prometo ter mais atenção e pronto.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Só atenção",
+      "text": "A mesma falha pode voltar.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Sugiro um alerta do sistema quando o valor difere da nota.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Alerta sugerido",
+      "text": "O sistema ajuda a evitar o erro.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero um caso isolado.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Caso isolado",
+      "text": "O processo continua vulnerável.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Proponho uma dupla conferência dos lançamentos acima de certo valor.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Dupla conferência",
+      "text": "O erro seria pego antes.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Erro escondido",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "conferir_documento",
+      "is": false
+     },
+     {
+      "decision": "medir_impacto",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Nota conferida",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "conferir_documento",
+      "is": true
+     },
+     {
+      "decision": "medir_impacto",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Correção registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_correcao",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Gestor e financeiro cientes",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_gestor",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Erro sem prevenção",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "prevenir",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Correção do erro",
+   "levels": {
+    "ok": "Erro corrigido",
+    "warn": "Erro parcialmente corrigido",
+    "bad": "Erro sem correção"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Integridade dos lançamentos",
+   "levels": {
+    "ok": "Lançamentos íntegros",
+    "warn": "Lançamentos parcialmente íntegros",
+    "bad": "Lançamentos comprometidos"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Confiança na pessoa",
+   "levels": {
+    "ok": "Confiança fortalecida",
+    "warn": "Confiança mantida",
+    "bad": "Confiança abalada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "administrativo-geral"
+}

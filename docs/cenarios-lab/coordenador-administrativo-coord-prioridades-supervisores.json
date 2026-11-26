@@ -1,0 +1,513 @@
+{
+ "id": "coord-prioridades-supervisores",
+ "title": "Supervisores em desacordo",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Quarta, 09h. Dois supervisores discordam sobre qual demanda é prioritária.",
+   "Você é coordenador e ambos esperam sua decisão.",
+   "A equipe percebe a tensão."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_diretoria",
+   "label": "Alinhar com a diretoria",
+   "procedure": "Alinhar com a diretoria quando a decisão afeta metas de outras áreas. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "ouvir_ambos",
+   "label": "Ouvir os dois",
+   "procedure": "Ouvir cada supervisor, com os dados e o que está em jogo. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "definir_criterio",
+   "label": "Definir o critério",
+   "procedure": "Basear a decisão em critério objetivo e conhecido. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_decisao",
+   "label": "Registrar a decisão",
+   "procedure": "Registrar a decisão e o motivo, e comunicar aos dois. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "verificar_clima",
+   "label": "Verificar o clima",
+   "procedure": "Acompanhar a relação dos dois e da equipe nos dias seguintes. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_diretoria",
+   "shot": "reuniao",
+   "time": "09:05",
+   "narration": "09:05 · A tensão ficou visível.",
+   "prompt": "Como você começa?",
+   "alternatives": [
+    {
+     "text": "Consulto a diretoria se a decisão afetar metas de outras áreas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Diretoria consultada",
+      "text": "Você decide com visão do conjunto.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Decido rapidamente para acabar com a tensão.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Decisão apressada",
+      "text": "Você pode errar e gerar ressentimento.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Aviso a diretoria que há um impasse e como pretendo resolver.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Impasse comunicado",
+      "text": "Há respaldo se a decisão for contestada.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo os dois resolverem entre si.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Delegação do impasse",
+      "text": "O conflito se arrasta e a equipe sofre.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "ouvir_ambos",
+   "shot": "mesa",
+   "time": "09:30",
+   "narration": "09:30 · Cada um tem boas razões.",
+   "prompt": "Como você ouve os dois?",
+   "alternatives": [
+    {
+     "text": "Ouço só o que tem mais tempo de casa.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Escuta seletiva",
+      "text": "O outro se sente desvalorizado.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Ouço os dois ao mesmo tempo e deixo discutirem.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Debate aberto",
+      "text": "A conversa vira disputa.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço aos dois uma página com argumentos e dados.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Argumentos por escrito",
+      "text": "Você analisa com calma e com base.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Ouço cada um separado, com dados e impacto, antes de reunir.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Escuta separada",
+      "text": "Cada um expõe sem pressão.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "definir_criterio",
+   "shot": "tela",
+   "time": "10:00",
+   "narration": "10:00 · Há metas e prazos de cada demanda.",
+   "prompt": "Como você decide?",
+   "alternatives": [
+    {
+     "text": "Apresento os critérios e mostro onde cada demanda se encaixa.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Critério explicado",
+      "text": "Os dois entendem o motivo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Divido o tempo igualmente entre as duas.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Divisão salomônica",
+      "text": "Nenhuma recebe o que precisa.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Uso um critério objetivo de impacto e prazo, que explico aos dois.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Critério objetivo",
+      "text": "A decisão é compreensível e defensável.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Escolho a que me parece mais interessante.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Decisão pessoal",
+      "text": "Parece favorecimento.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_decisao",
+   "shot": "tela",
+   "time": "10:30",
+   "narration": "10:30 · A decisão foi comunicada verbalmente.",
+   "prompt": "Como você registra?",
+   "alternatives": [
+    {
+     "text": "Peço aos dois que confirmem por escrito o que entenderam.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Confirmação pedida",
+      "text": "Cada um confirma o mesmo entendimento.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro a decisão e o motivo e envio aos dois.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Decisão registrada",
+      "text": "Há referência se o assunto voltar.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Não registro, está entendido.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem registro",
+      "text": "A decisão vira discussão novamente.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro apenas o resultado.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro mínimo",
+      "text": "Falta o motivo.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "verificar_clima",
+   "shot": "relogio",
+   "time": "Dias depois",
+   "narration": "Dias depois · A demanda escolhida está em andamento.",
+   "prompt": "Como você acompanha a relação?",
+   "alternatives": [
+    {
+     "text": "Converso com os dois e observo o clima da equipe.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Clima acompanhado",
+      "text": "Você percebe cedo se algo se agravar.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero encerrado e não volto ao assunto.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Assunto esquecido",
+      "text": "O ressentimento cresce em silêncio.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Marco uma conversa de retorno com cada um para ouvir como se sentem.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Retorno marcado",
+      "text": "Cada um se sente ouvido.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Só me preocupo se vier reclamação.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Atenção reativa",
+      "text": "Sinais de tensão são perdidos.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Impasse que se arrasta",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "ouvir_ambos",
+      "is": false
+     },
+     {
+      "decision": "definir_criterio",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Decisão com critério",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "ouvir_ambos",
+      "is": true
+     },
+     {
+      "decision": "definir_criterio",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Decisão registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_decisao",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Diretoria ciente",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_diretoria",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Relação sem acompanhamento",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "verificar_clima",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Clareza da decisão",
+   "levels": {
+    "ok": "Decisão clara e aceita",
+    "warn": "Decisão aceita em parte",
+    "bad": "Decisão contestada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Justiça no processo",
+   "levels": {
+    "ok": "Os dois ouvidos com justiça",
+    "warn": "Processo parcialmente justo",
+    "bad": "Processo injusto"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Clima entre supervisores",
+   "levels": {
+    "ok": "Clima preservado",
+    "warn": "Clima instável",
+    "bad": "Clima deteriorado"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "coordenador-administrativo"
+}

@@ -68,7 +68,8 @@ export class RevisaoDoLab {
         this.db.labResultado.count({
           where: {
             statusValidacao: "aguardando_validacao",
-            sessao: { status: "concluida", ...doParticipante }
+            // Resultado "interno" (de DEV, ADMIN e RH, que testam e validam) nunca entra na revisão nem nos números dos participantes.
+            sessao: { status: "concluida", origem: "participante", ...doParticipante }
           }
         }),
         this.db.labAlerta.count({ where: { status: "aberto", sessao: doParticipante } }),
@@ -91,7 +92,11 @@ export class RevisaoDoLab {
     const linhas = await this.db.labResultado.findMany({
       where: {
         ...(status === "todos" ? {} : { statusValidacao: status }),
-        sessao: { status: "concluida", participanteId: { in: participantes } }
+        sessao: {
+          status: "concluida",
+          origem: "participante",
+          participanteId: { in: participantes }
+        }
       },
       select: {
         id: true,
@@ -290,13 +295,15 @@ export class RevisaoDoLab {
       select: {
         sessao: {
           select: {
+            origem: true,
             participanteId: true,
             participante: { select: { employee: { select: { operation: true } } } }
           }
         }
       }
     });
-    if (!r) return null;
+    // O resultado interno não é validado nem revisado por ninguém: para o curador, ele não existe.
+    if (!r || r.sessao.origem !== "participante") return null;
     const op = r.sessao.participante.employee.operation;
     return {
       participanteId: r.sessao.participanteId,

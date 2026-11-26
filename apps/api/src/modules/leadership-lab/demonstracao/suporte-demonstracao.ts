@@ -87,8 +87,12 @@ export function responderComoSuporte(pedido: SuporteIaRequest): string {
 (Modo demonstração: texto pronto, sem IA real.)`;
   }
   const texto = `${pedido.mensagem} ${pedido.pagina.titulo}`.toLocaleLowerCase("pt-BR");
-  const achado = TOPICOS.find((t) => t.chaves.some((c) => texto.includes(c)));
-  return `${achado?.resposta ?? PADRAO}\n\n(Modo demonstração: resposta pronta, sem IA real.)`;
+  // Escopo "lab" (COMUM): só o tópico do Leadership Lab existe, nunca o das escalas ou dos cadastros.
+  const topicos =
+    pedido.escopo === "lab" ? TOPICOS.filter((t) => t.chaves.includes("lab")) : TOPICOS;
+  const achado = topicos.find((t) => t.chaves.some((c) => texto.includes(c)));
+  const padrao = pedido.escopo === "lab" ? (topicos[0]?.resposta ?? PADRAO) : PADRAO;
+  return `${achado?.resposta ?? padrao}\n\n(Modo demonstração: resposta pronta, sem IA real.)`;
 }
 
 // ---- Perguntas sobre dados (sem IA real): palavras-chave escolhem a consulta; a API a executa só se
@@ -100,6 +104,20 @@ const sem = (texto: string) =>
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("pt-BR");
 
+/** A pergunta é sobre o resultado da PRÓPRIA pessoa no Leadership Lab? */
+export function pedidoDosPropriosResultados(mensagem: string): boolean {
+  return /(meu|meus|minha|minhas)\b.*(resultado|aderencia|agilidade|desempenho|nivel|nota|perfil|teste)/.test(
+    sem(mensagem)
+  );
+}
+
+/** A pergunta é do Leadership Lab? (Demonstração; a IA real decide pelo guia do Lab.) */
+export function assuntoDoLab(mensagem: string): boolean {
+  return /(teste|lab\b|leadership|situacao|resultado|aderencia|agilidade|facilitador|aprendizagem|termo|contest|estilo|flexibilidade|alerta|competencia|nivel|tempo)/.test(
+    sem(mensagem)
+  );
+}
+
 /** Qual consulta a pergunta pede, ou nulo se não for uma pergunta sobre dados. */
 export function consultaPedidaPela(mensagem: string): ConsultaDoSuporte | null {
   const m = sem(mensagem);
@@ -108,7 +126,7 @@ export function consultaPedidaPela(mensagem: string): ConsultaDoSuporte | null {
     return "admissoes_recentes";
   }
   if (/(afastad|ferias|licenca|atestado)/.test(m)) return "afastamentos_atuais";
-  if (/(escalas? (recente|gerada|publicada)|ultimas? escalas?|cobertura)/.test(m)) {
+  if (/(escalas? (recente|gerada|publicada)|ultimas? escalas?)/.test(m)) {
     return "escalas_recentes";
   }
   if (/(quantos|quantas|total de|numero de).*(colaborador|funcionario|pessoas|equipe)/.test(m)) {
@@ -154,11 +172,15 @@ export function textoDosDados(consulta: ConsultaDoSuporte, r: Record<string, unk
       return `Afastamentos em curso (${String(r.total_de_afastamentos_em_curso)}):\n${lista(
         itens(r).map((e) => `${String(e.nome)} — ${String(e.motivo)}, até ${data(e.ate)}`)
       )}`;
+    case "meus_resultados":
+      return r.resultados_disponiveis === true
+        ? `Você fez ${String(r.testes_feitos)} teste(s) no Leadership Lab. Aderência média: ${String(r.aderencia_media)}; agilidade média: ${String(r.agilidade_media)}.`
+        : "Você ainda não tem resultados no Leadership Lab.";
     case "escalas_recentes":
       return `Escalas mais recentes:\n${lista(
         itens(r).map(
           (e) =>
-            `${String(e.operacao)} ${String(e.mes)} (versão ${String(e.versao)}): ${String(e.situacao).replace(/_/g, " ")}, cobertura ${String(e.cobertura_percentual ?? "—")}%`
+            `${String(e.operacao)} ${String(e.mes)} (versão ${String(e.versao)}): ${String(e.situacao).replace(/_/g, " ")}`
         )
       )}`;
   }

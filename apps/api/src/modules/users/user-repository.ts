@@ -1,4 +1,4 @@
-import type { AuthenticatedUser, Role, UserScope } from "@my-flux/types";
+import type { AuthenticatedUser, NivelGovernanca, Role, UserScope } from "@my-flux/types";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { HttpError } from "../../lib/http-error.js";
 import { hashToken } from "../auth/token-service.js";
@@ -10,6 +10,9 @@ const userSelect = {
   email: true,
   name: true,
   passwordHash: true,
+  cargo: true,
+  nivelGovernanca: true,
+  area: { select: { id: true, nome: true } },
   role: {
     select: {
       id: true,
@@ -31,16 +34,23 @@ const userSelect = {
 
 type UserWithAuth = Prisma.UserGetPayload<{ select: typeof userSelect }>;
 
-export type CreateUserData = {
+export type CadastroDaContaData = {
+  cargo: string;
+  nivelGovernanca: NivelGovernanca;
+  areaId: string;
+};
+
+export type CreateUserData = CadastroDaContaData & {
   email: string;
   name: string;
   passwordHash: string;
   role: Role;
   scopes: UserScope[];
   actorId: string;
+  actorRole: Role;
 };
 
-export type CreateInvitationData = {
+export type CreateInvitationData = CadastroDaContaData & {
   email: string;
   name: string;
   role: Role;
@@ -48,7 +58,22 @@ export type CreateInvitationData = {
   tokenHash: string;
   expiresAt: Date;
   actorId: string;
+  actorRole: Role;
 };
+
+type Db = PrismaClient | Prisma.TransactionClient;
+
+/**
+ * A área existe e está ativa? Senão, o mesmo erro de validação do zod, no campo `areaId`, para a
+ * tela mostrar a mensagem embaixo do campo certo.
+ */
+export async function assertAreaAtiva(db: Db, areaId: string): Promise<void> {
+  const area = await db.area.findUnique({ where: { id: areaId }, select: { ativa: true } });
+  if (!area?.ativa)
+    throw new HttpError(400, "VALIDATION_ERROR", "Payload invalido.", {
+      issues: [{ path: ["areaId"], message: "Escolha uma área ativa." }]
+    });
+}
 
 export class UserRepository {
   constructor(private readonly db: PrismaClient) {}
@@ -80,38 +105,49 @@ export class UserRepository {
       throw new HttpError(500, "ROLE_NOT_CONFIGURED", "Perfil nao configurado.");
     }
 
-    const created = await this.db.user.create({
-      data: {
-        email: data.email,
-        name: data.name,
-        passwordHash: data.passwordHash,
-        roleId: role.id,
-        createdBy: data.actorId,
-        scopes: {
-          create: data.scopes.map((scope) => ({
-            companyId: scope.companyId,
-            operationId: scope.operationId,
-            unitId: scope.unitId,
-            isGlobal: scope.isGlobal,
-            createdBy: data.actorId
-          }))
-        }
-      },
-      select: userSelect
-    });
-
-    await this.db.auditLog.create({
-      data: {
-        userId: data.actorId,
-        action: "CREATE",
-        entity: "User",
-        entityId: created.id,
-        after: {
-          email: created.email,
-          role: created.role.name
+    // A criação e a auditoria andam juntas: se uma falhar, nenhuma fica.
+    const created = await this.db.$transaction(async (tx) => {
+      await assertAreaAtiva(tx, data.areaId);
+      const user = await tx.user.create({
+        data: {
+          email: data.email,
+          name: data.name,
+          passwordHash: data.passwordHash,
+          roleId: role.id,
+          createdBy: data.actorId,
+          cargo: data.cargo,
+          nivelGovernanca: data.nivelGovernanca,
+          areaId: data.areaId,
+          scopes: {
+            create: data.scopes.map((scope) => ({
+              companyId: scope.companyId,
+              operationId: scope.operationId,
+              unitId: scope.unitId,
+              isGlobal: scope.isGlobal,
+              createdBy: data.actorId
+            }))
+          }
         },
-        origin: "api"
-      }
+        select: userSelect
+      });
+      await tx.auditLog.create({
+        data: {
+          userId: data.actorId,
+          userRole: data.actorRole,
+          action: "CREATE",
+          entity: "User",
+          entityId: user.id,
+          after: {
+            email: user.email,
+            role: user.role.name,
+            cargo: data.cargo,
+            nivelGovernanca: data.nivelGovernanca,
+            areaId: data.areaId
+          },
+          origin: "api"
+        }
+      });
+      return user;
     });
 
     return mapAuthenticatedUser(created);
@@ -126,37 +162,47 @@ export class UserRepository {
       throw new HttpError(500, "ROLE_NOT_CONFIGURED", "Perfil nao configurado.");
     }
 
-    const invitation = await this.db.userInvitation.create({
-      data: {
-        email: data.email,
-        name: data.name,
-        roleId: role.id,
-        scopes: normalizeScopes(data.scopes) as Prisma.InputJsonValue,
-        tokenHash: data.tokenHash,
-        expiresAt: data.expiresAt,
-        createdById: data.actorId
-      },
-      select: {
-        id: true,
-        email: true
-      }
-    });
-
-    await this.db.auditLog.create({
-      data: {
-        userId: data.actorId,
-        action: "USER_INVITE",
-        entity: "UserInvitation",
-        entityId: invitation.id,
-        after: {
+    return this.db.$transaction(async (tx) => {
+      await assertAreaAtiva(tx, data.areaId);
+      const invitation = await tx.userInvitation.create({
+        data: {
           email: data.email,
-          role: data.role
+          name: data.name,
+          roleId: role.id,
+          scopes: normalizeScopes(data.scopes) as Prisma.InputJsonValue,
+          tokenHash: data.tokenHash,
+          expiresAt: data.expiresAt,
+          createdById: data.actorId,
+          cargo: data.cargo,
+          nivelGovernanca: data.nivelGovernanca,
+          areaId: data.areaId
         },
-        origin: "api"
-      }
-    });
+        select: {
+          id: true,
+          email: true
+        }
+      });
 
-    return invitation;
+      await tx.auditLog.create({
+        data: {
+          userId: data.actorId,
+          userRole: data.actorRole,
+          action: "USER_INVITE",
+          entity: "UserInvitation",
+          entityId: invitation.id,
+          after: {
+            email: data.email,
+            role: data.role,
+            cargo: data.cargo,
+            nivelGovernanca: data.nivelGovernanca,
+            areaId: data.areaId
+          },
+          origin: "api"
+        }
+      });
+
+      return invitation;
+    });
   }
 
   async createRefreshSession(userId: string, refreshToken: string): Promise<void> {
@@ -194,7 +240,13 @@ export class UserRepository {
       }
     });
 
-    if (!session || !session.user.isActive || session.user.status !== "ACTIVE" || session.revokedAt || session.expiresAt <= new Date()) {
+    if (
+      !session ||
+      !session.user.isActive ||
+      session.user.status !== "ACTIVE" ||
+      session.revokedAt ||
+      session.expiresAt <= new Date()
+    ) {
       return null;
     }
 
@@ -260,6 +312,9 @@ export class UserRepository {
         acceptedAt: true,
         expiresAt: true,
         createdById: true,
+        cargo: true,
+        nivelGovernanca: true,
+        areaId: true,
         role: {
           select: {
             id: true,
@@ -283,6 +338,9 @@ export class UserRepository {
           passwordHash,
           roleId: invitation.role.id,
           createdBy: invitation.createdById,
+          cargo: invitation.cargo,
+          nivelGovernanca: invitation.nivelGovernanca,
+          areaId: invitation.areaId,
           scopes: {
             create: scopes.map((scope) => ({
               companyId: scope.companyId,
@@ -315,7 +373,10 @@ function mapUserWithPassword(user: UserWithAuth): AuthenticatedUser & { password
     name: user.name,
     passwordHash: user.passwordHash,
     role: user.role.name,
-    scopes: user.scopes
+    scopes: user.scopes,
+    cargo: user.cargo,
+    nivelGovernanca: user.nivelGovernanca,
+    area: user.area
   };
 }
 

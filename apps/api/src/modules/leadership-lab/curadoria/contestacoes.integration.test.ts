@@ -78,16 +78,19 @@ describe.skipIf(!integrationEnabled)("contestações", () => {
           expect(r.corpo.code).toBe("LAB_FORBIDDEN");
         }
       }
-      for (const papel of ["COMUM", "ADMIN"] as const) {
-        const pessoa =
-          papel === "COMUM" ? p.pessoa : await amb.cad.pessoa(papel, [{ isGlobal: true }]);
-        for (const r of [
-          await amb.http(pessoa, "GET", "/contestacoes"),
-          await decidir(pessoa, INEXISTENTE, { decisao: "aceita", nota: "x" })
-        ]) {
-          expect(r.status, papel).toBe(403);
-        }
+      // Quem decide: o RH (turmas dele), ADMIN e DEV. O participante nunca.
+      for (const r of [
+        await amb.http(p.pessoa, "GET", "/contestacoes"),
+        await decidir(p.pessoa, INEXISTENTE, { decisao: "aceita", nota: "x" }),
+        await amb.http(p.pessoa, "POST", `/contestacoes/${INEXISTENTE}/analise`)
+      ]) {
+        expect(r.status, "COMUM").toBe(403);
       }
+      const admin = await amb.cad.pessoa("ADMIN", [{ isGlobal: true }]);
+      expect((await amb.http(admin, "GET", "/contestacoes")).status).toBe(200);
+      expect((await decidir(admin, INEXISTENTE, { decisao: "aceita", nota: "x" })).status).toBe(
+        404
+      );
     });
 
     it("um usuário comum ainda sem vínculo recebe o aviso de vínculo, não 'não encontrado'", async () => {

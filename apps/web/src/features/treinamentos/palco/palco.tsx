@@ -104,7 +104,9 @@ export function Palco({
   const pacote = pacoteDeCena(idDoPacote);
   const camera = cameraDoPlano(pacote, plano);
   const grupo = useCamera(camera, reduzido, tremor);
-  const descricao = pacote.descrever({ ...pacote.estadoInicial, ...estado });
+  const estadoCompleto = { ...pacote.estadoInicial, ...estado };
+  const descricao = pacote.descrever(estadoCompleto);
+  const indicadores = pacote.indicadores?.(estadoCompleto) ?? [];
 
   return (
     <div
@@ -166,6 +168,27 @@ export function Palco({
           <span className="truncate rounded-md bg-black/40 px-2 py-1 font-display font-bold tracking-tight text-white">
             {hud.titulo}
           </span>
+          {indicadores.map((indicador) => (
+            <span
+              key={indicador.rotulo}
+              role="status"
+              aria-label={`${indicador.rotulo}: ${indicador.valor}`}
+              className="inline-flex items-center gap-1 rounded-md bg-black/40 px-2 py-1 text-white"
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "h-2 w-2 rounded-full",
+                  indicador.tom === "ok" && "bg-[rgb(var(--palco-brilho))]",
+                  indicador.tom === "atencao" && "bg-[rgb(var(--palco-atencao))]",
+                  indicador.tom === "risco" && "bg-[rgb(var(--palco-risco))]",
+                  indicador.tom === "neutro" && "bg-[rgb(var(--palco-neutro))]"
+                )}
+              />
+              <span className="hidden sm:inline">{indicador.rotulo}</span>
+              <span className="font-mono tabular-nums">{indicador.valor}</span>
+            </span>
+          ))}
           {estado.tvt ? (
             <span className="hidden items-center gap-1 rounded-md bg-black/40 px-2 py-1 text-[rgb(var(--palco-atencao))] sm:inline-flex">
               <Thermometer size={14} aria-hidden="true" />

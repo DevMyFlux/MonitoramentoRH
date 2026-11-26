@@ -1,0 +1,513 @@
+{
+ "id": "sup-pedido-fora-escopo",
+ "title": "Pedido fora do escopo",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Sexta, 11h. Um gestor de outra área pede um serviço que não está no escopo da equipe.",
+   "Você é o supervisor e o pedido chega como 'só um favorzinho'.",
+   "A equipe já está com a agenda cheia."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_coordenacao",
+   "label": "Informar a coordenação",
+   "procedure": "Informar a coordenação sobre pedidos fora do escopo antes de aceitar. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "entender_pedido",
+   "label": "Entender o pedido",
+   "procedure": "Perguntar o que é, por que e para quando antes de responder. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "avaliar_impacto",
+   "label": "Avaliar o impacto",
+   "procedure": "Avaliar o impacto na agenda e nos prazos já assumidos. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_demanda",
+   "label": "Registrar a demanda",
+   "procedure": "Registrar o pedido no sistema, mesmo que seja recusado ou adiado. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "responder_solicitante",
+   "label": "Responder ao solicitante",
+   "procedure": "Responder de forma clara, com prazo ou alternativa. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_coordenacao",
+   "shot": "mesa",
+   "time": "11:05",
+   "narration": "11:05 · O gestor insiste: 'é rápido, vocês dão conta'.",
+   "prompt": "Qual é o seu primeiro movimento?",
+   "alternatives": [
+    {
+     "text": "Digo que vou avaliar e retorno depois de falar com a coordenação.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Tempo para avaliar",
+      "text": "Você ganha tempo sem negar nem aceitar.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Digo 'depois eu vejo' e deixo passar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Resposta vaga",
+      "text": "O gestor entende como sim e cobra depois.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso a coordenação do pedido e peço orientação antes de responder.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Coordenação informada",
+      "text": "Você decide com respaldo.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aceito para não criar atrito com o outro gestor.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Aceite por pressão",
+      "text": "A equipe absorve uma carga que ninguém aprovou.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "entender_pedido",
+   "shot": "reuniao",
+   "time": "11:20",
+   "narration": "11:20 · O pedido ainda está pouco claro.",
+   "prompt": "Como você entende o que ele precisa?",
+   "alternatives": [
+    {
+     "text": "Peço que ele envie o pedido por escrito com os detalhes.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Pedido por escrito",
+      "text": "O combinado fica documentado.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Pergunto o que exatamente precisa, o motivo e a data limite.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Pedido esclarecido",
+      "text": "Você sabe o tamanho real do pedido.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aceito a descrição do jeito que veio.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Pedido vago",
+      "text": "O trabalho cresce no meio do caminho.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Imagino o que ele quer e começo a organizar.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Suposição",
+      "text": "A equipe faz o que ninguém pediu.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "avaliar_impacto",
+   "shot": "tela",
+   "time": "11:40",
+   "narration": "11:40 · Sua agenda está cheia até o fim do mês.",
+   "prompt": "Como você avalia o impacto?",
+   "alternatives": [
+    {
+     "text": "Verifico a agenda da equipe e o que seria adiado se aceitássemos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Impacto avaliado",
+      "text": "Você mostra o custo real do pedido.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero que 'sempre dá um jeito'.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Impacto ignorado",
+      "text": "Os prazos assumidos podem ser descumpridos.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço à equipe se alguém topa fazer fora do horário.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Compensação informal",
+      "text": "Você transfere o custo para o tempo livre.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Levanto horas necessárias e comparo com a capacidade da equipe.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Capacidade comparada",
+      "text": "A decisão fica com dados.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_demanda",
+   "shot": "tela",
+   "time": "12:00",
+   "narration": "12:00 · Mesmo que não seja aceito, o pedido existiu.",
+   "prompt": "Como você registra?",
+   "alternatives": [
+    {
+     "text": "Não registro, ficou entre nós.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem registro",
+      "text": "Pedidos repetidos viram problemas invisíveis.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Anoto em um bloco pessoal.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro pessoal",
+      "text": "Ninguém mais tem acesso.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Abro um chamado para o solicitante acompanhar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Chamado aberto",
+      "text": "O solicitante vê o andamento e a resposta.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro o pedido, o motivo e a decisão no sistema.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Demanda registrada",
+      "text": "Há histórico do que foi pedido e decidido.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "responder_solicitante",
+   "shot": "relogio",
+   "time": "12:30",
+   "narration": "12:30 · Você já tem a decisão.",
+   "prompt": "Como você responde ao solicitante?",
+   "alternatives": [
+    {
+     "text": "Respondo 'vamos ver' e não volto ao assunto.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Resposta evasiva",
+      "text": "A dúvida permanece e a cobrança volta.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Explico o que posso fazer agora e o que depende de aprovação.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Limites explicados",
+      "text": "O solicitante sabe o que esperar.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Respondo com clareza, indicando prazo possível ou alternativa.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Resposta clara",
+      "text": "O solicitante entende a situação e o próximo passo.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Ignoro a mensagem para evitar discussão.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Silêncio",
+      "text": "O gestor entende como descaso.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Demanda que desorganiza a equipe",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "entender_pedido",
+      "is": false
+     },
+     {
+      "decision": "avaliar_impacto",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Pedido bem entendido",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "entender_pedido",
+      "is": true
+     },
+     {
+      "decision": "avaliar_impacto",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Demanda registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_demanda",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Coordenação ciente",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_coordenacao",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Resposta sem clareza ou sem registro",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "responder_solicitante",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Carga da equipe",
+   "levels": {
+    "ok": "Carga preservada",
+    "warn": "Carga sob pressão",
+    "bad": "Carga excessiva"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Relação com a outra área",
+   "levels": {
+    "ok": "Relação preservada",
+    "warn": "Relação com ruídos",
+    "bad": "Relação prejudicada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Transparência da decisão",
+   "levels": {
+    "ok": "Decisão clara e registrada",
+    "warn": "Decisão parcialmente clara",
+    "bad": "Decisão opaca"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "supervisor-manutencao-adm"
+}

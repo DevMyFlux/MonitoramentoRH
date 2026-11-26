@@ -1,8 +1,12 @@
+export * from "./acessos.js";
+export * from "./conta.js";
 export * from "./holidays.js";
+export * from "./modules.js";
 export * from "./leadership-lab.js";
 export * from "./leadership-lab-acesso.js";
 export * from "./leadership-lab-api.js";
 export * from "./leadership-lab-cadastro-api.js";
+export * from "./leadership-lab-acompanhamento-api.js";
 export * from "./leadership-lab-curadoria-api.js";
 export * from "./leadership-lab-notificacoes-api.js";
 export * from "./leadership-lab-simulador-api.js";
@@ -15,6 +19,9 @@ export * from "./shift-pattern.js";
 export * from "./suporte-api.js";
 export * from "./treinamento-schema.js";
 export * from "./treinamento-motor.js";
+export * from "./treinamento-importacao.js";
+export * from "./leadership-lab-teste.js";
+export * from "./leadership-lab-teste-api.js";
 export * from "./treinamentos-acesso.js";
 export * from "./treinamentos-api.js";
 

@@ -7,7 +7,7 @@ import { chaves } from "../../features/leadership-lab/hooks";
 import { ApiError } from "../../features/my-flux/client";
 import { respostaDeResultado, respostaDeSituacao } from "../../test/dados-do-lab";
 import { renderizar } from "../../test/render";
-import { LabTestePage } from "./lab-teste-page";
+import { LabTesteLegadoPage } from "./lab-teste-page";
 
 vi.mock("../../features/leadership-lab/api", async (importOriginal) => {
   const original = await importOriginal<typeof import("../../features/leadership-lab/api")>();
@@ -26,7 +26,7 @@ vi.mock("../../features/leadership-lab/api", async (importOriginal) => {
 });
 
 const api = vi.mocked(labApi);
-const abrir = () => renderizar(<LabTestePage />, { rota: "/lab/teste" });
+const abrir = () => renderizar(<LabTesteLegadoPage />, { rota: "/lab/teste" });
 const erroDaApi = (status: number, code: string, message = "Mensagem.", details = {}) =>
   new ApiError(message, status, code, details);
 const escolher = async (usuario: ReturnType<typeof userEvent.setup>, letra: string) =>

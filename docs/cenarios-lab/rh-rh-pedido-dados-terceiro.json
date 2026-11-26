@@ -1,0 +1,513 @@
+{
+ "id": "rh-pedido-dados-terceiro",
+ "title": "Pedido de dados de colaborador",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Terça, 11h. Alguém de fora da empresa liga pedindo o endereço e o telefone de um colaborador.",
+   "Você é do RH e a pessoa diz que é 'urgente'.",
+   "Ela afirma ser um familiar."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_responsavel",
+   "label": "Acionar o responsável por dados",
+   "procedure": "Acionar o responsável por proteção de dados e a liderança do RH. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "verificar_identidade",
+   "label": "Verificar a identidade",
+   "procedure": "Confirmar quem está pedindo e por qual motivo. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "evitar_divulgacao",
+   "label": "Não divulgar dados",
+   "procedure": "Não passar dados pessoais por telefone a terceiros. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_pedido",
+   "label": "Registrar o pedido",
+   "procedure": "Registrar o pedido e como foi tratado. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "informar_colaborador",
+   "label": "Informar o colaborador",
+   "procedure": "Informar o colaborador sobre o contato, quando for adequado. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_responsavel",
+   "shot": "mesa",
+   "time": "11:05",
+   "narration": "11:05 · A pessoa insiste que é urgente.",
+   "prompt": "Qual é o primeiro passo?",
+   "alternatives": [
+    {
+     "text": "Aciono o responsável por proteção de dados e a liderança do RH.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Responsável acionado",
+      "text": "O caso segue as regras de privacidade.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Passo os dados para ajudar, parece genuíno.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Dados passados",
+      "text": "Você expõe uma pessoa sem autorização.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Digo que vou consultar o procedimento e retorno em seguida.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Procedimento consultado",
+      "text": "Você ganha tempo sem negar nem ceder.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Digo que ligue depois e desligo.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Atendimento apressado",
+      "text": "A pessoa pode procurar outra pessoa e conseguir os dados.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "verificar_identidade",
+   "shot": "mesa",
+   "time": "11:15",
+   "narration": "11:15 · Você não sabe quem é a pessoa.",
+   "prompt": "Como verifica a identidade?",
+   "alternatives": [
+    {
+     "text": "Acredito na pessoa porque o tom parece sincero.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Confiança no tom",
+      "text": "Golpistas costumam parecer sinceros.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço só o nome e o parentesco.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Verificação mínima",
+      "text": "Qualquer pessoa pode informar isso.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Digo que o RH contata o colaborador e pede que ele retorne.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Contato via colaborador",
+      "text": "O colaborador decide se quer falar.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Peço nome, relação e motivo e verifico se há como confirmar por canal seguro.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Identidade verificada",
+      "text": "Você evita fraudes e exposições.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "evitar_divulgacao",
+   "shot": "documento",
+   "time": "11:30",
+   "narration": "11:30 · O pedido envolve dados pessoais.",
+   "prompt": "O que faz com os dados?",
+   "alternatives": [
+    {
+     "text": "Passo os dados de outro setor que não conheço.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Encaminhamento errado",
+      "text": "Você espalha o problema.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Ofereço registrar o recado para o colaborador.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Recado oferecido",
+      "text": "A pessoa é atendida sem expor dados.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Não divulgo os dados e explico que só o colaborador pode autorizar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Dados protegidos",
+      "text": "A privacidade é preservada.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Passo só o telefone, o endereço não.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Divulgação parcial",
+      "text": "Qualquer dado pessoal exige cuidado.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_pedido",
+   "shot": "tela",
+   "time": "11:45",
+   "narration": "11:45 · O pedido foi tratado.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Registro e comunico ao responsável por proteção de dados.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Responsável informado",
+      "text": "A empresa pode avaliar risco.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro quem pediu, o que pediu e como foi tratado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Pedido registrado",
+      "text": "Há histórico para auditoria.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Não registro, foi só uma ligação.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem registro",
+      "text": "Se o caso voltar, ninguém sabe o que ocorreu.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro só 'ligação de familiar'.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro vago",
+      "text": "Faltam dados para investigar.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "informar_colaborador",
+   "shot": "relogio",
+   "time": "12:00",
+   "narration": "12:00 · O colaborador está em campo.",
+   "prompt": "Como informa a pessoa envolvida?",
+   "alternatives": [
+    {
+     "text": "Aviso o colaborador do contato, de forma discreta, quando for adequado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Colaborador informado",
+      "text": "Ele decide como agir.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Não aviso para não preocupar.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem aviso",
+      "text": "Ele não sabe que alguém o procurou.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço que o colaborador retorne ao RH e explico o ocorrido.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Retorno pedido",
+      "text": "Ele é consultado sobre o contato.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aviso só se a pessoa ligar de novo.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Aviso condicional",
+      "text": "Ele só sabe quando já é tarde.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Exposição de dados",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "verificar_identidade",
+      "is": false
+     },
+     {
+      "decision": "evitar_divulgacao",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Identidade verificada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "verificar_identidade",
+      "is": true
+     },
+     {
+      "decision": "evitar_divulgacao",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Pedido registrado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_pedido",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Responsável acionado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_responsavel",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Colaborador sem aviso",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "informar_colaborador",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Privacidade do colaborador",
+   "levels": {
+    "ok": "Privacidade preservada",
+    "warn": "Privacidade em risco",
+    "bad": "Privacidade violada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Conformidade com proteção de dados",
+   "levels": {
+    "ok": "Em conformidade",
+    "warn": "Conformidade parcial",
+    "bad": "Em desconformidade"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Confiança dos colaboradores",
+   "levels": {
+    "ok": "Confiança preservada",
+    "warn": "Confiança abalada",
+    "bad": "Confiança perdida"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "rh"
+}

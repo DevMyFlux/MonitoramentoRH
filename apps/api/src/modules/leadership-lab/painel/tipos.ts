@@ -12,6 +12,7 @@ import type {
   LabAlertaCor,
   LabEstilo,
   LabFlexibilidade,
+  LabModoDeTeste,
   LabMoldeNivel,
   LabSkillTipo,
   LabStatusValidacao
@@ -38,7 +39,9 @@ export type MotivoDeIndisponibilidade =
   | "cargo-nao-informado"
   | "molde-nao-mapeado"
   | "molde-inativo"
-  | "limite-diario";
+  | "limite-diario"
+  /** Só no teste por cenários: falta cargo, nível de governança ou área na conta. */
+  | "cadastro-incompleto";
 
 export type AcaoDoPainel =
   | { tipo: "iniciar"; molde: MoldeDoPainel }
@@ -172,6 +175,8 @@ export type SugestoesDoPainel = {
 // ---------------------------------------------------------------------------
 
 export type PainelDoParticipante = {
+  /** O modo do teste neste ambiente (a tela escolhe entre a trilha de cenários e o legado). */
+  modoDoTeste: LabModoDeTeste;
   /** Modo demonstração: a IA e o conteúdo são de exemplo. A tela avisa. */
   demonstracao: boolean;
   termo: { versaoAtual: string; aceito: boolean; aceitoEm: Date | null };

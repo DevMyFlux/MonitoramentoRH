@@ -1,0 +1,513 @@
+{
+ "id": "coord-equipe-reduzida",
+ "title": "Equipe reduzida por férias",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Quinta, 10h. Três pessoas da equipe entram de férias no mesmo mês.",
+   "Você é coordenador e precisa manter as entregas.",
+   "Há demandas importantes marcadas para o período."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_areas",
+   "label": "Avisar as áreas atendidas",
+   "procedure": "Avisar as áreas sobre a capacidade reduzida e o que muda no atendimento. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "mapear_capacidade",
+   "label": "Mapear a capacidade",
+   "procedure": "Levantar quantas horas e pessoas estarão disponíveis no período. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "repriorizar",
+   "label": "Reprogramar prioridades",
+   "procedure": "Reordenar as entregas conforme a capacidade real. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_plano",
+   "label": "Registrar o plano de cobertura",
+   "procedure": "Registrar quem cobre o quê durante as férias. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "verificar_carga",
+   "label": "Verificar a carga de cada um",
+   "procedure": "Conferir se ninguém ficou sobrecarregado e ajustar. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_areas",
+   "shot": "reuniao",
+   "time": "10:05",
+   "narration": "10:05 · As áreas atendidas ainda não sabem que haverá menos gente.",
+   "prompt": "Como você comunica a situação?",
+   "alternatives": [
+    {
+     "text": "Envio um comunicado com datas e contatos de cobertura.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Comunicado claro",
+      "text": "As áreas sabem a quem recorrer.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aviso só quando alguém cobra.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Aviso reativo",
+      "text": "As áreas descobrem tarde.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso as áreas da capacidade reduzida e do que pode mudar nos prazos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Áreas informadas",
+      "text": "Todos ajustam as expectativas.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Não aviso, para não gerar preocupação.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Silêncio",
+      "text": "Os prazos falham sem ninguém esperar.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "mapear_capacidade",
+   "shot": "tela",
+   "time": "10:30",
+   "narration": "10:30 · Você precisa saber quanto sobra de capacidade.",
+   "prompt": "Como você mapeia?",
+   "alternatives": [
+    {
+     "text": "Monto um quadro simples de quem está presente em cada semana.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Quadro de presença",
+      "text": "A visão da capacidade fica clara.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Levanto horas e pessoas disponíveis semana a semana e comparo com as demandas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Capacidade mapeada",
+      "text": "Você vê o tamanho do desafio.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Imagino que 'dá para segurar'.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Capacidade presumida",
+      "text": "O planejamento se apoia em um palpite.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Pergunto à equipe se acha que dá.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Opinião geral",
+      "text": "Cada um responde com um critério diferente.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "repriorizar",
+   "shot": "tela",
+   "time": "11:00",
+   "narration": "11:00 · Há mais demandas do que capacidade.",
+   "prompt": "Como você prioriza?",
+   "alternatives": [
+    {
+     "text": "Ordeno as entregas por impacto e prazo e adio o que for possível.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Entregas repriorizadas",
+      "text": "A equipe foca no que realmente importa.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Mantenho tudo como estava e esperamos o melhor.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Nenhum ajuste",
+      "text": "A equipe fica sobrecarregada e falha em tudo.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Negocio com as áreas o que pode esperar e o que é inegociável.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Negociação feita",
+      "text": "As áreas participam e entendem os critérios.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Priorizo o que quem cobra mais pede.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Prioridade por pressão",
+      "text": "O mais barulhento passa na frente.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_plano",
+   "shot": "documento",
+   "time": "11:30",
+   "narration": "11:30 · As pessoas vão cobrir umas às outras.",
+   "prompt": "Como você registra a cobertura?",
+   "alternatives": [
+    {
+     "text": "Combino em conversa e confio em que todos lembrem.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Cobertura de memória",
+      "text": "Esquecimentos viram buracos.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Deixo cada um se virar sozinho.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem cobertura",
+      "text": "Tarefas críticas ficam sem dono.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Envio uma planilha de cobertura e peço confirmação a cada um.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Confirmação pedida",
+      "text": "Cada pessoa confirma o que entendeu.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro quem cobre cada tarefa e como acionar em cada caso.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Cobertura registrada",
+      "text": "Todos sabem quem faz o quê.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "verificar_carga",
+   "shot": "relogio",
+   "time": "Meio do mês",
+   "narration": "Meio do mês · A rotina está apertada.",
+   "prompt": "Como você acompanha a carga da equipe?",
+   "alternatives": [
+    {
+     "text": "Olho semanalmente o que cada um entregou e o que falta.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Entregas acompanhadas",
+      "text": "Desbalanceamentos aparecem cedo.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Só ajusto se alguém pedir.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Ajuste reativo",
+      "text": "Quem não pede fica sobrecarregado.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Converso com cada pessoa e redistribuo o que estiver pesado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Carga ajustada",
+      "text": "A equipe não adoece nem queima.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Assumo que todos estão bem se não reclamam.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Silêncio como sinal",
+      "text": "Sobrecargas só aparecem na crise.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Entregas desorganizadas",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "mapear_capacidade",
+      "is": false
+     },
+     {
+      "decision": "repriorizar",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Capacidade conhecida",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "mapear_capacidade",
+      "is": true
+     },
+     {
+      "decision": "repriorizar",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Cobertura registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_plano",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Áreas informadas",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_areas",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Carga sem acompanhamento",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "verificar_carga",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Entregas no período",
+   "levels": {
+    "ok": "Entregas mantidas",
+    "warn": "Algumas entregas atrasam",
+    "bad": "Entregas comprometidas"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Saúde da equipe",
+   "levels": {
+    "ok": "Carga equilibrada",
+    "warn": "Carga irregular",
+    "bad": "Equipe sobrecarregada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Relação com as áreas",
+   "levels": {
+    "ok": "Áreas satisfeitas",
+    "warn": "Áreas parcialmente satisfeitas",
+    "bad": "Áreas insatisfeitas"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "coordenador-administrativo"
+}

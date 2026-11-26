@@ -1,0 +1,513 @@
+{
+ "id": "adm-documento-impressora",
+ "title": "Documento sigiloso na impressora",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Quinta, 17h. Você encontra na impressora um documento com dados de colaboradores.",
+   "Você é do administrativo e já é fim do dia.",
+   "Ninguém está por perto."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_responsavel",
+   "label": "Avisar o responsável",
+   "procedure": "Avisar o responsável pelo documento ou o gestor da área. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "proteger_documento",
+   "label": "Proteger o documento",
+   "procedure": "Guardar o documento em local seguro até a devolução. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "nao_ler",
+   "label": "Não ler nem copiar",
+   "procedure": "Não ler além do necessário nem fazer cópias. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_ocorrencia",
+   "label": "Registrar a ocorrência",
+   "procedure": "Registrar o que foi encontrado, quando e onde. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "orientar_equipe",
+   "label": "Orientar a equipe",
+   "procedure": "Orientar a equipe sobre impressão de documentos sigilosos. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_responsavel",
+   "shot": "mesa",
+   "time": "17:05",
+   "narration": "17:05 · O documento tem nomes e dados pessoais.",
+   "prompt": "Qual é o primeiro passo?",
+   "alternatives": [
+    {
+     "text": "Jogo no lixo comum.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Lixo comum",
+      "text": "Os dados pessoais ficam expostos.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Procuro o responsável pelo documento e aviso o gestor da área.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Responsável procurado",
+      "text": "O documento volta a quem pertence.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo na impressora e vou embora.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Documento abandonado",
+      "text": "Qualquer pessoa pode ler.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Pergunto à equipe de RH de quem é o documento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "RH consultado",
+      "text": "O dono é identificado rapidamente.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "proteger_documento",
+   "shot": "mesa",
+   "time": "17:10",
+   "narration": "17:10 · O documento pode ficar exposto durante a noite.",
+   "prompt": "Como protege?",
+   "alternatives": [
+    {
+     "text": "Guardo em local fechado e sob minha responsabilidade até devolver.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Documento guardado",
+      "text": "O risco de exposição diminui.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo em cima da minha mesa.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Mesa aberta",
+      "text": "Qualquer um pode ver.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Coloco em uma gaveta aberta.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Gaveta aberta",
+      "text": "A proteção é insuficiente.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Entrego pessoalmente ao responsável ou ao gestor da área.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Entrega pessoal",
+      "text": "O documento volta a quem o controla.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "nao_ler",
+   "shot": "documento",
+   "time": "17:15",
+   "narration": "17:15 · Você fica curioso(a) sobre o conteúdo.",
+   "prompt": "O que faz com o conteúdo?",
+   "alternatives": [
+    {
+     "text": "Leio tudo para saber do que se trata.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Leitura indevida",
+      "text": "Você acessa dados sem necessidade.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Tiro uma foto para mostrar ao gestor.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Foto do documento",
+      "text": "Você cria nova cópia dos dados.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Olho só o cabeçalho para identificar o dono.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Olhar mínimo",
+      "text": "Você faz o estritamente necessário.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Não leio além do necessário e não faço cópias.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Conteúdo respeitado",
+      "text": "A privacidade é preservada.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_ocorrencia",
+   "shot": "tela",
+   "time": "17:25",
+   "narration": "17:25 · O ocorrido precisa de registro.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Registro só 'documento encontrado'.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro vago",
+      "text": "Faltam detalhes importantes.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Envio um aviso formal ao gestor com o relato.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Relato formal",
+      "text": "A ocorrência chega a quem decide.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro o que encontrei, onde, quando e como tratei.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Ocorrência registrada",
+      "text": "A empresa pode melhorar o processo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero resolvido e não registro.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem registro",
+      "text": "O mesmo erro pode se repetir.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "orientar_equipe",
+   "shot": "reuniao",
+   "time": "Dia seguinte",
+   "narration": "Dia seguinte · O assunto pode se repetir.",
+   "prompt": "Como orienta a equipe?",
+   "alternatives": [
+    {
+     "text": "Mando uma mensagem genérica sobre 'cuidado com os documentos'.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Aviso genérico",
+      "text": "Ninguém sabe o que fazer de diferente.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Oriento a equipe a usar impressão com senha e recolher os documentos na hora.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Equipe orientada",
+      "text": "O risco de repetição cai.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Não comento, para não expor quem errou.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Silêncio",
+      "text": "O erro se repete.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Proponho ao gestor ativar a impressão com liberação por crachá.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Melhoria proposta",
+      "text": "O processo fica mais seguro.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Dados expostos",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "proteger_documento",
+      "is": false
+     },
+     {
+      "decision": "nao_ler",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Documento protegido",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "proteger_documento",
+      "is": true
+     },
+     {
+      "decision": "nao_ler",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Ocorrência registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_ocorrencia",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Responsável avisado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_responsavel",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Equipe sem orientação",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "orientar_equipe",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Proteção dos dados",
+   "levels": {
+    "ok": "Dados protegidos",
+    "warn": "Dados parcialmente protegidos",
+    "bad": "Dados expostos"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Cultura de privacidade",
+   "levels": {
+    "ok": "Cultura fortalecida",
+    "warn": "Cultura em construção",
+    "bad": "Cultura frágil"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Prevenção",
+   "levels": {
+    "ok": "Risco de repetição baixo",
+    "warn": "Risco médio",
+    "bad": "Risco alto"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "administrativo-geral"
+}

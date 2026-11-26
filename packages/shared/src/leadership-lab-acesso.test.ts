@@ -42,6 +42,10 @@ type NomeDoAtor = keyof typeof atores;
 const participantes: NomeDoAtor[] = ["comum", "comumGestao", "comumEspecialista", "dev"];
 const curadores: NomeDoAtor[] = ["rh", "rhGestao", "dev"];
 const administradores: NomeDoAtor[] = ["admin", "adminGestao", "dev"];
+// Contestações e acompanhamento: o RH (das turmas dele) e ADMIN/DEV (de todos).
+const acompanham: NomeDoAtor[] = [...curadores, ...administradores];
+// O teste por cenários: todos os perfis fazem o próprio (com vínculo), cada um só o seu.
+const fazemTeste: NomeDoAtor[] = participantes; // quem TEM vínculo (RH e ADMIN sem vínculo: veja abaixo)
 const gestores: NomeDoAtor[] = ["comumGestao", "rhGestao", "adminGestao", "dev"];
 
 /**
@@ -61,6 +65,9 @@ const podem: Record<LabAcao, NomeDoAtor[]> = {
   "sessao:ler-atual": participantes,
   "sessao:responder": participantes,
   "sessao:tempo-esgotado": participantes,
+  "teste:iniciar": fazemTeste,
+  "teste:ler": fazemTeste,
+  "teste:responder": fazemTeste,
   "contestacao:criar": participantes,
   "contestacao:ler-proprias": participantes,
   "simulador:ler": participantes,
@@ -73,8 +80,11 @@ const podem: Record<LabAcao, NomeDoAtor[]> = {
   "alerta:tratar": curadores,
   "contribuicao:listar": curadores,
   "contribuicao:decidir": curadores,
-  "contestacao:listar": curadores,
-  "contestacao:decidir": curadores,
+  "contestacao:listar": acompanham,
+  "contestacao:analisar": acompanham,
+  "contestacao:decidir": acompanham,
+  "acompanhamento:ler": acompanham,
+  "acompanhamento:exportar": acompanham,
   "turma:listar": curadores,
   "turma:criar": curadores,
   "turma:atualizar": curadores,
@@ -116,20 +126,22 @@ describe("matriz de permissões do Leadership Lab", () => {
 describe("papéis", () => {
   it("cada perfil e cada permissão dão o seu papel, e só ele", () => {
     const papeis = (a: LabAtor) => [...papeisLab(a)].sort();
-    expect(papeis(atores.comum)).toEqual(["participante"]);
-    expect(papeis(atores.rh)).toEqual(["curador"]);
-    expect(papeis(atores.admin)).toEqual(["administrador"]);
+    // Todo perfil tem também o papel "testador" (o próprio teste por cenários, só dados próprios).
+    expect(papeis(atores.comum)).toEqual(["participante", "testador"]);
+    expect(papeis(atores.rh)).toEqual(["curador", "testador"]);
+    expect(papeis(atores.admin)).toEqual(["administrador", "testador"]);
     // O perfil DEV é a exceção deliberada: acumula todos os papéis.
     expect(papeis(atores.dev)).toEqual([
       "administrador",
       "curador",
       "especialista",
       "gestao",
-      "participante"
+      "participante",
+      "testador"
     ]);
-    expect(papeis(atores.comumGestao)).toEqual(["gestao", "participante"]);
-    expect(papeis(atores.rhGestao)).toEqual(["curador", "gestao"]);
-    expect(papeis(atores.comumEspecialista)).toEqual(["especialista", "participante"]);
+    expect(papeis(atores.comumGestao)).toEqual(["gestao", "participante", "testador"]);
+    expect(papeis(atores.rhGestao)).toEqual(["curador", "gestao", "testador"]);
+    expect(papeis(atores.comumEspecialista)).toEqual(["especialista", "participante", "testador"]);
   });
 
   it("não há herança de hierarquia: ADMIN não é curador nem participante (só o DEV, por exceção)", () => {
@@ -179,8 +191,16 @@ describe("estrutura da matriz (vale para qualquer ação que se acrescente)", ()
     for (const c of celulas.filter((x) => x.papel === "gestao")) {
       expect(c.escopo, c.acao).toBe("agregados");
     }
+    // A exceção deliberada (Prompt 2, Fase 8): ADMIN e DEV decidem contestações e acompanham todos.
+    const doAcompanhamento = new Set<string>([
+      "contestacao:listar",
+      "contestacao:analisar",
+      "contestacao:decidir",
+      "acompanhamento:ler",
+      "acompanhamento:exportar"
+    ]);
     for (const c of celulas.filter((x) => x.papel === "administrador")) {
-      expect(c.escopo, c.acao).toBe("configuracao");
+      expect(c.escopo, c.acao).toBe(doAcompanhamento.has(c.acao) ? "turma" : "configuracao");
     }
   });
 
@@ -189,7 +209,13 @@ describe("estrutura da matriz (vale para qualquer ação que se acrescente)", ()
       (c) => c.escopo === "proprios" || c.escopo === "turma" || c.escopo === "escopo-do-rh"
     );
     for (const c of comDadoDePessoa) {
-      expect(["participante", "curador"], `${c.acao} -> ${c.papel}`).toContain(c.papel);
+      // O administrador só chega a dado de pessoa nas ações do acompanhamento e das contestações.
+      const papeisAdmitidos =
+        c.papel === "administrador" &&
+        (c.acao.startsWith("contestacao:") || c.acao.startsWith("acompanhamento:"))
+          ? ["administrador"]
+          : ["participante", "curador", "testador"];
+      expect(papeisAdmitidos, `${c.acao} -> ${c.papel}`).toContain(c.papel);
     }
   });
 
@@ -403,5 +429,58 @@ describe("escopo dos dados: o curador só cadastra colaboradores das operações
         dentroDoEscopoDoRh: true
       })
     ).toEqual({ permitido: false, motivo: "fora-da-turma" });
+  });
+});
+
+describe("o teste por cenários: todo perfil faz o próprio, com vínculo", () => {
+  const acoes = ["teste:iniciar", "teste:ler", "teste:responder"] as const;
+  const comVinculo = (role: LabAtor["role"]) => ator(role, { participanteId: "participante-1" });
+  const semVinculo = (role: LabAtor["role"]) => ator(role, { participanteId: null });
+
+  it.each(["COMUM", "RH", "ADMIN", "DEV"] as const)(
+    "%s com vínculo faz o próprio teste",
+    (role) => {
+      for (const acao of acoes) {
+        expect(podeExecutar(comVinculo(role), acao), `${role} ${acao}`).toBe(true);
+        expect(
+          avaliarAcesso(comVinculo(role), acao, { participanteId: "participante-1" }).permitido
+        ).toBe(true);
+      }
+    }
+  );
+
+  it.each(["COMUM", "RH", "ADMIN", "DEV"] as const)("%s sem vínculo é barrado (403)", (role) => {
+    for (const acao of acoes)
+      expect(avaliarAcesso(semVinculo(role), acao)).toEqual({
+        permitido: false,
+        motivo: "sem-vinculo"
+      });
+  });
+
+  it.each(["COMUM", "RH", "ADMIN", "DEV"] as const)(
+    "%s não alcança o teste de outra pessoa (404)",
+    (role) => {
+      for (const acao of acoes)
+        expect(avaliarAcesso(comVinculo(role), acao, { participanteId: "participante-2" })).toEqual(
+          {
+            permitido: false,
+            motivo: "alheio"
+          }
+        );
+    }
+  );
+
+  it("o papel testador só tem as ações do teste e só dados próprios", () => {
+    const doTestador = labAcoes.filter((a) => "testador" in labMatrizAcesso[a]);
+    expect(doTestador.sort()).toEqual([...acoes].sort());
+    for (const acao of doTestador)
+      expect(Object.keys(labMatrizAcesso[acao]), acao).toEqual(["testador"]);
+  });
+
+  it("ter o teste não dá ao RH nem ao ADMIN acesso a resultado de outra pessoa", () => {
+    expect(
+      podeExecutar(comVinculo("ADMIN"), "resultado:ler", { participanteId: "participante-2" })
+    ).toBe(false);
+    expect(podeExecutar(comVinculo("ADMIN"), "resultado:ler")).toBe(false);
   });
 });

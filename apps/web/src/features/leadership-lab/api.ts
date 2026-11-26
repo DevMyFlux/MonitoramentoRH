@@ -14,9 +14,16 @@ import {
   labEstadoDoTesteSchema,
   labPainelSchema,
   labRespostaDoTesteSchema,
+  labConclusaoDoCenarioSchema,
+  labCenarioEmAndamentoSchema,
+  labResultadoDosCenariosSchema,
   labResultadoSchema,
-  labTemasSimuladosSchema
+  labRespostaDeCenarioSchema,
+  labTemasSimuladosSchema,
+  labTesteProximaSchema,
+  type LabTesteIniciarEntrada
 } from "@my-flux/shared";
+import { z } from "zod";
 import type { ZodType } from "zod";
 import { request } from "../my-flux/client";
 
@@ -89,6 +96,34 @@ export const labApi = {
   /** Espaço de aprendizagem: dúvidas ao facilitador fora do teste. Nada é guardado. */
   aprender: (entrada: LabConversaEntrada) =>
     chamar(labConversaRespostaSchema, "POST", "/aprendizagem/conversa", entrada),
+  /**
+   * O resultado de um teste concluído: o de situações (legado) ou o de cenários. A tela distingue pelo
+   * campo `modo`, que só o de cenários tem.
+   */
   resultado: (sessaoId: string) =>
-    chamar(labResultadoSchema, "GET", `${daSessao(sessaoId)}/resultado`)
+    chamar(
+      z.union([labResultadoDosCenariosSchema, labResultadoSchema]),
+      "GET",
+      `${daSessao(sessaoId)}/resultado`
+    )
+};
+
+const doTeste = (id: string) => `/teste/${encodeURIComponent(id)}`;
+
+/** O teste por cenários (a trilha): sem IA no caminho do participante. */
+export const testeApi = {
+  /** Só lê: a trilha em andamento (para retomar) ou o que iniciar faria. Nunca começa um teste. */
+  proxima: () => chamar(labTesteProximaSchema, "GET", "/teste/proxima"),
+  /** O clique em "Começar": cria a trilha (ou retoma a que já existe). */
+  iniciar: (entrada: LabTesteIniciarEntrada = {}) =>
+    chamar(labCenarioEmAndamentoSchema, "POST", "/teste", entrada),
+  /** Uma pergunta do cenário: volta só a reação da alternativa escolhida. */
+  responder: (tentativaId: string, perguntaId: string, alternativa: number) =>
+    chamar(labRespostaDeCenarioSchema, "POST", `${doTeste(tentativaId)}/respostas`, {
+      perguntaId,
+      alternativa
+    }),
+  /** Conclui o cenário: o servidor calcula o desfecho e abre o próximo (ou fecha o teste). */
+  concluir: (tentativaId: string) =>
+    chamar(labConclusaoDoCenarioSchema, "POST", `${doTeste(tentativaId)}/concluir`)
 };

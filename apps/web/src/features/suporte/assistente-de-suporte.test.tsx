@@ -42,7 +42,6 @@ describe("contexto da página", () => {
     expect(assistenteVisivelEm("/treinamentos/abc/jogar")).toBe(false);
     expect(assistenteVisivelEm("/treinamentos/resultado/xyz")).toBe(false);
     expect(assistenteVisivelEm("/treinamentos")).toBe(true);
-    expect(assistenteVisivelEm("/treinamentos/rh")).toBe(true);
   });
 });
 

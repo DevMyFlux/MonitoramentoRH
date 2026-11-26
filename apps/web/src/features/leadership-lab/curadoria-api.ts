@@ -50,6 +50,8 @@ export const labCuradoriaApi = {
 
   contestacoes: (status: string) =>
     chamar(z.array(labContestacaoDoCuradorSchema), "GET", `/contestacoes${comStatus(status)}`),
+  analisarContestacao: (id: string) =>
+    chamar(labContestacaoDoCuradorSchema, "POST", `/contestacoes/${comId(id)}/analise`),
   decidirContestacao: (id: string, decisao: "aceita" | "rejeitada", nota: string) =>
     chamar(labContestacaoDoCuradorSchema, "POST", `/contestacoes/${comId(id)}/decisao`, {
       decisao,

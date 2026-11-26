@@ -10,6 +10,7 @@
 import {
   type LabAlertaCor,
   type LabEstilo,
+  type LabModoDeTeste,
   type LabMoldeNivel,
   type LabStatusValidacao,
   LAB_TESTES_MINIMOS_TENDENCIA,
@@ -90,7 +91,13 @@ export type LinhaDoUltimoResultado = {
 export type DadosDoPainel = {
   demonstracao: boolean;
   termo: { versaoAtual: string; aceitoEm: Date | null };
-  inicio: { estado: EstadoDoInicio; situacaoAtual: number | null };
+  inicio: {
+    estado: EstadoDoInicio | { tipo: "cadastro-incompleto" };
+    situacaoAtual: number | null;
+    /** No teste por cenários: quantos cenários tem a trilha em andamento (no legado, vem do molde). */
+    totalSituacoes?: number | null;
+  };
+  modoDoTeste?: LabModoDeTeste;
   indicadores: {
     testesFeitos: number;
     testesValidados: number;
@@ -116,7 +123,7 @@ function moldeDoPainel(molde: LabMolde): MoldeDoPainel {
 
 /** O botão: o mesmo estado que POST /sessoes usa para decidir, traduzido para a tela. */
 export function acaoDoPainel(inicio: DadosDoPainel["inicio"]): AcaoDoPainel {
-  const { estado, situacaoAtual } = inicio;
+  const { estado, situacaoAtual, totalSituacoes } = inicio;
   const indisponivel = (
     motivo: Extract<AcaoDoPainel, { tipo: "indisponivel" }>["motivo"],
     molde: LabMolde | null,
@@ -139,9 +146,11 @@ export function acaoDoPainel(inicio: DadosDoPainel["inicio"]): AcaoDoPainel {
         tipo: "continuar",
         sessaoId: estado.sessao.id,
         situacaoAtual,
-        totalSituacoes: estado.sessao.molde.numeroSituacoes,
+        totalSituacoes: totalSituacoes ?? estado.sessao.molde.numeroSituacoes,
         molde: moldeDoPainel(estado.sessao.molde)
       };
+    case "cadastro-incompleto":
+      return indisponivel("cadastro-incompleto", null, null);
     case "termo-pendente":
       return indisponivel("termo-pendente", null, null);
     case "cargo-nao-informado":
@@ -276,6 +285,7 @@ export function montarPainel(dados: DadosDoPainel): PainelDoParticipante {
   const media = (valor: number | null) => (valor === null ? null : arredondar(valor, 2));
 
   return {
+    modoDoTeste: dados.modoDoTeste ?? "legado",
     demonstracao: dados.demonstracao,
     termo: {
       versaoAtual: termo.versaoAtual,

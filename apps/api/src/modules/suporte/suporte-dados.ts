@@ -23,6 +23,10 @@ export function podeConsultarDados(perfil: string): boolean {
 export const MENSAGEM_DE_LIMITACAO =
   "Não posso responder a essa pergunta devido às limitações da sua conta. Informações sobre colaboradores só ficam disponíveis para administradores e responsáveis do RH. Posso ajudar com dúvidas sobre como usar o sistema.";
 
+/** O que o assistente responde à conta COMUM quando a pergunta não é do Leadership Lab nem do resultado dela. */
+export const RESPOSTA_FORA_DO_ESCOPO =
+  "Eu só posso ajudar com o Leadership Lab e com os seus resultados nele. Para outros assuntos, procure o RH.";
+
 export const LIMITE_PADRAO = 5;
 export const LIMITE_MAXIMO = 10;
 
@@ -53,10 +57,13 @@ const SITUACAO_DA_ESCALA: Record<string, string> = {
   ARCHIVED: "arquivada"
 };
 
+/** As consultas sobre dados da empresa (só DEV, ADMIN e RH). `meus_resultados` é outra: só da própria pessoa. */
+export type ConsultaDeDadosDaEmpresa = Exclude<ConsultaDoSuporte, "meus_resultados">;
+
 export async function consultarDados(
   db: Db,
   user: AuthenticatedUser,
-  consulta: ConsultaDoSuporte,
+  consulta: ConsultaDeDadosDaEmpresa,
   limitePedido: number | null | undefined,
   agora: Date = new Date()
 ): Promise<Dados> {
@@ -212,22 +219,16 @@ export async function consultarDados(
           month: true,
           status: true,
           createdAt: true,
-          generatedResult: true,
           operation: { select: { name: true } }
         }
       });
       return {
         itens: versoes.map((v) => {
-          const metricas = ((v.generatedResult as { metrics?: { coverage?: unknown } } | null)
-            ?.metrics ?? {}) as {
-            coverage?: unknown;
-          };
           return {
             operacao: v.operation.name,
             mes: v.month.toISOString().slice(0, 7),
             versao: v.version,
             situacao: SITUACAO_DA_ESCALA[v.status] ?? v.status,
-            cobertura_percentual: typeof metricas.coverage === "number" ? metricas.coverage : null,
             gerada_em: dia(v.createdAt)
           };
         })

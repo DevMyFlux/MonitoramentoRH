@@ -8,13 +8,13 @@ import { LoginPage } from "./pages/login-page";
 import { DashboardPage } from "./pages/dashboard-page";
 import { ResourcePage } from "./pages/resource-page";
 import { resources } from "./features/my-flux/resources";
-import { QlpPage } from "./pages/qlp-page";
-import { RecruitmentPage } from "./pages/recruitment-page";
+import { rotasOcultas } from "./_hidden/rotas";
 import { MonthlySchedulePage } from "./pages/monthly-schedule-page";
 import { UsersPage } from "./pages/users-page";
 import { AuditPage } from "./pages/audit-page";
 import { ImportsPage } from "./pages/imports-page";
 import { EmptyState } from "./components/ui";
+import { SoParaEquipe } from "./features/navigation/so-para-equipe";
 import { EmployeesPage } from "./pages/employees-page";
 import { HomeRedirect } from "./pages/home-redirect";
 // Fontes auto-hospedadas (@fontsource, licença OFL): Inter no corpo, Bricolage Grotesque nos títulos
@@ -45,6 +45,16 @@ const LabTurmasPage = lazy(() =>
 );
 const LabTurmaPage = lazy(() =>
   import("./pages/lab/rh/lab-turma-page").then((m) => ({ default: m.LabTurmaPage }))
+);
+const LabAcompanhamentoPage = lazy(() =>
+  import("./pages/lab/rh/lab-acompanhamento-page").then((m) => ({
+    default: m.LabAcompanhamentoPage
+  }))
+);
+const LabAcompanhamentoPessoaPage = lazy(() =>
+  import("./pages/lab/rh/lab-acompanhamento-pessoa-page").then((m) => ({
+    default: m.LabAcompanhamentoPessoaPage
+  }))
 );
 const LabVisaoGeralPage = lazy(() =>
   import("./pages/lab/rh/lab-visao-geral-page").then((m) => ({ default: m.LabVisaoGeralPage }))
@@ -80,9 +90,6 @@ const JogarTreinamentoPage = lazy(() =>
 const ResultadoTreinamentoPage = lazy(() =>
   import("./pages/treinamentos/resultado-page").then((m) => ({ default: m.ResultadoPage }))
 );
-const TreinamentosRhPage = lazy(() =>
-  import("./pages/treinamentos/rh-page").then((m) => ({ default: m.TreinamentosRhPage }))
-);
 const TreinamentosConfigPage = lazy(() =>
   import("./pages/treinamentos/config-page").then((m) => ({ default: m.TreinamentosConfigPage }))
 );
@@ -106,8 +113,6 @@ function PaginaDoLab({
   );
 }
 const paths: Record<string, string> = {
-  qlp: "QLP",
-  recrutamento: "Recrutamento",
   escalas: "Escalas",
   avaliacoes: "Avaliações",
   auditoria: "Auditoria",
@@ -163,7 +168,24 @@ const router = createBrowserRouter([
       </PaginaDoLab>
     )
   },
-  { path: "/lab/rh", element: <Navigate to="/lab/rh/visao-geral" replace /> },
+  // O acompanhamento é um só (o antigo de Treinamentos também vem para cá).
+  { path: "/lab/rh", element: <Navigate to="/lab/rh/acompanhamento" replace /> },
+  {
+    path: "/lab/rh/acompanhamento",
+    element: (
+      <PaginaDoLab breadcrumbs={["Acompanhamento"]}>
+        <LabAcompanhamentoPage />
+      </PaginaDoLab>
+    )
+  },
+  {
+    path: "/lab/rh/acompanhamento/pessoas/:participanteId",
+    element: (
+      <PaginaDoLab breadcrumbs={["Acompanhamento", "Pessoa"]}>
+        <LabAcompanhamentoPessoaPage />
+      </PaginaDoLab>
+    )
+  },
   {
     path: "/lab/rh/visao-geral",
     element: (
@@ -254,16 +276,7 @@ const router = createBrowserRouter([
   },
   ...Object.keys(resources)
     .filter(
-      (key) =>
-        ![
-          "qlp",
-          "recrutamento",
-          "escalas",
-          "usuarios",
-          "colaboradores",
-          "auditoria",
-          "importacoes"
-        ].includes(key)
+      (key) => !["escalas", "usuarios", "colaboradores", "auditoria", "importacoes"].includes(key)
     )
     .map((key) => ({
       path: `/${key}`,
@@ -272,73 +285,64 @@ const router = createBrowserRouter([
   {
     path: "/colaboradores",
     element: (
-      <App breadcrumbs={["MY FLUX", "Colaboradores"]}>
-        <EmployeesPage />
-      </App>
+      <SoParaEquipe>
+        <App breadcrumbs={["MY FLUX", "Colaboradores"]}>
+          <EmployeesPage />
+        </App>
+      </SoParaEquipe>
     )
   },
-  {
-    path: "/qlp",
-    element: (
-      <App breadcrumbs={["MY FLUX", "QLP"]}>
-        <QlpPage />
-      </App>
-    )
-  },
-  {
-    path: "/recrutamento",
-    element: (
-      <App breadcrumbs={["MY FLUX", "Recrutamento"]}>
-        <RecruitmentPage />
-      </App>
-    )
-  },
+  // QLP e Recrutamento (módulos ocultos): só entram no roteador se estiverem ativos no registro.
+  ...rotasOcultas(),
   {
     path: "/escalas",
     element: (
-      <App breadcrumbs={["MY FLUX", "Escalas"]}>
-        <MonthlySchedulePage />
-      </App>
+      <SoParaEquipe>
+        <App breadcrumbs={["MY FLUX", "Escalas"]}>
+          <MonthlySchedulePage />
+        </App>
+      </SoParaEquipe>
     )
   },
   {
     path: "/treinamentos",
     element: (
-      <App breadcrumbs={["MY FLUX", "Treinamentos"]}>
-        <TreinamentosPage />
-      </App>
+      <SoParaEquipe>
+        <App breadcrumbs={["MY FLUX", "Treinamentos"]}>
+          <TreinamentosPage />
+        </App>
+      </SoParaEquipe>
     )
   },
-  {
-    path: "/treinamentos/rh",
-    element: (
-      <App breadcrumbs={["MY FLUX", "Treinamentos", "Acompanhamento"]}>
-        <TreinamentosRhPage />
-      </App>
-    )
-  },
+  { path: "/treinamentos/rh", element: <Navigate to="/lab/rh/acompanhamento" replace /> },
   {
     path: "/treinamentos/config",
     element: (
-      <App breadcrumbs={["MY FLUX", "Treinamentos", "Configuração"]}>
-        <TreinamentosConfigPage />
-      </App>
+      <SoParaEquipe>
+        <App breadcrumbs={["MY FLUX", "Treinamentos", "Configuração"]}>
+          <TreinamentosConfigPage />
+        </App>
+      </SoParaEquipe>
     )
   },
   {
     path: "/treinamentos/:atribuicaoId/jogar",
     element: (
-      <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Palco"]}>
-        <JogarTreinamentoPage />
-      </App>
+      <SoParaEquipe>
+        <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Palco"]}>
+          <JogarTreinamentoPage />
+        </App>
+      </SoParaEquipe>
     )
   },
   {
     path: "/treinamentos/resultado/:tentativaId",
     element: (
-      <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Resultado"]}>
-        <ResultadoTreinamentoPage />
-      </App>
+      <SoParaEquipe>
+        <App layout={LayoutDoPalco} breadcrumbs={["MY FLUX", "Treinamentos", "Resultado"]}>
+          <ResultadoTreinamentoPage />
+        </App>
+      </SoParaEquipe>
     )
   },
   {

@@ -65,7 +65,7 @@ describe("menu lateral", () => {
     expect(configuracao()?.getAttribute("href")).toBe("/lab/config");
   });
 
-  it("cada perfil vê a sua parte do Lab: RH acompanha, ADMIN configura, COMUM participa", () => {
+  it("cada perfil vê a sua parte do Lab: RH e ADMIN acompanham, ADMIN configura, COMUM participa", () => {
     montar("RH");
     expect(acompanhamento()?.getAttribute("href")).toBe("/lab/rh");
     expect(configuracao()).toBeNull();
@@ -73,7 +73,8 @@ describe("menu lateral", () => {
 
     montar("ADMIN");
     expect(configuracao()?.getAttribute("href")).toBe("/lab/config");
-    expect(acompanhamento()).toBeNull();
+    // O ADMIN também acompanha (todas as turmas) e decide contestações.
+    expect(acompanhamento()?.getAttribute("href")).toBe("/lab/rh");
     cleanup();
 
     montar("COMUM");
@@ -81,10 +82,21 @@ describe("menu lateral", () => {
     expect(configuracao()).toBeNull();
   });
 
-  it("enquanto não se sabe quem está logado, o item restrito não aparece (e o resto sim)", () => {
+  it("enquanto não se sabe quem está logado, nenhum item restrito aparece", () => {
     montar(null);
     expect(lab()).toBeNull();
+    expect(screen.queryByRole("link", { name: "Colaboradores" })).toBeNull();
+  });
+
+  it("o COMUM só vê o Leadership Lab; o RH vê Colaboradores e Escalas", () => {
+    montar("COMUM");
+    expect(lab()).toBeTruthy();
+    for (const nome of ["Colaboradores", "Escalas", "Treinamentos"])
+      expect(screen.queryByRole("link", { name: nome })).toBeNull();
+    cleanup();
+    montar("RH");
     expect(screen.getByRole("link", { name: "Colaboradores" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Escalas" })).toBeTruthy();
   });
 
   it("a busca do menu encontra o Leadership Lab para o participante", async () => {

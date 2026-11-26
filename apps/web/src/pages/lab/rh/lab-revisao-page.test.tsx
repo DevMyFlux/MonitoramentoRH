@@ -129,13 +129,14 @@ describe("revisão dos resultados (fila)", () => {
       expect(abas.getByRole("link", { name: "Turmas" })).toBeTruthy();
     });
 
-    it("apontam para as telas certas, na ordem: o resumo, o que pede decisão e o cadastro", async () => {
+    it("apontam para as telas certas, na ordem: o acompanhamento, os painéis, o que pede decisão e o cadastro", async () => {
       api.revisao.mockResolvedValue([]);
       abrir();
       const links = within(
         screen.getByRole("navigation", { name: "Áreas do acompanhamento" })
       ).getAllByRole("link");
       expect(links.map((l) => l.getAttribute("href"))).toEqual([
+        "/lab/rh/acompanhamento",
         "/lab/rh/visao-geral",
         "/lab/rh/revisao",
         "/lab/rh/alertas",

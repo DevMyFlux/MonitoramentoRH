@@ -45,12 +45,8 @@ afterEach(() => {
 
 describe("itensDoDock", () => {
   it("são os mesmos itens visíveis do menu, por perfil, com nome curto", () => {
-    expect(itensDoDock("COMUM").map((i) => i.href)).toEqual([
-      "/colaboradores",
-      "/escalas",
-      "/lab",
-      "/treinamentos"
-    ]);
+    // O COMUM só tem o Leadership Lab.
+    expect(itensDoDock("COMUM").map((i) => i.href)).toEqual(["/lab"]);
     expect(itensDoDock("RH").map((i) => i.href)).toEqual(["/colaboradores", "/escalas", "/lab/rh"]);
     expect(itensDoDock("DEV").map((i) => i.curto)).toEqual([
       "Pessoas",
@@ -83,10 +79,13 @@ describe("dock (celular)", () => {
     expect(document.documentElement.style.getPropertyValue("--mf-dock-h")).toBe("");
   });
 
-  it("sem perfil conhecido, só os itens livres; cada alvo tem altura de toque", () => {
+  it("sem perfil conhecido não há item (todos têm perfil); cada alvo tem altura de toque", () => {
     montar(null);
+    expect(screen.queryAllByRole("link")).toHaveLength(0);
+    cleanup();
+    montar("RH");
     const links = screen.getAllByRole("link");
-    expect(links.length).toBe(2);
+    expect(links.length).toBe(3);
     expect(links[0]!.className).toContain("min-h-[52px]");
   });
 });

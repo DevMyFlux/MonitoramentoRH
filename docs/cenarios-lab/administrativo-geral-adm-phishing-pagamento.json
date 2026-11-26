@@ -1,0 +1,513 @@
+{
+ "id": "adm-phishing-pagamento",
+ "title": "Pedido de pagamento suspeito",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Segunda, 09h. Chega um e-mail 'da diretoria' pedindo um pagamento urgente.",
+   "Você é do administrativo e o pedido parece fora do comum.",
+   "O e-mail pede sigilo e pressa."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_gestor",
+   "label": "Avisar o gestor e a TI",
+   "procedure": "Avisar o gestor e a TI sobre mensagens suspeitas. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "verificar_origem",
+   "label": "Verificar a origem",
+   "procedure": "Conferir o remetente real e confirmar por outro canal. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "nao_pagar",
+   "label": "Não pagar sem confirmação",
+   "procedure": "Não realizar pagamentos sem confirmação e aprovação formais. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_ocorrencia",
+   "label": "Registrar a ocorrência",
+   "procedure": "Registrar a tentativa e as ações tomadas. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "orientar_colegas",
+   "label": "Orientar os colegas",
+   "procedure": "Avisar colegas para que não caiam na mesma mensagem. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_gestor",
+   "shot": "mesa",
+   "time": "09:05",
+   "narration": "09:05 · O e-mail parece vir de um diretor, mas algo soa estranho.",
+   "prompt": "Qual é o primeiro passo?",
+   "alternatives": [
+    {
+     "text": "Respondo pedindo mais detalhes do pagamento.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Resposta ao golpista",
+      "text": "Você confirma que o e-mail é lido.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Encaminho o e-mail à TI e à segurança da informação.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "E-mail encaminhado",
+      "text": "Os especialistas podem analisar.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Ignoro e deixo para ver se vem outro.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Ignorar",
+      "text": "Outros colegas podem cair.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso meu gestor e a TI antes de responder.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Gestor e TI avisados",
+      "text": "A suspeita é tratada por quem sabe.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "verificar_origem",
+   "shot": "tela",
+   "time": "09:15",
+   "narration": "09:15 · O endereço do remetente parece quase igual ao da diretoria.",
+   "prompt": "Como verifica a origem?",
+   "alternatives": [
+    {
+     "text": "Respondo ao e-mail perguntando se é ele.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Pergunta ao próprio remetente",
+      "text": "Quem engana responde que sim.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Pergunto pelo chat interno ao diretor se ele enviou.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Canal interno",
+      "text": "Você confirma por um canal confiável.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Olho o endereço completo e ligo para o diretor por um canal conhecido.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Origem verificada",
+      "text": "Você confirma que não é a pessoa.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Confio no nome que aparece no e-mail.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Nome do remetente",
+      "text": "O nome pode ser falsificado.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "nao_pagar",
+   "shot": "documento",
+   "time": "09:30",
+   "narration": "09:30 · O pedido insiste: 'pague hoje'.",
+   "prompt": "O que faz com o pagamento?",
+   "alternatives": [
+    {
+     "text": "Sigo o procedimento de pagamentos que exige aprovação do financeiro.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Procedimento seguido",
+      "text": "O pagamento só ocorre se for legítimo.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Não pago sem aprovação formal e confirmação por canal conhecido.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Pagamento retido",
+      "text": "Você evita perda de dinheiro.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Pago para não irritar a diretoria.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Pagamento por medo",
+      "text": "O dinheiro sai e dificilmente volta.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Pago uma parte para 'testar'.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Pagamento parcial",
+      "text": "Você perde dinheiro e confirma que paga.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_ocorrencia",
+   "shot": "tela",
+   "time": "09:50",
+   "narration": "09:50 · A tentativa precisa ficar documentada.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Registro o e-mail, o horário e as ações que tomei.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Ocorrência registrada",
+      "text": "A empresa pode investigar.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Apago o e-mail para não deixar rastro.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "E-mail apagado",
+      "text": "A evidência se perde.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Mantenho o e-mail na minha caixa e não aviso ninguém.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro pessoal",
+      "text": "A empresa não pode agir.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Abro um chamado de segurança com o e-mail anexado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Chamado aberto",
+      "text": "O caso fica acompanhado.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "orientar_colegas",
+   "shot": "reuniao",
+   "time": "10:15",
+   "narration": "10:15 · Outros colegas podem receber a mesma mensagem.",
+   "prompt": "Como orienta?",
+   "alternatives": [
+    {
+     "text": "Não comento, para não alarmar.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Silêncio",
+      "text": "Outros podem cair no golpe.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço à TI que envie um alerta a toda a empresa.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Alerta geral",
+      "text": "Todos ficam atentos.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Comento só com quem estiver ao lado.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Aviso limitado",
+      "text": "O resto da equipe continua exposto.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso os colegas do administrativo sobre o golpe e o que observar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Colegas avisados",
+      "text": "A equipe fica mais protegida.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Pagamento fraudulento",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "verificar_origem",
+      "is": false
+     },
+     {
+      "decision": "nao_pagar",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Origem verificada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "verificar_origem",
+      "is": true
+     },
+     {
+      "decision": "nao_pagar",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Ocorrência registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_ocorrencia",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Gestor e TI cientes",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_gestor",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Equipe sem orientação",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "orientar_colegas",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Proteção financeira",
+   "levels": {
+    "ok": "Dinheiro protegido",
+    "warn": "Risco de perda",
+    "bad": "Perda financeira"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Segurança da informação",
+   "levels": {
+    "ok": "Incidente tratado",
+    "warn": "Incidente parcialmente tratado",
+    "bad": "Incidente sem tratamento"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Cultura de segurança",
+   "levels": {
+    "ok": "Equipe atenta",
+    "warn": "Equipe parcialmente atenta",
+    "bad": "Equipe despreparada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "administrativo-geral"
+}

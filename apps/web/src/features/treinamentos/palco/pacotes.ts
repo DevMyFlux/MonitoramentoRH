@@ -2,6 +2,7 @@
 // câmera (shots), o estado inicial dos comandos e a descrição em texto da cena (leitor de tela). O
 // "mundo" em SVG fica em mundos.tsx. Pacote desconhecido cai no genérico: fundo escuro, legenda e
 // painel, nunca quebra.
+import { ESCRITORIO_GESTAO } from "@my-flux/shared";
 import type { EstadoDaCena } from "../fluxo";
 
 /** Ponto que a câmera centraliza (no viewBox 1600×900) e o zoom. */
@@ -15,6 +16,15 @@ export type PacoteDeCena = {
   descrever: (estado: EstadoDaCena) => string;
   /** Partículas para o estado: faíscas, brasas, poeira ou nenhuma. */
   particulas: (estado: EstadoDaCena) => ModoDasParticulas;
+  /** Indicadores do HUD que dependem do estado (ex.: pendências). Opcional. */
+  indicadores?: (estado: EstadoDaCena) => IndicadorDoHud[];
+};
+
+/** Um indicador do HUD: o rótulo, o valor e o tom (o tom sempre acompanha o texto, nunca só a cor). */
+export type IndicadorDoHud = {
+  rotulo: string;
+  valor: string;
+  tom: "ok" | "atencao" | "risco" | "neutro";
 };
 
 export type ModoDasParticulas = "nenhuma" | "faiscas" | "brasas" | "poeira";
@@ -131,9 +141,84 @@ export const hospitalEscala: PacoteDeCena = {
   particulas: () => "poeira"
 };
 
+/**
+ * Escritório de gestão (os cenários do Leadership Lab: supervisor, coordenador, RH e administrativo):
+ * a mesa de trabalho, a tela do sistema, a sala de reunião, a ficha de papel e o relógio com o
+ * calendário. Cada plano comanda o objeto de mesmo nome com "ok", "alerta" ou "falha".
+ */
+export const escritorioGestao: PacoteDeCena = {
+  id: ESCRITORIO_GESTAO.id,
+  planos: {
+    geral: GERAL,
+    mesa: { cx: 570, cy: 690, escala: 2 },
+    tela: { cx: 550, cy: 290, escala: 1.9 },
+    reuniao: { cx: 1240, cy: 585, escala: 2.3 },
+    documento: { cx: 1060, cy: 290, escala: 2.2 },
+    relogio: { cx: 1380, cy: 260, escala: 2.2 }
+  },
+  estadoInicial: { mesa: "", tela: "", reuniao: "", documento: "", relogio: "" },
+  descrever: (e) => {
+    const frase = (
+      valor: string | undefined,
+      textos: { ok: string; alerta: string; falha: string; neutro: string }
+    ) =>
+      valor === "ok" || valor === "alerta" || valor === "falha" ? textos[valor] : textos.neutro;
+    return [
+      "Escritório de gestão: a tela do sistema, a ficha de papel, o relógio com o calendário, a sala de reunião e a mesa de trabalho.",
+      frase(e.mesa, {
+        ok: "A mesa está em ordem, com a luminária acesa.",
+        alerta: "O telefone da mesa pisca em âmbar.",
+        falha: "A mesa está bagunçada e o telefone pisca em vermelho.",
+        neutro: "A mesa tem o monitor, o telefone e uma pilha de papéis."
+      }),
+      frase(e.tela, {
+        ok: "A tela do sistema mostra o registro correto, com um selo de confirmação.",
+        alerta: "A tela do sistema destaca uma linha em âmbar, com um aviso.",
+        falha: "A tela do sistema destaca uma linha em vermelho, com um erro.",
+        neutro: "A tela do sistema mostra uma planilha."
+      }),
+      frase(e.documento, {
+        ok: "A ficha de papel está carimbada como conferida.",
+        alerta: "A ficha de papel tem um carimbo de atenção.",
+        falha: "A ficha de papel está torta e com um carimbo de erro.",
+        neutro: "A ficha de papel está presa no quadro."
+      }),
+      frase(e.relogio, {
+        ok: "O relógio e o calendário mostram o prazo em dia.",
+        alerta: "O relógio e o calendário mostram o prazo apertado.",
+        falha: "O relógio e o calendário mostram o prazo estourado.",
+        neutro: "O relógio de parede e o calendário marcam o tempo passar."
+      }),
+      frase(e.reuniao, {
+        ok: "Na sala de reunião, o balão mostra o alinhamento confirmado.",
+        alerta: "Na sala de reunião, o balão mostra uma dúvida em aberto.",
+        falha: "Na sala de reunião, o balão mostra um problema sem tratamento.",
+        neutro: "Na sala de reunião, três pessoas em silhueta ao redor da mesa."
+      })
+    ].join(" ");
+  },
+  // Poeira no ar; brasas quando alguma frente falhou (a tensão da cena).
+  particulas: (e) => (ESCRITORIO_GESTAO.planos.some((p) => e[p] === "falha") ? "brasas" : "poeira"),
+  // Pendências: quantas frentes ainda não estão resolvidas ("ok"). Começa em 5, desce a cada "ok" e
+  // sobe de volta se uma frente que estava ok passa a alerta ou falha.
+  indicadores: (e) => {
+    const pendentes = ESCRITORIO_GESTAO.planos.filter((p) => e[p] !== "ok").length;
+    const falhou = ESCRITORIO_GESTAO.planos.some((p) => e[p] === "falha");
+    const alertou = ESCRITORIO_GESTAO.planos.some((p) => e[p] === "alerta");
+    return [
+      {
+        rotulo: "Pendências",
+        valor: String(pendentes),
+        tom: pendentes === 0 ? "ok" : falhou ? "risco" : alertou ? "atencao" : "neutro"
+      }
+    ];
+  }
+};
+
 const pacotes: Readonly<Record<string, PacoteDeCena>> = {
   [hospitalEnergia.id]: hospitalEnergia,
-  [hospitalEscala.id]: hospitalEscala
+  [hospitalEscala.id]: hospitalEscala,
+  [escritorioGestao.id]: escritorioGestao
 };
 
 /** O pacote pelo id; desconhecido = genérico. */

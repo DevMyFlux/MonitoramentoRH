@@ -7,9 +7,9 @@
 // Só se lê o que já terminou. Todo filtro abaixo exige `sessao.status = 'concluida'`: o que está
 // em andamento nunca entra, nem como contagem (veja a regra central em tipos.ts).
 import { Prisma, type PrismaClient } from "@prisma/client";
-import { podeExibirTendencia } from "@my-flux/shared";
+import { type LabModoDeTeste, podeExibirTendencia } from "@my-flux/shared";
 import type { ConfigDoMotor } from "../motor/config.js";
-import { avaliarInicio } from "../motor/precondicoes.js";
+import { avaliarInicio, avaliarInicioPorCenarios } from "../motor/precondicoes.js";
 import {
   type DadosDoPainel,
   type LinhaDeAlerta,
@@ -58,6 +58,10 @@ export type ArgumentosDoPainel = {
   participanteId: string;
   config: Pick<ConfigDoMotor, "versaoTermo" | "limiteTestesDia" | "fusoHorario" | "demonstracao">;
   agora: Date;
+  /** O modo do teste neste ambiente; sem ele, o legado. */
+  modoDoTeste?: LabModoDeTeste;
+  /** O usuário dono do painel (o cadastro dele decide o público no teste por cenários). */
+  userId?: string;
 };
 
 async function lerDadosDoPainel(tx: Tx, args: ArgumentosDoPainel): Promise<DadosDoPainel> {
@@ -68,15 +72,30 @@ async function lerDadosDoPainel(tx: Tx, args: ArgumentosDoPainel): Promise<Dados
   const aceite = await tx.labTermoAceite.findUnique({
     where: { participanteId_versaoTermo: { participanteId, versaoTermo: config.versaoTermo } }
   });
-  const estado = await avaliarInicio(tx, { participanteId, config, agora });
-  const atual =
-    estado.tipo === "continuar"
-      ? await tx.labTurno.findFirst({
-          where: { sessaoId: estado.sessao.id },
-          orderBy: { numero: "desc" },
-          select: { numero: true }
-        })
-      : null;
+  const porCenarios = args.modoDoTeste === "cenarios" && args.userId !== undefined;
+  const estado = porCenarios
+    ? await avaliarInicioPorCenarios(tx, { participanteId, userId: args.userId!, config, agora })
+    : await avaliarInicio(tx, { participanteId, config, agora });
+  // Onde o participante parou: a situação (legado) ou o cenário da trilha (por cenários).
+  let atual: { numero: number } | null = null;
+  let totalDaTrilha: number | null = null;
+  if (estado.tipo === "continuar") {
+    if (estado.sessao.modo === "cenarios") {
+      const trilha = await tx.labTentativaCenario.findMany({
+        where: { sessaoId: estado.sessao.id },
+        select: { ordem: true, status: true }
+      });
+      const emAndamento = trilha.find((c) => c.status === "em_andamento");
+      atual = emAndamento ? { numero: emAndamento.ordem } : null;
+      totalDaTrilha = trilha.length;
+    } else {
+      atual = await tx.labTurno.findFirst({
+        where: { sessaoId: estado.sessao.id },
+        orderBy: { numero: "desc" },
+        select: { numero: true }
+      });
+    }
+  }
 
   // Indicadores: a view que a documentação reserva para o painel.
   const [view] = await tx.$queryRaw<LinhaDaView[]>`
@@ -102,7 +121,13 @@ async function lerDadosDoPainel(tx: Tx, args: ArgumentosDoPainel): Promise<Dados
       aderenciaGeral: true,
       agilidade: true,
       statusValidacao: true,
-      sessao: { select: { concluidaEm: true, _count: { select: { turnos: true } } } }
+      sessao: {
+        select: {
+          concluidaEm: true,
+          _count: { select: { turnos: true } },
+          cenarios: { select: { _count: { select: { respostas: true } } } }
+        }
+      }
     }
   });
   const resultados: LinhaDeResultado[] = resultadosBrutos
@@ -117,7 +142,10 @@ async function lerDadosDoPainel(tx: Tx, args: ArgumentosDoPainel): Promise<Dados
               aderenciaGeral: r.aderenciaGeral,
               agilidade: r.agilidade,
               statusValidacao: r.statusValidacao,
-              nSituacoes: r.sessao._count.turnos
+              // Legado: as situações; por cenários: as perguntas respondidas (5 por cenário).
+              nSituacoes:
+                r.sessao._count.turnos ||
+                r.sessao.cenarios.reduce((n, c) => n + c._count.respostas, 0)
             }
           ]
     )
@@ -220,7 +248,8 @@ async function lerDadosDoPainel(tx: Tx, args: ArgumentosDoPainel): Promise<Dados
   return {
     demonstracao: config.demonstracao === true,
     termo: { versaoAtual: config.versaoTermo, aceitoEm: aceite?.aceitoEm ?? null },
-    inicio: { estado, situacaoAtual: atual?.numero ?? null },
+    modoDoTeste: args.modoDoTeste ?? "legado",
+    inicio: { estado, situacaoAtual: atual?.numero ?? null, totalSituacoes: totalDaTrilha },
     indicadores,
     resultados,
     skills,

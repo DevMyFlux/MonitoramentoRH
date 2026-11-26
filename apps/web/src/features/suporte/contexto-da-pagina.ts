@@ -3,18 +3,11 @@
 // O nome da tela vai para a IA (para responder sobre a tela atual quando a pergunta é vaga) e as
 // sugestões aparecem no início da conversa. A ordem importa: o prefixo mais específico vem antes.
 
+import { contextosOcultos } from "../../_hidden/contexto-do-assistente";
+
 export type ContextoDaPagina = { titulo: string; sugestoes: readonly string[] };
 
 const CONTEXTOS: ReadonlyArray<{ prefixo: string } & ContextoDaPagina> = [
-  {
-    prefixo: "/treinamentos/rh",
-    titulo: "Treinamentos · Acompanhamento do RH",
-    sugestoes: [
-      "Como valido um treinamento?",
-      "Quem aparece nesta lista?",
-      "Como leio o resultado de um treinamento?"
-    ]
-  },
   {
     prefixo: "/treinamentos/config",
     titulo: "Treinamentos · Configuração",
@@ -97,12 +90,7 @@ const CONTEXTOS: ReadonlyArray<{ prefixo: string } & ContextoDaPagina> = [
     titulo: "Usuários",
     sugestoes: ["Como crio um usuário?", "Qual a diferença entre os perfis?"]
   },
-  { prefixo: "/qlp", titulo: "QLP", sugestoes: ["O que é o QLP?", "Como o QLP gera posições?"] },
-  {
-    prefixo: "/recrutamento",
-    titulo: "Recrutamento",
-    sugestoes: ["Como abro uma vaga?", "Como concluo uma admissão?"]
-  },
+  ...contextosOcultos(),
   { prefixo: "/auditoria", titulo: "Auditoria", sugestoes: ["Quem pode ver a auditoria?"] },
   {
     prefixo: "/parametros",

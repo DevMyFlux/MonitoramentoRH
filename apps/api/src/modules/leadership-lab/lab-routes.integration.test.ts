@@ -354,6 +354,7 @@ describe.skipIf(!integrationEnabled)("rotas do Leadership Lab", () => {
         "demonstracao",
         "evolucao",
         "indicadores",
+        "modoDoTeste",
         "skills",
         "sugestoes",
         "termo",

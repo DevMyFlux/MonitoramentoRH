@@ -63,9 +63,9 @@ describe("contestar o resultado (participante)", () => {
     expect((screen.getByLabelText("O que você contesta") as HTMLSelectElement).value).toBe(
       "Resultado geral"
     );
-    // A nova contestação aparece na lista, em análise.
+    // A nova contestação aparece na lista, aberta.
     await screen.findByText("Suas contestações");
-    expect(screen.getByText("Em análise")).toBeTruthy();
+    expect(screen.getByText("Aberta")).toBeTruthy();
   });
 
   it("sem o motivo, não chama o servidor e diz o que falta", async () => {
@@ -100,6 +100,7 @@ describe("contestar o resultado (participante)", () => {
   describe("as contestações dele", () => {
     it("mostra cada uma, o estado e a resposta do RH, sem dizer quem respondeu", async () => {
       api.minhasContestacoes.mockResolvedValue([
+        contestacaoPropria({ id: "c0", status: "em_analise" }),
         contestacaoPropria({ id: "c1", status: "pendente" }),
         contestacaoPropria({
           id: "c2",
@@ -113,13 +114,16 @@ describe("contestar o resultado (participante)", () => {
       abrir();
       await screen.findByText("Suas contestações");
       expect(screen.getByText("Em análise")).toBeTruthy();
-      expect(screen.getByText("Aceita")).toBeTruthy();
-      expect(screen.getByText("Rejeitada")).toBeTruthy();
+      expect(screen.getByText("Aberta")).toBeTruthy();
+      expect(screen.getByText("Deferida")).toBeTruthy();
+      expect(screen.getByText("Indeferida")).toBeTruthy();
+      // Deferida: o participante sabe que o teste foi anulado e que pode refazê-lo.
+      expect(screen.getByText(/pode fazer um novo/)).toBeTruthy();
       expect(screen.getByText(/Revisamos e você tem razão\./).textContent).toContain(
-        "Resposta do RH:"
+        "Justificativa do RH:"
       );
       expect(screen.getByText(/Mantida a avaliação\./)).toBeTruthy();
-      expect(screen.getAllByText(/Resposta do RH:/)).toHaveLength(2);
+      expect(screen.getAllByText(/Justificativa do RH:/)).toHaveLength(2);
       expect(document.body.textContent).not.toMatch(/decidid/i);
     });
 

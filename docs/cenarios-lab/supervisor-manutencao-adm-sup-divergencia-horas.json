@@ -1,0 +1,513 @@
+{
+ "id": "sup-divergencia-horas",
+ "title": "Divergência nas horas da equipe",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Quinta, 16h. O apontamento de horas da equipe fecha amanhã.",
+   "Você é supervisor e encontra diferenças entre o que foi apontado e o que foi executado.",
+   "Dois técnicos têm horas que não batem com as OS."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_equipe",
+   "label": "Falar com a equipe",
+   "procedure": "Conversar com os envolvidos antes de corrigir qualquer registro. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "conferir_os",
+   "label": "Conferir com as OS",
+   "procedure": "Comparar as horas apontadas com as OS executadas no período. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "ouvir_tecnico",
+   "label": "Ouvir o técnico",
+   "procedure": "Dar ao técnico a chance de explicar a diferença antes de concluir. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_ajuste",
+   "label": "Registrar o ajuste",
+   "procedure": "Registrar o ajuste no sistema, com justificativa e aprovação. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "comunicar_rh",
+   "label": "Comunicar o RH",
+   "procedure": "Informar o RH sobre ajustes que afetam folha ou banco de horas. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_equipe",
+   "shot": "mesa",
+   "time": "16:05",
+   "narration": "16:05 · Você vê duas horas a mais em um apontamento e uma a menos em outro.",
+   "prompt": "Qual é o primeiro passo?",
+   "alternatives": [
+    {
+     "text": "Chamo os envolvidos para entender o que aconteceu antes de mexer em qualquer registro.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Conversa primeiro",
+      "text": "As informações vêm de quem executou o trabalho.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Corrijo os registros sozinho e aviso depois.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Correção unilateral",
+      "text": "A equipe se sente vigiada e o dado pode ficar pior.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço aos dois técnicos que me enviem o que lembram e os comprovantes.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Evidências pedidas",
+      "text": "Você começa com informações de quem viveu a situação.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo como está e vejo no mês seguinte.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Adiamento",
+      "text": "O erro vai para folha e fica mais difícil de corrigir.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "conferir_os",
+   "shot": "tela",
+   "time": "16:20",
+   "narration": "16:20 · As OS do período estão no sistema.",
+   "prompt": "Como você confere as horas?",
+   "alternatives": [
+    {
+     "text": "Confio no apontamento porque a pessoa é de confiança.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Confiança sem conferir",
+      "text": "Erros honestos passam sem serem notados.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Ajusto pelas horas que acho que fazem sentido.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Ajuste por achismo",
+      "text": "O registro deixa de refletir a realidade.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço um relatório de OS por técnico e comparo com a folha de apontamento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Relatório cruzado",
+      "text": "Você vê o conjunto e encontra o desvio.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Comparo cada apontamento com a OS executada, data e duração.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "OS conferidas",
+      "text": "A diferença fica localizada com dados.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "ouvir_tecnico",
+   "shot": "reuniao",
+   "time": "16:40",
+   "narration": "16:40 · Um técnico diz que ficou além do horário para terminar uma OS urgente.",
+   "prompt": "Como você trata a explicação dele?",
+   "alternatives": [
+    {
+     "text": "Aceito de imediato, sem confirmar nada.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Aceite sem checar",
+      "text": "A próxima divergência pode não ser tão honesta.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Ouço e levo o caso à coordenação se houver necessidade de autorização.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Autorização buscada",
+      "text": "O ajuste só entra com a aprovação certa.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Ouço, confiro se há OS ou pedido que confirme e registro o motivo.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Explicação verificada",
+      "text": "Você é justo e a decisão tem base.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Desconsidero a explicação, está fora das regras.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Explicação ignorada",
+      "text": "A pessoa perde a confiança e deixa de apontar com honestidade.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_ajuste",
+   "shot": "tela",
+   "time": "17:00",
+   "narration": "17:00 · Falta decidir como ajustar o sistema.",
+   "prompt": "Como você registra o ajuste?",
+   "alternatives": [
+    {
+     "text": "Peço ao coordenador a aprovação e lanço em seguida.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Aprovação obtida",
+      "text": "A mudança é feita por quem tem autoridade.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Lanço o ajuste com justificativa e aprovação de quem pode autorizar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Ajuste justificado",
+      "text": "O histórico explica o que mudou e por quê.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Altero o número e não registro o motivo.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Ajuste sem motivo",
+      "text": "Ninguém consegue explicar a alteração depois.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro o motivo em uma conversa e não no sistema.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Motivo fora do sistema",
+      "text": "O registro oficial fica sem explicação.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "comunicar_rh",
+   "shot": "relogio",
+   "time": "17:20",
+   "narration": "17:20 · O ajuste altera horas que vão para a folha.",
+   "prompt": "O que você faz em relação ao RH?",
+   "alternatives": [
+    {
+     "text": "Aviso o RH do ajuste, do motivo e do período afetado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "RH informado",
+      "text": "A folha e o banco de horas são tratados corretamente.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aviso só se alguém perguntar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Aviso reativo",
+      "text": "O RH descobre quando o erro já virou reclamação.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Considero assunto interno da equipe e não informo.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "RH fora do circuito",
+      "text": "O pagamento sai errado e o problema aparece depois.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Envio ao RH um resumo do ajuste e anexo a justificativa.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Resumo enviado",
+      "text": "O RH tem tudo o que precisa para processar.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Registros sem confiança",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "conferir_os",
+      "is": false
+     },
+     {
+      "decision": "ouvir_tecnico",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Horas conferidas",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "conferir_os",
+      "is": true
+     },
+     {
+      "decision": "ouvir_tecnico",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Ajuste documentado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_ajuste",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Equipe ouvida",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_equipe",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "RH não informado ou ajuste sem registro",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "comunicar_rh",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Fidelidade dos registros",
+   "levels": {
+    "ok": "Horas refletem a realidade",
+    "warn": "Horas parcialmente corretas",
+    "bad": "Horas inconsistentes"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Justiça com a equipe",
+   "levels": {
+    "ok": "Equipe ouvida e tratada com justiça",
+    "warn": "Equipe ouvida em parte",
+    "bad": "Equipe desconsiderada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Conformidade com a folha",
+   "levels": {
+    "ok": "Folha correta",
+    "warn": "Folha com risco de erro",
+    "bad": "Folha com erro provável"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "supervisor-manutencao-adm"
+}

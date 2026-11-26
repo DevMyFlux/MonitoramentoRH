@@ -1,0 +1,513 @@
+{
+ "id": "coord-relatorio-inconsistente",
+ "title": "Relatório mensal inconsistente",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Sexta, 16h. O relatório mensal vai para a diretoria na segunda.",
+   "Você é coordenador e percebe que dois números não batem.",
+   "A pessoa responsável pelo relatório está de folga."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_responsavel",
+   "label": "Avisar quem produziu",
+   "procedure": "Avisar quem produziu o relatório sobre a inconsistência. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "conferir_fonte",
+   "label": "Conferir a fonte",
+   "procedure": "Voltar à fonte dos dados e refazer a conta. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "identificar_causa",
+   "label": "Identificar a causa",
+   "procedure": "Entender de onde vem a diferença antes de corrigir. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_correcao",
+   "label": "Registrar a correção",
+   "procedure": "Registrar o que foi corrigido e por quê. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "avisar_diretoria",
+   "label": "Avisar a diretoria se necessário",
+   "procedure": "Informar a diretoria se algo já enviado estiver errado. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_responsavel",
+   "shot": "mesa",
+   "time": "16:05",
+   "narration": "16:05 · A pessoa que fez o relatório está de folga.",
+   "prompt": "O que você faz primeiro?",
+   "alternatives": [
+    {
+     "text": "Corrijo em silêncio e não digo nada.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Correção em silêncio",
+      "text": "A pessoa repetirá o erro.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro por escrito o que vi e deixo para ela ao voltar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Observação registrada",
+      "text": "Ela recebe a informação com clareza.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Ligo repetidas vezes até a pessoa atender, mesmo de folga.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Pressão fora do horário",
+      "text": "Você invade o descanso da pessoa.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Mando uma mensagem à pessoa explicando a inconsistência, sem culpar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Autor informado",
+      "text": "A pessoa pode ajudar quando voltar e aprende.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "conferir_fonte",
+   "shot": "tela",
+   "time": "16:20",
+   "narration": "16:20 · Você precisa saber qual número está certo.",
+   "prompt": "Como confere a fonte?",
+   "alternatives": [
+    {
+     "text": "Peço a um colega que 'dê uma olhada rápida'.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Conferência rápida",
+      "text": "A causa pode passar despercebida.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Comparo com o relatório do mês anterior e com os lançamentos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Comparação feita",
+      "text": "Você encontra a diferença com contexto.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Volto à base de dados e refaço o cálculo passo a passo.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Fonte conferida",
+      "text": "Você sabe qual valor é o correto.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Escolho o número que parece mais plausível.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Número plausível",
+      "text": "O relatório pode ir errado.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "identificar_causa",
+   "shot": "documento",
+   "time": "16:50",
+   "narration": "16:50 · A diferença é de uma categoria duplicada.",
+   "prompt": "Como você entende a causa?",
+   "alternatives": [
+    {
+     "text": "Verifico o processo de consolidação para evitar nova duplicidade.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Processo revisado",
+      "text": "Você ataca a origem.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Identifico onde a categoria foi duplicada e se há outros casos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Causa identificada",
+      "text": "Você corrige tudo de uma vez.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Removo a linha duplicada e considero encerrado.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Correção superficial",
+      "text": "O mesmo erro pode estar em outros lugares.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Ajusto o total para fechar e sigo.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Ajuste forçado",
+      "text": "Você esconde o problema.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_correcao",
+   "shot": "tela",
+   "time": "17:10",
+   "narration": "17:10 · O relatório foi corrigido.",
+   "prompt": "Como registra a correção?",
+   "alternatives": [
+    {
+     "text": "Registro a mudança, o motivo e quem aprovou, na versão final.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Correção registrada",
+      "text": "Há histórico do que foi corrigido.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Salvo por cima da versão anterior, sem registro.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem histórico",
+      "text": "Ninguém sabe o que mudou.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Mando a nova versão sem avisar o que mudou.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Mudança silenciosa",
+      "text": "Os leitores não sabem o que mudou.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Incluo uma nota de revisão no relatório.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Nota de revisão",
+      "text": "Os leitores veem o que foi alterado.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "avisar_diretoria",
+   "shot": "relogio",
+   "time": "Segunda, 08h",
+   "narration": "Segunda, 08h · O relatório anterior já tinha sido enviado com o erro.",
+   "prompt": "Você avisa a diretoria?",
+   "alternatives": [
+    {
+     "text": "Prefiro não mencionar, ninguém notou.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Erro escondido",
+      "text": "Quando descobrirem, a confiança cairá.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Envio a correção com uma explicação curta e peço desculpas pelo ajuste.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Correção transparente",
+      "text": "A diretoria percebe seriedade.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Corrijo só o novo e deixo o anterior como está.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Correção parcial",
+      "text": "Os números dos dois meses ficam incompatíveis.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso a diretoria sobre o erro no relatório anterior e envio a correção.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Diretoria informada",
+      "text": "A diretoria decide com números corretos.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Relatório com erro",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "conferir_fonte",
+      "is": false
+     },
+     {
+      "decision": "identificar_causa",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Números conferidos",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "conferir_fonte",
+      "is": true
+     },
+     {
+      "decision": "identificar_causa",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Correção registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_correcao",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Autor informado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_responsavel",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Correção sem registro ou sem aviso",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "avisar_diretoria",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Confiabilidade do relatório",
+   "levels": {
+    "ok": "Relatório confiável",
+    "warn": "Relatório parcialmente confiável",
+    "bad": "Relatório não confiável"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Aprendizado do processo",
+   "levels": {
+    "ok": "Causa tratada na origem",
+    "warn": "Causa tratada em parte",
+    "bad": "Causa ignorada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Transparência com a diretoria",
+   "levels": {
+    "ok": "Diretoria bem informada",
+    "warn": "Diretoria informada em parte",
+    "bad": "Diretoria no escuro"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "coordenador-administrativo"
+}

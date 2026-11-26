@@ -1,0 +1,513 @@
+{
+ "id": "adm-agenda-conflito",
+ "title": "Conflito na agenda da diretoria",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Segunda, 08h30. Duas reuniões importantes foram marcadas no mesmo horário com a diretoria.",
+   "Você é do administrativo e organiza a agenda.",
+   "Ninguém percebeu o choque."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_diretor",
+   "label": "Avisar o diretor",
+   "procedure": "Avisar o diretor ou assistente sobre o choque de horários. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "verificar_prioridade",
+   "label": "Verificar a prioridade",
+   "procedure": "Entender a importância e o prazo de cada reunião. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "propor_alternativa",
+   "label": "Propor alternativas",
+   "procedure": "Propor novos horários aos participantes. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_agenda",
+   "label": "Atualizar a agenda",
+   "procedure": "Atualizar a agenda e comunicar a todos os envolvidos. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "confirmar_participantes",
+   "label": "Confirmar com os participantes",
+   "procedure": "Confirmar por escrito com todos os participantes. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_diretor",
+   "shot": "mesa",
+   "time": "08:35",
+   "narration": "08:35 · As duas reuniões têm convidados externos.",
+   "prompt": "Qual é o primeiro passo?",
+   "alternatives": [
+    {
+     "text": "Aviso o diretor do choque e pergunto como prefere resolver.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Diretor avisado",
+      "text": "A decisão é de quem tem a agenda.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Cancelo uma das reuniões por conta própria.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Cancelamento unilateral",
+      "text": "Você pode cancelar a mais importante.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Mando uma mensagem ao assistente com as duas opções.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Opções apresentadas",
+      "text": "A decisão é rápida.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo para ver o que acontece no dia.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Espera",
+      "text": "Alguém ficará sem a reunião e sem aviso.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "verificar_prioridade",
+   "shot": "tela",
+   "time": "08:50",
+   "narration": "08:50 · Você não sabe qual reunião é mais urgente.",
+   "prompt": "Como verifica a prioridade?",
+   "alternatives": [
+    {
+     "text": "Mantenho a que foi marcada primeiro.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Ordem de chegada",
+      "text": "A mais urgente pode ser prejudicada.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Mantenho a reunião com a pessoa mais importante.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Critério de cargo",
+      "text": "O assunto pode ser menos relevante.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Consulto a pauta de cada reunião antes de decidir.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Pautas consultadas",
+      "text": "A decisão considera o conteúdo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Pergunto aos organizadores o objetivo e o prazo de cada reunião.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Prioridades entendidas",
+      "text": "Você apoia a decisão com dados.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "propor_alternativa",
+   "shot": "reuniao",
+   "time": "09:10",
+   "narration": "09:10 · Pelo menos uma reunião precisa mudar.",
+   "prompt": "Como propõe alternativas?",
+   "alternatives": [
+    {
+     "text": "Peço ao organizador que resolva sozinho.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Problema devolvido",
+      "text": "O organizador perde tempo.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Verifico antes a disponibilidade de todos e proponho um novo horário.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Disponibilidade conferida",
+      "text": "A nova data tem boa chance de funcionar.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Proponho novos horários aos participantes, com duas opções.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Alternativas propostas",
+      "text": "Os participantes têm escolha.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Informo apenas que a reunião foi cancelada.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Cancelamento seco",
+      "text": "Os participantes ficam sem opção.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_agenda",
+   "shot": "tela",
+   "time": "09:30",
+   "narration": "09:30 · As mudanças foram combinadas.",
+   "prompt": "Como atualiza a agenda?",
+   "alternatives": [
+    {
+     "text": "Atualizo e peço o 'de acordo' dos organizadores.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Aceite pedido",
+      "text": "Todos concordam com o novo horário.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Atualizo a agenda e envio convites revisados a todos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Agenda atualizada",
+      "text": "Todos veem a versão correta.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo a agenda antiga e aviso por telefone.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Agenda desatualizada",
+      "text": "Alguns aparecem no horário errado.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Atualizo só a agenda do diretor.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Atualização parcial",
+      "text": "Os convidados não sabem.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "confirmar_participantes",
+   "shot": "relogio",
+   "time": "09:50",
+   "narration": "09:50 · Falta confirmar com todos.",
+   "prompt": "Como confirma?",
+   "alternatives": [
+    {
+     "text": "Confirmo por escrito com cada participante e organizador.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Confirmações obtidas",
+      "text": "Ninguém é pego de surpresa.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero confirmado por não ter ouvido objeções.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Silêncio como aceite",
+      "text": "Alguém pode não ter lido.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Envio um resumo com data, hora e local, e peço resposta.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Resumo enviado",
+      "text": "Os participantes confirmam o que entenderam.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Confirmo só com o diretor.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Confirmação parcial",
+      "text": "Os outros participantes seguem sem certeza.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Reuniões em choque",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "verificar_prioridade",
+      "is": false
+     },
+     {
+      "decision": "propor_alternativa",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Prioridades entendidas",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "verificar_prioridade",
+      "is": true
+     },
+     {
+      "decision": "propor_alternativa",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Agenda atualizada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_agenda",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Diretor avisado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_diretor",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Participantes sem confirmação",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "confirmar_participantes",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Agenda da diretoria",
+   "levels": {
+    "ok": "Agenda organizada",
+    "warn": "Agenda parcialmente organizada",
+    "bad": "Agenda desorganizada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Relação com os participantes",
+   "levels": {
+    "ok": "Participantes bem atendidos",
+    "warn": "Participantes parcialmente atendidos",
+    "bad": "Participantes insatisfeitos"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Imagem da diretoria",
+   "levels": {
+    "ok": "Imagem profissional",
+    "warn": "Imagem regular",
+    "bad": "Imagem arranhada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "administrativo-geral"
+}

@@ -6,14 +6,21 @@ import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError } from "../../features/my-flux/client";
+import { useUsuarioAtual } from "../../features/auth/use-usuario-atual";
 import { apiDosTreinamentos } from "../../features/treinamentos/api";
 import { renderizar } from "../../test/render";
 import { TreinamentosConfigPage } from "./config-page";
-import { TreinamentosRhPage } from "./rh-page";
 
+vi.mock("../../features/auth/use-usuario-atual", () => ({ useUsuarioAtual: vi.fn() }));
 vi.mock("../../features/treinamentos/api", () => ({
   apiDosTreinamentos: {
+    regras: vi.fn(),
+    quantidades: vi.fn(),
+    importar: vi.fn(),
+    enviarParaRevisao: vi.fn(),
+    aprovarEmLote: vi.fn(),
+    salvarRegras: vi.fn(),
+    salvarQuantidades: vi.fn(),
     cenarios: vi.fn(),
     validarCenario: vi.fn(),
     criarCenario: vi.fn(),
@@ -21,9 +28,7 @@ vi.mock("../../features/treinamentos/api", () => ({
     lerVersao: vi.fn(),
     aprovar: vi.fn(),
     turmas: vi.fn(),
-    atribuir: vi.fn(),
-    tentativasDoRh: vi.fn(),
-    validarTentativa: vi.fn()
+    atribuir: vi.fn()
   }
 }));
 const api = vi.mocked(apiDosTreinamentos);
@@ -35,7 +40,14 @@ const plantao = readFileSync(
   "utf8"
 );
 
-beforeEach(() => vi.resetAllMocks());
+beforeEach(() => {
+  vi.resetAllMocks();
+  // A configuração é de ADMIN e DEV (o RH só lê): estes testes usam o ADMIN.
+  vi.mocked(useUsuarioAtual).mockReturnValue({ data: { role: "ADMIN" } } as never);
+  api.regras.mockResolvedValue({ regras: [], areas: [] });
+  api.quantidades.mockResolvedValue({ padrao: 3, itens: [] });
+  api.turmas.mockResolvedValue([]);
+});
 
 /** userEvent.type interpreta { e [ como teclas especiais; para JSON, cola o texto. */
 async function colar(campo: HTMLElement, texto: string) {
@@ -113,57 +125,5 @@ describe("configuração de treinamentos", () => {
     await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
     await waitFor(() => expect(api.criarCenario).toHaveBeenCalledTimes(1));
     expect(api.criarCenario.mock.calls[0]![0]).toMatchObject({ slug: "rh-falta-plantao-noturno" });
-  });
-});
-
-describe("acompanhamento do RH", () => {
-  const tentativa = {
-    tentativaId: "t1",
-    atribuicaoId: "a1",
-    participante: "Ana Souza",
-    turma: "Turma A",
-    titulo: "Quadro elétrico da UTI",
-    area: "manutencao",
-    concluidaEm: "2026-11-24T13:00:00Z",
-    resultados: [{ id: "tecnico", label: "Integridade do técnico", nivel: "warn" as const }],
-    validada: false
-  };
-
-  it("lista com o resultado em palavra e ícone, e valida com nota", async () => {
-    api.tentativasDoRh.mockResolvedValue([tentativa]);
-    api.validarTentativa.mockResolvedValue({
-      tentativaId: "t1",
-      validadaEm: "x",
-      nota: "Bom trabalho"
-    });
-    renderizar(<TreinamentosRhPage />);
-    expect(await screen.findByText("Ana Souza")).toBeTruthy();
-    expect(screen.getByText("Integridade do técnico: Atenção")).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Ver resultado/ }).getAttribute("href")).toBe(
-      "/treinamentos/resultado/t1"
-    );
-    await userEvent.click(screen.getByRole("button", { name: /^Validar/ }));
-    await userEvent.type(screen.getByLabelText(/Nota para a pessoa/), "Bom trabalho");
-    await userEvent.click(screen.getByRole("button", { name: "Confirmar validação" }));
-    await waitFor(() => expect(api.validarTentativa).toHaveBeenCalledWith("t1", "Bom trabalho"));
-    expect(api.tentativasDoRh).toHaveBeenCalledWith("pendentes");
-  });
-
-  it("se outro curador validou antes, avisa e atualiza a lista", async () => {
-    api.tentativasDoRh.mockResolvedValue([tentativa]);
-    api.validarTentativa.mockRejectedValue(
-      new ApiError("Esta tentativa já foi validada.", 409, "TREINO_JA_VALIDADA", {})
-    );
-    renderizar(<TreinamentosRhPage />);
-    await userEvent.click(await screen.findByRole("button", { name: /^Validar/ }));
-    await userEvent.click(screen.getByRole("button", { name: "Confirmar validação" }));
-    expect(await screen.findByText(/Outro curador já validou/)).toBeTruthy();
-    await waitFor(() => expect(api.tentativasDoRh.mock.calls.length).toBeGreaterThan(1));
-  });
-
-  it("sem nada a validar, explica de onde vêm as tentativas", async () => {
-    api.tentativasDoRh.mockResolvedValue([]);
-    renderizar(<TreinamentosRhPage />);
-    expect(await screen.findByText("Nada a validar agora")).toBeTruthy();
   });
 });

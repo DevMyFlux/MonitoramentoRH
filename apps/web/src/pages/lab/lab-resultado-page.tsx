@@ -21,6 +21,7 @@ import { ContestarResultado } from "../../features/leadership-lab/componentes/co
 import { ErroDaTelaDoLab } from "../../features/leadership-lab/componentes/erro-da-tela";
 import { SeloDeValidacao } from "../../features/leadership-lab/componentes/selo-de-validacao";
 import { descreverErro } from "../../features/leadership-lab/erros";
+import { ResultadoDosCenarios } from "../../features/leadership-lab/componentes/resultado-dos-cenarios";
 import { useResultado } from "../../features/leadership-lab/hooks";
 import {
   formatarDataEHora,
@@ -57,6 +58,8 @@ export function LabResultadoPage() {
       />
     );
   }
+  // O teste por cenários tem o resultado dele (só ele traz o campo `modo`).
+  if ("modo" in resultado.data) return <ResultadoDosCenarios resultado={resultado.data} />;
   return <ResultadoCompleto resultado={resultado.data} />;
 }
 

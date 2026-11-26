@@ -54,13 +54,16 @@ describe.skipIf(!integrationEnabled)("assistente de suporte", () => {
         }
       );
     }
-    const ultimo = JSON.parse(c.ia.corposPorAlvo.suporte.at(-1)!);
-    expect(ultimo).toEqual({
+    const corpos = c.ia.corposPorAlvo.suporte.map((c) => JSON.parse(c));
+    // O COMUM vai com escopo "lab" (a IA só recebe o guia do Leadership Lab); os demais, sem limite.
+    expect(corpos.at(-1)).toEqual({
       mensagem: "Como gero a escala?",
       historico: [],
       perfil: "COMUM",
-      pagina: { caminho: "/escalas", titulo: "Escalas" }
+      pagina: { caminho: "/escalas", titulo: "Escalas" },
+      escopo: "lab"
     });
+    for (const corpo of corpos.slice(0, -1)) expect(corpo).not.toHaveProperty("escopo");
     const logs = await consulta(
       "SELECT count(*)::int AS n FROM leadership_lab.log_ia WHERE agente = 'suporte' AND sucesso"
     );

@@ -51,7 +51,7 @@ export function conferir(
     bloqueio = `Corrija ${erros === 1 ? "o erro" : `os ${erros} erros`} na planilha e envie de novo.`;
   else if (tipo !== "EMPLOYEES")
     bloqueio =
-      "Por enquanto só a importação de colaboradores é efetivada; QLP e escala são criados nos fluxos próprios.";
+      "Por enquanto só a importação de colaboradores é efetivada; a escala é criada no fluxo próprio.";
 
   return { erros, avisos, porLinha, bloqueio };
 }

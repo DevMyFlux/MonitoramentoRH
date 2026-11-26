@@ -68,6 +68,8 @@ export class IaFalsa implements ClienteIa {
   respostaDoSuporte = "Resposta do suporte falso.";
   /** Quando definida, o suporte falso PEDE essa consulta de dados no 1º envio (e responde no 2º). */
   consultaDoSuporte: ConsultaDoSuporte | null = null;
+  /** Quando verdadeiro, o suporte falso recusa o assunto ("fora_do_escopo"), como a IA real no escopo lab. */
+  foraDoEscopoNoSuporte = false;
   /** Quando definida, o serviço falso responde ao GET / (a sonda de saúde do suporte). */
   saude?: () => Promise<unknown>;
   /** O que o facilitador falso responde. */
@@ -266,6 +268,7 @@ export class IaFalsa implements ClienteIa {
       this.lancar(falha);
       return { lixo: true };
     }
+    if (this.foraDoEscopoNoSuporte) return { fora_do_escopo: true, uso: this.uso("suporte") };
     if (this.consultaDoSuporte !== null && pedido.dados === undefined) {
       return {
         consulta: { nome: this.consultaDoSuporte, limite: null },

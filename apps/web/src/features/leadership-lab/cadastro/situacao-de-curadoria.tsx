@@ -4,6 +4,7 @@ import { Badge } from "../ui";
 
 const tomDoStatus = {
   pendente: "warning",
+  em_analise: "warning",
   aceita: "success",
   aprovada: "success",
   rejeitada: "neutral"
@@ -11,6 +12,7 @@ const tomDoStatus = {
 
 const rotuloDoStatus = {
   pendente: "Pendente",
+  em_analise: "Em análise",
   aceita: "Aceita",
   aprovada: "Aprovada",
   rejeitada: "Rejeitada"

@@ -17,7 +17,8 @@
 //   GET  /contribuicoes?status=           ideias dos participantes
 //   POST /contribuicoes/:id/decisao       aprova ou rejeita
 //   GET  /contestacoes?status=            contestações dos participantes
-//   POST /contestacoes/:id/decisao        aceita ou rejeita, com a nota
+//   POST /contestacoes/:id/analise        aberta -> em análise
+//   POST /contestacoes/:id/decisao        defere (aceita) ou indefere (rejeita), com a justificativa
 //
 //   Participante (perfil COMUM), só o próprio resultado:
 //   POST /resultados/:id/contestacoes     contesta um ponto
@@ -135,6 +136,11 @@ export async function registrarRotasDaCuradoria(
     const { user, ator } = await contexto(request);
     const { status } = labFiltroDeContestacoesSchema.parse(request.query);
     return { data: await contestacoes.listar(user, ator, status) };
+  });
+
+  app.post<ComId>("/contestacoes/:id/analise", async (request) => {
+    const { user, ator } = await contexto(request);
+    return { data: await contestacoes.analisar(user, ator, idValido(request.params.id)) };
   });
 
   app.post<ComId>(

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { camposFaltando } from "@my-flux/shared";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { authenticateRequest } from "../auth/auth-routes.js";
 import type { UserRepository } from "../users/user-repository.js";
@@ -10,7 +11,6 @@ import {
   createMonthly,
   monthlySnapshot
 } from "../scheduling/monthly-service.js";
-import { AptitudeRepository } from "../aptitude/aptitude-repository.js";
 
 export async function registerWorkspaceRoutes(
   app: FastifyInstance,
@@ -103,91 +103,39 @@ export async function registerWorkspaceRoutes(
     const original = row.generatedInput as Record<string, unknown>;
     return { data: { changed: original.inputSnapshotHash !== live.hash, ...live.result } };
   });
-  app.post("/positions/:id/assign", async (req) => {
-    const user = await authenticateRequest(req, users);
-    assertRole(user, ["DEV", "ADMIN", "RH"]);
-    const { id } = ids.parse(req.params);
-    const input = z
-      .object({
-        employeeId: z.string().uuid(),
-        startsAt: z.string().datetime(),
-        endsAt: z.string().datetime().optional()
-      })
-      .parse(req.body);
-    const position = await db.position.findUnique({ where: { id }, include: { qlpVersion: true } });
-    if (!position || position.qlpVersion?.status !== "APPROVED")
-      throw new HttpError(
-        409,
-        "APPROVED_POSITION_REQUIRED",
-        "Posição precisa pertencer a um QLP aprovado."
-      );
-    const op = await scopedOperation(db, user, position.operationId);
-    const employee = await db.employee.findUnique({ where: { id: input.employeeId } });
-    if (
-      !employee ||
-      employee.operationId !== op.id ||
-      employee.functionId !== position.functionId ||
-      employee.status !== "ACTIVE" ||
-      !employee.admissionDate ||
-      employee.admissionDate > new Date(input.startsAt)
-    )
-      throw new HttpError(
-        409,
-        "EMPLOYEE_INELIGIBLE",
-        "Colaborador incompatível ou não ativo na vigência."
-      );
-    if (input.endsAt && input.endsAt <= input.startsAt)
-      throw new HttpError(400, "INVALID_INTERVAL", "Fim deve ser posterior ao início.");
-    const aptitude = await new AptitudeRepository(db).getEmployeeAptitude(user, employee.id);
-    if (aptitude.status === "RED")
-      throw new HttpError(409, "APTITUDE_BLOCKED", "Requisito crítico não atendido.", {
-        reasonCodes: aptitude.reasonCodes
-      });
-    return {
-      data: await db.$transaction(async (tx) => {
-        const row = await tx.employeeAssignment.create({
-          data: {
-            positionId: id,
-            employeeId: employee.id,
-            startsAt: new Date(input.startsAt),
-            endsAt: input.endsAt ? new Date(input.endsAt) : null,
-            createdBy: user.id
-          }
-        });
-        await tx.auditLog.create({
-          data: {
-            userId: user.id,
-            userRole: user.role,
-            action: "CREATE",
-            entity: "EmployeeAssignment",
-            entityId: row.id,
-            operationId: op.id,
-            companyId: op.companyId,
-            unitId: op.unitId,
-            after: json(row),
-            origin: "api"
-          }
-        });
-        return row;
-      })
-    };
-  });
   app.get("/users", async (req) => {
     const user = await authenticateRequest(req, users);
     assertRole(user, ["DEV", "ADMIN", "RH"]);
-    return {
-      data: await db.user.findMany({
-        where: user.role === "DEV" ? {} : { createdBy: user.id },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          isActive: true,
-          role: { select: { name: true } },
-          scopes: { select: { companyId: true, operationId: true, unitId: true, isGlobal: true } }
-        },
-        orderBy: { name: "asc" }
+    const apenasPendentes =
+      z.object({ pendentes: z.enum(["0", "1"]).optional() }).parse(req.query).pendentes === "1";
+    const lista = await db.user.findMany({
+      where: user.role === "DEV" ? {} : { createdBy: user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isActive: true,
+        cargo: true,
+        nivelGovernanca: true,
+        area: { select: { id: true, nome: true } },
+        role: { select: { name: true } },
+        scopes: { select: { companyId: true, operationId: true, unitId: true, isGlobal: true } }
+      },
+      orderBy: { name: "asc" }
+    });
+    // Contas antigas ficam sem cargo, nível e área: `cadastroIncompleto` lista o que falta.
+    const comPendencias = lista.map((conta) => ({
+      ...conta,
+      cadastroIncompleto: camposFaltando({
+        cargo: conta.cargo,
+        nivelGovernanca: conta.nivelGovernanca,
+        areaId: conta.area?.id
       })
+    }));
+    return {
+      data: apenasPendentes
+        ? comPendencias.filter((c) => c.cadastroIncompleto.length > 0)
+        : comPendencias
     };
   });
   app.patch("/users/:id/status", async (req) => {

@@ -7,12 +7,18 @@ export type UserScope = {
   isGlobal: boolean;
 };
 
+export type NivelGovernanca = "assistente" | "supervisor" | "coordenador" | "diretoria";
+
 export type AuthenticatedUser = {
   id: string;
   email: string;
   name: string;
   role: Role;
   scopes: UserScope[];
+  /** Cadastro da conta (podem faltar em contas antigas: veja cadastroIncompleto em shared). */
+  cargo?: string | null;
+  nivelGovernanca?: NivelGovernanca | null;
+  area?: { id: string; nome: string } | null;
 };
 
 export type ApiErrorShape = {

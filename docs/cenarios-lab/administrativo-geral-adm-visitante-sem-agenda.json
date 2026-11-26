@@ -1,0 +1,513 @@
+{
+ "id": "adm-visitante-sem-agenda",
+ "title": "Visitante sem agendamento",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Terça, 14h. Um visitante chega à recepção sem agendamento e quer falar com um diretor.",
+   "Você é do administrativo e responde pela recepção.",
+   "Ele diz que é 'assunto urgente'."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_responsavel",
+   "label": "Avisar o destinatário",
+   "procedure": "Avisar o diretor ou assistente se aceita a visita. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "identificar",
+   "label": "Identificar o visitante",
+   "procedure": "Registrar nome, empresa e motivo da visita. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "controlar_acesso",
+   "label": "Controlar o acesso",
+   "procedure": "Não liberar acesso sem autorização do destinatário. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_visita",
+   "label": "Registrar a visita",
+   "procedure": "Registrar entrada, saída e com quem falou. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "acompanhar",
+   "label": "Acompanhar o visitante",
+   "procedure": "Acompanhar o visitante dentro da empresa. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_responsavel",
+   "shot": "mesa",
+   "time": "14:05",
+   "narration": "14:05 · A pessoa é educada, mas insiste.",
+   "prompt": "Qual é o primeiro passo?",
+   "alternatives": [
+    {
+     "text": "Pergunto ao assistente do diretor se há espaço para recebê-lo.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Assistente consultado",
+      "text": "A agenda é respeitada.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Digo que o diretor não está, sem verificar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Resposta presumida",
+      "text": "O diretor perde uma possível oportunidade.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço que aguarde e aviso o diretor ou o assistente.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Destinatário avisado",
+      "text": "O diretor decide se recebe.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo o visitante subir porque parece importante.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Acesso por insistência",
+      "text": "Ninguém sabia que ele estava lá.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "identificar",
+   "shot": "tela",
+   "time": "14:15",
+   "narration": "14:15 · O visitante não quer dizer o assunto.",
+   "prompt": "Como identifica?",
+   "alternatives": [
+    {
+     "text": "Peço um documento e registro na lista de visitantes.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Documento registrado",
+      "text": "A identidade é confirmada.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Peço nome, empresa e motivo e registro na recepção.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Visitante identificado",
+      "text": "O destinatário sabe quem é.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Libero sem pedir identificação, ele parece honesto.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem identificação",
+      "text": "Você não sabe quem entrou.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço só o nome.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Identificação mínima",
+      "text": "O destinatário fica sem contexto.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "controlar_acesso",
+   "shot": "mesa",
+   "time": "14:25",
+   "narration": "14:25 · O diretor ainda não respondeu.",
+   "prompt": "O que faz com o acesso?",
+   "alternatives": [
+    {
+     "text": "Mantenho o visitante na recepção até haver autorização.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Acesso controlado",
+      "text": "A empresa mantém seu controle.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo entrar para ele esperar à porta do diretor.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Espera dentro",
+      "text": "Ele fica em áreas restritas.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Aviso que ele pode circular até a sala de espera.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Circulação livre",
+      "text": "Pode ver áreas indevidas.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Ofereço água e uma sala de espera sob minha vista.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Sala de espera",
+      "text": "Ele é acolhido sob controle.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_visita",
+   "shot": "tela",
+   "time": "14:40",
+   "narration": "14:40 · A visita foi autorizada.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Não registro, é só uma visita rápida.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem registro",
+      "text": "Em caso de incidente não há prova.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro só o nome.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro mínimo",
+      "text": "Faltam hora e destinatário.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço ao visitante que assine e entrego o crachá.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Assinatura e crachá",
+      "text": "A visita tem comprovação.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro entrada, hora, destinatário e crachá de visitante.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Visita registrada",
+      "text": "Há histórico de quem esteve aqui.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "acompanhar",
+   "shot": "relogio",
+   "time": "15:00",
+   "narration": "15:00 · O visitante vai para a sala do diretor.",
+   "prompt": "Como acompanha?",
+   "alternatives": [
+    {
+     "text": "Peço ao assistente que o receba na porta e o leve à sala.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Assistente recebe",
+      "text": "O destinatário assume o acompanhamento.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Acompanho só até o elevador.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Acompanhamento parcial",
+      "text": "Ele chega sozinho aos andares.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Acompanho até a sala e, na saída, registro o horário.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Visitante acompanhado",
+      "text": "O percurso é controlado.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aponto o caminho e o deixo ir sozinho.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem acompanhamento",
+      "text": "Ele circula sem supervisão.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Acesso fora de controle",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "identificar",
+      "is": false
+     },
+     {
+      "decision": "controlar_acesso",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Visitante identificado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "identificar",
+      "is": true
+     },
+     {
+      "decision": "controlar_acesso",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Visita registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_visita",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Destinatário avisado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_responsavel",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Visitante sem acompanhamento",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "acompanhar",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Segurança do local",
+   "levels": {
+    "ok": "Local protegido",
+    "warn": "Proteção parcial",
+    "bad": "Local exposto"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Rastreabilidade",
+   "levels": {
+    "ok": "Visita rastreável",
+    "warn": "Rastreabilidade parcial",
+    "bad": "Sem rastro"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Imagem da empresa",
+   "levels": {
+    "ok": "Boa imagem",
+    "warn": "Imagem regular",
+    "bad": "Imagem prejudicada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "administrativo-geral"
+}

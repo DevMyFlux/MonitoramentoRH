@@ -16,7 +16,9 @@ import { ErroDaTelaDoLab } from "../../features/leadership-lab/componentes/erro-
 import { MapaDoCaminho } from "../../features/leadership-lab/componentes/mapa-do-caminho";
 import { SituacaoDoTeste } from "../../features/leadership-lab/componentes/situacao-do-teste";
 import { descreverErro } from "../../features/leadership-lab/erros";
+import { usePainel } from "../../features/leadership-lab/hooks";
 import { useTeste } from "../../features/leadership-lab/use-teste";
+import { LabTrilhaPage } from "./lab-trilha-page";
 
 const VoltarAoPainel = () => (
   <BotaoLink to="/lab" variant="secondary">
@@ -25,10 +27,28 @@ const VoltarAoPainel = () => (
 );
 
 /**
- * A tela do teste. Mostra só o que o servidor manda durante o teste: a situação, as opções, a
- * consequência da escolha anterior e o tempo. Nunca a aderência: ela só existe no resultado.
+ * A tela do teste. No modo por cenários (padrão) é a trilha de cenários; no modo legado (LAB_TESTE_MODO)
+ * são as situações A/B/C conduzidas pela IA. Quem decide o modo é o servidor (o painel o informa).
  */
 export function LabTestePage() {
+  const painel = usePainel();
+  if (painel.isPending) return <LoadingState />;
+  if (painel.isError)
+    return (
+      <ErroDaTelaDoLab
+        erro={descreverErro(painel.error)}
+        aoTentarDeNovo={() => void painel.refetch()}
+        acao={<VoltarAoPainel />}
+      />
+    );
+  return painel.data.modoDoTeste === "cenarios" ? <LabTrilhaPage /> : <LabTesteLegadoPage />;
+}
+
+/**
+ * O teste do modo legado. Mostra só o que o servidor manda durante o teste: a situação, as opções, a
+ * consequência da escolha anterior e o tempo. Nunca a aderência: ela só existe no resultado.
+ */
+export function LabTesteLegadoPage() {
   const navigate = useNavigate();
   const teste = useTeste((sessaoId) => navigate(`/lab/resultado/${sessaoId}`, { replace: true }));
   const { recebido, situacaoAtual } = teste;

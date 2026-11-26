@@ -1,0 +1,513 @@
+{
+ "id": "coord-erro-pagamento",
+ "title": "Erro de pagamento a fornecedor",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Quinta, 15h. Um fornecedor avisa que recebeu valor maior que o devido.",
+   "Você é coordenador e a área administrativa responde pelos pagamentos.",
+   "O valor é relevante para o orçamento do mês."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_financeiro",
+   "label": "Avisar o financeiro",
+   "procedure": "Avisar o financeiro imediatamente para tratar o erro pelo canal correto. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "conferir_documentos",
+   "label": "Conferir os documentos",
+   "procedure": "Conferir nota, pedido e comprovante antes de agir. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "entender_origem",
+   "label": "Entender a origem",
+   "procedure": "Descobrir como o erro aconteceu e se há outros casos. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_ocorrencia",
+   "label": "Registrar a ocorrência",
+   "procedure": "Registrar a ocorrência e o tratamento dado. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "alinhar_fornecedor",
+   "label": "Alinhar com o fornecedor",
+   "procedure": "Combinar com o fornecedor, por escrito, como será a devolução ou o ajuste. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_financeiro",
+   "shot": "mesa",
+   "time": "15:05",
+   "narration": "15:05 · O fornecedor está sendo honesto e quer resolver.",
+   "prompt": "O que faz primeiro?",
+   "alternatives": [
+    {
+     "text": "Combino diretamente com o fornecedor um desconto futuro.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Acerto por fora",
+      "text": "O financeiro não sabe e o registro fica errado.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Encaminho o aviso do fornecedor ao financeiro com os dados disponíveis.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Aviso encaminhado",
+      "text": "A área responsável recebe tudo o que precisa.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Digo ao fornecedor que vou ver e deixo passar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Resposta vaga",
+      "text": "O assunto cai no esquecimento.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso o financeiro e peço orientação sobre como tratar o pagamento a maior.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Financeiro acionado",
+      "text": "O assunto é tratado pelo canal correto.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "conferir_documentos",
+   "shot": "documento",
+   "time": "15:20",
+   "narration": "15:20 · Você tem nota, pedido e comprovante.",
+   "prompt": "O que você confere?",
+   "alternatives": [
+    {
+     "text": "Confiro só o comprovante.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Conferência parcial",
+      "text": "Você não vê se o erro estava no pedido.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço ao fornecedor o extrato do período e comparo.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Extrato comparado",
+      "text": "Você vê o quadro completo.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Comparo a nota, o pedido e o comprovante e confirmo o valor correto.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Documentos conferidos",
+      "text": "Você confirma o tamanho exato do erro.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aceito o valor informado pelo fornecedor sem conferir.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Valor presumido",
+      "text": "Você pode corrigir o que não está errado.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "entender_origem",
+   "shot": "tela",
+   "time": "15:45",
+   "narration": "15:45 · O erro precisa ser explicado.",
+   "prompt": "Como entende a origem?",
+   "alternatives": [
+    {
+     "text": "Verifico outros pagamentos do mesmo período para ver se há padrão.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Padrão verificado",
+      "text": "Você encontra e corrige outros casos.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Rastreio o lançamento e descubro em que etapa o valor foi alterado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Origem identificada",
+      "text": "Você sabe como evitar que se repita.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero um erro isolado e não investigo.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Erro isolado presumido",
+      "text": "Outros pagamentos podem ter o mesmo problema.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Culpo quem fez o lançamento.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Culpa pessoal",
+      "text": "A causa real, talvez de processo, é ignorada.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_ocorrencia",
+   "shot": "tela",
+   "time": "16:15",
+   "narration": "16:15 · O caso será tratado.",
+   "prompt": "Como registra a ocorrência?",
+   "alternatives": [
+    {
+     "text": "Registro o erro, a causa e a forma de correção no sistema.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Ocorrência registrada",
+      "text": "Há histórico completo do que aconteceu.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo sem registro para não expor a equipe.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem registro",
+      "text": "A auditoria encontrará a diferença sem explicação.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro apenas o valor.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro mínimo",
+      "text": "Faltam a causa e o tratamento.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Abro uma ocorrência formal e acompanho até o fechamento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Ocorrência formal",
+      "text": "O caso tem dono e prazo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "alinhar_fornecedor",
+   "shot": "relogio",
+   "time": "16:40",
+   "narration": "16:40 · O fornecedor aguarda uma definição.",
+   "prompt": "Como alinha com ele?",
+   "alternatives": [
+    {
+     "text": "Deixo a cargo do fornecedor devolver quando quiser.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem combinado",
+      "text": "O assunto se arrasta.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço ao financeiro que envie a orientação formal ao fornecedor.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Orientação formal",
+      "text": "O fornecedor recebe instruções oficiais.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Combino verbalmente e confio que ele lembre.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Combinado verbal",
+      "text": "Pode haver mal-entendido depois.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Combino por escrito se haverá devolução ou abatimento e em qual prazo.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Combinado por escrito",
+      "text": "Os dois lados sabem como o caso termina.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Pagamento em desacordo",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "conferir_documentos",
+      "is": false
+     },
+     {
+      "decision": "entender_origem",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Documentos conferidos",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "conferir_documentos",
+      "is": true
+     },
+     {
+      "decision": "entender_origem",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Ocorrência registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_ocorrencia",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Financeiro ciente",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_financeiro",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Caso sem registro ou sem combinado",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "alinhar_fornecedor",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Correção do pagamento",
+   "levels": {
+    "ok": "Pagamento corrigido",
+    "warn": "Pagamento em correção",
+    "bad": "Pagamento sem correção"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Controle interno",
+   "levels": {
+    "ok": "Controle preservado",
+    "warn": "Controle parcial",
+    "bad": "Controle comprometido"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Relação com o fornecedor",
+   "levels": {
+    "ok": "Relação preservada",
+    "warn": "Relação com incertezas",
+    "bad": "Relação desgastada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "coordenador-administrativo"
+}

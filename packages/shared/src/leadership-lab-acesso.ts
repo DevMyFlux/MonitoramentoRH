@@ -30,7 +30,8 @@ export type LabPerfil = "DEV" | "ADMIN" | "RH" | "COMUM";
  * curador não valida o próprio resultado e quem administra não gera dados de perfil. Se um
  * RH também for líder e precisar fazer o teste, é decisão do negócio.
  */
-export type PapelLab = "participante" | "curador" | "administrador" | "gestao" | "especialista";
+export type PapelLab =
+  "participante" | "curador" | "administrador" | "gestao" | "especialista" | "testador";
 
 /**
  * Que dados o papel alcança numa ação:
@@ -55,6 +56,13 @@ const matriz = {
   "sessao:ler-atual": { participante: "proprios" },
   "sessao:responder": { participante: "proprios" },
   "sessao:tempo-esgotado": { participante: "proprios" },
+  // O teste por cenários (a trilha): TODOS os perfis fazem o próprio teste (DEV, ADMIN e RH para
+  // validar e demonstrar, com origem "interno"), desde que a conta esteja ligada a um colaborador.
+  // É o papel "testador", que todo usuário tem e que só alcança dados PRÓPRIOS: o curador continua
+  // lendo resultados de turma por resultado:ler, e o administrador não lê resultado de ninguém.
+  "teste:iniciar": { testador: "proprios" },
+  "teste:ler": { testador: "proprios" },
+  "teste:responder": { testador: "proprios" },
   "contestacao:criar": { participante: "proprios" },
   "contestacao:ler-proprias": { participante: "proprios" },
   // Simulação local (só no modo demonstração): lista de temas e classificação do texto livre.
@@ -77,8 +85,14 @@ const matriz = {
   "alerta:tratar": { curador: "turma" },
   "contribuicao:listar": { curador: "turma" },
   "contribuicao:decidir": { curador: "turma" },
-  "contestacao:listar": { curador: "turma" },
-  "contestacao:decidir": { curador: "turma" },
+  // Contestações: o RH decide (turmas que acompanha); ADMIN e DEV também (todas).
+  "contestacao:listar": { curador: "turma", administrador: "turma" },
+  "contestacao:analisar": { curador: "turma", administrador: "turma" },
+  "contestacao:decidir": { curador: "turma", administrador: "turma" },
+  // Acompanhamento unificado do Lab (visão geral, pessoas, cenários, exportação): o RH, nas turmas
+  // ativas que acompanha; ADMIN e DEV, em tudo. Quem faz o teste só vê o próprio resultado.
+  "acompanhamento:ler": { curador: "turma", administrador: "turma" },
+  "acompanhamento:exportar": { curador: "turma", administrador: "turma" },
   "turma:listar": { curador: "turma" },
   "turma:criar": { curador: "turma" },
   "turma:atualizar": { curador: "turma" },
@@ -140,6 +154,8 @@ export type DecisaoDeAcesso = { permitido: true } | { permitido: false; motivo: 
 
 export function papeisLab(ator: LabAtor): ReadonlySet<PapelLab> {
   const papeis = new Set<PapelLab>();
+  // Todo perfil faz o próprio teste por cenários (origem interna fora do COMUM); só os dados dele.
+  papeis.add("testador");
   if (ator.role === "COMUM") papeis.add("participante");
   if (ator.role === "RH") papeis.add("curador");
   if (ator.role === "ADMIN" || ator.role === "DEV") papeis.add("administrador");

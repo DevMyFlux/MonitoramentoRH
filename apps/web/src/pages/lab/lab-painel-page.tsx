@@ -127,6 +127,7 @@ function PainelCompleto({ painel }: { painel: LabPainel }) {
       )}
 
       <AcaoDoPainel
+        modoDoTeste={painel.modoDoTeste}
         acao={painel.acao}
         iniciando={iniciar.isPending}
         erroAoIniciar={iniciar.error ? descreverErro(iniciar.error) : null}

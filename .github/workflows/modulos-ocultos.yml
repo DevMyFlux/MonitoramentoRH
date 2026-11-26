@@ -1,0 +1,28 @@
+# Módulos ocultos (QLP e Recrutamento): fora do menu, das rotas e da API, mas o código segue no
+# repositório e precisa continuar compilando e passando nos testes, para poder ser religado depois
+# (uma linha em packages/shared/src/modules.ts). Este job é só deles; veja docs/modulos-ocultos.md.
+name: Módulos ocultos
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  modulos-ocultos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Gerar o cliente do banco e compilar os pacotes compartilhados
+        run: |
+          pnpm --filter @my-flux/api db:generate
+          pnpm --filter @my-flux/shared --filter @my-flux/types --filter @my-flux/validation --filter @my-flux/config build
+      - name: Typecheck (inclui apps/*/src/_hidden)
+        run: pnpm typecheck
+      - name: Testes dos módulos ocultos
+        run: pnpm test:ocultos

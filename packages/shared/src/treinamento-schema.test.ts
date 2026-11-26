@@ -109,7 +109,7 @@ describe("validação de autoria do cenário", () => {
     expect(problemas(d).map((p) => p.caminho)).toContain("events.0.when");
   });
 
-  it("recusa formato fora do contrato: quantidade de perguntas e alternativas, horário, campo a mais", () => {
+  it("recusa formato fora do contrato: quantidade de perguntas e alternativas, rótulo de tempo longo demais, campo a mais", () => {
     const c = copia();
     c.questions.pop();
     expect(problemas(c).map((p) => p.caminho)).toContain("questions");
@@ -119,7 +119,7 @@ describe("validação de autoria do cenário", () => {
     expect(problemas(d).map((p) => p.caminho)).toContain("questions.0.alternatives");
 
     const e = copia();
-    e.questions[0].time = "25:00";
+    e.questions[0].time = "x".repeat(25); // o rótulo de tempo é texto curto (até 24)
     expect(problemas(e).map((p) => p.caminho)).toContain("questions.0.time");
 
     const f = copia();

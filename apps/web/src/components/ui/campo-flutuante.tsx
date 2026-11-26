@@ -91,6 +91,8 @@ type CampoDeSelecaoProps = {
   aoMudar: (valor: string) => void;
   opcoes: { value: string; label: string }[];
   obrigatorio?: boolean;
+  /** Mensagem de erro embaixo do campo (liga aria-invalid e aria-describedby). */
+  erro?: string;
   className?: string;
 };
 
@@ -100,38 +102,48 @@ export function CampoDeSelecao({
   aoMudar,
   opcoes,
   obrigatorio,
+  erro,
   className
 }: CampoDeSelecaoProps) {
   const id = useId();
   return (
-    <div className={cn("relative", className)}>
-      <select
-        id={id}
-        value={valor}
-        required={obrigatorio}
-        onChange={(e) => aoMudar(e.target.value)}
-        className={cn(base, "h-[3.25rem] cursor-pointer appearance-none pr-9")}
-      >
-        {opcoes.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      <label htmlFor={id} className={cn(rotuloBase, "top-1.5 text-[11px] font-medium")}>
-        {rotulo}
-        <Obrigatorio ligado={obrigatorio} />
-      </label>
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 20 20"
-        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mf-texto-3"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      >
-        <path d="m5 8 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+    <div className={className}>
+      <div className="relative">
+        <select
+          id={id}
+          value={valor}
+          required={obrigatorio}
+          aria-invalid={erro ? true : undefined}
+          aria-describedby={erro ? `${id}-erro` : undefined}
+          onChange={(e) => aoMudar(e.target.value)}
+          className={cn(base, "h-[3.25rem] cursor-pointer appearance-none pr-9")}
+        >
+          {opcoes.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <label htmlFor={id} className={cn(rotuloBase, "top-1.5 text-[11px] font-medium")}>
+          {rotulo}
+          <Obrigatorio ligado={obrigatorio} />
+        </label>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 20 20"
+          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mf-texto-3"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+        >
+          <path d="m5 8 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      {erro ? (
+        <p id={`${id}-erro`} role="alert" className="mt-1 text-xs text-mf-perigo">
+          {erro}
+        </p>
+      ) : null}
     </div>
   );
 }

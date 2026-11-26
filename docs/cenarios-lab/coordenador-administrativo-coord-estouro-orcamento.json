@@ -1,0 +1,513 @@
+{
+ "id": "coord-estouro-orcamento",
+ "title": "Estouro do orçamento do centro de custo",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Segunda, 09h. O fechamento parcial mostra o centro de custo acima do previsto.",
+   "Você é coordenador e responde pelo orçamento da área.",
+   "Faltam seis semanas para o fim do trimestre."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_diretoria",
+   "label": "Informar a diretoria",
+   "procedure": "Informar cedo a diretoria sobre desvios relevantes de orçamento. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "analisar_desvio",
+   "label": "Analisar o desvio",
+   "procedure": "Identificar onde e por que o gasto passou do previsto. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "revisar_prioridades",
+   "label": "Revisar prioridades",
+   "procedure": "Rever o que pode ser adiado, reduzido ou cancelado sem prejudicar a operação. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_plano",
+   "label": "Registrar o plano",
+   "procedure": "Formalizar o plano de ajuste e as aprovações necessárias. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "acompanhar_semanal",
+   "label": "Acompanhar semanalmente",
+   "procedure": "Acompanhar o gasto toda semana até voltar ao previsto. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_diretoria",
+   "shot": "mesa",
+   "time": "09:05",
+   "narration": "09:05 · Os números mostram o desvio e ninguém acima de você sabe.",
+   "prompt": "Qual é o seu primeiro movimento?",
+   "alternatives": [
+    {
+     "text": "Espero o fim do mês para ver se o gasto se compensa.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Esperança de compensação",
+      "text": "O desvio pode crescer sem ninguém ver.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço uma conversa curta com a diretoria e levo os números.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Conversa antecipada",
+      "text": "Você evita surpresas e ganha apoio.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Seguro a informação até ter tudo resolvido.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Informação retida",
+      "text": "A diretoria descobre por outro caminho.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Aviso a diretoria do desvio e levo uma proposta de ajuste.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Diretoria informada",
+      "text": "Quem decide vê o problema cedo e com proposta.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "analisar_desvio",
+   "shot": "tela",
+   "time": "09:30",
+   "narration": "09:30 · Há várias linhas de despesa acima do previsto.",
+   "prompt": "Como você analisa o desvio?",
+   "alternatives": [
+    {
+     "text": "Olho só o total e corto linhas ao acaso.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Corte cego",
+      "text": "Você pode cortar o que é essencial.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço à equipe de compras um extrato dos gastos do período.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Extrato pedido",
+      "text": "Os dados vêm de quem registra.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Abro o gasto por categoria e fornecedor e comparo com o orçamento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Desvio detalhado",
+      "text": "Você encontra de onde vem a diferença.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero que todo o gasto é necessário e não analiso.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem análise",
+      "text": "O desvio não se explica nem se corrige.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "revisar_prioridades",
+   "shot": "reuniao",
+   "time": "10:00",
+   "narration": "10:00 · Algumas despesas são essenciais e outras podem esperar.",
+   "prompt": "Como você define o que ajustar?",
+   "alternatives": [
+    {
+     "text": "Cancelo o que for mais fácil de cancelar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Corte de menor resistência",
+      "text": "O critério é conveniência, não impacto.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Classifico por impacto na operação e proponho adiar o que não é crítico.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Prioridades definidas",
+      "text": "O corte protege o que importa.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Corto igualmente de todos os itens.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Corte linear",
+      "text": "Itens críticos são prejudicados.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Discuto com os supervisores o que é adiável e combino o plano.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Equipe consultada",
+      "text": "A decisão tem a visão de quem executa.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_plano",
+   "shot": "tela",
+   "time": "10:30",
+   "narration": "10:30 · O plano precisa ser aprovado e acompanhado.",
+   "prompt": "Como você formaliza?",
+   "alternatives": [
+    {
+     "text": "Registro o plano, os valores e as aprovações necessárias.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Plano formalizado",
+      "text": "Todos sabem o que foi decidido.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Mantenho o plano na cabeça, sem papel.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Plano informal",
+      "text": "Ninguém consegue acompanhar nem cobrar.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro o plano sem aprovação de ninguém.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Plano sem aval",
+      "text": "Pode ser contestado depois.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Envio o plano à diretoria e à controladoria e peço ciência.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Ciência pedida",
+      "text": "O plano ganha respaldo formal.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "acompanhar_semanal",
+   "shot": "relogio",
+   "time": "Segunda seguinte",
+   "narration": "Segunda seguinte · O plano já está em andamento.",
+   "prompt": "Como você garante que vai funcionar?",
+   "alternatives": [
+    {
+     "text": "Só olho de novo no fechamento do mês.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Olhar tardio",
+      "text": "O desvio pode voltar sem ser percebido.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço à controladoria um relatório semanal do centro de custo.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Relatório semanal",
+      "text": "Você tem dados regulares para decidir.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Olho quando me lembro.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Acompanhamento irregular",
+      "text": "As decisões ficam desencontradas.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Acompanho o gasto toda semana e ajusto o que for preciso.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Acompanhamento semanal",
+      "text": "Qualquer novo desvio aparece cedo.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Desvio crescendo",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "analisar_desvio",
+      "is": false
+     },
+     {
+      "decision": "revisar_prioridades",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Desvio entendido",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "analisar_desvio",
+      "is": true
+     },
+     {
+      "decision": "revisar_prioridades",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Plano formalizado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_plano",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Diretoria ciente",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_diretoria",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Gasto sem acompanhamento",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "acompanhar_semanal",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Controle orçamentário",
+   "levels": {
+    "ok": "Gasto sob controle",
+    "warn": "Gasto parcialmente controlado",
+    "bad": "Gasto fora de controle"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Qualidade da decisão",
+   "levels": {
+    "ok": "Decisão com dados e prioridades",
+    "warn": "Decisão parcialmente fundamentada",
+    "bad": "Decisão sem base"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Transparência com a diretoria",
+   "levels": {
+    "ok": "Diretoria bem informada",
+    "warn": "Diretoria informada tarde",
+    "bad": "Diretoria surpreendida"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "coordenador-administrativo"
+}

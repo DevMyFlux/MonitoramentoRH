@@ -107,7 +107,11 @@ export async function registerAuthRoutes(
     assertCanCreateRole(actor.role, payload.role);
     const scopes = normalizeScopeInput(payload.scopes);
     if (payload.role === "DEV" && !scopes.some((scope) => scope.isGlobal)) {
-      throw new HttpError(400, "DEV_GLOBAL_SCOPE_REQUIRED", "Todo DEV precisa possuir escopo global.");
+      throw new HttpError(
+        400,
+        "DEV_GLOBAL_SCOPE_REQUIRED",
+        "Todo DEV precisa possuir escopo global."
+      );
     }
     assertDelegatedScopes(actor, scopes);
 
@@ -117,7 +121,11 @@ export async function registerAuthRoutes(
       passwordHash: hashPassword(payload.password),
       role: payload.role,
       scopes,
-      actorId: actor.id
+      cargo: payload.cargo,
+      nivelGovernanca: payload.nivelGovernanca,
+      areaId: payload.areaId,
+      actorId: actor.id,
+      actorRole: actor.role
     });
 
     return { data: { user: created } };
@@ -137,7 +145,11 @@ export async function registerAuthRoutes(
       scopes: normalizeScopeInput(payload.scopes),
       tokenHash: hashToken(token),
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-      actorId: actor.id
+      cargo: payload.cargo,
+      nivelGovernanca: payload.nivelGovernanca,
+      areaId: payload.areaId,
+      actorId: actor.id,
+      actorRole: actor.role
     });
 
     return {

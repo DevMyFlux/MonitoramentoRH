@@ -1,0 +1,282 @@
+[
+ {
+  "arquivo": "administrativo-geral-adm-agenda-conflito.json",
+  "id": "adm-agenda-conflito",
+  "titulo": "Conflito na agenda da diretoria",
+  "publico": "administrativo-geral",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "administrativo-geral-adm-cliente-interno-irritado.json",
+  "id": "adm-cliente-interno-irritado",
+  "titulo": "Cliente interno irritado",
+  "publico": "administrativo-geral",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "administrativo-geral-adm-compra-sem-cotacao.json",
+  "id": "adm-compra-sem-cotacao",
+  "titulo": "Compra pequena sem cotação",
+  "publico": "administrativo-geral",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "administrativo-geral-adm-documento-impressora.json",
+  "id": "adm-documento-impressora",
+  "titulo": "Documento sigiloso na impressora",
+  "publico": "administrativo-geral",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "administrativo-geral-adm-erro-nota-fiscal.json",
+  "id": "adm-erro-nota-fiscal",
+  "titulo": "Erro no lançamento de nota fiscal",
+  "publico": "administrativo-geral",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "administrativo-geral-adm-guarda-documentos.json",
+  "id": "adm-guarda-documentos",
+  "titulo": "Arquivamento e guarda de documentos",
+  "publico": "administrativo-geral",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "administrativo-geral-adm-phishing-pagamento.json",
+  "id": "adm-phishing-pagamento",
+  "titulo": "Pedido de pagamento suspeito",
+  "publico": "administrativo-geral",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "administrativo-geral-adm-senha-compartilhada.json",
+  "id": "adm-senha-compartilhada",
+  "titulo": "Senha compartilhada entre colegas",
+  "publico": "administrativo-geral",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "administrativo-geral-adm-versao-errada.json",
+  "id": "adm-versao-errada",
+  "titulo": "Versão errada de documento circulando",
+  "publico": "administrativo-geral",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "administrativo-geral-adm-visitante-sem-agenda.json",
+  "id": "adm-visitante-sem-agenda",
+  "titulo": "Visitante sem agendamento",
+  "publico": "administrativo-geral",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "coordenador-administrativo-coord-carga-trabalho.json",
+  "id": "coord-carga-trabalho",
+  "titulo": "Colaborador sobrecarregado",
+  "publico": "coordenador-administrativo",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "coordenador-administrativo-coord-contrato-vencendo.json",
+  "id": "coord-contrato-vencendo",
+  "titulo": "Contrato de fornecedor vencendo",
+  "publico": "coordenador-administrativo",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "coordenador-administrativo-coord-equipe-reduzida.json",
+  "id": "coord-equipe-reduzida",
+  "titulo": "Equipe reduzida por férias",
+  "publico": "coordenador-administrativo",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "coordenador-administrativo-coord-erro-pagamento.json",
+  "id": "coord-erro-pagamento",
+  "titulo": "Erro de pagamento a fornecedor",
+  "publico": "coordenador-administrativo",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "coordenador-administrativo-coord-estouro-orcamento.json",
+  "id": "coord-estouro-orcamento",
+  "titulo": "Estouro do orçamento do centro de custo",
+  "publico": "coordenador-administrativo",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "coordenador-administrativo-coord-mudanca-resistencia.json",
+  "id": "coord-mudanca-resistencia",
+  "titulo": "Mudança de processo e resistência",
+  "publico": "coordenador-administrativo",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "coordenador-administrativo-coord-prazo-impossivel.json",
+  "id": "coord-prazo-impossivel",
+  "titulo": "Pedido com prazo impossível",
+  "publico": "coordenador-administrativo",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "coordenador-administrativo-coord-prioridades-supervisores.json",
+  "id": "coord-prioridades-supervisores",
+  "titulo": "Supervisores em desacordo",
+  "publico": "coordenador-administrativo",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "coordenador-administrativo-coord-reconhecimento-justo.json",
+  "id": "coord-reconhecimento-justo",
+  "titulo": "Reconhecimento entre dois colaboradores",
+  "publico": "coordenador-administrativo",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "coordenador-administrativo-coord-relatorio-inconsistente.json",
+  "id": "coord-relatorio-inconsistente",
+  "titulo": "Relatório mensal inconsistente",
+  "publico": "coordenador-administrativo",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "rh-rh-admissao-incompleta.json",
+  "id": "rh-admissao-incompleta",
+  "titulo": "Admissão com documentos incompletos",
+  "publico": "rh",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "rh-rh-avaliacao-incoerente.json",
+  "id": "rh-avaliacao-incoerente",
+  "titulo": "Avaliações de desempenho incoerentes",
+  "publico": "rh",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "rh-rh-denuncia-assedio.json",
+  "id": "rh-denuncia-assedio",
+  "titulo": "Denúncia de assédio recebida",
+  "publico": "rh",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "rh-rh-desligamento.json",
+  "id": "rh-desligamento",
+  "titulo": "Conversa de desligamento",
+  "publico": "rh",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "rh-rh-dispensa-sem-justificativa.json",
+  "id": "rh-dispensa-sem-justificativa",
+  "titulo": "Pedido de dispensa sem justificativa",
+  "publico": "rh",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "rh-rh-folha-ponto-erro.json",
+  "id": "rh-folha-ponto-erro",
+  "titulo": "Erro no ponto e na folha",
+  "publico": "rh",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "rh-rh-pedido-dados-terceiro.json",
+  "id": "rh-pedido-dados-terceiro",
+  "titulo": "Pedido de dados de colaborador",
+  "publico": "rh",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "rh-rh-retorno-afastamento.json",
+  "id": "rh-retorno-afastamento",
+  "titulo": "Retorno após afastamento",
+  "publico": "rh",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "rh-rh-selecao-interna.json",
+  "id": "rh-selecao-interna",
+  "titulo": "Seleção interna e externa",
+  "publico": "rh",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "rh-rh-vencimento-treinamentos.json",
+  "id": "rh-vencimento-treinamentos",
+  "titulo": "Vencimentos de treinamentos obrigatórios",
+  "publico": "rh",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "supervisor-manutencao-adm-sup-checklist-incompleto.json",
+  "id": "sup-checklist-incompleto",
+  "titulo": "Checklist de OS incompleto",
+  "publico": "supervisor-manutencao-adm",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "supervisor-manutencao-adm-sup-compra-urgente.json",
+  "id": "sup-compra-urgente",
+  "titulo": "Compra urgente de peça",
+  "publico": "supervisor-manutencao-adm",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "supervisor-manutencao-adm-sup-conflito-tecnicos.json",
+  "id": "sup-conflito-tecnicos",
+  "titulo": "Conflito entre dois técnicos",
+  "publico": "supervisor-manutencao-adm",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "supervisor-manutencao-adm-sup-divergencia-horas.json",
+  "id": "sup-divergencia-horas",
+  "titulo": "Divergência nas horas da equipe",
+  "publico": "supervisor-manutencao-adm",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "supervisor-manutencao-adm-sup-estoque-critico.json",
+  "id": "sup-estoque-critico",
+  "titulo": "Item crítico abaixo do mínimo",
+  "publico": "supervisor-manutencao-adm",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "supervisor-manutencao-adm-sup-feedback-tecnico.json",
+  "id": "sup-feedback-tecnico",
+  "titulo": "Feedback a um técnico",
+  "publico": "supervisor-manutencao-adm",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "supervisor-manutencao-adm-sup-os-atrasadas.json",
+  "id": "sup-os-atrasadas",
+  "titulo": "Ordens de serviço atrasadas",
+  "publico": "supervisor-manutencao-adm",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "supervisor-manutencao-adm-sup-passagem-turno.json",
+  "id": "sup-passagem-turno",
+  "titulo": "Passagem de turno com pendência",
+  "publico": "supervisor-manutencao-adm",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "supervisor-manutencao-adm-sup-pedido-fora-escopo.json",
+  "id": "sup-pedido-fora-escopo",
+  "titulo": "Pedido fora do escopo",
+  "publico": "supervisor-manutencao-adm",
+  "status": "rascunho"
+ },
+ {
+  "arquivo": "supervisor-manutencao-adm-sup-terceiro-sem-docs.json",
+  "id": "sup-terceiro-sem-docs",
+  "titulo": "Terceirizado sem documentos",
+  "publico": "supervisor-manutencao-adm",
+  "status": "rascunho"
+ }
+]

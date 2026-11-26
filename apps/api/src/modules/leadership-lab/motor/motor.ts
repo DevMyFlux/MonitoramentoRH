@@ -21,6 +21,7 @@ import {
   type LabEscolha,
   type LabConversaResposta,
   type LabMoldeNivel,
+  type LabModoDeTeste,
   labConversaEntradaSchema,
   labConversaLimites,
   labMoldeNiveis,
@@ -39,9 +40,11 @@ import { z } from "zod";
 import type { AuthenticatedUser } from "@my-flux/types";
 import {
   MENSAGEM_DE_LIMITACAO,
+  RESPOSTA_FORA_DO_ESCOPO,
   consultarDados,
   podeConsultarDados
 } from "../../suporte/suporte-dados.js";
+import { resumirMeusResultados, resumoSemResultados } from "../../suporte/meus-resultados.js";
 import { HttpError } from "../../../lib/http-error.js";
 import { assertAcesso } from "../lab-access.js";
 import { carregarParticipantesDasTurmas } from "../lab-actor.js";
@@ -51,6 +54,7 @@ import {
   type RespostaTurnoIa,
   aplicarGuarda,
   conversaIaRequestSchema,
+  type PessoaIa,
   guardaIaRequestSchema,
   iniciarSessaoIaRequestSchema,
   proximoTurnoIaRequestSchema,
@@ -147,6 +151,16 @@ function ehViolacaoDeUnicidade(erro: unknown): boolean {
   return erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === "P2002";
 }
 
+/** O que o serviço de IA precisa informar em GET / (recursos_suporte) para o contrato novo do assistente. */
+const RECURSOS_DO_SUPORTE = ["escopo", "pessoa", "meus_resultados", "fora_do_escopo"] as const;
+
+/** Cargo, nível de governança e área da conta; nulo se o cadastro está incompleto (conta antiga). */
+export function pessoaDaConta(user: AuthenticatedUser): PessoaIa | null {
+  const { cargo, nivelGovernanca, area } = user;
+  if (!cargo || !nivelGovernanca || !area?.nome) return null;
+  return { cargo, nivel_governanca: nivelGovernanca, area: area.nome };
+}
+
 /** O que o assistente responde quando a Guarda segura a mensagem. */
 export const RESPOSTA_DO_SUPORTE_BLOQUEADA =
   "Sua mensagem parece ter dados pessoais ou sensíveis (nome, CPF, telefone, dados de saúde...), e por isso não foi enviada. Reescreva a dúvida sem esses dados que eu ajudo.";
@@ -168,6 +182,23 @@ export class MotorDoTeste {
     this.config = dependencias.config;
     this.relogio = dependencias.agora ?? (() => new Date());
     this.logger = dependencias.logger;
+  }
+
+  /** O relógio do motor (injetável nos testes): a trilha de cenários usa o mesmo. */
+  get agora(): () => Date {
+    return this.relogio;
+  }
+
+  /** O modo do teste neste ambiente. Sem configuração explícita, o legado. */
+  get modoDoTeste(): LabModoDeTeste {
+    return this.config.modoDoTeste ?? "legado";
+  }
+
+  /** O que a trilha de cenários precisa da configuração do motor (o mesmo termo, limite e fuso). */
+  get configDaTrilha() {
+    const { versaoTermo, limiteTestesDia, fusoHorario, cenariosPorTeste, modoDoTeste } =
+      this.config;
+    return { versaoTermo, limiteTestesDia, fusoHorario, cenariosPorTeste, modoDoTeste };
   }
 
   /** A trava de resultado experimental está ligada (LAB_EXIGE_BASE_VALIDADA)? */
@@ -267,7 +298,9 @@ export class MotorDoTeste {
     return consultarPainel(this.db, {
       participanteId: this.participanteDe(ator),
       config: this.config,
-      agora: this.relogio()
+      agora: this.relogio(),
+      modoDoTeste: this.modoDoTeste,
+      userId: ator.userId
     });
   }
 
@@ -282,6 +315,14 @@ export class MotorDoTeste {
    */
   async iniciar(ator: LabAtor, entradaBruta: unknown = {}): Promise<RespostaDoTeste> {
     assertAcesso(ator, "sessao:iniciar");
+    // No modo por cenários o teste é a trilha (POST /teste); este, de situações conduzidas pela IA, só
+    // existe no modo legado. Falha fechado: ninguém começa o teste da IA por engano.
+    if (this.modoDoTeste === "cenarios")
+      throw new HttpError(
+        409,
+        "LAB_MODO_CENARIOS",
+        "O teste deste ambiente é por cenários. Use o teste do painel do Leadership Lab."
+      );
     const entrada = iniciarEntradaSchema.parse(entradaBruta ?? {});
     const participanteId = this.participanteDe(ator);
 
@@ -602,20 +643,53 @@ export class MotorDoTeste {
       return texto.trim() ? [{ papel: m.papel, texto }] : [];
     });
 
+    // O ESCOPO é decidido aqui, pelo perfil da conta (nunca pela tela nem pela IA): o COMUM só
+    // conversa sobre o Leadership Lab e os resultados dele, e a IA nem recebe o guia dos outros
+    // módulos. Os demais perfis seguem sem limite. Quem tem cadastro completo manda também cargo,
+    // nível de governança e área, para a IA ajustar exemplos (contexto, não permissão).
+    const escopo = user.role === "COMUM" ? ("lab" as const) : ("completo" as const);
+    const pessoa = pessoaDaConta(user);
     const corpo = suporteIaRequestSchema.parse({
       mensagem,
       historico,
       perfil: ator.role,
-      pagina: entrada.pagina
+      pagina: entrada.pagina,
+      ...(escopo === "lab" ? { escopo } : {}),
+      ...(pessoa ? { pessoa } : {})
     });
 
-    // 1º envio: a IA responde, ou pede uma consulta de dados (só o NOME da consulta).
+    // 1º envio: a IA responde, recusa o assunto (escopo lab) ou pede uma consulta (só o NOME dela).
     const primeira = await this.chamarSuporte(corpo, user);
     if ("resposta" in primeira) return { desfecho: "respondida", resposta: primeira.resposta };
+    if ("fora_do_escopo" in primeira) {
+      // Só o escopo lab recusa assunto; o texto é fixo, nunca da IA.
+      return escopo === "lab"
+        ? { desfecho: "fora_do_escopo", resposta: RESPOSTA_FORA_DO_ESCOPO }
+        : {
+            desfecho: "respondida",
+            resposta: "Não consegui responder a essa pergunta. Tente reformulá-la."
+          };
+    }
+
+    const pedido = primeira.consulta;
+
+    // Os resultados DA PRÓPRIA pessoa: qualquer perfil pode pedir os dele (o dado nasce do painel do
+    // vínculo da conta que perguntou, então não há caminho para o de outra pessoa).
+    if (pedido.nome === "meus_resultados") {
+      return this.responderComMeusResultados({ ator, user, corpo, escopo, limite: pedido.limite });
+    }
+
+    // No escopo lab nenhuma outra consulta existe: se a IA pediu, a pergunta é de outro assunto.
+    if (escopo === "lab") {
+      this.logger?.info?.(
+        { userId: user.id, perfil: user.role, consulta: pedido.nome },
+        "suporte: consulta fora do escopo lab negada"
+      );
+      return { desfecho: "fora_do_escopo", resposta: RESPOSTA_FORA_DO_ESCOPO };
+    }
 
     // Dados de pessoas: a PERMISSÃO é conferida aqui, no servidor, antes de qualquer consulta. Sem
     // permissão, a consulta nem roda e a IA nunca vê o dado.
-    const pedido = primeira.consulta;
     if (!podeConsultarDados(user.role)) {
       this.logger?.info?.(
         { userId: user.id, perfil: user.role, consulta: pedido.nome },
@@ -646,6 +720,57 @@ export class MotorDoTeste {
 
     // 2º envio: a IA redige a resposta a partir dos dados autorizados.
     const segunda = await this.chamarSuporte(corpoComDados, user);
+    return {
+      desfecho: "respondida",
+      resposta:
+        "resposta" in segunda
+          ? segunda.resposta
+          : "Não consegui montar a resposta com esses dados. Tente reformular a pergunta."
+    };
+  }
+
+  /**
+   * `meus_resultados`: monta o resumo dos resultados da PRÓPRIA pessoa (painel do vínculo dela) e
+   * pede à IA que responda só com ele. Sem vínculo ou sem testes concluídos, o resumo diz isso.
+   */
+  private async responderComMeusResultados(args: {
+    ator: LabAtor;
+    user: AuthenticatedUser;
+    corpo: SuporteIaRequest;
+    escopo: "lab" | "completo";
+    limite: number | null;
+  }): Promise<SuporteResposta> {
+    const { ator, user, corpo, escopo, limite } = args;
+    let resultado: Record<string, unknown>;
+    try {
+      resultado =
+        ator.participanteId === null
+          ? resumoSemResultados("sem_vinculo")
+          : resumirMeusResultados(
+              await consultarPainel(this.db, {
+                participanteId: ator.participanteId,
+                config: this.config,
+                agora: this.relogio()
+              }),
+              limite ?? 5
+            );
+    } catch (erro) {
+      this.logger?.warn({ erro }, "falha ao consultar os resultados do suporte");
+      return {
+        desfecho: "respondida",
+        resposta: "Não consegui consultar os seus resultados agora. Tente de novo em instantes."
+      };
+    }
+    this.logger?.info?.(
+      { userId: user.id, perfil: user.role, consulta: "meus_resultados" },
+      "suporte: consulta dos próprios resultados"
+    );
+    const comDados = suporteIaRequestSchema.parse({
+      ...corpo,
+      ...(escopo === "lab" ? { escopo } : {}),
+      dados: { consulta: "meus_resultados", resultado }
+    });
+    const segunda = await this.chamarSuporte(comDados, user);
     return {
       desfecho: "respondida",
       resposta:
@@ -692,16 +817,30 @@ export class MotorDoTeste {
   }> {
     if (!this.ia.saude) return { estado: "ok", versao: "demonstracao", detalhe: null };
     try {
-      const corpo = (await this.ia.saude()) as { versao_instrucao?: unknown; agentes?: unknown };
+      const corpo = (await this.ia.saude()) as {
+        versao_instrucao?: unknown;
+        agentes?: unknown;
+        recursos_suporte?: unknown;
+      };
       const agentes = Array.isArray(corpo.agentes) ? corpo.agentes : [];
+      const recursos = Array.isArray(corpo.recursos_suporte) ? corpo.recursos_suporte : [];
       const versao = typeof corpo.versao_instrucao === "string" ? corpo.versao_instrucao : null;
-      return agentes.includes("suporte")
+      if (!agentes.includes("suporte"))
+        return {
+          estado: "desatualizado",
+          versao,
+          detalhe:
+            "O serviço de IA responde, mas não tem o agente de suporte. Reimplante o serviço lab-ia."
+        };
+      // Escopo por perfil, cargo/nível/área e resultados próprios: sem eles o serviço recusa o corpo
+      // novo e o assistente do perfil COMUM falha (fechado, nunca aberto). Reimplante o lab-ia.
+      const faltam = RECURSOS_DO_SUPORTE.filter((r) => !recursos.includes(r));
+      return faltam.length === 0
         ? { estado: "ok", versao, detalhe: null }
         : {
             estado: "desatualizado",
             versao,
-            detalhe:
-              "O serviço de IA responde, mas não tem o agente de suporte. Reimplante o serviço lab-ia."
+            detalhe: `O serviço de IA não tem o contrato novo do assistente (${faltam.join(", ")}). Reimplante o serviço lab-ia antes de usar o assistente com o perfil COMUM.`
           };
     } catch (erro) {
       return {
@@ -783,7 +922,11 @@ export class MotorDoTeste {
       molde: args.molde,
       mensagem,
       historico: historicoSeguro(entrada.historico, seguros),
-      resultado: args.resultado
+      resultado: args.resultado,
+      // Cargo, nível e área da conta (coerência dos exemplos); omitido se o cadastro está incompleto.
+      ...(await this.pessoaDoParticipante(args.participanteId).then((p) =>
+        p ? { pessoa: p } : {}
+      ))
     });
     const desfecho = await chamarIa(() => this.ia.conversar(corpo), validarConversaIa);
     if (!desfecho.ok) {
@@ -1135,6 +1278,25 @@ export class MotorDoTeste {
   // =========================================================================
   // Leitura e montagem das respostas
   // =========================================================================
+
+  /** Cargo, nível e área da conta que está ligada a este participante (nulo: cadastro incompleto). */
+  private async pessoaDoParticipante(participanteId: string): Promise<PessoaIa | null> {
+    const participante = await this.db.labParticipante.findUnique({
+      where: { id: participanteId },
+      select: {
+        user: {
+          select: { cargo: true, nivelGovernanca: true, area: { select: { nome: true } } }
+        }
+      }
+    });
+    const u = participante?.user;
+    if (!u) return null;
+    return pessoaDaConta({
+      cargo: u.cargo,
+      nivelGovernanca: u.nivelGovernanca,
+      area: u.area ? { id: "", nome: u.area.nome } : null
+    } as AuthenticatedUser);
+  }
 
   private participanteDe(ator: LabAtor): string {
     if (ator.participanteId === null) {

@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { registerRecruitmentRoutes } from "./modules/recruitment/recruitment-routes.js";
+import { registrarModulosOcultos } from "./_hidden/registrar.js";
 import { registerWorkspaceRoutes } from "./modules/operations/workspace-routes.js";
 import cors from "@fastify/cors";
 import fastifyStatic from "@fastify/static";
@@ -29,8 +29,6 @@ import { ImportRepository } from "./modules/imports/import-repository.js";
 import { registerImportRoutes } from "./modules/imports/import-routes.js";
 import { OperationalRepository } from "./modules/operations/operational-repository.js";
 import { registerOperationalRoutes } from "./modules/operations/operational-routes.js";
-import { QlpRepository } from "./modules/qlp/qlp-repository.js";
-import { registerQlpRoutes } from "./modules/qlp/qlp-routes.js";
 import { ReportRepository } from "./modules/reports/report-repository.js";
 import { registerReportRoutes } from "./modules/reports/report-routes.js";
 import { ScheduleRepository } from "./modules/scheduling/schedule-repository.js";
@@ -48,6 +46,9 @@ import {
   usaModoDemonstracao
 } from "./modules/leadership-lab/lab-modulo.js";
 import { registrarRotasDoLab } from "./modules/leadership-lab/lab-routes.js";
+import { registrarTravaDoComum } from "./modules/identity/comum-guard.js";
+import { registrarRotasDeCadastroDaConta } from "./modules/users/user-account-routes.js";
+import { ConfiguracaoDosTreinamentos } from "./modules/treinamentos/treinamentos-configuracao.js";
 import { registrarRotasDosTreinamentos } from "./modules/treinamentos/treinamentos-routes.js";
 import {
   type ConfigDosTreinamentos,
@@ -83,7 +84,11 @@ function getErrorMessage(error: unknown): string {
 export async function buildApp(
   opcoes: {
     lab?: InjecaoDoLab;
-    treinamentos?: { config?: ConfigDosTreinamentos; agora?: () => Date };
+    treinamentos?: {
+      config?: ConfigDosTreinamentos;
+      agora?: () => Date;
+      abertoParaComum?: boolean;
+    };
   } = {}
 ): Promise<FastifyInstance> {
   const app = Fastify({
@@ -160,10 +165,11 @@ export async function buildApp(
     }
   });
   const userRepository = new UserRepository(prisma);
+  // O COMUM só alcança o Leadership Lab (e o que é global): negado por padrão, antes de a rota rodar.
+  registrarTravaDoComum(app, userRepository, apiPrefix);
   const operationalRepository = new OperationalRepository(prisma);
   const employeeRepository = new EmployeeRepository(prisma);
   const importRepository = new ImportRepository(prisma, employeeRepository);
-  const qlpRepository = new QlpRepository(prisma);
   const aptitudeRepository = new AptitudeRepository(prisma);
   const evaluationRepository = new EvaluationRepository(prisma);
   const calendarRepository = new CalendarRepository(prisma);
@@ -193,12 +199,6 @@ export async function buildApp(
   await app.register(
     async (versionedApp) =>
       registerEmployeeRoutes(versionedApp, userRepository, employeeRepository),
-    {
-      prefix: apiPrefix
-    }
-  );
-  await app.register(
-    async (versionedApp) => registerQlpRoutes(versionedApp, userRepository, qlpRepository),
     {
       prefix: apiPrefix
     }
@@ -251,7 +251,9 @@ export async function buildApp(
     }
   );
 
-  await app.register(async a => registerRecruitmentRoutes(a, userRepository, prisma), { prefix: apiPrefix });
+  // QLP e Recrutamento: ocultos (rotas só existem se o módulo estiver ativo no registro).
+  await registrarModulosOcultos(app, { users: userRepository, prisma, apiPrefix });
+  await app.register(async a => registrarRotasDeCadastroDaConta(a, userRepository, prisma), { prefix: apiPrefix });
   await app.register(async a => registerWorkspaceRoutes(a, userRepository, prisma), { prefix: apiPrefix });
   await app.register(async a => registerEmployeeScheduleRoutes(a, userRepository, prisma), { prefix: apiPrefix });
 
@@ -313,9 +315,20 @@ export async function buildApp(
     opcoes.treinamentos?.config ?? configDosTreinamentos(process.env),
     opcoes.treinamentos?.agora
   );
+  const configuracaoDosTreinamentos = new ConfiguracaoDosTreinamentos(
+    prisma,
+    opcoes.treinamentos?.agora,
+    Number(process.env.LAB_TESTE_CENARIOS) >= 1 ? Number(process.env.LAB_TESTE_CENARIOS) : undefined
+  );
   await app.register(
     async (versionedApp) =>
-      registrarRotasDosTreinamentos(versionedApp, userRepository, servicoDeTreinamentos),
+      registrarRotasDosTreinamentos(
+        versionedApp,
+        userRepository,
+        servicoDeTreinamentos,
+        configuracaoDosTreinamentos,
+        { abertoParaComum: opcoes.treinamentos?.abertoParaComum === true }
+      ),
     { prefix: `${apiPrefix}/treinamentos` }
   );
 

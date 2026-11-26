@@ -1,0 +1,513 @@
+{
+ "id": "adm-cliente-interno-irritado",
+ "title": "Cliente interno irritado",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Quinta, 09h. Um gestor de outra área chega irritado por causa de uma solicitação atrasada.",
+   "Você é do administrativo e é o ponto de contato.",
+   "Ele fala alto e fica na frente de outros colegas."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_gestor",
+   "label": "Informar seu gestor",
+   "procedure": "Informar seu gestor sobre o episódio e o plano de resposta. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "acolher",
+   "label": "Acolher e ouvir",
+   "procedure": "Ouvir com calma e sem reagir à irritação. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "entender_causa",
+   "label": "Entender a causa",
+   "procedure": "Verificar o que realmente aconteceu com a solicitação. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_atendimento",
+   "label": "Registrar o atendimento",
+   "procedure": "Registrar a solicitação e o prazo combinado. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "retornar",
+   "label": "Retornar no prazo",
+   "procedure": "Retornar ao solicitante no prazo prometido. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_gestor",
+   "shot": "mesa",
+   "time": "09:05",
+   "narration": "09:05 · A tensão é visível para quem está por perto.",
+   "prompt": "Como reage?",
+   "alternatives": [
+    {
+     "text": "Mantenho a calma, ouço sem interromper e proponho conversar em local reservado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Calma mantida",
+      "text": "A conversa fica mais produtiva.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Respondo no mesmo tom para me defender.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Reação no mesmo tom",
+      "text": "O conflito se agrava.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Aviso meu gestor do ocorrido e peço apoio se necessário.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Gestor avisado",
+      "text": "Você tem respaldo.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Digo que 'não é minha área' e me afasto.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Afastamento",
+      "text": "O gestor se sente ignorado.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "acolher",
+   "shot": "reuniao",
+   "time": "09:15",
+   "narration": "09:15 · O gestor quer ser ouvido.",
+   "prompt": "Como acolhe?",
+   "alternatives": [
+    {
+     "text": "Explico por que ele está errado antes de ouvir.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Defesa precoce",
+      "text": "Ele não se sente escutado.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Prometo resolver na hora sem saber como.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Promessa vazia",
+      "text": "Você cria uma expectativa que não pode cumprir.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Faço perguntas para entender a urgência.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Perguntas feitas",
+      "text": "Você entende a dimensão do problema.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Ouço, reconheço o incômodo e explico o que vou fazer.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Acolhimento",
+      "text": "Ele se sente respeitado.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "entender_causa",
+   "shot": "tela",
+   "time": "09:30",
+   "narration": "09:30 · A solicitação está no sistema há uma semana.",
+   "prompt": "Como entende a causa?",
+   "alternatives": [
+    {
+     "text": "Peço que ele abra outra solicitação.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Reinício do processo",
+      "text": "Ele perde mais tempo.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Verifico o histórico da solicitação e o responsável atual.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Histórico consultado",
+      "text": "Você identifica o ponto de atraso.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Consulto o sistema e as pessoas envolvidas para ver onde travou.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Causa identificada",
+      "text": "Você sabe o que dizer e o que fazer.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Culpo outra área sem verificar.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Culpa sem prova",
+      "text": "Você perde credibilidade.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_atendimento",
+   "shot": "tela",
+   "time": "09:50",
+   "narration": "09:50 · Há uma solução com prazo.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Envio ao gestor um resumo escrito do que foi combinado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Resumo escrito",
+      "text": "O combinado fica documentado.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro o problema, o responsável e o novo prazo no sistema.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Atendimento registrado",
+      "text": "O compromisso fica rastreável.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Combino de boca e pronto.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Combinado de boca",
+      "text": "Ninguém lembra do combinado.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro o prazo sem o responsável.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro incompleto",
+      "text": "Ninguém é cobrado.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "retornar",
+   "shot": "relogio",
+   "time": "Dia seguinte",
+   "narration": "Dia seguinte · O prazo prometido chegou.",
+   "prompt": "Como retorna?",
+   "alternatives": [
+    {
+     "text": "Retorno ao gestor no prazo, com o resultado ou com a nova previsão.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Retorno no prazo",
+      "text": "A confiança é recuperada.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Espero que ele me procure.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Retorno omitido",
+      "text": "Ele volta irritado de novo.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Aviso antes do prazo se houver chance de atraso.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Aviso antecipado",
+      "text": "Ele não é pego de surpresa.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Retorno só quando tenho tempo.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Retorno irregular",
+      "text": "A confiança não se recupera.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Conflito escalando",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "acolher",
+      "is": false
+     },
+     {
+      "decision": "entender_causa",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Causa entendida",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "acolher",
+      "is": true
+     },
+     {
+      "decision": "entender_causa",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Atendimento registrado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_atendimento",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Gestor avisado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_gestor",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Retorno sem prazo",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "retornar",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Resolução do caso",
+   "levels": {
+    "ok": "Caso resolvido",
+    "warn": "Caso parcialmente resolvido",
+    "bad": "Caso sem solução"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Relação com o cliente interno",
+   "levels": {
+    "ok": "Relação recuperada",
+    "warn": "Relação em recuperação",
+    "bad": "Relação deteriorada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Imagem do administrativo",
+   "levels": {
+    "ok": "Boa imagem",
+    "warn": "Imagem regular",
+    "bad": "Imagem arranhada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "administrativo-geral"
+}

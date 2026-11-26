@@ -16,6 +16,8 @@ type AcaoDoPainelProps = {
   demonstracao?: boolean;
   /** `categoriaId` só vem na simulação local; sem ele, é o teste como sempre. */
   aoIniciar: (categoriaId?: string) => void;
+  /** O modo do teste: por cenários (a trilha) ou legado (situações da IA). */
+  modoDoTeste?: "cenarios" | "legado";
 };
 
 /** O botão do painel, no estado que o servidor decidiu (as mesmas regras de POST /sessoes). */
@@ -24,8 +26,48 @@ export function AcaoDoPainel({
   iniciando,
   erroAoIniciar,
   demonstracao = false,
-  aoIniciar
+  aoIniciar,
+  modoDoTeste = "legado"
 }: AcaoDoPainelProps) {
+  const porCenarios = modoDoTeste === "cenarios";
+  if (acao.tipo === "continuar" && porCenarios) {
+    return (
+      <CartaoDeTreinamento
+        eyebrow="Em andamento"
+        titulo="Você tem um teste em andamento"
+        descricao={`Você está no cenário ${acao.situacaoAtual} de ${acao.totalSituacoes}. Se recarregar a página, o teste continua na primeira pergunta sem resposta.`}
+        lateral={
+          <MapaDoCaminho
+            total={acao.totalSituacoes}
+            atual={acao.situacaoAtual}
+            marco={labSituacaoDoMarco}
+            compacto
+          />
+        }
+        acao={
+          <BotaoLink to="/lab/teste" size="lg" icon={<Play size={16} aria-hidden="true" />}>
+            Continuar teste
+          </BotaoLink>
+        }
+      />
+    );
+  }
+
+  if (acao.tipo === "iniciar" && porCenarios) {
+    return (
+      <CartaoDeTreinamento
+        eyebrow="Próximo teste"
+        titulo="Pronto para o próximo teste"
+        descricao="O teste é uma sequência de cenários do dia a dia de gestão, escolhidos para o seu público. Você decide, vê o que acontece e entende por quê. Sem limite de tempo."
+        acao={
+          <BotaoLink to="/lab/teste" size="lg" icon={<Play size={16} aria-hidden="true" />}>
+            Iniciar teste
+          </BotaoLink>
+        }
+      />
+    );
+  }
+
   if (acao.tipo === "continuar") {
     return (
       <CartaoDeTreinamento

@@ -118,7 +118,9 @@ describe("contrato das respostas do Leadership Lab", () => {
 
   describe("painel", () => {
     it("aceita o painel de quem ainda não fez nenhum teste", () => {
-      expect(labPainelSchema.parse(painel)).toEqual(painel);
+      // Um servidor antigo (sem modoDoTeste) vale como legado.
+      expect(labPainelSchema.parse(painel)).toEqual({ ...painel, modoDoTeste: "legado" });
+      expect(labPainelSchema.parse({ ...painel, modoDoTeste: "cenarios" }).modoDoTeste).toBe("cenarios");
     });
 
     it.each([

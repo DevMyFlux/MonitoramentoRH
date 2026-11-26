@@ -3,7 +3,13 @@
 // A tolerância de tempo NÃO tem valor padrão: a documentação não define quantos segundos de
 // latência de rede se descontam, e um valor escolhido aqui mudaria a nota de quem responde no
 // limite. Sem a variável, o motor se recusa a subir, em vez de decidir por conta própria.
-import { labTermoVersaoAtual } from "@my-flux/shared";
+import {
+  type LabModoDeTeste,
+  LAB_CENARIOS_POR_TESTE_MAXIMO,
+  LAB_CENARIOS_POR_TESTE_PADRAO,
+  labModosDeTeste,
+  labTermoVersaoAtual
+} from "@my-flux/shared";
 
 export type ConfigDoMotor = {
   /** Segundos descontados do tempo de resposta pela latência da rede (LAB_TOLERANCIA_TEMPO_S). */
@@ -33,6 +39,14 @@ export type ConfigDoMotor = {
   exigeBaseValidada?: boolean;
   /** Mensagens ao facilitador por participante por hora, fora de um teste (LAB_LIMITE_CONVERSAS_HORA). */
   limiteConversasHora?: number;
+  /**
+   * O modo do teste (LAB_TESTE_MODO): "cenarios" (padrão em produção: a trilha de cenários de
+   * Treinamentos) ou "legado" (as situações A/B/C conduzidas pela IA, mantidas para reverter). Ausente
+   * na configuração injetada pelos testes = legado, para os testes antigos seguirem iguais.
+   */
+  modoDoTeste?: LabModoDeTeste;
+  /** Quantos cenários compõem um teste (LAB_TESTE_CENARIOS; padrão 3). */
+  cenariosPorTeste?: number;
 };
 
 export const IA_TIMEOUT_PADRAO_MS = 25_000;
@@ -62,6 +76,16 @@ function numero(
   return valor;
 }
 
+/** LAB_TESTE_MODO: "cenarios" (padrão) ou "legado". Outro valor é erro de configuração. */
+function modoDoTeste(env: Record<string, string | undefined>): LabModoDeTeste {
+  const bruto = env.LAB_TESTE_MODO?.trim().toLowerCase();
+  if (!bruto) return "cenarios";
+  if ((labModosDeTeste as readonly string[]).includes(bruto)) return bruto as LabModoDeTeste;
+  throw new ConfigDoLabInvalida(
+    `LAB_TESTE_MODO aceita "cenarios" ou "legado" (recebido: "${bruto}").`
+  );
+}
+
 export function lerConfigDoLab(env: Record<string, string | undefined>): ConfigDoMotor {
   const toleranciaTempoS = numero(env, "LAB_TOLERANCIA_TEMPO_S", { inteiro: false, minimo: 0 });
   if (toleranciaTempoS === undefined) {
@@ -71,6 +95,12 @@ export function lerConfigDoLab(env: Record<string, string | undefined>): ConfigD
     );
   }
   return {
+    modoDoTeste: modoDoTeste(env),
+    cenariosPorTeste: Math.min(
+      LAB_CENARIOS_POR_TESTE_MAXIMO,
+      numero(env, "LAB_TESTE_CENARIOS", { inteiro: true, minimo: 1 }) ??
+        LAB_CENARIOS_POR_TESTE_PADRAO
+    ),
     exigeBaseValidada: env.LAB_EXIGE_BASE_VALIDADA?.trim().toLowerCase() === "true",
     limiteConversasHora:
       numero(env, "LAB_LIMITE_CONVERSAS_HORA", { inteiro: true, minimo: 1 }) ??

@@ -1,0 +1,513 @@
+{
+ "id": "rh-dispensa-sem-justificativa",
+ "title": "Pedido de dispensa sem justificativa",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Quarta, 15h. Um gestor pede ao RH para dispensar um colaborador 'o quanto antes'.",
+   "Você é do RH e o gestor não explica o motivo.",
+   "Ele diz que 'a equipe não aguenta mais'."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_gestao_rh",
+   "label": "Alinhar com a liderança do RH",
+   "procedure": "Levar o pedido à liderança do RH antes de agir. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "entender_motivo",
+   "label": "Entender o motivo",
+   "procedure": "Pedir ao gestor fatos e exemplos que embasem o pedido. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "verificar_historico",
+   "label": "Verificar o histórico",
+   "procedure": "Consultar avaliações, advertências e registros do colaborador. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_pedido",
+   "label": "Registrar o pedido",
+   "procedure": "Registrar o pedido e as análises feitas. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "decidir_caminho",
+   "label": "Decidir o caminho",
+   "procedure": "Decidir junto com a liderança o caminho: orientação, plano de melhoria ou desligamento. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_gestao_rh",
+   "shot": "mesa",
+   "time": "15:05",
+   "narration": "15:05 · O gestor pressiona por uma resposta imediata.",
+   "prompt": "Como reage?",
+   "alternatives": [
+    {
+     "text": "Digo ao gestor que vamos analisar e voltar em breve.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Análise combinada",
+      "text": "Você ganha tempo para investigar.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Respondo que 'não dá' sem explicar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Negativa seca",
+      "text": "O gestor perde a confiança no RH.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Levo o pedido à liderança do RH e combino o prazo da resposta.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Liderança consultada",
+      "text": "A decisão tem respaldo.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Atendo ao pedido para evitar conflito com o gestor.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Atendimento imediato",
+      "text": "A empresa pode agir sem base.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "entender_motivo",
+   "shot": "reuniao",
+   "time": "15:30",
+   "narration": "15:30 · O gestor fala em termos gerais.",
+   "prompt": "Como entende o motivo?",
+   "alternatives": [
+    {
+     "text": "Pergunto o que já foi feito para apoiar o colaborador.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Apoio investigado",
+      "text": "Você entende se houve tentativa de melhoria.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Peço fatos, datas e exemplos concretos do que ocorreu.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Fatos pedidos",
+      "text": "A análise parte de dados.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Aceito a avaliação geral do gestor.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Opinião como prova",
+      "text": "Você corre o risco de uma decisão injusta.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Aceito o motivo e deixo os detalhes para depois.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Detalhes adiados",
+      "text": "A fundamentação fica frágil.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "verificar_historico",
+   "shot": "tela",
+   "time": "16:00",
+   "narration": "16:00 · Há avaliações e registros.",
+   "prompt": "Como verifica o histórico?",
+   "alternatives": [
+    {
+     "text": "Consulto avaliações, feedbacks, advertências e ocorrências do período.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Histórico consultado",
+      "text": "A decisão considera o todo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Ignoro o histórico, o gestor sabe mais.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Histórico ignorado",
+      "text": "Você não vê se há padrão ou injustiça.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Olho só a última avaliação.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Olhar parcial",
+      "text": "Você perde o contexto.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Converso com outras pessoas que trabalham com ele, com discrição.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Visões consultadas",
+      "text": "Você amplia a compreensão do caso.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_pedido",
+   "shot": "tela",
+   "time": "16:30",
+   "narration": "16:30 · A análise precisa ser documentada.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Mantenho tudo na conversa.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem registro",
+      "text": "A decisão fica sem base escrita.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro só o pedido.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro mínimo",
+      "text": "Faltam as análises.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Documento também o que o colaborador disse, se for ouvido.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Visão do colaborador",
+      "text": "O registro é mais justo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro o pedido, os fatos e as análises feitas.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Análise registrada",
+      "text": "O caso tem histórico claro.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "decidir_caminho",
+   "shot": "reuniao",
+   "time": "Dia seguinte",
+   "narration": "Dia seguinte · É hora de decidir o caminho.",
+   "prompt": "Como decide?",
+   "alternatives": [
+    {
+     "text": "Proponho um plano de melhoria com metas e prazo, se os fatos permitirem.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Plano de melhoria",
+      "text": "O colaborador recebe uma chance justa.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo sem decisão para ver se melhora sozinho.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Indecisão",
+      "text": "O caso se arrasta sem solução.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Decido com a liderança entre orientação, plano de melhoria ou desligamento, com base nos fatos.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Caminho decidido",
+      "text": "A decisão tem respaldo e critérios.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Decido pelo desligamento para encerrar o assunto.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Atalho",
+      "text": "Você ignora alternativas e riscos.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Decisão sem base",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "entender_motivo",
+      "is": false
+     },
+     {
+      "decision": "verificar_historico",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Fatos levantados",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "entender_motivo",
+      "is": true
+     },
+     {
+      "decision": "verificar_historico",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Análise registrada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_pedido",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Liderança do RH alinhada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_gestao_rh",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Caminho sem decisão",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "decidir_caminho",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Justiça com o colaborador",
+   "levels": {
+    "ok": "Decisão justa",
+    "warn": "Decisão parcialmente justa",
+    "bad": "Decisão injusta"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Risco para a empresa",
+   "levels": {
+    "ok": "Risco controlado",
+    "warn": "Risco moderado",
+    "bad": "Risco elevado"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Confiança do gestor no RH",
+   "levels": {
+    "ok": "Gestor confia no RH",
+    "warn": "Confiança parcial",
+    "bad": "Gestor desacredita"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "rh"
+}

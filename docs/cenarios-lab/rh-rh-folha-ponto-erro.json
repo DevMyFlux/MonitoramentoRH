@@ -1,0 +1,513 @@
+{
+ "id": "rh-folha-ponto-erro",
+ "title": "Erro no ponto e na folha",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Sexta, 11h. Um colaborador reclama que a folha veio com horas descontadas.",
+   "Você é do RH e a folha fecha na segunda.",
+   "Ele diz que trabalhou todos os dias."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_gestor",
+   "label": "Informar o gestor",
+   "procedure": "Informar o gestor sobre a contestação e pedir confirmação das presenças. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "conferir_registros",
+   "label": "Conferir os registros",
+   "procedure": "Conferir os registros de ponto e as justificativas. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "ouvir_colaborador",
+   "label": "Ouvir o colaborador",
+   "procedure": "Ouvir o colaborador e coletar o que ele tem de evidência. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_ajuste",
+   "label": "Registrar o ajuste",
+   "procedure": "Registrar o ajuste e o motivo no sistema, com aprovação. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "dar_retorno",
+   "label": "Dar retorno",
+   "procedure": "Dar retorno ao colaborador sobre o que foi decidido. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_gestor",
+   "shot": "mesa",
+   "time": "11:05",
+   "narration": "11:05 · A folha fecha em pouco tempo.",
+   "prompt": "Como começa?",
+   "alternatives": [
+    {
+     "text": "Aviso o gestor e peço a confirmação das presenças do período.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Gestor consultado",
+      "text": "Você tem a visão de quem acompanhou.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Mantenho a folha como está e peço que o colaborador reclame depois.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Contestação ignorada",
+      "text": "A folha sai errada e o problema cresce.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Envio ao gestor a lista de dias contestados para confirmar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Dias listados",
+      "text": "O gestor responde com precisão.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Resolvo sozinho e só aviso o gestor depois.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Gestor fora do circuito",
+      "text": "O gestor descobre sem poder ajudar.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "conferir_registros",
+   "shot": "tela",
+   "time": "11:30",
+   "narration": "11:30 · Há registros de ponto e algumas justificativas.",
+   "prompt": "Como confere?",
+   "alternatives": [
+    {
+     "text": "Aceito o relato do colaborador sem conferir nada.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Aceite sem prova",
+      "text": "Você pode pagar o que não foi trabalhado.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Confio apenas no sistema e descarto o resto.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Só o sistema",
+      "text": "Falhas de marcação passam despercebidas.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço o relatório de marcações e verifico se houve falha do equipamento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Equipamento verificado",
+      "text": "Você enxerga falhas técnicas.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Comparo marcações, escalas e justificativas dia a dia.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Registros cruzados",
+      "text": "Você identifica a origem da diferença.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "ouvir_colaborador",
+   "shot": "reuniao",
+   "time": "12:00",
+   "narration": "12:00 · O colaborador traz fotos e mensagens.",
+   "prompt": "Como o ouve?",
+   "alternatives": [
+    {
+     "text": "Ouço e prometo resolver sem conferir.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Promessa precipitada",
+      "text": "Você promete algo que não pode cumprir.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Explico como a conferência funciona e o prazo de resposta.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Processo explicado",
+      "text": "Ele sabe o que esperar.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Ouço, peço as evidências e registro tudo o que for relevante.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Colaborador ouvido",
+      "text": "Ele se sente respeitado e você tem material.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Digo que o sistema não erra.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Descarte",
+      "text": "Ele perde a confiança no RH.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_ajuste",
+   "shot": "tela",
+   "time": "12:30",
+   "narration": "12:30 · A diferença é comprovada.",
+   "prompt": "Como registra o ajuste?",
+   "alternatives": [
+    {
+     "text": "Peço a aprovação do responsável antes de lançar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Aprovação pedida",
+      "text": "O ajuste tem autoridade.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro o ajuste, o motivo e a aprovação no sistema.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Ajuste registrado",
+      "text": "O ajuste tem histórico.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Altero o valor direto na folha sem registro.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Alteração direta",
+      "text": "O ajuste não pode ser explicado depois.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Registro o ajuste sem o motivo.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Ajuste sem motivo",
+      "text": "A auditoria questionará.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "dar_retorno",
+   "shot": "relogio",
+   "time": "Segunda, 08h",
+   "narration": "Segunda, 08h · A folha já está fechada.",
+   "prompt": "Como dá retorno?",
+   "alternatives": [
+    {
+     "text": "Informo ao colaborador o que foi ajustado e quando aparece no pagamento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Retorno dado",
+      "text": "Ele sabe o resultado e o prazo.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Não retorno, ele vai ver no holerite.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem retorno",
+      "text": "Ele acha que a reclamação foi ignorada.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Envio um resumo por escrito do que foi corrigido.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Resumo enviado",
+      "text": "O colaborador tem o registro do resultado.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Retorno apenas quando ele perguntar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Retorno reativo",
+      "text": "Ele precisa insistir para saber.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Folha com erro",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "conferir_registros",
+      "is": false
+     },
+     {
+      "decision": "ouvir_colaborador",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Registros conferidos",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "conferir_registros",
+      "is": true
+     },
+     {
+      "decision": "ouvir_colaborador",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Ajuste registrado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_ajuste",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Gestor consultado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_gestor",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Colaborador sem retorno",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "dar_retorno",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Correção da folha",
+   "levels": {
+    "ok": "Folha correta",
+    "warn": "Folha em ajuste",
+    "bad": "Folha errada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Justiça com o colaborador",
+   "levels": {
+    "ok": "Colaborador tratado com justiça",
+    "warn": "Tratamento parcial",
+    "bad": "Colaborador injustiçado"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Rastreabilidade",
+   "levels": {
+    "ok": "Ajuste rastreável",
+    "warn": "Rastreabilidade parcial",
+    "bad": "Sem rastro"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "rh"
+}

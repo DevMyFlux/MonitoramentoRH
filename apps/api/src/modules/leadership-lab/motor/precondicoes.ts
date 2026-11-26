@@ -6,6 +6,7 @@
 //
 // A ordem das verificações define quem recebe qual erro e não deve mudar sem decisão explícita:
 // termo -> teste em andamento (retoma) -> cargo -> molde do cargo -> molde liberado -> limite do dia.
+import { moldeDoPublico, publicoDoCadastro } from "@my-flux/shared";
 import type { LabMolde, LabSessao, Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import type { ConfigDoMotor } from "./config.js";
@@ -109,4 +110,66 @@ export async function avaliarInicio(
   }
 
   return { tipo: "iniciar", molde, temas: pronto.temas };
+}
+
+/**
+ * O mesmo "posso iniciar agora?" para o teste POR CENÁRIOS (só mostra o botão; quem inicia é a trilha).
+ * Não depende do cargo do colaborador nem do molde mapeado: depende do termo, do teste em andamento,
+ * do limite do dia e do cadastro da conta (cargo, nível de governança e área).
+ *
+ * DEV, ADMIN e RH sem cadastro completo ainda podem iniciar (eles escolhem o público na própria tela).
+ */
+export async function avaliarInicioPorCenarios(
+  db: Db,
+  args: {
+    participanteId: string;
+    userId: string;
+    config: Pick<ConfigDoMotor, "versaoTermo" | "limiteTestesDia" | "fusoHorario">;
+    agora: Date;
+  }
+): Promise<EstadoDoInicio | { tipo: "cadastro-incompleto" }> {
+  const { participanteId, userId, config, agora } = args;
+
+  const termo = await db.labTermoAceite.findUnique({
+    where: { participanteId_versaoTermo: { participanteId, versaoTermo: config.versaoTermo } }
+  });
+  if (!termo) return { tipo: "termo-pendente" };
+
+  const ativa = await buscarSessaoAtiva(db, participanteId);
+  if (ativa) return { tipo: "continuar", sessao: ativa };
+
+  const usuario = await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      nivelGovernanca: true,
+      area: { select: { slug: true } },
+      role: { select: { name: true } }
+    }
+  });
+  const completo = usuario?.nivelGovernanca != null && usuario.area != null;
+  if (usuario?.role.name === "COMUM" && !completo) return { tipo: "cadastro-incompleto" };
+
+  // O molde só rotula a sessão (o conteúdo vem dos cenários): o do público da conta, ou o de supervisor.
+  const publico = completo
+    ? publicoDoCadastro({
+        nivelGovernanca: usuario.nivelGovernanca!,
+        areaSlug: usuario.area!.slug
+      }).publico
+    : "supervisor-manutencao-adm";
+  const molde = await db.labMolde.findUniqueOrThrow({ where: { nivel: moldeDoPublico(publico) } });
+
+  if (config.limiteTestesDia !== null) {
+    const desde = inicioDoDia(agora, config.fusoHorario);
+    const hoje = await db.labSessao.count({
+      where: {
+        participanteId,
+        iniciadaEm: { gte: desde },
+        status: { in: ["em_andamento", "concluida"] }
+      }
+    });
+    if (hoje >= config.limiteTestesDia) {
+      return { tipo: "limite-diario", molde, limite: config.limiteTestesDia };
+    }
+  }
+  return { tipo: "iniciar", molde, temas: [] };
 }

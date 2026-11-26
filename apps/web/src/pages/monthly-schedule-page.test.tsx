@@ -115,13 +115,12 @@ describe("escalas: a última escala", () => {
     expect(fluxo.getByText("Rascunho").closest("li")!.getAttribute("aria-current")).toBe("step");
     expect(fluxo.getByText("Publicado").closest("li")!.getAttribute("aria-current")).toBeNull();
 
-    await waitFor(() =>
-      expect(screen.getByText("Necessário").parentElement!.textContent).toContain("60")
-    );
-    expect(screen.getByText("Coberto").parentElement!.textContent).toContain("54");
-    expect(screen.getByText("Cobertura").parentElement!.textContent).toContain("90%");
-
-    const equipes = within(screen.getByRole("list", { name: "Equipes por turno" }));
+    // "Necessário", "Coberto" e "Cobertura" vêm do dimensionamento do QLP (módulo oculto): mesmo
+    // com as métricas no resultado da escala, a tela não os mostra.
+    const equipes = within(await screen.findByRole("list", { name: "Equipes por turno" }));
+    const texto = document.body.textContent ?? "";
+    expect(texto).not.toMatch(/Necessário|Coberto|Cobertura( de)? ?\d|% de cobertura/);
+    expect(screen.queryByRole("img", { name: /Cobertura de/ })).toBeNull();
     expect(equipes.getByText("Diurno Par").parentElement!.textContent).toContain("1");
     expect(equipes.getByText("Noturno Ímpar").parentElement!.textContent).toContain("2");
   });

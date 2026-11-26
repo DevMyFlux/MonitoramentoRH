@@ -1,0 +1,513 @@
+{
+ "id": "adm-guarda-documentos",
+ "title": "Arquivamento e guarda de documentos",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Sexta, 15h. O arquivo da área está cheio e alguém sugere 'jogar fora os antigos'.",
+   "Você é do administrativo e responde pelo arquivo.",
+   "Não há uma lista clara de prazos de guarda."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_gestor",
+   "label": "Informar o gestor",
+   "procedure": "Informar o gestor sobre a falta de espaço e a proposta. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "consultar_prazos",
+   "label": "Consultar prazos de guarda",
+   "procedure": "Consultar a tabela de prazos de guarda e o jurídico, se necessário. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "separar_documentos",
+   "label": "Separar os documentos",
+   "procedure": "Separar por tipo, data e prazo de guarda. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_descarte",
+   "label": "Registrar o descarte",
+   "procedure": "Registrar o que foi descartado, quando e por quem. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "descartar_seguro",
+   "label": "Descartar com segurança",
+   "procedure": "Descartar com destruição segura os documentos com dados pessoais. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_gestor",
+   "shot": "mesa",
+   "time": "15:05",
+   "narration": "15:05 · Há caixas de documentos sem identificação.",
+   "prompt": "Qual é o primeiro passo?",
+   "alternatives": [
+    {
+     "text": "Deixo as caixas no corredor até alguém resolver.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Caixas abandonadas",
+      "text": "Os documentos ficam expostos.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso o gestor da falta de espaço e proponho um plano de arquivamento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Gestor informado",
+      "text": "A decisão vem com respaldo.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Descarto o que parece antigo.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Descarte por aparência",
+      "text": "Você pode jogar fora o que ainda precisa.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Pergunto ao jurídico e ao gestor sobre os prazos de guarda.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Prazos consultados",
+      "text": "A decisão se baseia nas regras.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "consultar_prazos",
+   "shot": "documento",
+   "time": "15:20",
+   "narration": "15:20 · Os documentos têm tipos diferentes.",
+   "prompt": "Como consulta os prazos?",
+   "alternatives": [
+    {
+     "text": "Consulto a tabela de prazos e confirmo com o jurídico quando há dúvida.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Prazos conferidos",
+      "text": "Você segue regras formais.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Decido pelo tempo que 'acho razoável'.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Prazo presumido",
+      "text": "Você pode violar exigências.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    },
+    {
+     "text": "Pergunto a colegas quanto tempo costumam guardar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Costume",
+      "text": "Os costumes podem estar errados.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço à área responsável por cada tipo os prazos de guarda.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Áreas consultadas",
+      "text": "Cada documento segue sua regra.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "separar_documentos",
+   "shot": "tela",
+   "time": "15:45",
+   "narration": "15:45 · As caixas são de tipos e épocas diferentes.",
+   "prompt": "Como separa?",
+   "alternatives": [
+    {
+     "text": "Separo só pelo tamanho das caixas.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Separação por tamanho",
+      "text": "Os prazos se misturam.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Separo o que me parece mais importante.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Separação subjetiva",
+      "text": "Você pode ignorar documentos relevantes.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Faço uma lista com o conteúdo de cada caixa.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Lista feita",
+      "text": "O arquivo fica identificável.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Separo por tipo, data e prazo e identifico cada caixa.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Documentos separados",
+      "text": "Você sabe o que pode ser descartado.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_descarte",
+   "shot": "tela",
+   "time": "16:10",
+   "narration": "16:10 · Alguns documentos já podem ser descartados.",
+   "prompt": "Como registra o descarte?",
+   "alternatives": [
+    {
+     "text": "Registro só 'descarte de documentos antigos'.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro vago",
+      "text": "Faltam detalhes.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço a autorização do gestor e arquivo o termo.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Termo arquivado",
+      "text": "O descarte tem aprovação.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Registro o que foi descartado, quando, por quem e com qual autorização.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Descarte registrado",
+      "text": "Há comprovação do descarte.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Descarto sem registrar para ganhar tempo.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Descarte sem registro",
+      "text": "Não há como comprovar depois.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "descartar_seguro",
+   "shot": "relogio",
+   "time": "16:30",
+   "narration": "16:30 · Há documentos com nomes e dados pessoais.",
+   "prompt": "Como descarta?",
+   "alternatives": [
+    {
+     "text": "Contrato o serviço de destruição certificada para o lote.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Serviço contratado",
+      "text": "O descarte tem comprovante.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Destruo com picotadora ou serviço certificado e guardo o comprovante.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Descarte seguro",
+      "text": "Os dados não ficam expostos.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Jogo no lixo comum.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Lixo comum",
+      "text": "Os dados pessoais ficam expostos.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Rasgo ao meio e jogo fora.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Rasgo simples",
+      "text": "Os dados podem ser reconstruídos.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Descarte indevido",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "consultar_prazos",
+      "is": false
+     },
+     {
+      "decision": "separar_documentos",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Prazos conferidos",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "consultar_prazos",
+      "is": true
+     },
+     {
+      "decision": "separar_documentos",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Descarte registrado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_descarte",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Gestor informado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_gestor",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Dados expostos no descarte",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "descartar_seguro",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Conformidade documental",
+   "levels": {
+    "ok": "Guarda em conformidade",
+    "warn": "Guarda parcial",
+    "bad": "Guarda irregular"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Proteção de dados",
+   "levels": {
+    "ok": "Dados protegidos",
+    "warn": "Proteção parcial",
+    "bad": "Dados expostos"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Organização do arquivo",
+   "levels": {
+    "ok": "Arquivo organizado",
+    "warn": "Arquivo parcialmente organizado",
+    "bad": "Arquivo desorganizado"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "administrativo-geral"
+}

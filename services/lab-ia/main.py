@@ -42,6 +42,7 @@ from conhecimento import carregar_base, citacoes, formatar_para_prompt, fundamen
 from contrato import dificuldade_alvo, normalizar_base
 from estado import criar_repositorio
 import suporte as agente_suporte
+from pessoa import NIVEIS_DE_GOVERNANCA
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
 log = logging.getLogger("lab-ia")
@@ -186,6 +187,15 @@ class MensagemDaConversa(Estrito):
     texto: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1200)]
 
 
+class PessoaDaConta(Estrito):
+    """Cargo, nível de governança e área da conta de quem conversa. Montado pela API a partir da conta
+    (nunca da tela); é contexto para ajustar exemplos, não libera nem restringe assunto."""
+
+    cargo: Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
+    nivel_governanca: Literal[NIVEIS_DE_GOVERNANCA]  # type: ignore[valid-type]
+    area: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=80)]
+
+
 class Conversa(Estrito):
     modo: Literal["debriefing", "aprendizagem"]
     molde: Literal["encarregado", "supervisor", "coordenador"]
@@ -193,6 +203,8 @@ class Conversa(Estrito):
     historico: list[MensagemDaConversa] = Field(max_length=6)
     resultado: ResultadoDaConversa | None
     contexto: ContextoPedagogico | None
+    # Opcional: um serviço antigo da API não manda. Conta sem cadastro completo vai como nulo.
+    pessoa: PessoaDaConta | None = None
 
     @model_validator(mode="after")
     def _modo_coerente(self) -> "Conversa":
@@ -218,7 +230,12 @@ class DadosDoSuporte(Estrito):
     """O resultado de uma consulta que a API executou (e só se a conta podia): vai no 2º envio."""
 
     consulta: Literal[
-        "resumo_colaboradores", "desligados_recentes", "admissoes_recentes", "afastamentos_atuais", "escalas_recentes"
+        "resumo_colaboradores",
+        "desligados_recentes",
+        "admissoes_recentes",
+        "afastamentos_atuais",
+        "escalas_recentes",
+        "meus_resultados",
     ]
     resultado: dict[str, Any]
 
@@ -235,6 +252,16 @@ class Suporte(Estrito):
     historico: list[MensagemDoSuporte] = Field(max_length=6)
     perfil: Literal["DEV", "ADMIN", "RH", "COMUM"]
     pagina: PaginaDoSuporte
+    # "lab": o assistente só fala do Leadership Lab e dos resultados da própria pessoa (a API manda "lab"
+    # para o COMUM). "completo" (padrão, e o que um serviço antigo da API assume) é o de sempre.
+    escopo: Literal["completo", "lab"] = "completo"
+    pessoa: PessoaDaConta | None = None
+
+    @model_validator(mode="after")
+    def _escopo_coerente(self) -> "Suporte":
+        if self.escopo == "lab" and self.dados is not None and self.dados.consulta != "meus_resultados":
+            raise ValueError("no escopo lab só os resultados da própria pessoa podem vir como dados")
+        return self
 
 
 # ---------------------------------------------------------------------------
@@ -330,6 +357,9 @@ def saude() -> dict[str, Any]:
         "versao_instrucao": agente.VERSAO_INSTRUCAO,
         "agentes": ["agente_lab", "guarda", "facilitador", "analista", "suporte"],
         "versao_suporte": agente_suporte.VERSAO_SUPORTE,
+        # Recursos do contrato do assistente. Um serviço sem eles recusa os campos novos (extra="forbid"):
+        # a API usa esta lista para dizer "desatualizado" em vez de falhar chamada a chamada.
+        "recursos_suporte": ["escopo", "pessoa", "meus_resultados", "fora_do_escopo"],
     }
 
 
@@ -447,10 +477,11 @@ def suporte(corpo: Suporte, x_servico_token: str | None = Header(default=None)) 
 
     def gerar(texto: str):
         bruto = agente.gerar_json(
-            agente_suporte.INSTRUCAO_SUPORTE, agente_suporte.ESQUEMA_SUPORTE, texto, uso,
-            temperatura=0.3, raciocinio="LOW", agente="suporte",
+            agente_suporte.instrucao_do_suporte(corpo.escopo),
+            agente_suporte.esquema_do_suporte(corpo.escopo),
+            texto, uso, temperatura=0.3, raciocinio="LOW", agente="suporte",
         )
-        return agente_suporte.normalizar_suporte(bruto, com_dados=corpo.dados is not None)
+        return agente_suporte.normalizar_suporte(bruto, com_dados=corpo.dados is not None, escopo=corpo.escopo)
 
     resultado = _com_retentativa(gerar, pedido, uso)
     bloco = uso.bloco("suporte")

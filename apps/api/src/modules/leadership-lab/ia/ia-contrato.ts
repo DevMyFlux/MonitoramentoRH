@@ -31,7 +31,8 @@ import {
   labProfundidadesTecnicas,
   labTiposDeFonte,
   labSituacaoDoMarco,
-  labSkillsPiloto
+  labSkillsPiloto,
+  niveisDeGovernanca
 } from "@my-flux/shared";
 import { z } from "zod";
 
@@ -445,6 +446,18 @@ const resultadoDaConversaSchema = z.strictObject({
 });
 
 /**
+ * Quem conversa: cargo, nível de governança e área da CONTA, montados pelo servidor (nunca pela tela).
+ * É contexto para a IA ajustar exemplos e linguagem; não libera nem restringe assunto (isso é o
+ * escopo). Sem nome, e-mail ou ids. Conta com cadastro incompleto não manda o bloco.
+ */
+export const pessoaIaSchema = z.strictObject({
+  cargo: z.string().trim().min(2).max(120),
+  nivel_governanca: z.enum(niveisDeGovernanca),
+  area: z.string().trim().min(1).max(80)
+});
+export type PessoaIa = z.infer<typeof pessoaIaSchema>;
+
+/**
  * O que a IA recebe para conversar. Dois modos:
  *  - `debriefing`: depois do teste, com o resultado que o participante já viu;
  *  - `aprendizagem`: fora de qualquer teste, sobre gestão, liderança e procedimentos, adaptada ao
@@ -467,7 +480,9 @@ export const conversaIaRequestSchema = z
       )
       .max(labConversaLimites.historico),
     resultado: resultadoDaConversaSchema.nullable(),
-    contexto: contextoPedagogicoIaSchema.nullable()
+    contexto: contextoPedagogicoIaSchema.nullable(),
+    /** Cargo, nível e área da conta (omitido quando o cadastro está incompleto). */
+    pessoa: pessoaIaSchema.optional()
   })
   .superRefine((c, ctx) => {
     if (c.modo === "debriefing" && c.resultado === null) {
@@ -527,7 +542,9 @@ export const consultasDoSuporte = [
   "desligados_recentes",
   "admissoes_recentes",
   "afastamentos_atuais",
-  "escalas_recentes"
+  "escalas_recentes",
+  /** Os resultados do Leadership Lab de QUEM PERGUNTA (e só dele); a API monta a partir do painel. */
+  "meus_resultados"
 ] as const;
 export type ConsultaDoSuporte = (typeof consultasDoSuporte)[number];
 
@@ -539,29 +556,53 @@ export const dadosDoSuporteSchema = z
     message: "o resultado da consulta passou do tamanho permitido"
   });
 
-export const suporteIaRequestSchema = z.strictObject({
-  /** Só vai no SEGUNDO envio, depois de a API executar a consulta que a IA pediu. */
-  dados: dadosDoSuporteSchema.optional(),
-  mensagem: z.string().trim().min(1).max(suporteLimites.mensagem),
-  historico: z
-    .array(
-      z.strictObject({
-        papel: z.enum(suportePapeis),
-        texto: z.string().trim().min(1).max(suporteLimites.textoDoHistorico)
-      })
-    )
-    .max(suporteLimites.historico),
-  perfil: z.enum(["DEV", "ADMIN", "RH", "COMUM"]),
-  pagina: z.strictObject({
-    caminho: z.string().trim().min(1).max(suporteLimites.pagina),
-    titulo: z.string().trim().min(1).max(suporteLimites.pagina)
+/**
+ * Escopo do assistente. "completo" (omitido) é o de sempre. "lab" é o do perfil COMUM: a IA só fala do
+ * Leadership Lab e dos resultados da própria pessoa, e só recebe o guia do Lab (o resto do sistema nem
+ * chega ao contexto dela). Quem define é o servidor, pelo perfil da conta.
+ */
+export const suporteEscopos = ["completo", "lab"] as const;
+export type SuporteEscopo = (typeof suporteEscopos)[number];
+
+export const suporteIaRequestSchema = z
+  .strictObject({
+    /** Só vai no SEGUNDO envio, depois de a API executar a consulta que a IA pediu. */
+    dados: dadosDoSuporteSchema.optional(),
+    mensagem: z.string().trim().min(1).max(suporteLimites.mensagem),
+    historico: z
+      .array(
+        z.strictObject({
+          papel: z.enum(suportePapeis),
+          texto: z.string().trim().min(1).max(suporteLimites.textoDoHistorico)
+        })
+      )
+      .max(suporteLimites.historico),
+    perfil: z.enum(["DEV", "ADMIN", "RH", "COMUM"]),
+    pagina: z.strictObject({
+      caminho: z.string().trim().min(1).max(suporteLimites.pagina),
+      titulo: z.string().trim().min(1).max(suporteLimites.pagina)
+    }),
+    /** Omitido = "completo" (assim um serviço de IA antigo ainda atende os perfis sem restrição). */
+    escopo: z.enum(suporteEscopos).optional(),
+    /** Cargo, nível e área da conta; omitido quando o cadastro está incompleto. */
+    pessoa: pessoaIaSchema.optional()
   })
-});
+  .superRefine((p, ctx) => {
+    if (p.escopo === "lab" && p.dados !== undefined && p.dados.consulta !== "meus_resultados") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["dados", "consulta"],
+        message: "no escopo lab só os resultados da própria pessoa podem ir como dados"
+      });
+    }
+  });
 export type SuporteIaRequest = z.infer<typeof suporteIaRequestSchema>;
 
 /** A IA responde com o texto, OU pede uma consulta de dados (nunca os dois). */
 export const respostaSuporteIaSchema = z.union([
   z.strictObject({ resposta: z.string().trim().min(1).max(2500), uso: uso("suporte") }),
+  /** Só no escopo "lab": o assunto não é do Leadership Lab. O texto da recusa é da API, não da IA. */
+  z.strictObject({ fora_do_escopo: z.literal(true), uso: uso("suporte") }),
   z.strictObject({
     consulta: z.strictObject({
       nome: z.enum(consultasDoSuporte),

@@ -3,14 +3,12 @@ import {
   Activity,
   CalendarDays,
   Clapperboard,
-  ClipboardCheck,
   Compass,
   ClipboardList,
   SlidersHorizontal,
   FileCheck2,
   FileCog,
   FileWarning,
-  Gauge,
   LayoutDashboard,
   Network,
   Settings,
@@ -21,6 +19,7 @@ import {
   Workflow
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { itensDeMenuOcultos } from "../../_hidden/navegacao";
 
 export type NavigationItem = {
   label: string;
@@ -65,10 +64,23 @@ export const navigationGroups: NavigationGroup[] = [
   {
     label: "Operação",
     items: [
-      { label: "QLP", href: "/qlp", icon: Gauge, hidden: true },
-      { label: "Recrutamento", href: "/recrutamento", icon: Users, hidden: true },
-      { label: "Colaboradores", href: "/colaboradores", icon: Users, curto: "Pessoas" },
-      { label: "Escalas", href: "/escalas", icon: CalendarDays, curto: "Escalas" }
+      // Módulos ocultos (QLP, Recrutamento): só aparecem se estiverem ativos no registro.
+      ...itensDeMenuOcultos(),
+      // Colaboradores e Escalas são da equipe (DEV, ADMIN e RH): o menu do COMUM tem APENAS o Leadership Lab.
+      {
+        label: "Colaboradores",
+        href: "/colaboradores",
+        icon: Users,
+        curto: "Pessoas",
+        roles: ["DEV", "ADMIN", "RH"]
+      },
+      {
+        label: "Escalas",
+        href: "/escalas",
+        icon: CalendarDays,
+        curto: "Escalas",
+        roles: ["DEV", "ADMIN", "RH"]
+      }
     ]
   },
   {
@@ -85,11 +97,13 @@ export const navigationGroups: NavigationGroup[] = [
         roles: ["COMUM", "DEV"]
       },
       {
+        // O acompanhamento unificado (teste por cenários, pessoas, cenários, contestações). O RH vê
+        // as turmas dele; ADMIN e DEV, tudo.
         label: "Acompanhamento do Lab",
         href: "/lab/rh",
         icon: ClipboardList,
         curto: "Gestão",
-        roles: ["RH", "DEV"]
+        roles: ["RH", "ADMIN", "DEV"]
       },
       {
         label: "Configuração do Lab",
@@ -98,27 +112,36 @@ export const navigationGroups: NavigationGroup[] = [
         curto: "Config.",
         roles: ["ADMIN", "DEV"]
       },
-      // Treinamentos Interativos: o participante (COMUM) e o DEV. Curadoria e configuração entram
-      // na Fase 8. Esconder é só arrumação: quem barra é a API.
+      // Treinamentos Interativos (o módulo antigo): só o DEV. Os cenários agora fazem parte do teste do
+      // Leadership Lab, e o menu do COMUM tem APENAS o Leadership Lab. Esconder é arrumação: a web
+      // também redireciona o COMUM (SoParaEquipe).
       {
         label: "Treinamentos",
         href: "/treinamentos",
         icon: Clapperboard,
         curto: "Treinos",
-        roles: ["COMUM", "DEV"]
-      },
-      {
-        label: "Acompanhamento de treinamentos",
-        href: "/treinamentos/rh",
-        icon: ClipboardCheck,
-        roles: ["RH", "DEV"],
-        foraDoDock: true
+        roles: ["DEV"]
       },
       {
         label: "Configuração de treinamentos",
         href: "/treinamentos/config",
         icon: Settings2,
-        roles: ["ADMIN", "DEV"],
+        // ADMIN e DEV editam; o RH só lê (cenários, regras e quantidades).
+        roles: ["RH", "ADMIN", "DEV"],
+        foraDoDock: true
+      }
+    ]
+  },
+  {
+    label: "Administração",
+    // Contas de acesso: cargo, nível de governança, área e perfil. DEV, ADMIN e RH; a API decide
+    // quem gerencia quem (packages/shared, can). Fica só no menu lateral, fora do dock do celular.
+    items: [
+      {
+        label: "Usuários",
+        href: "/usuarios",
+        icon: UserCog,
+        roles: ["DEV", "ADMIN", "RH"],
         foraDoDock: true
       }
     ]
@@ -155,7 +178,6 @@ export const navigationGroups: NavigationGroup[] = [
       { label: "Planos de desenvolvimento", href: "/planos", icon: Workflow },
       { label: "Importações", href: "/importacoes", icon: FileCog },
       { label: "Auditoria", href: "/auditoria", icon: ShieldCheck },
-      { label: "Usuários", href: "/usuarios", icon: UserCog },
       { label: "Parâmetros", href: "/parametros", icon: Settings }
     ]
   }

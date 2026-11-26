@@ -20,7 +20,8 @@ import {
   temVinculo,
   TreinoErroDoMotor,
   treinoCenarioSchema,
-  validarCenario,
+  validarCenarioImportado,
+  type TreinoProblemaDeAutoria,
   visaoDoParticipante,
   type TreinoAtor,
   type TreinoCenario,
@@ -67,6 +68,22 @@ function inicioDoDiaEmSaoPaulo(agora: Date): Date {
 }
 
 type Db = PrismaClient;
+
+export type RelatorioDeImportacao = {
+  /** A posição do item na lista enviada (começa em 0). */
+  indice: number;
+  estado: "criado" | "ja_existe" | "invalido";
+  slug: string | null;
+  cenarioId?: string;
+  problemas?: TreinoProblemaDeAutoria[];
+};
+
+/** O identificador de um cenário bruto, só para o relatório (o `id` do pacote ou o `slug` do projeto). */
+function slugDe(bruto: unknown): string | null {
+  if (typeof bruto !== "object" || bruto === null) return null;
+  const { slug, id } = bruto as { slug?: unknown; id?: unknown };
+  return typeof slug === "string" ? slug : typeof id === "string" ? id : null;
+}
 
 export class ServicoDeTreinamentos {
   constructor(
@@ -574,7 +591,7 @@ export class ServicoDeTreinamentos {
 
   validar(ator: TreinoAtor, conteudo: unknown) {
     this.exigirPapel(ator, "administrador");
-    const resultado = validarCenario(conteudo);
+    const resultado = validarCenarioImportado(conteudo);
     if (!resultado.ok) return { valido: false as const, problemas: resultado.problemas };
     const c = resultado.cenario;
     return {
@@ -586,6 +603,7 @@ export class ServicoDeTreinamentos {
         area: c.area,
         scenePack: c.scenePack,
         exemplo: c.exemplo,
+        publico: c.publico ?? null,
         decisoes: c.decisions.length,
         acontecimentos: c.events.length,
         resultados: c.outcomes.length
@@ -594,7 +612,7 @@ export class ServicoDeTreinamentos {
   }
 
   private validoOuErro(conteudo: unknown): TreinoCenario {
-    const resultado = validarCenario(conteudo);
+    const resultado = validarCenarioImportado(conteudo);
     if (!resultado.ok)
       throw new HttpError(422, "TREINO_CENARIO_INVALIDO", "O cenário tem problemas de autoria.", {
         problemas: resultado.problemas
@@ -602,8 +620,14 @@ export class ServicoDeTreinamentos {
     return resultado.cenario;
   }
 
+  /** ADMIN e DEV editam a configuração; o RH (e o DEV) só a leem. */
+  private exigirLeituraDaConfiguracao(ator: TreinoAtor): void {
+    if (!perfilPermite(ator, "administrador") && !perfilPermite(ator, "curador"))
+      throw new HttpError(403, "TREINO_FORBIDDEN", "Seu perfil não tem permissão para esta ação.");
+  }
+
   async listarCenarios(ator: TreinoAtor) {
-    this.exigirPapel(ator, "administrador");
+    this.exigirLeituraDaConfiguracao(ator);
     const cenarios = await this.db.treinoCenario.findMany({
       orderBy: { alteradoEm: "desc" },
       include: {
@@ -624,6 +648,7 @@ export class ServicoDeTreinamentos {
       id: c.id,
       slug: c.slug,
       area: c.area,
+      publico: c.publico,
       titulo: c.titulo,
       status: c.status,
       alteradoEm: c.alteradoEm.toISOString(),
@@ -639,7 +664,7 @@ export class ServicoDeTreinamentos {
   }
 
   async lerVersao(ator: TreinoAtor, cenarioId: string, versaoId: string) {
-    this.exigirPapel(ator, "administrador");
+    this.exigirLeituraDaConfiguracao(ator);
     const versao = await this.db.treinoCenarioVersao.findFirst({
       where: { id: versaoId, cenarioId }
     });
@@ -662,6 +687,7 @@ export class ServicoDeTreinamentos {
           data: {
             slug: cenario.slug,
             area: cenario.area,
+            publico: cenario.publico ?? null,
             titulo: cenario.title,
             criadoPor: ator.userId,
             criadoEm: agora,
@@ -693,6 +719,45 @@ export class ServicoDeTreinamentos {
         });
       throw erro;
     }
+  }
+
+  /**
+   * Importação em lote: cada item é validado (e adaptado, se vier no formato do pacote do Lab) e
+   * entra como RASCUNHO, versão 1, em transação própria: um item inválido ou repetido não impede os
+   * demais. Devolve o relatório por item, com os problemas por caminho. Nada é aprovado aqui: só a
+   * área responsável aprova, uma versão por vez.
+   */
+  async importarCenarios(ator: TreinoAtor, brutos: readonly unknown[]) {
+    this.exigirPapel(ator, "administrador");
+    const itens: RelatorioDeImportacao[] = [];
+    for (const [indice, bruto] of brutos.entries()) {
+      const validado = validarCenarioImportado(bruto);
+      if (!validado.ok) {
+        itens.push({
+          indice,
+          estado: "invalido",
+          slug: slugDe(bruto),
+          problemas: validado.problemas
+        });
+        continue;
+      }
+      try {
+        const criado = await this.criarCenario(ator, validado.cenario);
+        itens.push({ indice, estado: "criado", slug: criado.slug, cenarioId: criado.id });
+      } catch (erro) {
+        if (erro instanceof HttpError && erro.code === "TREINO_SLUG_EM_USO")
+          itens.push({ indice, estado: "ja_existe", slug: validado.cenario.slug });
+        else throw erro;
+      }
+    }
+    const total = (estado: RelatorioDeImportacao["estado"]) =>
+      itens.filter((i) => i.estado === estado).length;
+    return {
+      criados: total("criado"),
+      jaExistem: total("ja_existe"),
+      invalidos: total("invalido"),
+      itens
+    };
   }
 
   async novaVersao(ator: TreinoAtor, cenarioId: string, conteudo: unknown) {
@@ -729,6 +794,7 @@ export class ServicoDeTreinamentos {
         data: {
           titulo: cenario.title,
           area: cenario.area,
+          publico: cenario.publico ?? null,
           alteradoPor: ator.userId,
           alteradoEm: agora
         }
@@ -775,6 +841,73 @@ export class ServicoDeTreinamentos {
       });
       return { versaoId, numero: versao.numero, aprovadoEm: agora.toISOString() };
     });
+  }
+
+  /** Rascunho -> em revisão: o conteúdo foi enviado para a área responsável revisar. */
+  async enviarParaRevisao(ator: TreinoAtor, cenarioId: string) {
+    this.exigirPapel(ator, "administrador");
+    const cenario = await this.db.treinoCenario.findUnique({ where: { id: cenarioId } });
+    if (!cenario) throw NAO_ENCONTRADO();
+    if (cenario.status !== "rascunho")
+      throw new HttpError(
+        409,
+        "TREINO_STATUS_INVALIDO",
+        "Só um cenário em rascunho pode ser enviado para revisão.",
+        { status: cenario.status }
+      );
+    return this.db.$transaction(async (tx) => {
+      const agora = this.agora();
+      await tx.treinoCenario.update({
+        where: { id: cenarioId },
+        data: { status: "em_revisao", alteradoPor: ator.userId, alteradoEm: agora }
+      });
+      await this.auditar(
+        tx,
+        ator,
+        "UPDATE",
+        "treinamentos.cenario",
+        cenarioId,
+        { status: "rascunho" },
+        { status: "em_revisao" }
+      );
+      return { id: cenarioId, status: "em_revisao" as const };
+    });
+  }
+
+  /**
+   * Aprova várias versões, uma por vez (cada uma em transação própria e com auditoria): uma que falha
+   * (inválida, já aprovada) não impede as outras. Devolve o relatório por item.
+   */
+  async aprovarEmLote(ator: TreinoAtor, itens: readonly { cenarioId: string; versaoId: string }[]) {
+    this.exigirPapel(ator, "administrador");
+    const relatorio: {
+      cenarioId: string;
+      versaoId: string;
+      estado: "aprovada" | "recusada";
+      codigo?: string;
+      problemas?: TreinoProblemaDeAutoria[];
+    }[] = [];
+    for (const item of itens) {
+      try {
+        await this.aprovarVersao(ator, item.cenarioId, item.versaoId);
+        relatorio.push({ ...item, estado: "aprovada" });
+      } catch (erro) {
+        if (!(erro instanceof HttpError)) throw erro;
+        const problemas = (erro.details as { problemas?: TreinoProblemaDeAutoria[] } | undefined)
+          ?.problemas;
+        relatorio.push({
+          ...item,
+          estado: "recusada",
+          codigo: erro.code,
+          ...(problemas ? { problemas } : {})
+        });
+      }
+    }
+    return {
+      aprovadas: relatorio.filter((r) => r.estado === "aprovada").length,
+      recusadas: relatorio.filter((r) => r.estado === "recusada").length,
+      itens: relatorio
+    };
   }
 
   async listarTurmas(ator: TreinoAtor) {

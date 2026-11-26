@@ -2,7 +2,7 @@
 // Layout em "bento" (blocos de tamanhos diferentes numa grade), inspirado na ideia do "Magic Bento"
 // do React Bits (reactbits.dev), mas feito do zero: cada bloco usa o CartaoSpotlight, os números
 // contam (Contador) e o único fundo animado da tela é o fundo ambiente do shell (CSS, sem WebGL).
-import type { CSSProperties } from "react";
+import { MODULOS } from "@my-flux/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
@@ -11,9 +11,7 @@ import {
   CalendarDays,
   ClipboardList,
   FileWarning,
-  Gauge,
   RefreshCw,
-  Users,
   Workflow
 } from "lucide-react";
 import {
@@ -24,11 +22,18 @@ import {
   Skeleton,
   TituloDePagina
 } from "../components/ui";
+import {
+  indicadoresDoQlp,
+  itemDeRadarDoQlp,
+  PainelDeCobertura,
+  passosDoQlp
+} from "../_hidden/qlp/dashboard-qlp";
 import { cn } from "../lib/cn";
 import { apiGet } from "../services/api-client";
 
 type DashboardSummaryResponse = {
   data: {
+    // Posições, vagas e cobertura vêm do QLP (módulo oculto): só aparecem com ele ativo.
     qlp: number;
     occupied: number;
     vacancies: number;
@@ -39,14 +44,9 @@ type DashboardSummaryResponse = {
     pending: number;
   };
 };
+const qlpAtivo = MODULOS.qlp?.status === "active";
 const steps = [
-  { title: "Planejamento", text: "Dimensione funções e posições.", href: "/qlp", icon: Gauge },
-  {
-    title: "Recrutamento",
-    text: "Acompanhe cada contratação.",
-    href: "/recrutamento",
-    icon: Users
-  },
+  ...(qlpAtivo ? passosDoQlp : []),
   {
     title: "Colaboradores",
     text: "Cuide de pessoas e requisitos.",
@@ -64,7 +64,6 @@ export function DashboardPage() {
     queryFn: () => apiGet<DashboardSummaryResponse>("/dashboard/summary")
   });
   const data = summary.data?.data;
-  const percent = Math.max(0, Math.min(100, data?.coveragePercent ?? 0));
   return (
     <div className="space-y-7">
       <TituloDePagina
@@ -93,14 +92,16 @@ export function DashboardPage() {
               Planejar bem é cuidar de quem faz.
             </h2>
             <p className="mt-2 max-w-lg text-sm leading-6 text-mf-realce-suave/80">
-              Conecte as necessidades da operação às pessoas certas, do QLP à escala.
+              {qlpAtivo
+                ? "Conecte as necessidades da operação às pessoas certas, do QLP à escala."
+                : "Conecte as necessidades da operação às pessoas certas, do cadastro à escala."}
             </p>
           </div>
           <Link
-            to="/qlp"
+            to={qlpAtivo ? "/qlp" : "/colaboradores"}
             className="flex min-h-11 items-center gap-3 rounded-xl bg-mf-realce px-5 py-3 text-sm font-semibold text-mf-primaria transition hover:bg-white focus-visible:outline-white"
           >
-            Ver planejamento <ArrowRight size={17} />
+            {qlpAtivo ? "Ver planejamento" : "Ver colaboradores"} <ArrowRight size={17} />
           </Link>
         </div>
       </section>
@@ -128,30 +129,7 @@ export function DashboardPage() {
             className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4"
           >
             {[
-              {
-                icon: Gauge,
-                label: "Posições previstas",
-                value: data.qlp,
-                hint: "Planejamento aprovado",
-                href: "/qlp",
-                tone: "bg-mf-realce-suave text-mf-primaria"
-              },
-              {
-                icon: Users,
-                label: "Posições ocupadas",
-                value: data.occupied,
-                hint: "Pessoas vinculadas",
-                href: "/colaboradores",
-                tone: "bg-mf-azul-suave text-mf-azul"
-              },
-              {
-                icon: ClipboardList,
-                label: "Vagas em aberto",
-                value: data.vacancies,
-                hint: "Oportunidades para preencher",
-                href: "/recrutamento",
-                tone: "bg-mf-alerta-suave text-mf-alerta"
-              },
+              ...(qlpAtivo ? indicadoresDoQlp(data) : []),
               {
                 icon: FileWarning,
                 label: "Documentos críticos",
@@ -188,58 +166,7 @@ export function DashboardPage() {
             ))}
           </section>
           <div className="grid gap-4 sm:gap-5 xl:grid-cols-[1.05fr_1fr]">
-            <CartaoSpotlight className="p-5 sm:p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="font-display text-lg font-bold text-mf-tinta">
-                    Cobertura da operação
-                  </h2>
-                  <p className="mt-1 text-xs text-mf-texto-2">
-                    Ocupação em relação ao quadro previsto.
-                  </p>
-                </div>
-                <Gauge size={18} aria-hidden="true" className="text-mf-texto-3" />
-              </div>
-              <div className="mt-7 flex flex-wrap items-center gap-7">
-                <div
-                  role="img"
-                  aria-label={`Cobertura: ${data.coveragePercent}%`}
-                  className="grid h-36 w-36 shrink-0 place-items-center rounded-full"
-                  style={
-                    {
-                      background: `conic-gradient(rgb(var(--mf-brilho)) ${percent}%, rgb(var(--mf-realce-suave)) 0)`
-                    } as CSSProperties
-                  }
-                >
-                  <div className="grid h-[120px] w-[120px] place-content-center rounded-full bg-white text-center">
-                    <strong className="font-display text-3xl font-bold tracking-tight text-mf-tinta">
-                      <Contador
-                        valor={data.coveragePercent}
-                        formatar={(n) => n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
-                      />
-                      %
-                    </strong>
-                    <span className="mt-1 text-[11px] text-mf-texto-2">de cobertura</span>
-                  </div>
-                </div>
-                <div className="min-w-[160px] flex-1 space-y-4">
-                  <p className="flex items-center justify-between text-sm">
-                    <span className="text-mf-texto-2">Ocupadas</span>
-                    <strong className="text-mf-primaria">{data.occupied}</strong>
-                  </p>
-                  <p className="flex items-center justify-between text-sm">
-                    <span className="text-mf-texto-2">Em aberto</span>
-                    <strong className="text-mf-alerta">{data.vacancies}</strong>
-                  </p>
-                  <Link
-                    to="/qlp"
-                    className="flex min-h-11 items-center justify-between border-t border-mf-linha pt-4 text-xs font-medium text-mf-primaria"
-                  >
-                    Consultar QLP <ArrowRight size={15} aria-hidden="true" />
-                  </Link>
-                </div>
-              </div>
-            </CartaoSpotlight>
+            {qlpAtivo ? <PainelDeCobertura data={data} /> : null}
             <CartaoSpotlight className="p-5 sm:p-6">
               <h2 className="font-display text-lg font-bold text-mf-tinta">No seu radar</h2>
               <p className="mt-1 text-xs text-mf-texto-2">Pontos para acompanhar no dia a dia.</p>
@@ -257,12 +184,7 @@ export function DashboardPage() {
                     href: "/escalas",
                     text: "Confira disponibilidade e alocações."
                   },
-                  {
-                    label: "Excedentes no quadro",
-                    value: data.surplus,
-                    href: "/qlp",
-                    text: "Compare a ocupação com a necessidade."
-                  }
+                  ...(qlpAtivo ? [itemDeRadarDoQlp(data)] : [])
                 ].map((item) => (
                   <Link
                     key={item.label}

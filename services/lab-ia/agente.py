@@ -18,9 +18,10 @@ from google import genai
 from google.genai import types
 
 from contrato import ESTILOS, SKILLS
+from pessoa import linha_da_pessoa
 
 MODELO = os.environ.get("LAB_IA_MODELO", "gemini-3.5-flash")
-VERSAO_INSTRUCAO = "lab-ia-2026-11-16.1"
+VERSAO_INSTRUCAO = "lab-ia-2026-11-25.1"
 
 # Teto de saída por agente (inclui o raciocínio do modelo). Configurável: LAB_IA_SAIDA_<AGENTE>.
 LIMITE_DE_SAIDA = {
@@ -209,6 +210,10 @@ COMO RESPONDER:
 - Português do Brasil, consultivo, acolhedor e direto. Explique conceitos de forma simples, com um
   exemplo prático do dia a dia da manutenção. Até 140 palavras; sem títulos, sem markdown pesado,
   sem emojis. Se a dúvida for ampla, dê o essencial e ofereça aprofundar.
+- COERÊNCIA COM A PESSOA: quando o pedido trouxer o bloco PESSOA (cargo, nível de governança e área da
+  conta), escolha exemplos e linguagem coerentes com ele (um supervisor de manutenção e uma coordenadora
+  administrativa vivem situações diferentes). Isso NÃO muda as regras, o nível do molde nem o que você pode
+  responder, e você nunca repete esses dados.
 - RESPEITE O CARGO: o gestor não precisa dominar todas as especialidades técnicas. Em dúvidas
   técnicas, responda no nível indicado em PROFUNDIDADE (noção = o que exigir, a quem acionar e o que
   acompanhar; aplicação = o procedimento correto no nível do cargo) e diga a quem encaminhar o
@@ -555,6 +560,7 @@ def pedido_de_conversa(corpo: dict[str, Any], fontes: str = "(nenhuma fonte recu
     partes = [
         f"MODO: {corpo['modo'].upper()}.",
         f"Nível do gestor: {corpo['molde']}.",
+        linha_da_pessoa(corpo.get("pessoa")),
         _contexto_txt(corpo.get("contexto")),
     ]
     if corpo["resultado"] is not None:

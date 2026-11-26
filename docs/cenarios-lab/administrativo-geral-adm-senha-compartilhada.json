@@ -1,0 +1,513 @@
+{
+ "id": "adm-senha-compartilhada",
+ "title": "Senha compartilhada entre colegas",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Quarta, 10h. Um colega pede sua senha do sistema 'só por hoje' porque o acesso dele ainda não saiu.",
+   "Você é do administrativo e o prazo do trabalho dele é hoje.",
+   "Ele diz que 'todo mundo faz isso'."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_gestor",
+   "label": "Avisar o gestor",
+   "procedure": "Avisar o gestor sobre o acesso pendente do colega. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "negar",
+   "label": "Não compartilhar a senha",
+   "procedure": "Recusar de forma cordial e explicar o motivo. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "buscar_solucao",
+   "label": "Buscar uma solução",
+   "procedure": "Ajudar a acelerar o acesso pelo canal correto. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_chamado",
+   "label": "Registrar o chamado",
+   "procedure": "Abrir ou acompanhar o chamado de acesso na TI. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "confirmar_acesso",
+   "label": "Confirmar o acesso",
+   "procedure": "Confirmar com o colega que o acesso foi liberado. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_gestor",
+   "shot": "mesa",
+   "time": "10:05",
+   "narration": "10:05 · O colega está aflito com o prazo.",
+   "prompt": "Qual é o primeiro passo?",
+   "alternatives": [
+    {
+     "text": "Peço ao gestor que priorize o chamado junto à TI.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Priorização pedida",
+      "text": "O acesso tende a sair mais rápido.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Digo que vou pensar e deixo o colega esperando.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Resposta vaga",
+      "text": "O colega acaba pegando outro caminho.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Aviso meu gestor e o gestor dele sobre o acesso pendente.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Gestores informados",
+      "text": "Quem pode acelerar fica sabendo.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Passo a senha só desta vez.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Senha compartilhada",
+      "text": "Tudo o que ele fizer será em seu nome.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "negar",
+   "shot": "reuniao",
+   "time": "10:15",
+   "narration": "10:15 · Ele insiste que é só por hoje.",
+   "prompt": "Como recusa?",
+   "alternatives": [
+    {
+     "text": "Explico que tudo o que ele fizer ficará registrado em meu nome.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Motivo explicado",
+      "text": "Ele entende o risco.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Explico com gentileza que não posso compartilhar e proponho outro caminho.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Recusa cordial",
+      "text": "A relação é preservada.",
+      "scene": {
+       "reuniao": "ok"
+      }
+     }
+    },
+    {
+     "text": "Cedo para evitar atrito.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Cedo por pressão",
+      "text": "Você assume o risco por ele.",
+      "scene": {
+       "reuniao": "falha"
+      }
+     }
+    },
+    {
+     "text": "Digo que 'eu até daria, mas não posso'.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Recusa fraca",
+      "text": "O colega insiste mais.",
+      "scene": {
+       "reuniao": "alerta"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "buscar_solucao",
+   "shot": "tela",
+   "time": "10:30",
+   "narration": "10:30 · Ainda há tempo de resolver o acesso.",
+   "prompt": "Como busca a solução?",
+   "alternatives": [
+    {
+     "text": "Ligo para a TI e peço prioridade para o acesso dele.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "TI acionada",
+      "text": "O acesso pode sair rápido.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Deixo por conta dele resolver.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem ajuda",
+      "text": "Ele ficará sem acesso e sem saída.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Sugiro que ele use o login de outro colega.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Outro login",
+      "text": "Você apenas troca de pessoa.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço ao gestor uma autorização temporária formal.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Autorização temporária",
+      "text": "O acesso é concedido de forma controlada.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_chamado",
+   "shot": "tela",
+   "time": "10:50",
+   "narration": "10:50 · O chamado precisa de acompanhamento.",
+   "prompt": "Como registra?",
+   "alternatives": [
+    {
+     "text": "Não abro chamado, ele resolve.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem chamado",
+      "text": "Ninguém acompanha.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Abro o chamado sem detalhes.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Chamado vago",
+      "text": "A TI demora mais.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Abro o chamado com a urgência e o gestor em cópia.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Chamado urgente",
+      "text": "A TI entende a prioridade.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Confirmo que o chamado foi aberto e acompanho o andamento.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Chamado acompanhado",
+      "text": "O acesso é liberado pelo canal correto.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "confirmar_acesso",
+   "shot": "relogio",
+   "time": "11:30",
+   "narration": "11:30 · O acesso deve sair em breve.",
+   "prompt": "Como confirma?",
+   "alternatives": [
+    {
+     "text": "Peço a ele que teste e me avise.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Teste pedido",
+      "text": "O acesso é validado.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Só pergunto se ele reclamar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Atenção reativa",
+      "text": "O problema pode persistir.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Confirmo com o colega que o acesso funciona e fecho o chamado.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Acesso confirmado",
+      "text": "O caso é encerrado de forma correta.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Considero resolvido e não pergunto.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem confirmação",
+      "text": "Ele pode ainda estar sem acesso.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Credencial exposta",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "negar",
+      "is": false
+     },
+     {
+      "decision": "buscar_solucao",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Acesso solicitado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "negar",
+      "is": true
+     },
+     {
+      "decision": "buscar_solucao",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Chamado registrado",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_chamado",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Gestores cientes",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_gestor",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Acesso sem confirmação",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "confirmar_acesso",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Segurança das contas",
+   "levels": {
+    "ok": "Contas protegidas",
+    "warn": "Contas parcialmente protegidas",
+    "bad": "Contas expostas"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Auditoria de ações",
+   "levels": {
+    "ok": "Ações rastreáveis",
+    "warn": "Rastreabilidade parcial",
+    "bad": "Ações atribuídas à pessoa errada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Relação com o colega",
+   "levels": {
+    "ok": "Relação preservada",
+    "warn": "Relação com atrito",
+    "bad": "Relação desgastada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "administrativo-geral"
+}

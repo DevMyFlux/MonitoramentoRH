@@ -1,0 +1,513 @@
+{
+ "id": "sup-compra-urgente",
+ "title": "Compra urgente de peça",
+ "area": "gestao",
+ "locale": "pt-BR",
+ "status": "rascunho",
+ "scenePack": "escritorio-gestao",
+ "intro": {
+  "captions": [
+   "Terça, 08h30. Uma bomba da água gelada parou e a peça não está no estoque.",
+   "Você é supervisor e precisa comprar rápido sem abrir mão do controle.",
+   "O almoxarifado diz que o fornecedor de sempre só entrega amanhã."
+  ]
+ },
+ "decisions": [
+  {
+   "id": "avisar_gestor",
+   "label": "Avisar o coordenador",
+   "procedure": "Informar o coordenador sobre a parada, o impacto e o plano de compra. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "cotar",
+   "label": "Comparar fornecedores",
+   "procedure": "Pedir ao menos duas cotações antes de decidir, mesmo em urgência. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "conferir_peca",
+   "label": "Conferir a peça correta",
+   "procedure": "Validar modelo e especificação com o técnico antes de pedir. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "registrar_pedido",
+   "label": "Registrar o pedido",
+   "procedure": "Lançar a solicitação no sistema de compras com justificativa de urgência. [EXEMPLO a validar pela área responsável]"
+  },
+  {
+   "id": "confirmar_entrega",
+   "label": "Confirmar prazo de entrega",
+   "procedure": "Confirmar por escrito prazo e quem recebe a peça. [EXEMPLO a validar pela área responsável]"
+  }
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "decision": "avisar_gestor",
+   "shot": "mesa",
+   "time": "08:35",
+   "narration": "08:35 · A parada afeta o conforto de uma área sensível. O coordenador ainda não sabe.",
+   "prompt": "Qual é a sua primeira ação?",
+   "alternatives": [
+    {
+     "text": "Resolvo a compra primeiro e aviso quando a peça chegar.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Aviso tardio",
+      "text": "O coordenador descobre depois, sem poder ajudar nem decidir.",
+      "scene": {
+       "mesa": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Ligo para o coordenador, explico a urgência e combino quem aprova o gasto.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Aprovação combinada",
+      "text": "Fica claro quem autoriza e em quanto tempo.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    },
+    {
+     "text": "Compro por conta própria porque é urgente e depois explico.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Compra sem alinhamento",
+      "text": "O gasto sai fora do circuito e gera questionamento depois.",
+      "scene": {
+       "mesa": "falha"
+      }
+     }
+    },
+    {
+     "text": "Aviso o coordenador agora, com o impacto e o plano de compra que pretendo seguir.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Coordenador alinhado",
+      "text": "Ele fica ciente, pode priorizar e ajudar com a aprovação.",
+      "scene": {
+       "mesa": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q2",
+   "decision": "cotar",
+   "shot": "tela",
+   "time": "08:50",
+   "narration": "08:50 · Dois fornecedores respondem. Um é mais rápido e bem mais caro.",
+   "prompt": "Como você decide de quem comprar?",
+   "alternatives": [
+    {
+     "text": "Peço uma terceira cotação rápida por mensagem antes de fechar.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Mais uma referência",
+      "text": "Você ganha segurança de preço sem perder muito tempo.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Fecho com o fornecedor de sempre, por confiança.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Confiança sem comparar",
+      "text": "Pode estar bom, mas ninguém consegue comprovar.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Comparo as duas cotações, prazo e preço, e registro o motivo da escolha.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Cotação comparada",
+      "text": "A decisão fica justificada e transparente.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Fecho com o mais rápido sem olhar o preço do outro.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem comparação",
+      "text": "Você paga caro sem saber se havia alternativa melhor.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q3",
+   "decision": "conferir_peca",
+   "shot": "documento",
+   "time": "09:05",
+   "narration": "09:05 · O técnico descreve a peça de memória, sem o código.",
+   "prompt": "Como você garante que vai comprar a peça certa?",
+   "alternatives": [
+    {
+     "text": "Confiro o manual ou o histórico do equipamento antes de enviar o pedido.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Histórico consultado",
+      "text": "Você confirma a especificação com fonte confiável.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Peço a peça pelo nome que o técnico falou.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Pedido por nome",
+      "text": "Há risco de vir um modelo parecido que não serve.",
+      "scene": {
+       "documento": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço ao técnico o modelo e a especificação da placa do equipamento e confiro no pedido.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Especificação conferida",
+      "text": "A peça pedida é a que o equipamento aceita.",
+      "scene": {
+       "documento": "ok"
+      }
+     }
+    },
+    {
+     "text": "Compro a mais barata que parece igual e vemos na instalação.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Compatibilidade no escuro",
+      "text": "A peça chega, não encaixa e a parada se prolonga.",
+      "scene": {
+       "documento": "falha"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q4",
+   "decision": "registrar_pedido",
+   "shot": "tela",
+   "time": "09:20",
+   "narration": "09:20 · O pedido precisa entrar no sistema, mas a pressa tenta a conversa pelo WhatsApp.",
+   "prompt": "Como você formaliza a compra?",
+   "alternatives": [
+    {
+     "text": "Combino tudo por mensagem e deixo o sistema para depois.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Compra informal",
+      "text": "Sem registro, o pedido pode ser questionado e ninguém acompanha.",
+      "scene": {
+       "tela": "falha"
+      }
+     }
+    },
+    {
+     "text": "Lanço o pedido no sistema com a justificativa de urgência e anexo a cotação.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Pedido registrado",
+      "text": "A compra fica rastreável do pedido ao recebimento.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    },
+    {
+     "text": "Lanço só o valor e deixo a justificativa para quando alguém pedir.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Registro pela metade",
+      "text": "Falta o motivo, e a auditoria vai perguntar.",
+      "scene": {
+       "tela": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Peço ao comprador que lance e eu confiro o registro depois.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Registro conferido",
+      "text": "O pedido entra corretamente e você acompanha.",
+      "scene": {
+       "tela": "ok"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "q5",
+   "decision": "confirmar_entrega",
+   "shot": "relogio",
+   "time": "09:40",
+   "narration": "09:40 · O fornecedor diz que entrega amanhã de manhã, mas não diz quem recebe.",
+   "prompt": "O que você faz antes de encerrar?",
+   "alternatives": [
+    {
+     "text": "Aceito o prazo falado e sigo para outras tarefas.",
+     "taken": false,
+     "beat": {
+      "tone": "warn",
+      "title": "Prazo só falado",
+      "text": "Se atrasar, não há como cobrar nem replanejar.",
+      "scene": {
+       "relogio": "alerta"
+      }
+     }
+    },
+    {
+     "text": "Deixo para ver amanhã se a peça chegou.",
+     "taken": false,
+     "beat": {
+      "tone": "bad",
+      "title": "Sem acompanhamento",
+      "text": "A peça chega com ninguém para receber e o equipamento segue parado.",
+      "scene": {
+       "relogio": "falha"
+      }
+     }
+    },
+    {
+     "text": "Peço confirmação por escrito e aviso o técnico do horário da instalação.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Instalação planejada",
+      "text": "A equipe se organiza para instalar assim que chegar.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    },
+    {
+     "text": "Peço o prazo por escrito e combino com o almoxarifado quem recebe e confere.",
+     "taken": true,
+     "beat": {
+      "tone": "good",
+      "title": "Entrega combinada",
+      "text": "Todos sabem quando chega e quem recebe.",
+      "scene": {
+       "relogio": "ok"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "events": [
+  {
+   "id": "risco",
+   "label": "Compra fora do controle",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "cotar",
+      "is": false
+     },
+     {
+      "decision": "conferir_peca",
+      "is": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "base",
+   "label": "Compra bem fundamentada",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "cotar",
+      "is": true
+     },
+     {
+      "decision": "conferir_peca",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "registro",
+   "label": "Pedido rastreável",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "registrar_pedido",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "alinhado",
+   "label": "Coordenador ciente",
+   "tone": "good",
+   "when": {
+    "all": [
+     {
+      "decision": "avisar_gestor",
+      "is": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "falha",
+   "label": "Compra sem prazo ou sem registro",
+   "tone": "bad",
+   "when": {
+    "any": [
+     {
+      "decision": "confirmar_entrega",
+      "is": false
+     },
+     {
+      "event": "registro",
+      "is": false
+     }
+    ]
+   }
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "r1",
+   "label": "Parada do equipamento",
+   "levels": {
+    "ok": "Parada curta e controlada",
+    "warn": "Parada com risco de se prolongar",
+    "bad": "Parada prolongada"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      },
+      {
+       "event": "risco",
+       "is": false
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "falha",
+       "is": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r2",
+   "label": "Qualidade da compra",
+   "levels": {
+    "ok": "Peça certa, preço justificado",
+    "warn": "Compra boa, mas pouco comprovada",
+    "bad": "Risco de peça errada ou preço injustificado"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "all": [
+      {
+       "event": "base",
+       "is": true
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "r3",
+   "label": "Transparência",
+   "levels": {
+    "ok": "Todos no circuito",
+    "warn": "Parte do circuito informada",
+    "bad": "Compra fora do circuito"
+   },
+   "when": {
+    "ok": {
+     "all": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    },
+    "warn": {
+     "any": [
+      {
+       "event": "alinhado",
+       "is": true
+      },
+      {
+       "event": "registro",
+       "is": true
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "publico": "supervisor-manutencao-adm"
+}

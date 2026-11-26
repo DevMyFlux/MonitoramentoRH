@@ -7,6 +7,31 @@ datasource db {
   schemas  = ["public", "leadership_lab", "treinamentos"]
 }
 
+/// Nível de governança da pessoa na empresa (define, com a área, o público dos treinamentos).
+enum NivelGovernanca {
+  assistente
+  supervisor
+  coordenador
+  diretoria
+  @@schema("public")
+}
+
+/// Áreas da empresa (RH, Administrativo, Compras...). Lista configurável por DEV e ADMIN.
+model Area {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug      String           @unique
+  nome      String
+  ativa     Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  createdBy String?          @db.Uuid
+  updatedBy String?          @db.Uuid
+  usuarios  User[]
+  convites  UserInvitation[]
+  regrasDePublico TreinoRegraPublico[]
+  @@schema("public")
+}
+
 enum RoleName {
   DEV
   ADMIN
@@ -132,6 +157,11 @@ model User {
   createdBy            String?              @db.Uuid
   updatedBy            String?              @db.Uuid
   archivedAt           DateTime?
+  /// Cadastro da conta: opcionais só por causa das contas antigas (obrigatórios nas novas, na API).
+  cargo                String?
+  nivelGovernanca      NivelGovernanca?
+  areaId               String?              @db.Uuid
+  area                 Area?                @relation(fields: [areaId], references: [id])
   auditLogs            AuditLog[]
   scopes               UserScope[]
   refreshSessions      RefreshSession[]
@@ -142,6 +172,7 @@ model User {
   labPermissoes        LabPermissaoUsuario[]
   labNotificacoesLidas LabNotificacaoLeitura[]
   labTurmas            LabTurma[]
+  @@index([areaId])
   @@schema("public")
 }
 
@@ -1012,6 +1043,10 @@ model UserInvitation {
   updatedAt   DateTime     @updatedAt
   updatedBy   String?      @db.Uuid
   archivedAt  DateTime?
+  cargo       String?
+  nivelGovernanca NivelGovernanca?
+  areaId      String?      @db.Uuid
+  area        Area?        @relation(fields: [areaId], references: [id])
 
   @@index([email])
   @@index([createdById])
@@ -1242,6 +1277,7 @@ model LabTurma {
   criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
   participantes LabTurmaParticipante[]
   atribuicoesDeTreino TreinoAtribuicao[]
+  configsDeTeste TreinoTesteConfig[]
 
   @@index([curadorId])
   @@map("turma")
@@ -1281,7 +1317,12 @@ model LabSessao {
   participante   LabParticipante @relation(fields: [participanteId], references: [id])
   moldeId        String          @map("molde_id") @db.Uuid
   molde          LabMolde        @relation(fields: [moldeId], references: [id])
+  /// dinamico (IA, legado) | cenarios (a trilha de Treinamentos)
   modo           String          @default("dinamico")
+  /// participante (COMUM) | interno (DEV, ADMIN, RH). Interno nunca entra em métrica de participantes.
+  origem         String          @default("participante")
+  /// O público dos cenários da trilha (só no modo cenarios).
+  publico        String?
   /// Identificador opaco da conversa no serviço de IA. Nunca é o id do usuário.
   iaSessaoId     String?         @unique @map("ia_sessao_id")
   /// A versão da rubrica com que o teste foi conduzido, e a dificuldade-base que o histórico sugeriu.
@@ -1296,15 +1337,55 @@ model LabSessao {
   alertas        LabAlerta[]
   contribuicoes  LabContribuicao[]
   logsIa         LabLogIa[]
+  cenarios       LabTentativaCenario[]
 
   @@index([participanteId, iniciadaEm(sort: Desc)])
   @@index([status])
+  @@index([origem])
   @@map("sessao")
   @@schema("leadership_lab")
 }
 
 /// Cada situação do teste. Aderência, estilo, skills e alerta ficam aqui, mas
 /// nunca saem do backend durante o teste.
+/// Um cenário da trilha de uma sessão (modo cenarios): a versão aprovada, a ordem e o desfecho calculado
+/// no servidor. pendente | em_andamento | concluida (CHECK no banco).
+model LabTentativaCenario {
+  id              String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessaoId        String               @map("sessao_id") @db.Uuid
+  sessao          LabSessao            @relation(fields: [sessaoId], references: [id])
+  ordem           Int                  @db.SmallInt
+  cenarioVersaoId String               @map("cenario_versao_id") @db.Uuid
+  cenarioVersao   TreinoCenarioVersao  @relation(fields: [cenarioVersaoId], references: [id])
+  status          String               @default("pendente")
+  iniciadaEm      DateTime?            @map("iniciada_em") @db.Timestamptz(3)
+  concluidaEm     DateTime?            @map("concluida_em") @db.Timestamptz(3)
+  decisoes        Json?
+  desfecho        Json?
+  respostas       LabRespostaCenario[]
+
+  @@unique([sessaoId, ordem])
+  @@unique([sessaoId, cenarioVersaoId])
+  @@index([cenarioVersaoId])
+  @@map("tentativa_cenario")
+  @@schema("leadership_lab")
+}
+
+/// A alternativa escolhida numa pergunta do cenário, com o tempo gasto. Não muda nem some (gatilho).
+model LabRespostaCenario {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tentativaCenarioId String              @map("tentativa_cenario_id") @db.Uuid
+  tentativaCenario   LabTentativaCenario @relation(fields: [tentativaCenarioId], references: [id])
+  perguntaId         String              @map("pergunta_id")
+  alternativa        Int                 @db.SmallInt
+  respondidaEm       DateTime            @default(now()) @map("respondida_em") @db.Timestamptz(3)
+  tempoMs            Int?                @map("tempo_ms")
+
+  @@unique([tentativaCenarioId, perguntaId])
+  @@map("resposta_cenario")
+  @@schema("leadership_lab")
+}
+
 model LabTurno {
   id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   sessaoId        String    @map("sessao_id") @db.Uuid
@@ -1377,6 +1458,8 @@ model LabResultado {
   validadoPor           String?   @map("validado_por") @db.Uuid
   validadoEm            DateTime? @map("validado_em") @db.Timestamptz(3)
   justificativaValidacao String?  @map("justificativa_validacao")
+  /// Uma contestação deste resultado foi deferida: ele fica guardado, mas a trilha não o conta mais.
+  contestacaoDeferidaEm DateTime? @map("contestacao_deferida_em") @db.Timestamptz(3)
   criadoEm              DateTime  @default(now()) @map("criado_em") @db.Timestamptz(3)
   contestacoes          LabContestacao[]
 
@@ -1458,6 +1541,9 @@ model LabContestacao {
   decididoPor  String?      @map("decidido_por") @db.Uuid
   decididoEm   DateTime?    @map("decidido_em") @db.Timestamptz(3)
   notaDecisao  String?      @map("nota_decisao")
+  /// Quem passou a contestação para "em análise" e quando.
+  analisePor   String?      @map("analise_por") @db.Uuid
+  analiseEm    DateTime?    @map("analise_em") @db.Timestamptz(3)
   criadoEm     DateTime     @default(now()) @map("criado_em") @db.Timestamptz(3)
 
   @@index([status])
@@ -1509,6 +1595,8 @@ model TreinoCenario {
   id          String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   slug        String                @unique
   area        String
+  /// O público da versão mais recente (a lista da configuração filtra por ele).
+  publico     String?
   titulo      String
   /// rascunho | em_revisao | aprovado | arquivado (CHECK no banco)
   status      String                @default("rascunho")
@@ -1536,6 +1624,7 @@ model TreinoCenarioVersao {
   aprovadoPor String?            @map("aprovado_por") @db.Uuid
   aprovadoEm  DateTime?          @map("aprovado_em") @db.Timestamptz(3)
   atribuicoes TreinoAtribuicao[]
+  tentativasDoLab LabTentativaCenario[]
 
   @@unique([cenarioId, numero])
   @@map("cenario_versao")
@@ -1599,5 +1688,38 @@ model TreinoResposta {
 
   @@id([tentativaId, perguntaId])
   @@map("resposta")
+  @@schema("treinamentos")
+}
+
+/// Nível de governança + área -> público do teste (nulo = qualquer). Editável pela configuração; sem
+/// regra que sirva, vale o padrão do código (publicoDoCadastro em packages/shared).
+model TreinoRegraPublico {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nivel       String?
+  areaId      String?  @map("area_id") @db.Uuid
+  area        Area?    @relation(fields: [areaId], references: [id])
+  publico     String
+  ativa       Boolean  @default(true)
+  criadoEm    DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+  alteradoEm  DateTime @default(now()) @map("alterado_em") @db.Timestamptz(3)
+  alteradoPor String?  @map("alterado_por") @db.Uuid
+
+  @@index([areaId])
+  @@map("regra_publico")
+  @@schema("treinamentos")
+}
+
+/// Quantos cenários compõem o teste de um público (e, opcionalmente, de uma turma do Lab).
+model TreinoTesteConfig {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  publico     String
+  turmaId     String?   @map("turma_id") @db.Uuid
+  turma       LabTurma? @relation(fields: [turmaId], references: [id])
+  quantidade  Int       @db.SmallInt
+  alteradoEm  DateTime  @default(now()) @map("alterado_em") @db.Timestamptz(3)
+  alteradoPor String?   @map("alterado_por") @db.Uuid
+
+  @@index([turmaId])
+  @@map("teste_config")
   @@schema("treinamentos")
 }
