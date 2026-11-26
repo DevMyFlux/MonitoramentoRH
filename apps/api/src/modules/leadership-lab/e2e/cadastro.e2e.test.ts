@@ -28,7 +28,9 @@ describe.skipIf(!ligado)("cadastros do Leadership Lab no navegador", () => {
   beforeAll(async () => {
     if (pastaDeCapturas) mkdirSync(pastaDeCapturas, { recursive: true });
     ambiente = await subirAmbienteE2e();
-    navegador = await chromium.launch();
+    navegador = await chromium.launch(
+      process.env.LAB_E2E_CHROMIUM ? { executablePath: process.env.LAB_E2E_CHROMIUM } : {}
+    );
     // O cenário de teste já deixa o molde do supervisor liberado (60 s). Aqui ele volta a como a
     // migração o entrega (desligado e sem tempo): é a liberação, pela tela, que está sendo testada.
     await ambiente.banco.db.client.query(
@@ -227,10 +229,11 @@ describe.skipIf(!ligado)("cadastros do Leadership Lab no navegador", () => {
     const comum = await navegador.newPage({ viewport: { width: 1280, height: 900 } });
     await entrar(comum, marina);
     await comum.waitForURL("**/lab");
+    // Rota que o perfil não abre: volta para a inicial dele.
     await comum.goto(`${ambiente.url}/lab/rh/participantes`);
-    await comum.getByText("Esta área não é para o seu perfil").waitFor();
+    await comum.waitForURL("**/lab");
     await comum.goto(`${ambiente.url}/lab/config`);
-    await comum.getByText("Esta área não é para o seu perfil").waitFor();
+    await comum.waitForURL("**/lab");
     await capturar(comum, "17-area-sem-acesso");
     await comum.close();
 
@@ -238,7 +241,7 @@ describe.skipIf(!ligado)("cadastros do Leadership Lab no navegador", () => {
     await entrar(doRh, rh);
     await doRh.waitForURL("**/colaboradores");
     await doRh.goto(`${ambiente.url}/lab/config`);
-    await doRh.getByText("Esta área não é para o seu perfil").waitFor();
+    await doRh.waitForURL("**/colaboradores");
     await doRh.close();
   }, 90_000);
 

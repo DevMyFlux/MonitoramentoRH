@@ -1,15 +1,15 @@
-import { type ComponentType, Suspense, useEffect, useState, type ReactNode } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { homeFor, podeAbrirRota } from "@my-flux/shared";
+import type { AuthenticatedUser } from "@my-flux/types";
+import { type ComponentType, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AppShell } from "./components/layout";
-import { clearSession, request, saveSession, session } from "./features/my-flux/client";
+import { ApiError, clearSession, request, saveSession, session } from "./features/my-flux/client";
 import { AssistenteDeSuporte } from "./features/suporte/assistente-de-suporte";
 
-// TEST MODE (temporary, at the system owner's request): no login screen, every visitor is signed
-// in as the seeded DEV user (apps/api/prisma/seed.ts), in production too, and the demo credentials
-// below ship in the bundle. To require login again, build the web app with
-// VITE_MODO_TESTE_SEM_LOGIN=false (or change the default here): the /login screen comes back and
-// the bundler drops the credentials from the output.
-const DEV_AUTO_LOGIN = import.meta.env.VITE_MODO_TESTE_SEM_LOGIN !== "false";
+// MODO DE TESTE (desligado por padrão; só com VITE_MODO_TESTE_SEM_LOGIN=true): sem tela de login,
+// todo visitante entra como o DEV do seed e as credenciais de demonstração vão no pacote. Nunca ligar
+// em um ambiente com dados reais. Fica numa constante do build para o empacotador retirar o trecho.
+const DEV_AUTO_LOGIN = import.meta.env.VITE_MODO_TESTE_SEM_LOGIN === "true";
 
 async function autoLoginAsDev(): Promise<void> {
   const payload = await request<{ accessToken: string; refreshToken: string }>(
@@ -34,20 +34,35 @@ export function App({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [checking, setChecking] = useState(true);
+  const [usuario, setUsuario] = useState<AuthenticatedUser | null>(null);
   const [authError, setAuthError] = useState(false);
   // Bumped by the session-expired listener to force the effect below to
-  // re-run (a plain setChecking(true) would re-render but NOT re-trigger the
-  // async session check, since the effect isn't keyed on `checking`).
+  // re-run (a plain state reset would re-render but NOT re-trigger the
+  // async session check, since the effect isn't keyed on it).
   const [retryTick, setRetryTick] = useState(0);
+  // O endereço atual, para o login voltar a ele depois (inclusive quando a sessão expira no meio).
+  const pretendida = useRef("");
+  useEffect(() => {
+    pretendida.current = `${location.pathname}${location.search}`;
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     let mounted = true;
+    const irAoLogin = () =>
+      navigate("/login", { replace: true, state: { from: pretendida.current } });
+
+    async function conferir(): Promise<void> {
+      const { user } = await request<{ user: AuthenticatedUser }>("/auth/me");
+      if (mounted) {
+        setUsuario(user);
+        setAuthError(false);
+      }
+    }
 
     async function ensureSession(): Promise<void> {
       if (!session()) {
         if (!DEV_AUTO_LOGIN) {
-          navigate("/login", { replace: true });
+          irAoLogin();
           return;
         }
         try {
@@ -59,24 +74,21 @@ export function App({
       }
 
       try {
-        await request<{ user: unknown }>("/auth/me");
-        if (mounted) {
-          setChecking(false);
-          setAuthError(false);
-        }
-      } catch {
+        await conferir();
+      } catch (erro) {
         if (!mounted) return;
-        clearSession();
         if (!DEV_AUTO_LOGIN) {
-          navigate("/login", { replace: true });
+          // Só o 401 encerra a sessão: rede fora ou erro do servidor não deslogam ninguém.
+          if (erro instanceof ApiError && erro.status === 401) {
+            clearSession();
+            irAoLogin();
+          } else setAuthError(true);
           return;
         }
+        clearSession();
         try {
           await autoLoginAsDev();
-          if (mounted) {
-            setChecking(false);
-            setAuthError(false);
-          }
+          await conferir();
         } catch {
           if (mounted) setAuthError(true);
         }
@@ -86,10 +98,10 @@ export function App({
     const onSessionExpired = () => {
       clearSession();
       if (!DEV_AUTO_LOGIN) {
-        navigate("/login", { replace: true });
+        irAoLogin();
         return;
       }
-      setChecking(true);
+      setUsuario(null);
       setRetryTick((tick) => tick + 1);
     };
 
@@ -104,22 +116,33 @@ export function App({
 
   if (authError) {
     return (
-      <main className="grid min-h-screen place-items-center bg-slate-100 p-6 text-center text-sm text-slate-600">
+      <main
+        role="alert"
+        className="grid min-h-screen place-items-center bg-slate-100 p-6 text-center text-sm text-slate-600"
+      >
         <div>
-          <p>Não foi possível entrar automaticamente como Dev.</p>
+          <p>
+            {DEV_AUTO_LOGIN
+              ? "Não foi possível entrar automaticamente como Dev."
+              : "Não foi possível validar a sua sessão."}
+          </p>
           <p className="mt-2">Verifique se a API está no ar e recarregue a página.</p>
         </div>
       </main>
     );
   }
 
-  if (checking) {
+  // Nada da página aparece antes de se saber quem é.
+  if (!usuario) {
     return (
       <main className="grid min-h-screen place-items-center bg-slate-100 p-6 text-sm text-slate-600">
         Validando sessão do MY FLUX...
       </main>
     );
   }
+
+  if (!podeAbrirRota(usuario.role, location.pathname))
+    return <Navigate to={homeFor(usuario.role, usuario.menu)} replace />;
 
   return (
     // O Suspense é para o layout de um módulo carregado sob demanda (o do Leadership Lab).

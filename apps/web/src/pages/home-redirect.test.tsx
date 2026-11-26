@@ -45,17 +45,17 @@ describe("página inicial", () => {
     expect(screen.queryByTestId("local")).toBeNull();
   });
 
-  it("sem sessão, vai para Colaboradores (a página de lá manda para o login)", () => {
+  it("sem sessão, vai para o login", () => {
     vi.mocked(session).mockReturnValue(null);
     estado({ isPending: false, data: undefined });
     abrir();
-    expect(screen.getByTestId("local").textContent).toBe("/colaboradores");
+    expect(screen.getByTestId("local").textContent).toBe("/login");
   });
 
-  it("se não conseguiu saber o perfil, vai para onde sempre foi", () => {
+  it("se não conseguiu saber o perfil, vai para o login", () => {
     comSessao();
     estado({ isPending: false, isError: true, data: undefined });
     abrir();
-    expect(screen.getByTestId("local").textContent).toBe("/colaboradores");
+    expect(screen.getByTestId("local").textContent).toBe("/login");
   });
 });

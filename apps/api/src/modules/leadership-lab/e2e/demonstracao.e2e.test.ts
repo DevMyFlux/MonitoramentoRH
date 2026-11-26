@@ -30,7 +30,9 @@ describe.skipIf(!ligado)("Leadership Lab em modo demonstração, no navegador", 
   beforeAll(async () => {
     if (pastaDeCapturas) mkdirSync(pastaDeCapturas, { recursive: true });
     ambiente = await subirAmbienteDeDemonstracao();
-    navegador = await chromium.launch();
+    navegador = await chromium.launch(
+      process.env.LAB_E2E_CHROMIUM ? { executablePath: process.env.LAB_E2E_CHROMIUM } : {}
+    );
   }, 180_000);
 
   afterAll(async () => {

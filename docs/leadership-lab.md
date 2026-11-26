@@ -374,13 +374,11 @@ Os formatos das respostas são schemas Zod em `packages/shared/src/leadership-la
 
 As três páginas e a biblioteca de gráficos (Recharts, só linha e radar) são carregadas sob demanda: o restante do sistema não paga por elas. `"sideEffects": false` em `packages/shared` impede que o Zod dos schemas entre no pacote principal.
 
-### Modo de teste: sem login (temporário)
+### Modo de teste: sem login (desligado por padrão)
 
-Por decisão do dono do sistema, **para o primeiro momento de teste o front não pede login**: todo visitante entra como o usuário DEV do seed (`dev@myflux.local`), como era antes da Etapa 4. Isto vale em produção, e a senha de demonstração vai no pacote. Quem abre o endereço tem acesso de DEV (escopo global: dados de todos os colaboradores e gestão de usuários).
+O front **exige login**. Sem sessão, a raiz e qualquer rota interna levam a `/login`, e depois de entrar a pessoa volta à rota pretendida (só caminhos internos) ou cai na página inicial do perfil (`homeFor`, em `packages/shared/src/menu.ts`).
 
-Nesse modo o item **Leadership Lab** aparece no menu para qualquer perfil, para ser encontrado. Como o DEV não faz testes, a página dele diz isso e traz a dica de entrar como `comum@myflux.local` (botão "Ir para o login"). Com o modo de teste desligado, o item volta a aparecer só para o perfil COMUM.
-
-Para voltar a exigir login, construa o front com `VITE_MODO_TESTE_SEM_LOGIN=false` (ou mude o padrão em `App.tsx`): a tela de login volta e o e-mail do usuário DEV sai do pacote (conferido). O teste de ponta a ponta comum já constrói o front assim, porque exercita o login de verdade.
+Só para demonstração local, construir o front com `VITE_MODO_TESTE_SEM_LOGIN=true` liga o modo sem login: todo visitante entra como o DEV do seed (`dev@myflux.local`) e a senha de demonstração vai no pacote. **Nunca ligar em ambiente com dados reais.**
 
 ## Modo demonstração
 

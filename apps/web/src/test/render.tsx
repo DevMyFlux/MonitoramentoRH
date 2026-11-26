@@ -5,7 +5,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render } from "@testing-library/react";
 import type { ReactElement } from "react";
-import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { type InitialEntry, MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach } from "vitest";
 
 afterEach(() => cleanup());
@@ -29,7 +29,7 @@ export function novoCliente(): QueryClient {
 
 export function renderizar(
   elemento: ReactElement,
-  opcoes: { rota?: string; caminho?: string; cliente?: QueryClient } = {}
+  opcoes: { rota?: InitialEntry; caminho?: string; cliente?: QueryClient } = {}
 ) {
   const cliente = opcoes.cliente ?? novoCliente();
   const rota = opcoes.rota ?? "/";
@@ -37,7 +37,10 @@ export function renderizar(
     <QueryClientProvider client={cliente}>
       <MemoryRouter initialEntries={[rota]}>
         <Routes>
-          <Route path={opcoes.caminho ?? rota} element={elemento} />
+          <Route
+            path={opcoes.caminho ?? (typeof rota === "string" ? rota : rota.pathname!)}
+            element={elemento}
+          />
           <Route path="*" element={<LocalAtual />} />
         </Routes>
       </MemoryRouter>

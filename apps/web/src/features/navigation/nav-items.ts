@@ -114,7 +114,7 @@ export const navigationGroups: NavigationGroup[] = [
       },
       // Treinamentos Interativos (o módulo antigo): só o DEV. Os cenários agora fazem parte do teste do
       // Leadership Lab, e o menu do COMUM tem APENAS o Leadership Lab. Esconder é arrumação: a web
-      // também redireciona o COMUM (SoParaEquipe).
+      // também redireciona o COMUM (a guarda de rota no App).
       {
         label: "Treinamentos",
         href: "/treinamentos",

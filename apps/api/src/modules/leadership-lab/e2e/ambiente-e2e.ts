@@ -47,7 +47,7 @@ export type AmbienteE2e = {
   curador: PessoaDoE2e;
   /** Cria um usuário de qualquer perfil. `escopoGlobal` dá ao RH acesso a todas as operações. */
   criarPessoa(
-    papel: "RH" | "ADMIN" | "COMUM",
+    papel: "DEV" | "RH" | "ADMIN" | "COMUM",
     opcoes?: { nome?: string; email?: string; escopoGlobal?: boolean }
   ): Promise<PessoaDoE2e>;
   /** Um colaborador que ainda não é participante, em um cargo novo que ainda não está em molde algum. */
@@ -66,12 +66,13 @@ export type AmbienteE2e = {
 function compilarOFront(destino: string, { modoDeTeste }: { modoDeTeste: boolean }): void {
   const raiz = fileURLToPath(new URL("../../../../../../", import.meta.url));
   const env: NodeJS.ProcessEnv = { ...process.env, VITE_API_BASE_URL: "/api/v1" };
-  if (modoDeTeste) delete env.VITE_MODO_TESTE_SEM_LOGIN;
-  else env.VITE_MODO_TESTE_SEM_LOGIN = "false";
+  env.VITE_MODO_TESTE_SEM_LOGIN = modoDeTeste ? "true" : "false";
+  // O Vite pelo próprio node: não depende de um `pnpm` no PATH (no Windows ele é um .cmd).
+  const web = join(raiz, "apps", "web");
   execFileSync(
-    "pnpm",
-    ["--filter", "@my-flux/web", "exec", "vite", "build", "--outDir", destino, "--emptyOutDir"],
-    { cwd: raiz, env, stdio: "pipe" }
+    process.execPath,
+    [join(web, "node_modules", "vite", "bin", "vite.js"), "build", "--outDir", destino, "--emptyOutDir"],
+    { cwd: web, env, stdio: "pipe" }
   );
 }
 
@@ -152,7 +153,7 @@ export async function subirAmbienteE2e(): Promise<AmbienteE2e> {
       roles[papel] = await inserir(banco.db.client, '"Role"', {
         id: crypto.randomUUID(),
         name: papel,
-        level: papel === "ADMIN" ? 3 : 1,
+        level: papel === "DEV" ? 4 : papel === "ADMIN" ? 3 : 1,
         description: papel,
         updatedAt: new Date().toISOString()
       });

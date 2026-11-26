@@ -30,7 +30,9 @@ describe.skipIf(!ligado)("curadoria do Leadership Lab no navegador", () => {
   beforeAll(async () => {
     if (pastaDeCapturas) mkdirSync(pastaDeCapturas, { recursive: true });
     ambiente = await subirAmbienteE2e();
-    navegador = await chromium.launch();
+    navegador = await chromium.launch(
+      process.env.LAB_E2E_CHROMIUM ? { executablePath: process.env.LAB_E2E_CHROMIUM } : {}
+    );
     rh = await ambiente.criarPessoa("RH", { nome: "Rita do RH", escopoGlobal: true });
     semTurma = await ambiente.criarPessoa("RH", { nome: "RH sem turma", escopoGlobal: true });
 
@@ -327,7 +329,7 @@ describe.skipIf(!ligado)("curadoria do Leadership Lab no navegador", () => {
     await comum.waitForURL("**/lab");
     for (const caminho of ["revisao", "alertas", "contestacoes", "contribuicoes"]) {
       await comum.goto(`${ambiente.url}/lab/rh/${caminho}`);
-      await comum.getByText("Esta área não é para o seu perfil").waitFor();
+      await comum.waitForURL("**/lab");
     }
     await comum.close();
   }, 90_000);
