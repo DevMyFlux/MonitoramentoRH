@@ -33,7 +33,7 @@ export function TreinamentosPage() {
   return (
     <div className="space-y-6">
       <TituloDePagina
-        etiqueta="MY FLUX · Desenvolvimento"
+        etiqueta="MY FLUX · Hub Leadership"
         titulo="Treinamentos"
         descricao="Situações do dia a dia em cena: você decide, vê o que acontece e entende por quê. Sem limite de tempo."
       />

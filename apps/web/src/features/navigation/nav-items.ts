@@ -76,7 +76,7 @@ export const navigationGroups: NavigationGroup[] = [
     ]
   },
   {
-    label: "Desenvolvimento",
+    label: "Hub Leadership",
     // Quem vê cada item é o menu que a API devolve (packages/shared/src/menu.ts).
     items: [
       {

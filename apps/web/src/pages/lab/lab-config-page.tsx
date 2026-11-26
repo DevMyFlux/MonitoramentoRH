@@ -32,7 +32,7 @@ export function LabConfigPage() {
     <Escalonar className="space-y-8">
       <Revelar>
         <CabecalhoDePagina
-          eyebrow="MY FLUX · Desenvolvimento"
+          eyebrow="MY FLUX · Hub Leadership"
           titulo="Configuração do Leadership Lab"
           descricao="Defina o tempo de cada situação, quais cargos usam cada teste e quando o teste é liberado para os participantes. Não há dados de pessoas nesta tela."
         />

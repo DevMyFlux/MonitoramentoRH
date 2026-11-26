@@ -52,7 +52,7 @@ export function LayoutDoAcompanhamento({ children }: { children: React.ReactNode
   return (
     <div className="space-y-8">
       <CabecalhoDePagina
-        eyebrow="MY FLUX · Desenvolvimento"
+        eyebrow="MY FLUX · Hub Leadership"
         titulo="Acompanhamento do Leadership Lab"
         descricao="Acompanhe o teste por cenários, valide os resultados, responda às contestações e cadastre quem faz os testes e as turmas que você acompanha."
       />
