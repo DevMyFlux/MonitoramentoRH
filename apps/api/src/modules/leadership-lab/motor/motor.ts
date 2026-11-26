@@ -91,6 +91,7 @@ import {
   moldePronto,
   resolverMoldeDoParticipante
 } from "./precondicoes.js";
+import { expirarTesteInternoParado } from "../trilha/expiracao.js";
 import {
   type EstadoDoTeste,
   type RespostaDeResultado,
@@ -621,6 +622,16 @@ export class MotorDoTeste {
         );
     }
     throw resolvido.falta === "cargo" ? erros.cargoNaoInformado() : erros.moldeNaoMapeado();
+  }
+
+  /** Antes de olhar o teste em aberto: o interno parado além do prazo expira (veja expiracao.ts). */
+  expirarTesteInterno(ator: LabAtor): Promise<void> {
+    return expirarTesteInternoParado(
+      this.db,
+      ator,
+      this.relogio(),
+      this.config.expiraTesteInternoH
+    );
   }
 
   /**

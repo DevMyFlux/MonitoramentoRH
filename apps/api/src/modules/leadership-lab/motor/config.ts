@@ -10,6 +10,7 @@ import {
   labModosDeTeste,
   labTermoVersaoAtual
 } from "@my-flux/shared";
+import { EXPIRACAO_DO_TESTE_INTERNO_PADRAO_H } from "../trilha/expiracao.js";
 
 export type ConfigDoMotor = {
   /** Segundos descontados do tempo de resposta pela latência da rede (LAB_TOLERANCIA_TEMPO_S). */
@@ -47,6 +48,11 @@ export type ConfigDoMotor = {
   modoDoTeste?: LabModoDeTeste;
   /** Quantos cenários compõem um teste (LAB_TESTE_CENARIOS; padrão 3). */
   cenariosPorTeste?: number;
+  /**
+   * Horas sem atividade até o teste interno (DEV, ADMIN, RH) expirar (LAB_TESTE_INTERNO_EXPIRA_H;
+   * padrão 24). O teste do participante nunca expira.
+   */
+  expiraTesteInternoH?: number;
 };
 
 export const IA_TIMEOUT_PADRAO_MS = 25_000;
@@ -101,6 +107,9 @@ export function lerConfigDoLab(env: Record<string, string | undefined>): ConfigD
       numero(env, "LAB_TESTE_CENARIOS", { inteiro: true, minimo: 1 }) ??
         LAB_CENARIOS_POR_TESTE_PADRAO
     ),
+    expiraTesteInternoH:
+      numero(env, "LAB_TESTE_INTERNO_EXPIRA_H", { inteiro: true, minimo: 1 }) ??
+      EXPIRACAO_DO_TESTE_INTERNO_PADRAO_H,
     exigeBaseValidada: env.LAB_EXIGE_BASE_VALIDADA?.trim().toLowerCase() === "true",
     limiteConversasHora:
       numero(env, "LAB_LIMITE_CONVERSAS_HORA", { inteiro: true, minimo: 1 }) ??

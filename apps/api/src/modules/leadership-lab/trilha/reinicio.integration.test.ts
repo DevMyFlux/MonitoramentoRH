@@ -6,7 +6,13 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createAccessToken } from "../../auth/token-service.js";
 import { integrationEnabled } from "../db/test-database.js";
 import { criarParticipante, criarSessao, inserir } from "../db/test-fixtures.js";
-import { type Banco, configDeTeste, encerrarBanco, prepararBanco } from "../motor/cenario-de-teste.js";
+import {
+  type Banco,
+  RelogioFalso,
+  configDeTeste,
+  encerrarBanco,
+  prepararBanco
+} from "../motor/cenario-de-teste.js";
 import { IaFalsa } from "../motor/ia-falsa.js";
 import { readdirSync, readFileSync } from "node:fs";
 
@@ -18,6 +24,8 @@ describe.skipIf(!integrationEnabled)("teste interno: retomar e reiniciar", () =>
   let banco: Banco;
   let app: FastifyInstance;
   let desligarPrisma: () => Promise<void>;
+  const relogio = new RelogioFalso();
+  const HORA = 3_600_000;
   const papeis = {} as Record<Papel, string>;
 
   const sql = (texto: string, params: unknown[] = []) =>
@@ -68,7 +76,8 @@ describe.skipIf(!integrationEnabled)("teste interno: retomar e reiniciar", () =>
     app = await buildApp({
       lab: {
         ia: new IaFalsa(),
-        config: configDeTeste({ modoDoTeste: "cenarios", cenariosPorTeste: 1 })
+        config: configDeTeste({ modoDoTeste: "cenarios", cenariosPorTeste: 1 }),
+        agora: relogio.agora
       }
     });
     papeis.COMUM = banco.base.roleId;
@@ -186,5 +195,92 @@ describe.skipIf(!integrationEnabled)("teste interno: retomar e reiniciar", () =>
     const dev = await pessoa("DEV");
     const r = await dev.chamar("POST", "/teste/reiniciar");
     expect(r.json().data, r.body).toEqual({ encerrado: false });
+  });
+
+  describe("teste interno parado há mais de 24 horas", () => {
+    const responder = (
+      quem: Awaited<ReturnType<typeof pessoa>>,
+      estado: { tentativa: { id: string }; cenario: { questions: { id: string }[] } },
+      indice = 0
+    ) =>
+      quem.chamar("POST", `/teste/${estado.tentativa.id}/respostas`, {
+        perguntaId: estado.cenario.questions[indice]!.id,
+        alternativa: 0
+      });
+
+    it("expira sozinho: vira cancelada, com auditoria, e libera um teste novo", async () => {
+      const dev = await pessoa("DEV");
+      const velho = (await dev.chamar("POST", "/teste", {})).json().data;
+
+      relogio.avancar(23 * HORA);
+      // Só olhar não conta como atividade, nem expira antes da hora.
+      expect((await dev.chamar("GET", "/teste/proxima")).json().data.tipo).toBe("cenario");
+
+      relogio.avancar(2 * HORA);
+      const depois = (await dev.chamar("GET", "/teste/proxima")).json().data;
+      expect(depois).toMatchObject({ tipo: "sem-teste", podeIniciar: true });
+      expect(await sessoesDe(dev.participanteId)).toMatchObject([{ status: "cancelada" }]);
+      const auditoria = await sql(`SELECT after FROM "AuditLog" WHERE "entityId" = $1`, [
+        velho.trilha.sessaoId
+      ]);
+      expect(auditoria).toMatchObject([{ after: { motivo: "expiracao-do-teste-interno" } }]);
+
+      const novo = (await dev.chamar("POST", "/teste", {})).json().data;
+      expect(novo.trilha.sessaoId).not.toBe(velho.trilha.sessaoId);
+    });
+
+    it("o prazo conta da última resposta, não do começo", async () => {
+      const dev = await pessoa("DEV");
+      const estado = (await dev.chamar("POST", "/teste", {})).json().data;
+      relogio.avancar(23 * HORA);
+      expect((await responder(dev, estado, 0)).statusCode).toBe(200);
+      relogio.avancar(23 * HORA);
+      expect((await responder(dev, estado, 1)).statusCode).toBe(200);
+    });
+
+    it("quem volta numa aba antiga recebe que o teste foi encerrado", async () => {
+      const dev = await pessoa("DEV");
+      const estado = (await dev.chamar("POST", "/teste", {})).json().data;
+      relogio.avancar(25 * HORA);
+      const r = await responder(dev, estado);
+      expect(r.json().code, r.body).toBe("LAB_SESSAO_ENCERRADA");
+    });
+
+    it("o do participante nunca expira", async () => {
+      const comum = await pessoa("COMUM", { termo: true });
+      const um = (await comum.chamar("POST", "/teste", {})).json().data;
+      relogio.avancar(200 * HORA);
+      const atual = (await comum.chamar("GET", "/teste/proxima")).json().data;
+      expect(atual.trilha.sessaoId).toBe(um.trilha.sessaoId);
+    });
+
+    it("vale para o teste do modo anterior, e o painel já o mostra liberado", async () => {
+      const dev = await pessoa("DEV");
+      await criarSessao(banco.db.client, dev, {
+        iniciada_em: new Date(relogio.agora().getTime() - 25 * HORA).toISOString()
+      });
+      const painel = await dev.chamar("GET", "/painel");
+      expect(painel.json().data.acao.tipo, painel.body).toBe("iniciar");
+    });
+
+    it("o assistente deixa de ficar bloqueado por um teste abandonado", async () => {
+      const dev = await pessoa("DEV");
+      await dev.chamar("POST", "/teste", {});
+      const perguntar = () =>
+        app.inject({
+          method: "POST",
+          url: "/api/v1/suporte/conversa",
+          headers: { authorization: `Bearer ${dev.token}` },
+          payload: {
+            mensagem: "Como importo uma escala?",
+            historico: [],
+            pagina: { caminho: "/escalas", titulo: "Escalas" }
+          }
+        });
+      expect((await perguntar()).json().code).toBe("SUPORTE_DURANTE_O_TESTE");
+      relogio.avancar(25 * HORA);
+      const r = await perguntar();
+      expect(r.statusCode, r.body).toBe(200);
+    });
   });
 });

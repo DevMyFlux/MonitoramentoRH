@@ -70,13 +70,15 @@ export async function registrarRotasDoLab(
     return payload;
   });
 
-  const atorDe = async (request: FastifyRequest) =>
-    carregarAtorLab(db, await authenticateRequest(request, users));
   // O teste por cenários também precisa do cadastro da conta (cargo, nível e área decidem o público).
   const contextoDe = async (request: FastifyRequest) => {
     const user = await authenticateRequest(request, users);
-    return { user, ator: await carregarAtorLab(db, user) };
+    const ator = await carregarAtorLab(db, user);
+    // Antes de qualquer rota olhar o teste em aberto, o interno abandonado expira.
+    await motor.expirarTesteInterno(ator);
+    return { user, ator };
   };
+  const atorDe = async (request: FastifyRequest) => (await contextoDe(request)).ator;
   const trilha = new TrilhaDeCenarios({
     db,
     config: motor.configDaTrilha,

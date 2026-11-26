@@ -255,6 +255,7 @@ As pré-condições de início ficam num só lugar, `avaliarInicio` (`precondico
 | `LAB_TOLERANCIA_TEMPO_S`    | sim, se `LAB_IA_URL` existe   | **Sem valor padrão.** Segundos de latência de rede descontados do tempo de resposta (0 = nada) |
 | `LAB_LIMITE_TESTES_DIA`     | não                           | Testes por participante por dia. Sem ela, sem limite                                           |
 | `LAB_IA_TIMEOUT_MS`         | não                           | Tempo máximo de cada chamada à IA. Padrão 25 000; fica abaixo dos 30 s do cliente web          |
+| `LAB_TESTE_INTERNO_EXPIRA_H` | não                          | Horas sem atividade até o teste interno (DEV, ADMIN, RH) expirar. Padrão 24; o do participante nunca expira. Vale no próximo acesso do dono |
 | `LAB_MODO_DEMO`             | não                           | `true` liga o **modo demonstração** (veja a seção própria). Só vale sem `LAB_IA_URL`           |
 | `LAB_IA_AUTENTICACAO`       | não                           | `cloud-run`: cada chamada leva o ID token da conta de serviço do site (serviço de IA privado)  |
 | `LAB_EXIGE_BASE_VALIDADA`   | não                           | `true`: resultado experimental (situação sem base validada) não pode ser validado como oficial |
