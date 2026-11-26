@@ -2,8 +2,7 @@ import { Layers2, X } from "lucide-react";
 import { LayoutGroup, motion } from "motion/react";
 import { Link, useLocation } from "react-router-dom";
 import { useUsuarioAtual } from "../../auth/use-usuario-atual";
-import { gruposDoMenu, itemAtivo } from "./navegacao";
-import { modoDeTesteSemLogin } from "../../../modo-de-teste";
+import { gruposVisiveis, itemAtivo } from "../../navigation/nav-items";
 import { cn } from "../../../lib/cn";
 import { Button } from "../ui";
 import { useArmadilhaDeFoco } from "../ui/armadilha-de-foco";
@@ -13,8 +12,7 @@ type LabSidebarProps = { aberta: boolean; aoFechar: () => void };
 
 export function LabSidebar({ aberta, aoFechar }: LabSidebarProps) {
   const { pathname } = useLocation();
-  const perfil = useUsuarioAtual().data?.role;
-  const grupos = gruposDoMenu(perfil, modoDeTesteSemLogin());
+  const grupos = gruposVisiveis(useUsuarioAtual().data?.menu);
   const ativo = itemAtivo(
     pathname,
     grupos.flatMap((g) => g.items)
@@ -58,7 +56,7 @@ export function LabSidebar({ aberta, aoFechar }: LabSidebarProps) {
         />
       </div>
 
-      <nav className="rolagem-fina min-h-0 flex-1 space-y-7 overflow-y-auto px-3 pb-6 pt-3">
+      <nav aria-label="Módulos" className="rolagem-fina min-h-0 flex-1 space-y-7 overflow-y-auto px-3 pb-6 pt-3">
         <LayoutGroup id="menu-do-lab">
           {grupos.map((grupo) => (
             <section key={grupo.label}>
@@ -75,7 +73,7 @@ export function LabSidebar({ aberta, aoFechar }: LabSidebarProps) {
                         onClick={aoFechar}
                         aria-current={selecionado ? "page" : undefined}
                         className={cn(
-                          "relative flex min-h-10 items-center gap-3 rounded-lab-md px-3 py-2 text-lab-pequeno font-medium transition-colors duration-lab-rapida",
+                          "relative flex min-h-11 items-center gap-3 rounded-lab-md px-3 py-2 text-lab-pequeno font-medium transition-colors duration-lab-rapida",
                           selecionado
                             ? "text-lab-tinta"
                             : "text-lab-tinta-2 hover:bg-lab-tinta/[0.04] hover:text-lab-tinta"

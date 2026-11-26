@@ -4,19 +4,18 @@
 // aqui é o alvo grande (44 px ou mais), o rótulo sempre visível e o item ativo bem marcado.
 // Por quê: o celular é o uso principal do RH, e o polegar alcança o pé da tela, não o menu do topo.
 import { motion } from "motion/react";
-import { NavLink } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useUsuarioAtual } from "../../features/auth/use-usuario-atual";
-import { itensDoDock } from "../../features/navigation/nav-items";
+import { itemAtivo, itensDoDock } from "../../features/navigation/nav-items";
 import { cn } from "../../lib/cn";
-import { modoDeTesteSemLogin } from "../../modo-de-teste";
 
 /** Altura da barra, para o conteúdo e os botões flutuantes deixarem espaço. */
 export const ALTURA_DO_DOCK = "4.25rem";
 
 export function Dock() {
-  const perfil = useUsuarioAtual().data?.role;
-  const itens = itensDoDock(perfil, modoDeTesteSemLogin());
+  const itens = itensDoDock(useUsuarioAtual().data?.menu);
+  const ativo = itemAtivo(useLocation().pathname, itens);
 
   // Avisa a quem flutua no canto (o assistente) quanto espaço a barra ocupa. Só vale abaixo de lg,
   // que é onde ela aparece; acima disso a variável volta a 0 pelo CSS da própria barra.
@@ -44,36 +43,30 @@ export function Dock() {
       <ul className="flex items-stretch justify-around gap-1 p-1.5">
         {itens.map((item) => (
           <li key={item.href} className="min-w-0 flex-1">
-            <NavLink
+            <Link
               to={item.href}
-              end={item.href === "/"}
-              className={({ isActive }) =>
-                cn(
-                  "relative flex min-h-[52px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[11px] font-medium leading-none transition-colors",
-                  isActive ? "text-mf-primaria" : "text-mf-texto-3 hover:text-mf-tinta"
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {isActive ? (
-                    <motion.span
-                      layoutId="dock-ativo"
-                      aria-hidden="true"
-                      transition={{ type: "spring", stiffness: 460, damping: 34, mass: 0.7 }}
-                      className="absolute inset-0 rounded-xl bg-mf-realce-suave ring-1 ring-inset ring-mf-realce"
-                    />
-                  ) : null}
-                  <item.icon
-                    size={20}
-                    strokeWidth={isActive ? 2.1 : 1.7}
-                    aria-hidden="true"
-                    className="relative"
-                  />
-                  <span className="relative max-w-full truncate">{item.curto ?? item.label}</span>
-                </>
+              aria-current={item.href === ativo ? "page" : undefined}
+              className={cn(
+                "relative flex min-h-[52px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[11px] font-medium leading-none transition-colors",
+                item.href === ativo ? "text-mf-primaria" : "text-mf-texto-3 hover:text-mf-tinta"
               )}
-            </NavLink>
+            >
+              {item.href === ativo ? (
+                <motion.span
+                  layoutId="dock-ativo"
+                  aria-hidden="true"
+                  transition={{ type: "spring", stiffness: 460, damping: 34, mass: 0.7 }}
+                  className="absolute inset-0 rounded-xl bg-mf-realce-suave ring-1 ring-inset ring-mf-realce"
+                />
+              ) : null}
+              <item.icon
+                size={20}
+                strokeWidth={item.href === ativo ? 2.1 : 1.7}
+                aria-hidden="true"
+                className="relative"
+              />
+              <span className="relative max-w-full truncate">{item.curto ?? item.label}</span>
+            </Link>
           </li>
         ))}
       </ul>

@@ -7,7 +7,7 @@ import { LabShell } from "./lab-shell";
 
 const usuarioAtual = vi.hoisted(() => ({
   data: undefined as
-    undefined | { id: string; name: string; email: string; role: string; scopes: never[] }
+    undefined | { id: string; name: string; email: string; role: string; scopes: never[]; menu?: string[] }
 }));
 
 vi.mock("../../auth/use-usuario-atual", async () => ({
@@ -20,6 +20,7 @@ const ana = {
   name: "Ana Souza",
   email: "ana@exemplo.com",
   role: "COMUM",
+  menu: ["/lab"] as string[],
   scopes: []
 } as const;
 

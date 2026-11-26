@@ -1,5 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { itemVisivelPara, navigationGroups } from "./nav-items";
+import { menuDoPerfil, type PerfilDeAcesso, rotasDoMenu } from "@my-flux/shared";
+import { itemAtivo, type NavigationItem, navigationGroups } from "./nav-items";
+
+const itemVisivelPara = (item: NavigationItem, perfil: PerfilDeAcesso | undefined) =>
+  perfil !== undefined && menuDoPerfil(perfil).includes(item.href);
+
+describe("ordem fixa e destaque", () => {
+  const todos = navigationGroups.filter((g) => !g.hidden).flatMap((g) => g.items);
+
+  it("os itens do menu estão declarados na mesma ordem usada pelo servidor", () => {
+    const posicoes = todos.filter((i) => !i.hidden).map((i) => rotasDoMenu.indexOf(i.href));
+    expect(posicoes).not.toContain(-1);
+    expect(posicoes).toEqual([...posicoes].sort((a, b) => a - b));
+  });
+
+  it("o destaque é o do endereço mais específico, inclusive em rotas filhas", () => {
+    expect(itemAtivo("/lab/rh/revisao/abc", todos)).toBe("/lab/rh");
+    expect(itemAtivo("/lab/teste", todos)).toBe("/lab");
+    expect(itemAtivo("/treinamentos/config", todos)).toBe("/treinamentos/config");
+    expect(itemAtivo("/relatorio-que-nao-existe", todos)).toBeNull();
+  });
+});
 
 describe("navigation groups", () => {
   it("exposes the MY FLUX operational modules", () => {
@@ -18,7 +39,7 @@ describe("navigation groups", () => {
     const item = navigationGroups.flatMap((g) => g.items).find((i) => i.label === "Usuários");
 
     it("aparece para DEV, ADMIN e RH e nunca para o COMUM", () => {
-      expect(item).toMatchObject({ href: "/usuarios", roles: ["DEV", "ADMIN", "RH"] });
+      expect(item).toMatchObject({ href: "/usuarios" });
       expect(item?.hidden).toBeUndefined();
       expect(navigationGroups.find((g) => g.items.includes(item!))?.hidden).toBeUndefined();
       for (const perfil of ["DEV", "ADMIN", "RH"] as const)
@@ -35,7 +56,7 @@ describe("navigation groups", () => {
     const item = navigationGroups.flatMap((g) => g.items).find((i) => i.label === "Treinamentos");
 
     it("é só do DEV: o participante faz os cenários dentro do teste do Leadership Lab", () => {
-      expect(item).toMatchObject({ href: "/treinamentos", roles: ["DEV"] });
+      expect(item).toMatchObject({ href: "/treinamentos" });
       expect(item?.hidden).toBeUndefined();
       expect(itemVisivelPara(item!, "COMUM")).toBe(false);
       expect(itemVisivelPara(item!, "DEV")).toBe(true);
@@ -76,7 +97,7 @@ describe("navigation groups", () => {
     const item = navigationGroups.flatMap((g) => g.items).find((i) => i.label === "Leadership Lab");
 
     it("está no menu e aponta para o painel do participante", () => {
-      expect(item).toMatchObject({ href: "/lab", roles: ["COMUM", "DEV"] });
+      expect(item).toMatchObject({ href: "/lab" });
       const grupo = navigationGroups.find((g) => g.items.includes(item!));
       expect(grupo?.hidden).toBeUndefined();
       expect(item?.hidden).toBeUndefined();
@@ -101,8 +122,8 @@ describe("navigation groups", () => {
     const configuracao = itens.find((i) => i.label === "Configuração do Lab");
 
     it("estão no menu e apontam para as telas certas", () => {
-      expect(acompanhamento).toMatchObject({ href: "/lab/rh", roles: ["RH", "ADMIN", "DEV"] });
-      expect(configuracao).toMatchObject({ href: "/lab/config", roles: ["ADMIN", "DEV"] });
+      expect(acompanhamento).toMatchObject({ href: "/lab/rh" });
+      expect(configuracao).toMatchObject({ href: "/lab/config" });
       for (const item of [acompanhamento, configuracao]) {
         expect(item?.hidden).toBeUndefined();
         expect(navigationGroups.find((g) => g.items.includes(item!))?.hidden).toBeUndefined();
@@ -127,14 +148,6 @@ describe("navigation groups", () => {
         expect(visiveis, perfil).toHaveLength(perfil === "DEV" ? 3 : perfil === "ADMIN" ? 2 : 1);
       }
     });
-
-    it("no modo de teste todas aparecem, para o Lab poder ser encontrado", () => {
-      for (const item of [acompanhamento!, configuracao!]) {
-        for (const perfil of ["DEV", "RH", "COMUM", undefined] as const) {
-          expect(itemVisivelPara(item, perfil, true)).toBe(true);
-        }
-      }
-    });
   });
 
   it("Colaboradores e Escalas são da equipe: nunca aparecem para o COMUM nem sem saber o perfil", () => {
@@ -153,22 +166,5 @@ describe("navigation groups", () => {
       .flatMap((g) => g.items)
       .filter((i) => !i.hidden && itemVisivelPara(i, "COMUM"));
     expect(itens.map((i) => i.href)).toEqual(["/lab"]);
-  });
-
-  describe("modo de teste (todo visitante entra como DEV)", () => {
-    const itens = navigationGroups.flatMap((g) => g.items);
-    const lab = itens.find((i) => i.label === "Leadership Lab")!;
-
-    it("mostra o item restrito a qualquer perfil, e até sem saber quem está logado", () => {
-      for (const perfil of ["DEV", "ADMIN", "RH", "COMUM", undefined] as const) {
-        expect(itemVisivelPara(lab, perfil, true)).toBe(true);
-      }
-    });
-
-    it("sem o modo de teste (o padrão da função), a restrição por perfil vale", () => {
-      expect(itemVisivelPara(lab, "RH")).toBe(false);
-      expect(itemVisivelPara(lab, "RH", false)).toBe(false);
-      expect(itemVisivelPara(lab, "COMUM", false)).toBe(true);
-    });
   });
 });

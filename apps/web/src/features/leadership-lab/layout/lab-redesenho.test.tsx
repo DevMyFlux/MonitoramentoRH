@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // O redesenho do MY FLUX (fases 1 a 5) também vale dentro do Leadership Lab: fundo ambiente, dock no
 // celular e campos com rótulo flutuante. Os tokens da paleta têm teste próprio (ui/tokens-paleta.test.ts).
+import { menuDoPerfil } from "@my-flux/shared";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar } from "../../../test/render";
@@ -9,7 +10,7 @@ import { LabShell } from "./lab-shell";
 
 const usuarioAtual = vi.hoisted(() => ({
   data: undefined as
-    undefined | { id: string; name: string; email: string; role: string; scopes: never[] }
+    undefined | { id: string; name: string; email: string; role: string; scopes: never[]; menu?: string[] }
 }));
 vi.mock("../../auth/use-usuario-atual", async () => ({
   useUsuarioAtual: () => usuarioAtual,
@@ -17,7 +18,7 @@ vi.mock("../../auth/use-usuario-atual", async () => ({
 }));
 
 beforeEach(() => {
-  usuarioAtual.data = { id: "u1", name: "Ana", email: "a@b.c", role: "RH", scopes: [] };
+  usuarioAtual.data = { id: "u1", name: "Ana", email: "a@b.c", role: "RH", scopes: [], menu: menuDoPerfil("RH") };
   vi.stubEnv("VITE_MODO_TESTE_SEM_LOGIN", "false");
 });
 
