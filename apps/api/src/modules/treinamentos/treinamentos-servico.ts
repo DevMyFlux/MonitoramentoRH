@@ -620,8 +620,14 @@ export class ServicoDeTreinamentos {
     return resultado.cenario;
   }
 
+  /** ADMIN e DEV editam a configuração; o RH (e o DEV) só a leem. */
+  private exigirLeituraDaConfiguracao(ator: TreinoAtor): void {
+    if (!perfilPermite(ator, "administrador") && !perfilPermite(ator, "curador"))
+      throw new HttpError(403, "TREINO_FORBIDDEN", "Seu perfil não tem permissão para esta ação.");
+  }
+
   async listarCenarios(ator: TreinoAtor) {
-    this.exigirPapel(ator, "administrador");
+    this.exigirLeituraDaConfiguracao(ator);
     const cenarios = await this.db.treinoCenario.findMany({
       orderBy: { alteradoEm: "desc" },
       include: {
@@ -642,6 +648,7 @@ export class ServicoDeTreinamentos {
       id: c.id,
       slug: c.slug,
       area: c.area,
+      publico: c.publico,
       titulo: c.titulo,
       status: c.status,
       alteradoEm: c.alteradoEm.toISOString(),
@@ -657,7 +664,7 @@ export class ServicoDeTreinamentos {
   }
 
   async lerVersao(ator: TreinoAtor, cenarioId: string, versaoId: string) {
-    this.exigirPapel(ator, "administrador");
+    this.exigirLeituraDaConfiguracao(ator);
     const versao = await this.db.treinoCenarioVersao.findFirst({
       where: { id: versaoId, cenarioId }
     });
@@ -680,6 +687,7 @@ export class ServicoDeTreinamentos {
           data: {
             slug: cenario.slug,
             area: cenario.area,
+            publico: cenario.publico ?? null,
             titulo: cenario.title,
             criadoPor: ator.userId,
             criadoEm: agora,
@@ -786,6 +794,7 @@ export class ServicoDeTreinamentos {
         data: {
           titulo: cenario.title,
           area: cenario.area,
+          publico: cenario.publico ?? null,
           alteradoPor: ator.userId,
           alteradoEm: agora
         }
@@ -832,6 +841,73 @@ export class ServicoDeTreinamentos {
       });
       return { versaoId, numero: versao.numero, aprovadoEm: agora.toISOString() };
     });
+  }
+
+  /** Rascunho -> em revisão: o conteúdo foi enviado para a área responsável revisar. */
+  async enviarParaRevisao(ator: TreinoAtor, cenarioId: string) {
+    this.exigirPapel(ator, "administrador");
+    const cenario = await this.db.treinoCenario.findUnique({ where: { id: cenarioId } });
+    if (!cenario) throw NAO_ENCONTRADO();
+    if (cenario.status !== "rascunho")
+      throw new HttpError(
+        409,
+        "TREINO_STATUS_INVALIDO",
+        "Só um cenário em rascunho pode ser enviado para revisão.",
+        { status: cenario.status }
+      );
+    return this.db.$transaction(async (tx) => {
+      const agora = this.agora();
+      await tx.treinoCenario.update({
+        where: { id: cenarioId },
+        data: { status: "em_revisao", alteradoPor: ator.userId, alteradoEm: agora }
+      });
+      await this.auditar(
+        tx,
+        ator,
+        "UPDATE",
+        "treinamentos.cenario",
+        cenarioId,
+        { status: "rascunho" },
+        { status: "em_revisao" }
+      );
+      return { id: cenarioId, status: "em_revisao" as const };
+    });
+  }
+
+  /**
+   * Aprova várias versões, uma por vez (cada uma em transação própria e com auditoria): uma que falha
+   * (inválida, já aprovada) não impede as outras. Devolve o relatório por item.
+   */
+  async aprovarEmLote(ator: TreinoAtor, itens: readonly { cenarioId: string; versaoId: string }[]) {
+    this.exigirPapel(ator, "administrador");
+    const relatorio: {
+      cenarioId: string;
+      versaoId: string;
+      estado: "aprovada" | "recusada";
+      codigo?: string;
+      problemas?: TreinoProblemaDeAutoria[];
+    }[] = [];
+    for (const item of itens) {
+      try {
+        await this.aprovarVersao(ator, item.cenarioId, item.versaoId);
+        relatorio.push({ ...item, estado: "aprovada" });
+      } catch (erro) {
+        if (!(erro instanceof HttpError)) throw erro;
+        const problemas = (erro.details as { problemas?: TreinoProblemaDeAutoria[] } | undefined)
+          ?.problemas;
+        relatorio.push({
+          ...item,
+          estado: "recusada",
+          codigo: erro.code,
+          ...(problemas ? { problemas } : {})
+        });
+      }
+    }
+    return {
+      aprovadas: relatorio.filter((r) => r.estado === "aprovada").length,
+      recusadas: relatorio.filter((r) => r.estado === "recusada").length,
+      itens: relatorio
+    };
   }
 
   async listarTurmas(ator: TreinoAtor) {

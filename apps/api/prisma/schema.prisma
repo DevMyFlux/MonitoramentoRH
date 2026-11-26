@@ -28,6 +28,7 @@ model Area {
   updatedBy String?          @db.Uuid
   usuarios  User[]
   convites  UserInvitation[]
+  regrasDePublico TreinoRegraPublico[]
   @@schema("public")
 }
 
@@ -1276,6 +1277,7 @@ model LabTurma {
   criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
   participantes LabTurmaParticipante[]
   atribuicoesDeTreino TreinoAtribuicao[]
+  configsDeTeste TreinoTesteConfig[]
 
   @@index([curadorId])
   @@map("turma")
@@ -1588,6 +1590,8 @@ model TreinoCenario {
   id          String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   slug        String                @unique
   area        String
+  /// O público da versão mais recente (a lista da configuração filtra por ele).
+  publico     String?
   titulo      String
   /// rascunho | em_revisao | aprovado | arquivado (CHECK no banco)
   status      String                @default("rascunho")
@@ -1679,5 +1683,38 @@ model TreinoResposta {
 
   @@id([tentativaId, perguntaId])
   @@map("resposta")
+  @@schema("treinamentos")
+}
+
+/// Nível de governança + área -> público do teste (nulo = qualquer). Editável pela configuração; sem
+/// regra que sirva, vale o padrão do código (publicoDoCadastro em packages/shared).
+model TreinoRegraPublico {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nivel       String?
+  areaId      String?  @map("area_id") @db.Uuid
+  area        Area?    @relation(fields: [areaId], references: [id])
+  publico     String
+  ativa       Boolean  @default(true)
+  criadoEm    DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+  alteradoEm  DateTime @default(now()) @map("alterado_em") @db.Timestamptz(3)
+  alteradoPor String?  @map("alterado_por") @db.Uuid
+
+  @@index([areaId])
+  @@map("regra_publico")
+  @@schema("treinamentos")
+}
+
+/// Quantos cenários compõem o teste de um público (e, opcionalmente, de uma turma do Lab).
+model TreinoTesteConfig {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  publico     String
+  turmaId     String?   @map("turma_id") @db.Uuid
+  turma       LabTurma? @relation(fields: [turmaId], references: [id])
+  quantidade  Int       @db.SmallInt
+  alteradoEm  DateTime  @default(now()) @map("alterado_em") @db.Timestamptz(3)
+  alteradoPor String?   @map("alterado_por") @db.Uuid
+
+  @@index([turmaId])
+  @@map("teste_config")
   @@schema("treinamentos")
 }

@@ -72,6 +72,29 @@ nível e área não inicia (`LAB_CADASTRO_INCOMPLETO`).
 Migração `0024_lab_teste_cenarios` (aditiva, com `down.sql`): `sessao.modo` aceita `cenarios`;
 `sessao.origem` e `sessao.publico`; tabelas `leadership_lab.tentativa_cenario` e `resposta_cenario`.
 
+## Configuração (`/treinamentos/config`)
+
+ADMIN e DEV editam; o RH só lê (lista, regras, quantidades e prévia). A API confere o perfil em toda
+chamada. Tudo grava `AuditLog`.
+
+- **Lista de cenários:** título, público, área, situação (rascunho, em revisão, aprovado), versão e
+  última alteração. "Enviar para revisão" leva o rascunho a `em_revisao`; aprovar congela a versão.
+- **Editor de JSON:** valida ao vivo com o mesmo schema do servidor e mostra os erros por caminho
+  (`questions.2.alternatives.1.beat.title`). Aceita o formato do sistema e o do pacote do Lab. Pré-visualiza
+  no Palco sem gravar resultado. Editar um cenário aprovado cria uma nova versão em rascunho.
+- **Importar, exportar e aprovar em lote:** vários arquivos .json (um cenário ou uma lista cada), com
+  relatório por arquivo e por cenário; tudo entra como rascunho. Exporta os selecionados. "Aprovar em lote"
+  aprova a versão mais nova dos selecionados, com relatório por item.
+- **Regra de público** (`treinamentos.regra_publico`): nível + área → público, ativa ou não. Vale a mais
+  específica (nível e área, depois só a área, depois só o nível); em empate, a de cima. Os padrões da
+  seção de contas entram como linhas iniciais; sem regra que sirva, vale o padrão do código.
+- **Quantidade de cenários** (`treinamentos.teste_config`): por público e, se quiser, por turma (a da turma
+  vale no lugar da do público). Sem linha, vale `LAB_TESTE_CENARIOS` (3).
+
+Rotas (`/api/v1/treinamentos`): `POST /cenarios/:id/revisao`, `POST /cenarios/aprovar-em-lote`,
+`GET|PUT /configuracao/regras`, `GET|PUT /configuracao/quantidades`, além das de cenários e importação.
+Migração `0025_treinamentos_configuracao` (aditiva, com `down.sql`).
+
 ## Menu
 
 O COMUM só tem o Leadership Lab. `/treinamentos`, `/colaboradores` e `/escalas` o levam para o Lab na

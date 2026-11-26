@@ -132,7 +132,8 @@ export const navigationGroups: NavigationGroup[] = [
         label: "Configuração de treinamentos",
         href: "/treinamentos/config",
         icon: Settings2,
-        roles: ["ADMIN", "DEV"],
+        // ADMIN e DEV editam; o RH só lê (cenários, regras e quantidades).
+        roles: ["RH", "ADMIN", "DEV"],
         foraDoDock: true
       }
     ]

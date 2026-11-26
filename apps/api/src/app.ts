@@ -48,6 +48,7 @@ import {
 import { registrarRotasDoLab } from "./modules/leadership-lab/lab-routes.js";
 import { registrarTravaDoComum } from "./modules/identity/comum-guard.js";
 import { registrarRotasDeCadastroDaConta } from "./modules/users/user-account-routes.js";
+import { ConfiguracaoDosTreinamentos } from "./modules/treinamentos/treinamentos-configuracao.js";
 import { registrarRotasDosTreinamentos } from "./modules/treinamentos/treinamentos-routes.js";
 import {
   type ConfigDosTreinamentos,
@@ -310,9 +311,19 @@ export async function buildApp(
     opcoes.treinamentos?.config ?? configDosTreinamentos(process.env),
     opcoes.treinamentos?.agora
   );
+  const configuracaoDosTreinamentos = new ConfiguracaoDosTreinamentos(
+    prisma,
+    opcoes.treinamentos?.agora,
+    Number(process.env.LAB_TESTE_CENARIOS) >= 1 ? Number(process.env.LAB_TESTE_CENARIOS) : undefined
+  );
   await app.register(
     async (versionedApp) =>
-      registrarRotasDosTreinamentos(versionedApp, userRepository, servicoDeTreinamentos),
+      registrarRotasDosTreinamentos(
+        versionedApp,
+        userRepository,
+        servicoDeTreinamentos,
+        configuracaoDosTreinamentos
+      ),
     { prefix: `${apiPrefix}/treinamentos` }
   );
 

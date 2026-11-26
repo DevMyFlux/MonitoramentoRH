@@ -384,7 +384,8 @@ describe.skipIf(!integrationEnabled)("contas: cargo, nível de governança e ár
   it("a migração 0023 desce sem tocar em outras tabelas e sobe de novo", async () => {
     const outro = await createTestDatabase();
     try {
-      await applyMigrations(outro.client);
+      // Só até a 0023: as migrações seguintes (a 0025 tem chave para "Area") dependem dela.
+      await applyMigrations(outro.client, "0023_contas_cargo_nivel_area");
       const migracao = readMigrations().find((m) => m.name === "0023_contas_cargo_nivel_area")!;
       expect(migracao.down).not.toBeNull();
       const tabelasAntes = (

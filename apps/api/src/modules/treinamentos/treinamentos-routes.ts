@@ -20,6 +20,10 @@
 //   GET  /cenarios/:id/versoes/:versaoId conteúdo completo de uma versão (pré-visualização)
 //   POST /cenarios/:id/versoes           { conteudo } nova versão (mesmo slug)
 //   POST /cenarios/:id/aprovar           { versaoId } congela a versão
+//   POST /cenarios/:id/revisao           rascunho -> em revisão
+//   POST /cenarios/aprovar-em-lote       { itens: [{ cenarioId, versaoId }] } relatório por item
+//   GET|PUT /configuracao/regras         regra nível + área -> público (RH lê; ADMIN e DEV editam)
+//   GET|PUT /configuracao/quantidades    quantos cenários por público (e por turma)
 //   GET  /turmas                         turmas ativas do Lab, para atribuir
 //   POST /atribuicoes                    { versaoId, turmaId, prazo? }
 //
@@ -33,6 +37,9 @@
 // rotas exigem o mesmo JWT do resto do sistema.
 import {
   treinoAprovarBodySchema,
+  treinoAprovarEmLoteBodySchema,
+  treinoRegrasDePublicoBodySchema,
+  treinoTesteConfigBodySchema,
   treinoAtribuirBodySchema,
   treinoConteudoBodySchema,
   treinoFiltrosDoRhSchema,
@@ -45,6 +52,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { authenticateRequest } from "../auth/auth-routes.js";
 import type { UserRepository } from "../users/user-repository.js";
+import type { ConfiguracaoDosTreinamentos } from "./treinamentos-configuracao.js";
 import type { ServicoDeTreinamentos } from "./treinamentos-servico.js";
 
 const paramsComId = z.object({ id: z.uuid() });
@@ -59,7 +67,8 @@ const LIMITE_DA_IMPORTACAO = 4 * 1024 * 1024;
 export async function registrarRotasDosTreinamentos(
   app: FastifyInstance,
   users: UserRepository,
-  servico: ServicoDeTreinamentos
+  servico: ServicoDeTreinamentos,
+  configuracao: ConfiguracaoDosTreinamentos
 ): Promise<void> {
   app.addHook("onSend", async (_request, reply, payload) => {
     reply.header("Cache-Control", "no-store");
@@ -163,6 +172,32 @@ export async function registrarRotasDosTreinamentos(
     return {
       data: await servico.aprovarVersao(await atorDe(request), idDe(request), corpo.versaoId)
     };
+  });
+
+  // Revisão e aprovação em lote
+  app.post("/cenarios/:id/revisao", pequeno, async (request) => ({
+    data: await servico.enviarParaRevisao(await atorDe(request), idDe(request))
+  }));
+
+  app.post("/cenarios/aprovar-em-lote", { bodyLimit: LIMITE_DO_CORPO * 8 }, async (request) => {
+    const corpo = treinoAprovarEmLoteBodySchema.parse(request.body);
+    return { data: await servico.aprovarEmLote(await atorDe(request), corpo.itens) };
+  });
+
+  // Configuração do teste do Lab: regra de público e quantidade de cenários (RH lê; ADMIN e DEV editam)
+  app.get("/configuracao/regras", async (request) => ({
+    data: await configuracao.lerRegras(await atorDe(request))
+  }));
+  app.put("/configuracao/regras", pequeno, async (request) => {
+    const corpo = treinoRegrasDePublicoBodySchema.parse(request.body);
+    return { data: await configuracao.salvarRegras(await atorDe(request), corpo.regras) };
+  });
+  app.get("/configuracao/quantidades", async (request) => ({
+    data: await configuracao.lerQuantidades(await atorDe(request))
+  }));
+  app.put("/configuracao/quantidades", pequeno, async (request) => {
+    const corpo = treinoTesteConfigBodySchema.parse(request.body);
+    return { data: await configuracao.salvarQuantidades(await atorDe(request), corpo.itens) };
   });
 
   app.get("/turmas", async (request) => ({

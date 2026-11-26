@@ -76,6 +76,46 @@ export function moldeDoNivel(
       : "coordenador";
 }
 
+/** Uma regra configurada: nível + área -> público (nulo = qualquer). */
+export type RegraDePublico = {
+  nivelGovernanca: NivelDeGovernanca | null;
+  areaId: string | null;
+  publico: TreinoPublico;
+  ativa: boolean;
+};
+
+export type PublicoPelasRegras = {
+  publico: TreinoPublico;
+  /** "regra": uma regra configurada serviu; "padrao": nenhuma serviu e valeu o padrão do código. */
+  origem: "regra" | "padrao";
+};
+
+/**
+ * O público de uma conta pelas regras CONFIGURADAS (a tabela editável da configuração). Vale a regra
+ * ativa mais específica: nível e área juntos (3), só a área (2), só o nível (1); em empate, a primeira da
+ * lista. Se nenhuma serve (tabela vazia, por exemplo), vale o padrão do código (publicoDoCadastro).
+ */
+export function publicoPelasRegras(
+  regras: readonly RegraDePublico[],
+  conta: { nivelGovernanca: NivelDeGovernanca; areaId: string; areaSlug: string }
+): PublicoPelasRegras {
+  let melhor: { regra: RegraDePublico; pontos: number } | null = null;
+  for (const regra of regras) {
+    if (!regra.ativa) continue;
+    if (regra.nivelGovernanca !== null && regra.nivelGovernanca !== conta.nivelGovernanca) continue;
+    if (regra.areaId !== null && regra.areaId !== conta.areaId) continue;
+    const pontos = (regra.areaId !== null ? 2 : 0) + (regra.nivelGovernanca !== null ? 1 : 0);
+    if (pontos === 0) continue;
+    if (melhor === null || pontos > melhor.pontos) melhor = { regra, pontos };
+  }
+  if (melhor) return { publico: melhor.regra.publico, origem: "regra" };
+  return {
+    publico: publicoDoCadastro({ nivelGovernanca: conta.nivelGovernanca, areaSlug: conta.areaSlug })
+      .publico,
+    origem: "padrao"
+  };
+}
+
 /**
  * O molde do Lab que a sessão de cenários usa (a sessão exige um molde; o conteúdo vem dos cenários, não
  * dele): o público de supervisores usa o de supervisor, o de coordenadores usa o de coordenador, o

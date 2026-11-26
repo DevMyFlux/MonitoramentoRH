@@ -49,11 +49,12 @@ describe("navigation groups", () => {
     const rh = todos.find((i) => i.href === "/treinamentos/rh")!;
     const config = todos.find((i) => i.href === "/treinamentos/config")!;
 
-    it("o RH acompanha, o ADMIN configura, o DEV vê os dois; o participante, nenhum", () => {
+    it("o RH acompanha e lê a configuração, o ADMIN configura, o DEV vê os dois; o participante, nenhum", () => {
       expect(itemVisivelPara(rh, "RH")).toBe(true);
       expect(itemVisivelPara(rh, "ADMIN")).toBe(false);
       expect(itemVisivelPara(config, "ADMIN")).toBe(true);
-      expect(itemVisivelPara(config, "RH")).toBe(false);
+      // O RH só lê a configuração (a tela esconde o que edita).
+      expect(itemVisivelPara(config, "RH")).toBe(true);
       for (const item of [rh, config]) {
         expect(itemVisivelPara(item, "DEV")).toBe(true);
         expect(itemVisivelPara(item, "COMUM")).toBe(false);

@@ -29,7 +29,8 @@ import {
   evaluate,
   moldeDoPublico,
   origemDoPerfil,
-  publicoDoCadastro,
+  publicoPelasRegras,
+  type RegraDePublico,
   reacaoDaAlternativa,
   takenFromPicks,
   treinoCenarioSchema,
@@ -178,16 +179,46 @@ export class TrilhaDeCenarios {
   // Quem é a pessoa para o teste (público e molde)
   // -------------------------------------------------------------------------
 
-  /** O público que a regra do cadastro define, ou nulo se o cadastro está incompleto. */
+  /**
+   * O público que as regras definem para o cadastro da conta, ou nulo se o cadastro está incompleto. Valem
+   * as regras CONFIGURADAS (tabela editável); sem regra que sirva, o padrão do código.
+   */
   private async publicoDaConta(user: AuthenticatedUser): Promise<TreinoPublico | null> {
     if (!user.nivelGovernanca || !user.area?.id) return null;
-    const area = await this.db.area.findUnique({
-      where: { id: user.area.id },
-      select: { slug: true }
-    });
+    const [area, regras] = await Promise.all([
+      this.db.area.findUnique({ where: { id: user.area.id }, select: { slug: true } }),
+      this.db.treinoRegraPublico.findMany({ orderBy: [{ criadoEm: "asc" }, { id: "asc" }] })
+    ]);
     if (!area) return null;
-    return publicoDoCadastro({ nivelGovernanca: user.nivelGovernanca, areaSlug: area.slug })
-      .publico;
+    return publicoPelasRegras(
+      regras.map((r) => ({
+        nivelGovernanca: r.nivel as RegraDePublico["nivelGovernanca"],
+        areaId: r.areaId,
+        publico: r.publico as TreinoPublico,
+        ativa: r.ativa
+      })),
+      { nivelGovernanca: user.nivelGovernanca, areaId: user.area.id, areaSlug: area.slug }
+    ).publico;
+  }
+
+  /**
+   * Quantos cenários compõem o teste desta pessoa: a quantidade da TURMA dela para o público (se houver
+   * mais de uma, a maior), senão a do público, senão o padrão do ambiente.
+   */
+  private async quantidadeDe(participanteId: string, publico: TreinoPublico): Promise<number> {
+    const configs = await this.db.treinoTesteConfig.findMany({ where: { publico } });
+    const limite = (n: number) => Math.max(1, Math.min(LAB_CENARIOS_POR_TESTE_MAXIMO, n));
+    if (configs.length === 0) return this.quantidade;
+    const turmas = await this.db.labTurmaParticipante.findMany({
+      where: { participanteId, turma: { ativa: true } },
+      select: { turmaId: true }
+    });
+    const deTurma = configs.filter(
+      (c) => c.turmaId !== null && turmas.some((t) => t.turmaId === c.turmaId)
+    );
+    if (deTurma.length) return limite(Math.max(...deTurma.map((c) => c.quantidade)));
+    const doPublico = configs.find((c) => c.turmaId === null);
+    return doPublico ? limite(doPublico.quantidade) : this.quantidade;
   }
 
   /** DEV, ADMIN e RH escolhem o público; o COMUM recebe o da regra do cadastro. */
@@ -280,7 +311,8 @@ export class TrilhaDeCenarios {
       return this.semTeste(user, false, "cadastro-incompleto", null, 0);
     // Quem pode escolher o público vê, para o público da conta (se houver), quantos cenários teria.
     if (publico === null) return this.semTeste(user, true, null, null, 0);
-    const total = (await this.escolher(this.db, participanteId, publico, this.quantidade)).length;
+    const quantos = await this.quantidadeDe(participanteId, publico);
+    const total = (await this.escolher(this.db, participanteId, publico, quantos)).length;
     return total === 0
       ? this.semTeste(user, false, "sem-cenarios", publico, 0)
       : this.semTeste(user, true, null, publico, total);
@@ -386,9 +418,10 @@ export class TrilhaDeCenarios {
     if (!molde)
       throw new HttpError(409, "LAB_MOLDE_NAO_MAPEADO", "O molde do teste não está cadastrado.");
 
+    const quantos = await this.quantidadeDe(participanteId, publico);
     try {
       const sessaoId = await this.db.$transaction(async (tx) => {
-        const escolhidos = await this.escolher(tx, participanteId, publico, this.quantidade);
+        const escolhidos = await this.escolher(tx, participanteId, publico, quantos);
         if (escolhidos.length === 0)
           throw new HttpError(
             409,

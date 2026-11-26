@@ -6,14 +6,23 @@ import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useUsuarioAtual } from "../../features/auth/use-usuario-atual";
 import { ApiError } from "../../features/my-flux/client";
 import { apiDosTreinamentos } from "../../features/treinamentos/api";
 import { renderizar } from "../../test/render";
 import { TreinamentosConfigPage } from "./config-page";
 import { TreinamentosRhPage } from "./rh-page";
 
+vi.mock("../../features/auth/use-usuario-atual", () => ({ useUsuarioAtual: vi.fn() }));
 vi.mock("../../features/treinamentos/api", () => ({
   apiDosTreinamentos: {
+    regras: vi.fn(),
+    quantidades: vi.fn(),
+    importar: vi.fn(),
+    enviarParaRevisao: vi.fn(),
+    aprovarEmLote: vi.fn(),
+    salvarRegras: vi.fn(),
+    salvarQuantidades: vi.fn(),
     cenarios: vi.fn(),
     validarCenario: vi.fn(),
     criarCenario: vi.fn(),
@@ -35,7 +44,14 @@ const plantao = readFileSync(
   "utf8"
 );
 
-beforeEach(() => vi.resetAllMocks());
+beforeEach(() => {
+  vi.resetAllMocks();
+  // A configuração é de ADMIN e DEV (o RH só lê): estes testes usam o ADMIN.
+  vi.mocked(useUsuarioAtual).mockReturnValue({ data: { role: "ADMIN" } } as never);
+  api.regras.mockResolvedValue({ regras: [], areas: [] });
+  api.quantidades.mockResolvedValue({ padrao: 3, itens: [] });
+  api.turmas.mockResolvedValue([]);
+});
 
 /** userEvent.type interpreta { e [ como teclas especiais; para JSON, cola o texto. */
 async function colar(campo: HTMLElement, texto: string) {

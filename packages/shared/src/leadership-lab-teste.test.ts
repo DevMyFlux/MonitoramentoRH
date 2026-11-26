@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { niveisDeGovernanca } from "./conta.js";
 import {
+  publicoPelasRegras,
+  type RegraDePublico,
   moldeDoPublico,
   agilidadeDosCenarios,
   aderenciaDosCenarios,
@@ -121,5 +123,96 @@ describe("corpos das requisições", () => {
       labTesteRespostaEntradaSchema.safeParse({ perguntaId: "q1", alternativa: 0, extra: 1 })
         .success
     ).toBe(false);
+  });
+});
+
+describe("público pelas regras configuradas", () => {
+  const RH = "11111111-1111-4111-8111-111111111111";
+  const COMPRAS = "22222222-2222-4222-8222-222222222222";
+  const regra = (
+    nivelGovernanca: RegraDePublico["nivelGovernanca"],
+    areaId: string | null,
+    publico: RegraDePublico["publico"],
+    ativa = true
+  ): RegraDePublico => ({ nivelGovernanca, areaId, publico, ativa });
+  const conta = (
+    nivelGovernanca: "assistente" | "supervisor" | "coordenador" | "diretoria",
+    areaId: string,
+    areaSlug: string
+  ) => ({
+    nivelGovernanca,
+    areaId,
+    areaSlug
+  });
+
+  it("a regra mais específica vence: nível+área, depois só a área, depois só o nível", () => {
+    const regras = [
+      regra("assistente", null, "administrativo-geral"),
+      regra(null, RH, "rh"),
+      regra("supervisor", COMPRAS, "supervisor-manutencao-adm")
+    ];
+    // Assistente de RH: a regra da área (2) vence a do nível (1).
+    expect(publicoPelasRegras(regras, conta("assistente", RH, "rh"))).toEqual({
+      publico: "rh",
+      origem: "regra"
+    });
+    expect(publicoPelasRegras(regras, conta("assistente", COMPRAS, "compras")).publico).toBe(
+      "administrativo-geral"
+    );
+    expect(publicoPelasRegras(regras, conta("supervisor", COMPRAS, "compras")).publico).toBe(
+      "supervisor-manutencao-adm"
+    );
+  });
+
+  it("nível e área juntos vencem a regra só da área", () => {
+    const regras = [
+      regra(null, COMPRAS, "administrativo-geral"),
+      regra("coordenador", COMPRAS, "coordenador-administrativo")
+    ];
+    expect(publicoPelasRegras(regras, conta("coordenador", COMPRAS, "compras")).publico).toBe(
+      "coordenador-administrativo"
+    );
+    expect(publicoPelasRegras(regras, conta("supervisor", COMPRAS, "compras")).publico).toBe(
+      "administrativo-geral"
+    );
+  });
+
+  it("regra inativa não vale; sem regra que sirva, vale o padrão do código", () => {
+    const regras = [regra("coordenador", COMPRAS, "rh", false)];
+    expect(publicoPelasRegras(regras, conta("coordenador", COMPRAS, "compras"))).toEqual({
+      publico: "coordenador-administrativo",
+      origem: "padrao"
+    });
+    expect(publicoPelasRegras([], conta("assistente", RH, "rh"))).toEqual({
+      publico: "rh",
+      origem: "padrao"
+    });
+  });
+
+  it("empate: a primeira da lista", () => {
+    const regras = [
+      regra("supervisor", null, "rh"),
+      regra("supervisor", null, "administrativo-geral")
+    ];
+    expect(publicoPelasRegras(regras, conta("supervisor", COMPRAS, "compras")).publico).toBe("rh");
+  });
+});
+
+describe("corpos da configuração", () => {
+  it("regra exige nível, área ou os dois", async () => {
+    const { treinoRegrasDePublicoBodySchema: schema } = await import("./treinamentos-api.js");
+    const ok = { nivelGovernanca: "supervisor", areaId: null, publico: "rh", ativa: true };
+    expect(schema.safeParse({ regras: [ok] }).success).toBe(true);
+    expect(schema.safeParse({ regras: [{ ...ok, nivelGovernanca: null }] }).success).toBe(false);
+    expect(schema.safeParse({ regras: [{ ...ok, publico: "diretoria" }] }).success).toBe(false);
+  });
+
+  it("quantidade de 1 a 10, sem repetir público e turma", async () => {
+    const { treinoTesteConfigBodySchema: schema } = await import("./treinamentos-api.js");
+    const item = { publico: "rh", turmaId: null, quantidade: 3 };
+    expect(schema.safeParse({ itens: [item] }).success).toBe(true);
+    expect(schema.safeParse({ itens: [{ ...item, quantidade: 0 }] }).success).toBe(false);
+    expect(schema.safeParse({ itens: [{ ...item, quantidade: 11 }] }).success).toBe(false);
+    expect(schema.safeParse({ itens: [item, { ...item, quantidade: 4 }] }).success).toBe(false);
   });
 });

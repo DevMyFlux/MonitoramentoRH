@@ -5,6 +5,7 @@ import type {
   TreinoBeat,
   TreinoDesfecho,
   TreinoNivel,
+  TreinoPublico,
   TreinoRegra,
   TreinoVisaoDoParticipante
 } from "@my-flux/shared";
@@ -94,11 +95,39 @@ export type CenarioDaLista = {
   id: string;
   slug: string;
   area: string;
+  /** O público da versão mais recente (nulo: cenário sem público). */
+  publico: string | null;
   titulo: string;
   status: string;
   alteradoEm: string;
   versoes: VersaoDaLista[];
 };
+/** A regra de público como a tela a edita (nulo = qualquer). */
+export type RegraDePublicoDaTela = {
+  nivelGovernanca: "assistente" | "supervisor" | "coordenador" | "diretoria" | null;
+  areaId: string | null;
+  publico: TreinoPublico;
+  ativa: boolean;
+};
+export type ItemDeQuantidade = {
+  publico: TreinoPublico;
+  turmaId: string | null;
+  quantidade: number;
+};
+
+export type RelatorioDaImportacao = {
+  criados: number;
+  jaExistem: number;
+  invalidos: number;
+  itens: {
+    indice: number;
+    estado: "criado" | "ja_existe" | "invalido";
+    slug: string | null;
+    cenarioId?: string;
+    problemas?: ProblemaDeAutoria[];
+  }[];
+};
+
 export type ProblemaDeAutoria = { caminho: string; mensagem: string };
 export type ValidacaoDoCenario = {
   valido: boolean;
@@ -179,6 +208,28 @@ export const apiDosTreinamentos = {
       "POST",
       { versaoId }
     ),
+  importar: (cenarios: unknown[]) =>
+    request<RelatorioDaImportacao>(`${base}/cenarios/importar`, "POST", { cenarios }),
+  enviarParaRevisao: (cenarioId: string) =>
+    request<{ id: string; status: string }>(`${base}/cenarios/${cenarioId}/revisao`, "POST", {}),
+  aprovarEmLote: (itens: { cenarioId: string; versaoId: string }[]) =>
+    request<{ aprovadas: number; recusadas: number }>(`${base}/cenarios/aprovar-em-lote`, "POST", {
+      itens
+    }),
+  regras: () =>
+    request<{
+      regras: RegraDePublicoDaTela[];
+      areas: { id: string; nome: string; ativa: boolean }[];
+    }>(`${base}/configuracao/regras`),
+  salvarRegras: (regras: RegraDePublicoDaTela[]) =>
+    request<{ salvas: number }>(`${base}/configuracao/regras`, "PUT", { regras }),
+  quantidades: () =>
+    request<{
+      padrao: number;
+      itens: (ItemDeQuantidade & { turma: string | null })[];
+    }>(`${base}/configuracao/quantidades`),
+  salvarQuantidades: (itens: ItemDeQuantidade[]) =>
+    request<{ salvas: number }>(`${base}/configuracao/quantidades`, "PUT", { itens }),
   turmas: () => request<TurmaParaAtribuir[]>(`${base}/turmas`),
   atribuir: (versaoId: string, turmaId: string, prazo: string | null) =>
     request<{ id: string }>(`${base}/atribuicoes`, "POST", { versaoId, turmaId, prazo }),

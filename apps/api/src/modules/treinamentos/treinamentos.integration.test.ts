@@ -427,8 +427,10 @@ describe.skipIf(!integrationEnabled)("rotas dos Treinamentos Interativos", () =>
     const criar = await chamar(admin, "POST", "/cenarios", { conteudo: ruim });
     expect(criar.statusCode).toBe(422);
 
-    for (const quem of [ana, rh1])
-      expect((await chamar(quem, "GET", "/cenarios")).statusCode).toBe(403);
+    // O participante não lê a configuração; o RH a lê (só leitura), mas não edita.
+    expect((await chamar(ana, "GET", "/cenarios")).statusCode).toBe(403);
+    expect((await chamar(rh1, "GET", "/cenarios")).statusCode).toBe(200);
+    expect((await chamar(rh1, "POST", "/cenarios", { conteudo: quadro })).statusCode).toBe(403);
     expect((await chamar(dev, "GET", "/cenarios")).statusCode).toBe(200);
 
     const repetido = await chamar(admin, "POST", "/cenarios", { conteudo: quadro });
